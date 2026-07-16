@@ -23,18 +23,13 @@ const FREQUENCY_BY_LEVEL: Record<FreshnessLevel, CardFrequency> = {
 
 type TreeGrowthNodeProps = {
   data: TreeNodeData;
-  selected?: boolean;
 };
 
-const TreeGrowthNode = ({ data, selected }: TreeGrowthNodeProps) => {
+const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
   const level = getFreshnessLevel(data.lastActivity);
 
   return (
-    <div
-      className={
-        selected ? "rounded-xl ring-2 ring-gray-900 ring-offset-2" : ""
-      }
-    >
+    <div>
       <Handle type="target" position={Position.Top} />
       <GrowthCard
         icon={ROLE_ICON[data.role]}

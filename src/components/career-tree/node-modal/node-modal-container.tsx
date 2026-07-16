@@ -35,32 +35,42 @@ const NodeModalContainer = ({
   childrenCount,
   onClose,
 }: NodeModalContainerProps) => {
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [activitiesState, setActivitiesState] = useState<{
+    nodeId: string;
+    activities: Activity[];
+  } | null>(null);
   const contentDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     getNodeCardsAction(node.id).then((cards) => {
       if (cancelled) return;
-      setActivities(
-        cards.map((c) => ({
+      setActivitiesState({
+        nodeId: node.id,
+        activities: cards.map((c) => ({
           id: c.id,
           text: extractPlainText(c.content) || "(trống)",
           time: c.createdAt,
         })),
-      );
+      });
     });
     return () => {
       cancelled = true;
     };
   }, [node.id]);
 
+  const activities = activitiesState?.nodeId === node.id ? activitiesState.activities : [];
+  const isLoadingActivities = activitiesState?.nodeId !== node.id;
+
   const handleAddActivity = async (text: string) => {
     const card = await createCardAction(workspaceId, node.id, {
       type: "doc",
       content: [{ type: "paragraph", content: [{ type: "text", text }] }],
     });
-    setActivities((prev) => [{ id: card.id, text, time: card.createdAt }, ...prev]);
+    setActivitiesState({
+      nodeId: node.id,
+      activities: [{ id: card.id, text, time: card.createdAt }, ...activities],
+    });
   };
 
   const handleContentChange = (json: Record<string, unknown>) => {
@@ -93,6 +103,7 @@ const NodeModalContainer = ({
         total: MAX_EXPECTED_CARDS,
         content: node.content,
         activities,
+        isLoadingActivities,
         updatedAt: node.updatedAt,
       }}
       onContentChange={handleContentChange}

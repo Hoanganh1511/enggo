@@ -9,14 +9,14 @@ const Sidebar = ({ onAddNode }: SidebarProps) => {
         type="button"
         title="Tạo node"
         onClick={onAddNode}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-lg leading-none text-background transition-colors hover:opacity-90"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-foreground text-lg leading-none text-background transition-colors hover:opacity-90"
       >
         +
       </button>
       <button
         type="button"
         title="Trang chủ"
-        className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
       >
         <svg
           width="18"
@@ -33,7 +33,7 @@ const Sidebar = ({ onAddNode }: SidebarProps) => {
       <button
         type="button"
         title="Bảng"
-        className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
       >
         <svg
           width="18"
@@ -52,7 +52,7 @@ const Sidebar = ({ onAddNode }: SidebarProps) => {
       <button
         type="button"
         title="Cài đặt"
-        className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
       >
         <svg
           width="18"

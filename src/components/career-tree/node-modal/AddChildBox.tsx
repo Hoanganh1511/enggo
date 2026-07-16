@@ -27,12 +27,12 @@ const AddChildBox = ({ onAddChild }: AddChildBoxProps) => {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           placeholder="Tên nhánh con..."
-          className="flex-1 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-900"
+          className="flex-1 rounded-lg border border-dashed border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-solid focus:border-gray-900 focus:outline-none"
         />
         <button
           type="button"
           onClick={handleSubmit}
-          className="rounded-lg bg-gray-900 px-3 py-1.5 text-sm text-white transition-colors hover:bg-gray-800"
+          className="cursor-pointer rounded-lg bg-gray-900 px-3 py-1.5 text-sm text-white transition-colors hover:bg-gray-800"
         >
           Thêm
         </button>

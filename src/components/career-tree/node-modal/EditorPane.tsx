@@ -24,7 +24,7 @@ function ToolbarButton({ label, isActive, onClick, Icon }: ToolbarButtonProps) {
       type="button"
       title={label}
       onClick={onClick}
-      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors ${
         isActive ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50"
       }`}
     >
@@ -93,7 +93,7 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
           Icon={Code}
         />
       </div>
-      <div className="mt-3 flex-1 overflow-y-auto">
+      <div className="mt-3 flex-1 overflow-y-auto rounded-lg border border-gray-200 p-4">
         <EditorContent editor={editor} />
       </div>
     </div>

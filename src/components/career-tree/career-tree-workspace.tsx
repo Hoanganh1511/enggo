@@ -107,7 +107,7 @@ const CareerTreeWorkspace = ({
             <button
               type="button"
               onClick={handleAddNode}
-              className="pointer-events-auto rounded-full bg-foreground px-4 py-2 text-sm text-background transition-colors hover:opacity-90"
+              className="pointer-events-auto cursor-pointer rounded-full bg-foreground px-4 py-2 text-sm text-background transition-colors hover:opacity-90"
             >
               + Tạo node đầu tiên
             </button>

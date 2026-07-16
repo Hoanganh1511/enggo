@@ -61,7 +61,7 @@ const GrowthCard = ({
     <button
       type="button"
       onClick={onClick}
-      className="w-64 rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+      className="w-64 cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
     >
       <div className="flex items-center gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100">

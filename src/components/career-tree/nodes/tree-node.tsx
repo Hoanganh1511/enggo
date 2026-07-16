@@ -16,7 +16,7 @@ const TreeNode = ({ data, selected }: TreeNodeProps) => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.2 }}
       title={data.title}
-      className={`relative flex cursor-pointer items-center justify-center rounded-xl border-2 bg-white px-3 text-center text-sm font-medium text-zinc-800 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-900 dark:text-zinc-100 ${
+      className={`relative flex cursor-pointer items-center justify-center  rounded-xl border-2 bg-white px-3 text-center text-sm font-medium text-zinc-800 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-900 dark:text-zinc-100 ${
         selected
           ? "ring-2 ring-offset-2 ring-foreground dark:ring-offset-zinc-900"
           : ""
