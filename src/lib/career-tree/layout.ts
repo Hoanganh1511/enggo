@@ -3,8 +3,8 @@ import type { ApiNode } from "../api/types";
 
 import { resolveNodeRole, type AppEdge, type AppNode } from "./types";
 
-const NODE_WIDTH = 220;
-const LEVEL_HEIGHT = 160;
+const NODE_WIDTH = 300;
+const LEVEL_HEIGHT = 200;
 
 export function computeTreeLayout(root: HierarchyNode<ApiNode>): {
   nodes: AppNode[];
@@ -27,6 +27,7 @@ export function computeTreeLayout(root: HierarchyNode<ApiNode>): {
         lastActivity: d.data.lastActivity,
         hiddenFromShare: d.data.hiddenFromShare,
         isCollapsed: d.data.isCollapsed,
+        childrenCount: d.children?.length ?? 0,
       },
     };
   });

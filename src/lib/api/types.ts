@@ -7,6 +7,7 @@ export type ApiNode = {
   orderIndex: number;
   hiddenFromShare: boolean;
   isCollapsed: boolean;
+  content: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   cardCount: number;

@@ -10,6 +10,7 @@ export type TreeNodeData = {
   lastActivity: string | null;
   hiddenFromShare: boolean;
   isCollapsed: boolean;
+  childrenCount: number;
 };
 
 export type AppNode = Node<TreeNodeData, NodeRole>;

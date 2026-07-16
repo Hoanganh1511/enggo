@@ -1,14 +1,14 @@
 type SidebarProps = {
-  onAddBoard: () => void;
+  onAddNode: () => void;
 };
 
-const Sidebar = ({ onAddBoard }: SidebarProps) => {
+const Sidebar = ({ onAddNode }: SidebarProps) => {
   return (
     <nav className="z-10 m-4 flex w-16 flex-col items-center gap-3 rounded-full bg-white/90 py-5 shadow-md ring-1 ring-black/5 dark:bg-zinc-900/90 dark:ring-white/10">
       <button
         type="button"
-        title="Tạo bảng"
-        onClick={onAddBoard}
+        title="Tạo node"
+        onClick={onAddNode}
         className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-lg leading-none text-background transition-colors hover:opacity-90"
       >
         +
