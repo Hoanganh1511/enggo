@@ -11,6 +11,8 @@ export type TreeNodeData = {
   hiddenFromShare: boolean;
   isCollapsed: boolean;
   childrenCount: number;
+  isToggling?: boolean;
+  onToggleCollapse?: () => void;
 };
 
 export type AppNode = Node<TreeNodeData, NodeRole>;

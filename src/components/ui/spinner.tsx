@@ -5,7 +5,7 @@ type SpinnerProps = {
 
 const Spinner = ({ size = 16, className = "" }: SpinnerProps) => (
   <svg
-    className={`animate-spin text-gray-400 ${className}`}
+    className={`animate-spin text-gray-800 ${className}`}
     width={size}
     height={size}
     viewBox="0 0 24 24"
@@ -14,7 +14,7 @@ const Spinner = ({ size = 16, className = "" }: SpinnerProps) => (
     aria-label="Đang tải"
   >
     <circle
-      className="opacity-25"
+      className="opacity-20"
       cx="12"
       cy="12"
       r="10"
@@ -22,7 +22,6 @@ const Spinner = ({ size = 16, className = "" }: SpinnerProps) => (
       strokeWidth="4"
     />
     <path
-      className="opacity-75"
       fill="currentColor"
       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
     />

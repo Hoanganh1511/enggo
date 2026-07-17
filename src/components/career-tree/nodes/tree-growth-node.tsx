@@ -1,5 +1,6 @@
 import { Folder, FileText, Target } from "lucide-react";
 import { Handle, Position } from "@xyflow/react";
+import { motion } from "framer-motion";
 import GrowthCard, { type CardFrequency } from "@/components/ui/growth-card";
 import {
   getFreshnessLevel,
@@ -27,10 +28,15 @@ type TreeGrowthNodeProps = {
 
 const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
   const level = getFreshnessLevel(data.lastActivity);
+  const hasVisibleChildren = data.childrenCount > 0 && !data.isCollapsed;
 
   return (
-    <div>
-      <Handle type="target" position={Position.Top} />
+    <motion.div
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      {data.role !== "root" && <Handle type="target" position={Position.Top} />}
       <GrowthCard
         icon={ROLE_ICON[data.role]}
         title={data.title}
@@ -39,9 +45,12 @@ const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
         frequency={FREQUENCY_BY_LEVEL[level]}
         done={Math.min(data.cardCount, MAX_EXPECTED_CARDS)}
         total={MAX_EXPECTED_CARDS}
+        isCollapsed={data.isCollapsed}
+        isToggling={data.isToggling}
+        onToggleCollapse={data.onToggleCollapse}
       />
-      <Handle type="source" position={Position.Bottom} />
-    </div>
+      {hasVisibleChildren && <Handle type="source" position={Position.Bottom} />}
+    </motion.div>
   );
 };
 
