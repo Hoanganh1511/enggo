@@ -69,6 +69,7 @@ export function computeTreeLayout(root: HierarchyNode<ApiNode>): {
       data: {
         title: d.data.title,
         role,
+        depth: d.data.depth,
         cardCount: d.data.cardCount,
         lastActivity: d.data.lastActivity,
         hiddenFromShare: d.data.hiddenFromShare,

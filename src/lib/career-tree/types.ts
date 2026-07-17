@@ -6,6 +6,7 @@ export type NodeRole = "root" | "branch" | "leaf";
 export type TreeNodeData = {
   title: string;
   role: NodeRole;
+  depth: number;
   cardCount: number;
   lastActivity: string | null;
   hiddenFromShare: boolean;
