@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Background,
   BackgroundVariant,
   Controls,
   MiniMap,
   ReactFlow,
+  ControlButton,
   type Node,
   type NodeTypes,
 } from "@xyflow/react";
+import { Map as MapIcon } from "lucide-react";
 import TreeGrowthNode from "./nodes/tree-growth-node";
 import { buildHierarchy } from "@/lib/career-tree/transform";
 import { computeTreeLayout } from "@/lib/career-tree/layout";
@@ -19,10 +22,9 @@ import {
   filterVisibleNodes,
   getRealChildrenCount,
 } from "@/lib/career-tree/filter-visible-nodes";
-import type { ApiNode } from "@/lib/api/types";
+import type { ApiNodeListItem } from "@/lib/api/types";
 import { resolveNodeRole, type AppNode } from "@/lib/career-tree/types";
 import { useCareerTree } from "@/lib/career-tree/career-tree-context";
-
 const nodeTypes: NodeTypes = {
   root: TreeGrowthNode,
   branch: TreeGrowthNode,
@@ -31,13 +33,36 @@ const nodeTypes: NodeTypes = {
 
 type CareerTreeCanvasProps = {
   workspaceId: string;
-  initialNodes: ApiNode[];
+  initialNodes: ApiNodeListItem[];
+};
+
+const MINIMAP_SIZES = ["sm", "md", "lg", "hidden"] as const;
+type MinimapSize = (typeof MINIMAP_SIZES)[number];
+
+const MINIMAP_DIMENSIONS: Record<
+  Exclude<MinimapSize, "hidden">,
+  { width: number; height: number }
+> = {
+  sm: {
+    width: 120,
+    height: 90,
+  },
+  md: { width: 180, height: 135 },
+  lg: { width: 240, height: 180 },
+};
+
+const MINIMAP_LABEL: Record<MinimapSize, string> = {
+  sm: "Nhỏ",
+  md: "Vừa",
+  lg: "Lớn",
+  hidden: "Đã ẩn",
 };
 
 const CareerTreeCanvas = ({
   workspaceId,
   initialNodes,
 }: CareerTreeCanvasProps) => {
+  const router = useRouter();
   const {
     setAllNodes,
     nodes,
@@ -46,17 +71,27 @@ const CareerTreeCanvas = ({
     edges,
     setEdges,
     onEdgesChange,
-    selectedNodeId,
-    setSelectedNodeId,
+    lastViewport,
+    setLastViewport,
     togglingNodeId,
     setTogglingNodeId,
     pendingFocusNodeId,
     setPendingFocusNodeId,
     reactFlowInstanceRef,
   } = useCareerTree();
+  const [minimapSize, setMinimapSize] = useState<MinimapSize>("md");
+
+  const cycleMinimapSize = () => {
+    setMinimapSize((prev) => {
+      const nextIndex =
+        (MINIMAP_SIZES.indexOf(prev) + 1) % MINIMAP_SIZES.length;
+      return MINIMAP_SIZES[nextIndex];
+    });
+  };
 
   //   Đồng bộ lại canvas mỗi khi Server Component cha refetch dữ liệu (sau khi 1 Server Action gọi revalidatePath)
   // useNodesState chỉ nhận giá trị khởi tạo ban đầu, không tự re-sync theo prop, nên cần useEffect này để node mới tạo thực sự hiện lên canvas.
+
   useEffect(() => {
     setAllNodes(initialNodes);
 
@@ -105,7 +140,7 @@ const CareerTreeCanvas = ({
       node.position.y + height / 2,
       {
         zoom: instance.getZoom(),
-        duration: 400,
+        duration: 600,
       },
     );
     setPendingFocusNodeId(null);
@@ -128,12 +163,11 @@ const CareerTreeCanvas = ({
   };
 
   const handleNodeClick = (_event: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id);
+    router.push(`/w/${workspaceId}/nodes/${node.id}`);
   };
 
   const displayNodes: AppNode[] = nodes.map((n) => ({
     ...n,
-    selected: n.id === selectedNodeId,
     data: {
       ...n.data,
       isToggling: n.id === togglingNodeId,
@@ -153,35 +187,61 @@ const CareerTreeCanvas = ({
         onInit={(instance) => {
           reactFlowInstanceRef.current = instance;
         }}
+        onMoveEnd={(_, viewport) => setLastViewport(viewport)}
         defaultEdgeOptions={{
           style: { stroke: "#a1a1aa", strokeWidth: 1.5 },
         }}
-        fitView
+        {...(lastViewport
+          ? { defaultViewport: lastViewport }
+          : { fitView: true })}
+        onlyRenderVisibleElements
         className="h-full w-full"
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={28}
           size={2}
-          color="#e5e5e0"
+          color="var(--border)"
         />
         <Controls
           position="top-right"
           orientation="horizontal"
           showInteractive={false}
-        />
-        <MiniMap pannable zoomable className="bg-white! dark:bg-zinc-900!" />
+        >
+          <ControlButton
+            onClick={cycleMinimapSize}
+            title={`Minimap: ${MINIMAP_LABEL[minimapSize]} - bấm để đổi cỡ`}
+          >
+            <MapIcon size={14} strokeWidth={1.75} />
+          </ControlButton>
+        </Controls>
+        {minimapSize !== "hidden" && (
+          <MiniMap
+            pannable
+            zoomable
+            style={{
+              width: MINIMAP_DIMENSIONS[minimapSize].width,
+              height: MINIMAP_DIMENSIONS[minimapSize].height,
+            }}
+            className="bg-surface! border border-border! rounded-lg! overflow-hidden!"
+            maskColor="var(--overlay)" // đổi vùng ngoài viewport sang overlay thay vì màu mặc định
+            nodeColor="var(--surface-muted)" // khối xám mặc định
+            nodeStrokeColor="var(--border)"
+            nodeStrokeWidth={1}
+            nodeBorderRadius={4} // bo góc nhẹ
+          />
+        )}
       </ReactFlow>
 
       {nodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-ink-muted">
             Chưa có node nào — bắt đầu cây sự nghiệp của bạn
           </p>
           <button
             type="button"
             onClick={handleAddNode}
-            className="pointer-events-auto cursor-pointer rounded-full bg-foreground px-4 py-2 text-sm text-background transition-colors hover:opacity-90"
+            className="pointer-events-auto cursor-pointer rounded-full bg-primary px-4 py-2 text-sm text-white transition-colors duration-150 ease-out hover:bg-primary-hover"
           >
             + Tạo node đầu tiên
           </button>

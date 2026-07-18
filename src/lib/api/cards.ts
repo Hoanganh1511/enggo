@@ -1,8 +1,15 @@
 import { apiFetch } from "./client";
 import type { ApiCard } from "./types";
 
-export function getNodeCards(nodeId: string): Promise<ApiCard[]> {
-  return apiFetch<ApiCard[]>(`/nodes/${nodeId}/cards`);
+export function getNodeCards(
+  nodeId: string,
+  params?: { cursor?: string; limit?: number },
+): Promise<ApiCard[]> {
+  const query = new URLSearchParams();
+  if (params?.cursor) query.set("cursor", params.cursor);
+  if (params?.limit) query.set("limit", String(params.limit));
+  const qs = query.toString();
+  return apiFetch<ApiCard[]>(`/nodes/${nodeId}/cards${qs ? `?${qs}` : ""}`);
 }
 
 export function createCard(

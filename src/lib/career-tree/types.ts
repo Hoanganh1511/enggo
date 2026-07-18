@@ -1,5 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { ApiNode } from "../api/types";
+import type { ApiNodeListItem } from "../api/types";
 
 export type NodeRole = "root" | "branch" | "leaf";
 
@@ -20,7 +20,7 @@ export type AppNode = Node<TreeNodeData, NodeRole>;
 export type AppEdge = Edge;
 
 export function resolveNodeRole(
-  apiNode: ApiNode,
+  apiNode: ApiNodeListItem,
   hasChildren: boolean,
 ): NodeRole {
   if (apiNode.depth === 0) return "root";

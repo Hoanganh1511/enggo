@@ -1,5 +1,5 @@
 import type { HierarchyNode } from "d3-hierarchy";
-import type { ApiNode } from "../api/types";
+import type { ApiNodeListItem } from "../api/types";
 
 import { resolveNodeRole, type AppEdge, type AppNode } from "./types";
 
@@ -18,7 +18,7 @@ type SubtreeLayout = {
 // Tự dựng layout thay vì dùng d3.tree() trực tiếp, vì d3.tree() luôn xếp
 // toàn bộ con của 1 node trên CÙNG 1 hàng ngang, không hỗ trợ giới hạn
 // số node/hàng rồi xuống dòng.
-function layoutSubtree(node: HierarchyNode<ApiNode>): SubtreeLayout {
+function layoutSubtree(node: HierarchyNode<ApiNodeListItem>): SubtreeLayout {
   const positions = new Map<string, { x: number; y: number }>();
   positions.set(node.data.id, { x: 0, y: 0 });
 
@@ -52,7 +52,7 @@ function layoutSubtree(node: HierarchyNode<ApiNode>): SubtreeLayout {
   return { width: maxRowWidth, height: yOffset, positions };
 }
 
-export function computeTreeLayout(root: HierarchyNode<ApiNode>): {
+export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
   nodes: AppNode[];
   edges: AppEdge[];
 } {

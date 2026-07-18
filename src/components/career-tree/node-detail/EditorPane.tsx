@@ -24,8 +24,10 @@ function ToolbarButton({ label, isActive, onClick, Icon }: ToolbarButtonProps) {
       type="button"
       title={label}
       onClick={onClick}
-      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors ${
-        isActive ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50"
+      className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150 ease-out ${
+        isActive
+          ? "bg-active-bg text-icon-active"
+          : "text-icon hover:bg-hover-bg"
       }`}
     >
       <Icon size={16} strokeWidth={1.75} />
@@ -47,11 +49,11 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
     editorProps: {
       attributes: {
         class:
-          "min-h-[300px] text-sm text-gray-900 focus:outline-none " +
+          "min-h-[300px] text-sm text-ink focus:outline-none " +
           "[&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-base [&_h2]:font-medium " +
           "[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 " +
-          "[&_pre]:mt-2 [&_pre]:rounded-lg [&_pre]:bg-gray-100 [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-xs " +
-          "[&_p.is-editor-empty:first-child::before]:text-gray-400 [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none",
+          "[&_pre]:mt-2 [&_pre]:rounded-lg [&_pre]:bg-surface-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-xs " +
+          "[&_p.is-editor-empty:first-child::before]:text-ink-faint [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none",
       },
     },
   });
@@ -61,7 +63,7 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
   return (
     <div className="flex h-full flex-col">
       <SectionLabel>Chi tiết node</SectionLabel>
-      <div className="mt-2 flex items-center gap-1 border-b border-gray-100 pb-2">
+      <div className="mt-2 flex items-center gap-1 border-b border-border pb-2">
         <ToolbarButton
           label="Heading"
           isActive={editor.isActive("heading", { level: 2 })}
@@ -93,7 +95,7 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
           Icon={Code}
         />
       </div>
-      <div className="mt-3 flex-1 overflow-y-auto rounded-lg border border-gray-200 p-4">
+      <div className="mt-3 flex-1 overflow-y-auto rounded-lg border border-border p-4">
         <EditorContent editor={editor} />
       </div>
     </div>

@@ -1,8 +1,14 @@
 import { apiFetch } from "./client";
-import type { ApiNode } from "./types";
+import type { ApiNode, ApiNodeListItem } from "./types";
 
-export function getWorkspaceTree(workspaceId: string): Promise<ApiNode[]> {
-  return apiFetch<ApiNode[]>(`/workspaces/${workspaceId}/nodes`);
+export function getWorkspaceTree(
+  workspaceId: string,
+): Promise<ApiNodeListItem[]> {
+  return apiFetch<ApiNodeListItem[]>(`/workspaces/${workspaceId}/nodes`);
+}
+
+export function getNode(workspaceId: string, nodeId: string): Promise<ApiNode> {
+  return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes/${nodeId}`);
 }
 
 export function createNode(

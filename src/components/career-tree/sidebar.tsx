@@ -23,8 +23,8 @@ const Sidebar = () => {
 
   return (
     <nav
-      className={`z-10 flex shrink-0 flex-col gap-1 bg-white/90 py-3 ring-1 ring-black/15 transition-[width] duration-200 dark:bg-zinc-900/90 dark:ring-white/10 ${
-        isCollapsed ? "w-16 items-center" : "w-80"
+      className={`z-10 flex shrink-0 flex-col gap-1 border-r border-border bg-surface py-3 transition-[width] duration-200 ${
+        isCollapsed ? "w-16 items-center" : "w-50 3xl:w-80"
       }`}
     >
       <div className="px-2">
@@ -33,16 +33,16 @@ const Sidebar = () => {
             key={title}
             type="button"
             title={title}
-            className={`flex h-10 shrink-0 cursor-pointer items-center rounded-sm gap-1 text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 ${
+            className={`flex h-9 3xl:h-10 shrink-0 cursor-pointer items-center rounded-sm gap-1 text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover ${
               isCollapsed ? "w-10 justify-center" : "w-full px-2"
             }`}
           >
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <Icon size={16} strokeWidth={1.75} className="shrink-0" />
+            <div className="flex size-5 3xl:size-6 shrink-0 items-center justify-center">
+              <Icon strokeWidth={1.75} className="size-4 3xl:size-5 shrink-0" />
             </div>
 
             {!isCollapsed && (
-              <span className="flex-1 text-left truncate font-medium text-sm">
+              <span className="flex-1 text-left truncate font-medium text-[13px] 3xl:text-sm text-ink">
                 {title}
               </span>
             )}

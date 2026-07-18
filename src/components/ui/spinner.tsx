@@ -5,7 +5,7 @@ type SpinnerProps = {
 
 const Spinner = ({ size = 16, className = "" }: SpinnerProps) => (
   <svg
-    className={`animate-spin text-gray-800 ${className}`}
+    className={`animate-spin text-ink-muted ${className}`}
     width={size}
     height={size}
     viewBox="0 0 24 24"

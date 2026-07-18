@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,10 @@ type WorkspaceSwitcherProps = {
   workspaces: ApiWorkspace[];
 };
 
-const WorkspaceSwitcher = ({ workspace, workspaces }: WorkspaceSwitcherProps) => {
+const WorkspaceSwitcher = ({
+  workspace,
+  workspaces,
+}: WorkspaceSwitcherProps) => {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -21,7 +24,10 @@ const WorkspaceSwitcher = ({ workspace, workspaces }: WorkspaceSwitcherProps) =>
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -43,10 +49,12 @@ const WorkspaceSwitcher = ({ workspace, workspaces }: WorkspaceSwitcherProps) =>
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={isPending}
-        className="flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 disabled:cursor-wait dark:text-zinc-300 dark:hover:bg-zinc-800"
+        className="flex cursor-pointer items-center gap-2 rounded-sm px-2 text-sm text-ink transition-colors duration-150 ease-out disabled:cursor-wait"
       >
-        {isPending && <Spinner size={14} />}
-        <span className="max-w-40 truncate font-medium">{workspace.name}</span>
+        {isPending && <Spinner className="size-3.5 text-ink" />}
+        <span className="max-w-40 truncate text-[12px] 2xl:text-base font-medium">
+          {workspace.name}
+        </span>
         <ChevronDown
           size={14}
           strokeWidth={1.75}
@@ -61,21 +69,28 @@ const WorkspaceSwitcher = ({ workspace, workspaces }: WorkspaceSwitcherProps) =>
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-full z-20 mt-2 w-56 origin-top rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+            className="absolute left-0 top-full z-20 mt-2 w-56 origin-top  rounded-sm border border-border bg-surface p-2 shadow-dropdown"
           >
-            {workspaces.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                onClick={() => handleSelect(w.id)}
-                className="flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-900 transition-colors hover:bg-gray-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <span className="truncate">{w.name}</span>
-                {w.id === workspace.id && (
-                  <Check size={14} className="shrink-0 text-gray-500" />
-                )}
-              </button>
-            ))}
+            {workspaces.map((w) => {
+              const isActive = w.id === workspace.id;
+              return (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => handleSelect(w.id)}
+                  className={`relative flex w-full cursor-pointer items-center justify-between rounded-sm px-3 py-2 text-left text-sm transition-colors duration-150 ease-out ${
+                    isActive
+                      ? "bg-active-bg text-ink before:absolute before:inset-y-1 before:left-0 before:w-0.5 before:rounded-full before:bg-primary-dark"
+                      : "text-ink hover:underline"
+                  }`}
+                >
+                  <span className="truncate text-[12.5px]">{w.name}</span>
+                  {isActive && (
+                    <Check className="size-4 shrink-0 text-icon-active" />
+                  )}
+                </button>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

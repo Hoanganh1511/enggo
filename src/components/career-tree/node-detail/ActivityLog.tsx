@@ -16,6 +16,9 @@ type ActivityLogProps = {
   activities: Activity[];
   isLoading?: boolean;
   onAddActivity: (text: string) => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 };
 
 type DayGroup = {
@@ -37,7 +40,14 @@ function groupByDay(activities: Activity[]): DayGroup[] {
   return groups;
 }
 
-const ActivityLog = ({ activities, isLoading, onAddActivity }: ActivityLogProps) => {
+const ActivityLog = ({
+  activities,
+  isLoading,
+  onAddActivity,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
+}: ActivityLogProps) => {
   const [text, setText] = useState("");
 
   const handleSubmit = () => {
@@ -61,33 +71,43 @@ const ActivityLog = ({ activities, isLoading, onAddActivity }: ActivityLogProps)
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
         placeholder="Hôm nay học được gì?"
-        className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+        className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
       />
 
       {isLoading ? (
-        <div className="mt-3 flex min-h-32 flex-col items-center justify-center gap-2 text-xs text-gray-900">
+        <div className="mt-3 flex min-h-32 flex-col items-center justify-center gap-2 text-xs text-ink-muted">
           <Spinner size={18} />
           <span>Đang tải...</span>
         </div>
       ) : sorted.length === 0 ? (
         <div className="mt-3 flex min-h-32 flex-col items-center justify-center gap-2 text-center">
-          <Inbox size={20} strokeWidth={1.75} className="text-gray-300" />
-          <p className="text-xs text-gray-900">Chưa có hoạt động nào.</p>
+          <Inbox
+            size={20}
+            strokeWidth={1.75}
+            className="text-ink-disabled"
+          />
+          <p className="text-xs text-ink-muted">
+            Chưa có hoạt động nào.
+          </p>
         </div>
       ) : (
         <div className="mt-3 space-y-4">
           {groups.map((group) => (
             <div key={group.label}>
-              <p className="text-xs font-medium text-gray-500">{group.label}</p>
+              <p className="text-xs font-medium text-ink-muted">
+                {group.label}
+              </p>
               <ul className="mt-2 space-y-3">
                 {group.items.map((activity, i) => (
                   <li key={activity.id} className="relative pl-4">
-                    <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-gray-900" />
+                    <span className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
                     {i < group.items.length - 1 && (
-                      <span className="absolute left-[2.5px] top-3 h-full w-px bg-gray-200" />
+                      <span className="absolute left-[2.5px] top-3 h-full w-px bg-tree-line" />
                     )}
-                    <p className="text-sm text-gray-900">{activity.text}</p>
-                    <p className="text-xs tabular-nums text-gray-400">
+                    <p className="text-sm text-ink">
+                      {activity.text}
+                    </p>
+                    <p className="text-xs tabular-nums text-ink-faint">
                       {formatTimeOnly(activity.time)}
                     </p>
                   </li>
@@ -95,6 +115,17 @@ const ActivityLog = ({ activities, isLoading, onAddActivity }: ActivityLogProps)
               </ul>
             </div>
           ))}
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="mt-2 w-full cursor-pointer rounded-lg py-2 text-center text-xs text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-wait"
+            >
+              {isLoadingMore ? "Đang tải..." : "Tải thêm"}
+            </button>
+          )}
         </div>
       )}
     </div>

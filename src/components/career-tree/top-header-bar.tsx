@@ -9,6 +9,7 @@ import {
   subscribeSidebarCollapsed,
 } from "@/lib/career-tree/sidebar-collapsed-store";
 import AppSwitcherMenu from "./app-switcher-menu";
+import Logo from "@/components/ui/logo";
 
 const TopHeaderBar = () => {
   const isCollapsed = useSyncExternalStore(
@@ -20,20 +21,27 @@ const TopHeaderBar = () => {
   const toggleCollapsed = () => setSidebarCollapsed(!isCollapsed);
 
   return (
-    <header className="z-10 flex h-12 shrink-0 items-center gap-1 border-b border-gray-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-950">
+    <header className="z-10 flex h-12 shrink-0 items-center gap-1 border-b border-border bg-surface px-3">
+      {/* <div className="h-5 w-px shrink-0 bg-border" /> */}
       <button
         type="button"
         title={isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
         onClick={toggleCollapsed}
-        className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+        className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover
+
+          `}
       >
         {isCollapsed ? (
-          <PanelLeftOpen size={16} strokeWidth={1.75} />
+          <PanelLeftOpen strokeWidth={1.75} className="size-4.5 2xl:size-5" />
         ) : (
-          <PanelLeftClose size={16} strokeWidth={1.75} />
+          <PanelLeftClose strokeWidth={1.75} className="size-4.5 2xl:size-5" />
         )}
       </button>
       <AppSwitcherMenu />
+      <div className="flex items-center">
+        <Logo orientation="icon-only" size={22} className="shrink-0" />
+        <span className="ml-2 text-white font-bold text-xs">Tree Career</span>
+      </div>
     </header>
   );
 };

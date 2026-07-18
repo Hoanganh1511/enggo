@@ -1,7 +1,9 @@
 import { stratify, type HierarchyNode } from "d3-hierarchy";
-import type { ApiNode } from "../api/types";
+import type { ApiNodeListItem } from "../api/types";
 
-export function buildHierarchy(apiNodes: ApiNode[]): HierarchyNode<ApiNode> {
+export function buildHierarchy(
+  apiNodes: ApiNodeListItem[],
+): HierarchyNode<ApiNodeListItem> {
   const roots = apiNodes.filter((n) => n.parentId === null);
 
   if (roots.length === 0) {
@@ -15,7 +17,7 @@ export function buildHierarchy(apiNodes: ApiNode[]): HierarchyNode<ApiNode> {
     );
   }
 
-  return stratify<ApiNode>()
+  return stratify<ApiNodeListItem>()
     .id((n) => n.id)
     .parentId((n) => n.parentId ?? undefined)(apiNodes);
 }

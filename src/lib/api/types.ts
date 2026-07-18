@@ -14,6 +14,12 @@ export type ApiNode = {
   lastActivity: string | null;
 };
 
+// Workspace tree list responses omit `content` (Tiptap JSON can be large and is
+// never rendered outside the node's own detail modal) — this is the shape held
+// in memory for the whole tree at all times. Use `ApiNode` (with `content`)
+// only for a single node fetched on demand, e.g. via `getNode`.
+export type ApiNodeListItem = Omit<ApiNode, "content">;
+
 export type ApiCard = {
   id: string;
   nodeId: string;
