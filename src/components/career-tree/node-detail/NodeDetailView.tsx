@@ -1,15 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Trash2, type LucideIcon } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import EditorPane from "./EditorPane";
 import ActivityLog, { type Activity } from "./ActivityLog";
-import AddChildBox from "./AddChildBox";
+import TopicsTab from "./TopicsTab";
 import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import type { ApiNodeListItem } from "@/lib/api/types";
+import type { LucideIcon } from "lucide-react";
+import ResourcesTab from "./ResourcesTab";
+import type { ApiResource, ResourceType } from "@/lib/api/types";
+type TabKey = "topics" | "journal" | "resources" | "issues";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "topics", label: "Các chủ đề" },
+  { key: "journal", label: "Nhật ký hoạt động" },
+  { key: "resources", label: "Tài liệu sử dụng" },
+  { key: "issues", label: "Vấn đề tồn đọng" },
+];
+
+const EmptyTab = ({ text }: { text: string }) => (
+  <div className="flex min-h-32 flex-col items-center justify-center gap-2 text-center">
+    <p className="text-xs text-ink-muted">{text}</p>
+  </div>
+);
 
 type NodeDetailViewProps = {
   workspaceId: string;
+  childNodes: ApiNodeListItem[];
   node: {
     id: string;
     icon: LucideIcon;
@@ -29,62 +47,101 @@ type NodeDetailViewProps = {
   onDelete: () => void;
   onAddActivity: (text: string) => void;
   onLoadMoreActivities: () => void;
+  resources: ApiResource[];
+  onAddResource: (data: {
+    type: ResourceType;
+    title: string;
+    url: string;
+  }) => void;
+  onDeleteResource: (resourceId: string) => void;
 };
 
 const NodeDetailView = ({
   workspaceId,
+  childNodes,
   node,
   onContentChange,
   onAddChild,
   onDelete,
   onAddActivity,
   onLoadMoreActivities,
+  resources,
+  onAddResource,
+  onDeleteResource,
 }: NodeDetailViewProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const Icon = node.icon;
+  const [activeTab, setActiveTab] = useState<TabKey>("topics");
 
   return (
     <div className="flex h-full w-full flex-col bg-surface">
-      <div className="flex items-start justify-between gap-4  px-8 2xl:px-10  py-0 2xl:py-6">
-        <div className="flex min-w-0 items-center gap-3">
-          {/* <Link
-            href={`/w/${workspaceId}`}
-            aria-label="Quay lại"
-            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
-          >
-            <ArrowLeft size={16} strokeWidth={1.75} />
-          </Link>
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-muted">
-            <Icon
-              size={18}
-              strokeWidth={1.75}
-              className="text-icon-active"
-            />
-          </span> */}
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-medium text-ink">
-              {node.title}
-            </h1>
-            <p className="truncate text-xs tabular-nums text-ink-muted">
-              {node.subtitle} · {node.branches} nhánh · {node.done}/{node.total}
-            </p>
-          </div>
+      <div className="flex items-start justify-between gap-4 px-8 py-6 2xl:px-10">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-medium text-ink">
+            {node.title}
+          </h1>
+          <p className="truncate text-xs tabular-nums text-ink-muted">
+            {node.subtitle} · {node.branches} nhánh · {node.done}/{node.total}
+          </p>
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-[1fr_360px] 2xl:grid-cols-[1fr_420px] gap-8 overflow-hidden p-8 2xl:p-10">
-        <EditorPane content={node.content} onContentChange={onContentChange} />
-        <div className="flex flex-col gap-6 overflow-y-auto border-l border-border pl-8">
-          <div className="rounded-lg border border-border p-4">
+      {/* Chi tiết node — chiều cao vừa đủ, không chiếm hết màn hình như trước */}
+      <div className="shrink-0 px-8 pb-6 2xl:px-10">
+        <div className="h-56 2xl:h-64">
+          <EditorPane
+            content={node.content}
+            onContentChange={onContentChange}
+          />
+        </div>
+      </div>
+
+      {/* Tab list: Các chủ đề / Nhật ký hoạt động / Tài liệu sử dụng / Vấn đề tồn đọng */}
+      <div className="flex min-h-0 flex-1 flex-col border-t border-border">
+        <div className="flex items-center gap-1 px-8 2xl:px-10">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`-mb-px cursor-pointer border-b-2 px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out ${
+                activeTab === tab.key
+                  ? "border-primary text-ink"
+                  : "border-transparent text-ink-muted hover:text-ink"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 2xl:px-10">
+          {activeTab === "topics" && (
+            <TopicsTab
+              workspaceId={workspaceId}
+              childNodes={childNodes}
+              onAddChild={onAddChild}
+            />
+          )}
+          {activeTab === "journal" && (
             <ActivityLog
               activities={node.activities}
               onAddActivity={onAddActivity}
               hasMore={node.hasMoreActivities}
               isLoadingMore={node.isLoadingMoreActivities}
               onLoadMore={onLoadMoreActivities}
+              hideLabel
             />
-          </div>
-          <AddChildBox onAddChild={onAddChild} />
+          )}
+          {activeTab === "resources" && (
+            <ResourcesTab
+              resources={resources}
+              onAddResource={onAddResource}
+              onDeleteResource={onDeleteResource}
+            />
+          )}
+          {activeTab === "issues" && (
+            <EmptyTab text="Chưa có vấn đề tồn đọng nào." />
+          )}
         </div>
       </div>
 

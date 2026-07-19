@@ -19,6 +19,7 @@ type ActivityLogProps = {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  hideLabel?: boolean;
 };
 
 type DayGroup = {
@@ -47,6 +48,7 @@ const ActivityLog = ({
   hasMore,
   isLoadingMore,
   onLoadMore,
+  hideLabel,
 }: ActivityLogProps) => {
   const [text, setText] = useState("");
 
@@ -64,14 +66,14 @@ const ActivityLog = ({
 
   return (
     <div>
-      <SectionLabel>Nhật ký hoạt động</SectionLabel>
+      {!hideLabel && <SectionLabel>Nhật ký hoạt động</SectionLabel>}
       <input
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
         placeholder="Hôm nay học được gì?"
-        className="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
+        className={`w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none ${hideLabel ? "" : "mt-2"}`}
       />
 
       {isLoading ? (

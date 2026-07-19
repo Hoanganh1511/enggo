@@ -37,3 +37,16 @@ export type ApiWorkspace = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ResourceType = "ARTICLE" | "VIDEO" | "DOC" | "COURSE" | "BOOK";
+
+export type ApiResource = {
+  id: string;
+  nodeId: string;
+  type: ResourceType;
+  title: string;
+  url: string;
+  orderIndex: string;
+  createdAt: string;
+  updatedAt: string;
+};

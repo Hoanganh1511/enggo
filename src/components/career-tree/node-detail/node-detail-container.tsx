@@ -12,7 +12,16 @@ import { deleteNodeAction } from "@/actions/career-tree/delete-node";
 import { updateNodeContentAction } from "@/actions/career-tree/update-node-content";
 import { extractPlainText } from "@/lib/career-tree/extract-plain-text";
 import { MAX_EXPECTED_CARDS } from "@/lib/career-tree/constants";
-import type { ApiCard, ApiNode } from "@/lib/api/types";
+import { getNodeResourcesAction } from "@/actions/career-tree/get-node-resources"; // không cần nếu chỉ dùng initial, có thể bỏ import này
+import { createResourceAction } from "@/actions/career-tree/create-resource-action";
+import { deleteResourceAction } from "@/actions/career-tree/delete-resource-action";
+import type {
+  ApiCard,
+  ApiNode,
+  ApiNodeListItem,
+  ApiResource,
+  ResourceType,
+} from "@/lib/api/types";
 import type { NodeRole } from "@/lib/career-tree/types";
 const PAGE_SIZE = 20;
 
@@ -35,7 +44,9 @@ type NodeDetailContainerProps = {
   node: ApiNode;
   role: NodeRole;
   childrenCount: number;
+  childNodes: ApiNodeListItem[];
   initialCards: ApiCard[];
+  initialResources: ApiResource[];
 };
 
 const NodeDetailContainer = ({
@@ -43,9 +54,12 @@ const NodeDetailContainer = ({
   node,
   role,
   childrenCount,
+  childNodes,
   initialCards,
+  initialResources,
 }: NodeDetailContainerProps) => {
   const router = useRouter();
+  const [resources, setResources] = useState<ApiResource[]>(initialResources);
   const [activitiesState, setActivitiesState] = useState({
     activities: initialCards.map(toActivity),
     cursor: initialCards.at(-1)?.id ?? null,
@@ -53,6 +67,20 @@ const NodeDetailContainer = ({
   });
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const contentDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAddResource = async (data: {
+    type: ResourceType;
+    title: string;
+    url: string;
+  }) => {
+    const resource = await createResourceAction(workspaceId, node.id, data);
+    setResources((prev) => [...prev, resource]);
+  };
+  const handleDeleteResource = async (resourceId: string) => {
+    await deleteResourceAction(workspaceId, resourceId);
+    setResources((prev) => prev.filter((r) => r.id !== resourceId));
+  };
+
   const handleAddActivity = async (text: string) => {
     const card = await createCardAction(workspaceId, node.id, {
       type: "doc",
@@ -101,6 +129,7 @@ const NodeDetailContainer = ({
   return (
     <NodeDetailView
       workspaceId={workspaceId}
+      childNodes={childNodes}
       node={{
         id: node.id,
         icon: ROLE_ICON[role],
@@ -120,6 +149,9 @@ const NodeDetailContainer = ({
       onDelete={handleDelete}
       onAddActivity={handleAddActivity}
       onLoadMoreActivities={handleLoadMore}
+      resources={resources}
+      onAddResource={handleAddResource}
+      onDeleteResource={handleDeleteResource}
     />
   );
 };
