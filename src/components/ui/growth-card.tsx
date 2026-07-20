@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import { ChevronDown, ChevronRight, GitBranch } from "lucide-react";
 import Spinner from "./spinner";
+import type { DelayStatus } from "@/lib/career-tree/constants";
 
 export type CardFrequency = "daily" | "weekly" | "monthly";
 
@@ -12,12 +13,25 @@ type GrowthCardProps = {
   subtitle: string;
   branches: number;
   frequency: CardFrequency;
+  status: DelayStatus;
   done: number;
   total: number;
   isCollapsed?: boolean;
   isToggling?: boolean;
   onToggleCollapse?: () => void;
   onClick?: () => void;
+};
+
+const STATUS_BAR_COLOR: Record<DelayStatus, string> = {
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+};
+
+const STATUS_TEXT_COLOR: Record<DelayStatus, string> = {
+  success: "text-ink-muted",
+  warning: "text-warning",
+  danger: "text-danger",
 };
 
 const FREQUENCY_LABEL: Record<CardFrequency, string> = {
@@ -32,14 +46,20 @@ const FREQUENCY_LEVEL: Record<CardFrequency, 0 | 1 | 2> = {
   daily: 2,
 };
 
-function FrequencyBars({ level }: { level: 0 | 1 | 2 }) {
+function FrequencyBars({
+  level,
+  status,
+}: {
+  level: 0 | 1 | 2;
+  status: DelayStatus;
+}) {
   const heights = ["h-1.5", "h-2.5", "h-3.5"];
   return (
     <span className="flex items-end gap-0.5">
       {heights.map((h, i) => (
         <span
           key={i}
-          className={`w-1 rounded-sm ${h} ${i <= level ? "bg-primary" : "bg-border"}`}
+          className={`w-1 rounded-sm ${h} ${i <= level ? STATUS_BAR_COLOR[status] : "bg-border"}`}
         />
       ))}
     </span>
@@ -52,6 +72,7 @@ const GrowthCard = ({
   subtitle,
   branches,
   frequency,
+  status,
   done,
   total,
   isCollapsed,
@@ -123,8 +144,10 @@ const GrowthCard = ({
             {branches} nhánh
           </span>
         )}
-        <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-          <FrequencyBars level={FREQUENCY_LEVEL[safeFrequency]} />
+        <span
+          className={`flex items-center gap-1.5 text-xs ${STATUS_TEXT_COLOR[status]}`}
+        >
+          <FrequencyBars level={FREQUENCY_LEVEL[safeFrequency]} status={status} />
           {FREQUENCY_LABEL[safeFrequency]}
         </span>
       </div>

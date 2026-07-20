@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { ApiCard } from "./types";
+import type { ApiCard, CardKind } from "./types";
 
 export function getNodeCards(
   nodeId: string,
@@ -15,10 +15,11 @@ export function getNodeCards(
 export function createCard(
   nodeId: string,
   content: Record<string, unknown>,
+  kind?: CardKind,
 ): Promise<ApiCard> {
   return apiFetch<ApiCard>(`/nodes/${nodeId}/cards`, {
     method: "POST",
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, kind }),
   });
 }
 

@@ -26,6 +26,7 @@ export function updateNode(
   nodeId: string,
   data: {
     title?: string;
+    goal?: string;
     hiddenFromShare?: boolean;
     isCollapsed?: boolean;
     content?: Record<string, unknown>;

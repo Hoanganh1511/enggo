@@ -1,21 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Inbox } from "lucide-react";
+import { Inbox, Laptop } from "lucide-react";
 import SectionLabel from "./SectionLabel";
 import Spinner from "@/components/ui/spinner";
 import { formatDayLabel, formatTimeOnly } from "@/lib/career-tree/format-time";
+import type { CardKind } from "@/lib/api/types";
 
 export type Activity = {
   id: string;
   text: string;
   time: string;
+  kind?: CardKind;
 };
 
 type ActivityLogProps = {
   activities: Activity[];
   isLoading?: boolean;
-  onAddActivity: (text: string) => void;
+  onAddActivity: (text: string, kind: CardKind) => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
@@ -51,11 +53,12 @@ const ActivityLog = ({
   hideLabel,
 }: ActivityLogProps) => {
   const [text, setText] = useState("");
+  const [kind, setKind] = useState<CardKind>("NOTE");
 
   const handleSubmit = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    onAddActivity(trimmed);
+    onAddActivity(trimmed, kind);
     setText("");
   };
 
@@ -67,14 +70,40 @@ const ActivityLog = ({
   return (
     <div>
       {!hideLabel && <SectionLabel>Nhật ký hoạt động</SectionLabel>}
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        placeholder="Hôm nay học được gì?"
-        className={`w-full rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none ${hideLabel ? "" : "mt-2"}`}
-      />
+      <div className={`flex items-center gap-2 ${hideLabel ? "" : "mt-2"}`}>
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          placeholder="Hôm nay học được gì?"
+          className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
+        />
+        <div className="flex shrink-0 rounded-lg border border-border p-0.5">
+          <button
+            type="button"
+            onClick={() => setKind("NOTE")}
+            className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
+              kind === "NOTE"
+                ? "bg-active-bg text-ink"
+                : "text-ink-muted hover:text-ink"
+            }`}
+          >
+            Ghi chú
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind("PRACTICE")}
+            className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
+              kind === "PRACTICE"
+                ? "bg-active-bg text-ink"
+                : "text-ink-muted hover:text-ink"
+            }`}
+          >
+            Thực hành
+          </button>
+        </div>
+      </div>
 
       {isLoading ? (
         <div className="mt-3 flex min-h-32 flex-col items-center justify-center gap-2 text-xs text-ink-muted">
@@ -83,14 +112,8 @@ const ActivityLog = ({
         </div>
       ) : sorted.length === 0 ? (
         <div className="mt-3 flex min-h-32 flex-col items-center justify-center gap-2 text-center">
-          <Inbox
-            size={20}
-            strokeWidth={1.75}
-            className="text-ink-disabled"
-          />
-          <p className="text-xs text-ink-muted">
-            Chưa có hoạt động nào.
-          </p>
+          <Inbox size={20} strokeWidth={1.75} className="text-ink-disabled" />
+          <p className="text-xs text-ink-muted">Chưa có hoạt động nào.</p>
         </div>
       ) : (
         <div className="mt-3 space-y-4">
@@ -106,9 +129,15 @@ const ActivityLog = ({
                     {i < group.items.length - 1 && (
                       <span className="absolute left-[2.5px] top-3 h-full w-px bg-tree-line" />
                     )}
-                    <p className="text-sm text-ink">
-                      {activity.text}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm text-ink">{activity.text}</p>
+                      {activity.kind === "PRACTICE" && (
+                        <span className="flex shrink-0 items-center gap-1 rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-400">
+                          <Laptop size={10} strokeWidth={2} />
+                          Thực hành
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs tabular-nums text-ink-faint">
                       {formatTimeOnly(activity.time)}
                     </p>

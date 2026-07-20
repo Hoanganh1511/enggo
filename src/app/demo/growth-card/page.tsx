@@ -11,6 +11,7 @@ export default function GrowthCardDemoPage() {
         subtitle="Mục tiêu 2026"
         branches={6}
         frequency="daily"
+        status="success"
         done={8}
         total={24}
       />
@@ -20,6 +21,7 @@ export default function GrowthCardDemoPage() {
         subtitle="NestJS · Prisma"
         branches={4}
         frequency="daily"
+        status="warning"
         done={13}
         total={20}
       />
@@ -29,6 +31,7 @@ export default function GrowthCardDemoPage() {
         subtitle="Event loop · Streams"
         branches={3}
         frequency="monthly"
+        status="danger"
         done={0}
         total={12}
       />

@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.19",
+    "@tiptap/extension-link": "^3.28.0",
     "@tiptap/extension-placeholder": "^3.28.0",
+    "@tiptap/extension-task-item": "^3.28.0",
+    "@tiptap/extension-task-list": "^3.28.0",
+    "@tiptap/extension-underline": "^3.28.0",
     "@tiptap/react": "^3.28.0",
     "@tiptap/starter-kit": "^3.28.0",
     "@xyflow/react": "^12.11.2",

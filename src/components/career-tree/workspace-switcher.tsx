@@ -52,7 +52,7 @@ const WorkspaceSwitcher = ({
         className="flex cursor-pointer items-center gap-2 rounded-sm px-2 text-sm text-ink transition-colors duration-150 ease-out disabled:cursor-wait"
       >
         {isPending && <Spinner className="size-3.5 text-ink" />}
-        <span className="max-w-40 truncate text-[12px] 2xl:text-base font-medium">
+        <span className="max-w-40 truncate text-[12px] 2xl:text-[14.5px] font-medium">
           {workspace.name}
         </span>
         <ChevronDown

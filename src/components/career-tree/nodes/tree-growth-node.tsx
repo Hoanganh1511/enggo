@@ -3,6 +3,7 @@ import { Handle, Position } from "@xyflow/react";
 import { motion } from "framer-motion";
 import GrowthCard, { type CardFrequency } from "@/components/ui/growth-card";
 import {
+  getDelayStatus,
   getFreshnessLevel,
   MAX_EXPECTED_CARDS,
   type FreshnessLevel,
@@ -43,6 +44,7 @@ const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
         subtitle={`${data.cardCount} ghi chú`}
         branches={data.childrenCount}
         frequency={FREQUENCY_BY_LEVEL[level]}
+        status={getDelayStatus(data.lastActivity)}
         done={Math.min(data.cardCount, MAX_EXPECTED_CARDS)}
         total={MAX_EXPECTED_CARDS}
         isCollapsed={data.isCollapsed}

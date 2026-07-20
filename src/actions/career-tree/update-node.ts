@@ -8,6 +8,7 @@ export async function updateNodeAction(
   nodeId: string,
   patch: {
     title?: string;
+    goal?: string;
     hiddenFromShare?: boolean;
     isCollapsed?: boolean;
     content?: Record<string, unknown>;

@@ -32,3 +32,28 @@ const FRESHNESS_COLORS: Record<FreshnessLevel, string> = {
 export function getFreshnessColor(lastActivity: string | null): string {
   return FRESHNESS_COLORS[getFreshnessLevel(lastActivity)];
 }
+
+// Mức "delay" hiển thị màu semantic trên canvas: fresh (<7 ngày) = xanh,
+// recent (7-30 ngày) = vàng, fading/stale (>30 ngày hoặc chưa từng hoạt
+// động) = đỏ — gộp 2 mức cuối vì cả hai đều đáng báo động ở mức UI, dù
+// getFreshnessLevel vẫn phân biệt 4 mức cho phần khác (label tần suất).
+export type DelayStatus = "success" | "warning" | "danger";
+
+const DELAY_STATUS_BY_LEVEL: Record<FreshnessLevel, DelayStatus> = {
+  fresh: "success",
+  recent: "warning",
+  fading: "danger",
+  stale: "danger",
+};
+
+export function getDelayStatus(lastActivity: string | null): DelayStatus {
+  return DELAY_STATUS_BY_LEVEL[getFreshnessLevel(lastActivity)];
+}
+
+// Số ngày kể từ lần hoạt động gần nhất — null nếu chưa từng có hoạt động.
+export function getDaysSinceActivity(lastActivity: string | null): number | null {
+  if (!lastActivity) return null;
+  return Math.floor(
+    (Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24),
+  );
+}

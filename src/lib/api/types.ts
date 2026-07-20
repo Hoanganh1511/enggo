@@ -2,6 +2,7 @@ export type ApiNode = {
   id: string;
   workspaceId: string;
   parentId: string | null;
+  goal: string | null;
   title: string;
   depth: number;
   orderIndex: number;
@@ -11,6 +12,9 @@ export type ApiNode = {
   createdAt: string;
   updatedAt: string;
   cardCount: number;
+  practiceCount: number;
+  resourceCount: number;
+  openIssueCount: number;
   lastActivity: string | null;
 };
 
@@ -20,10 +24,13 @@ export type ApiNode = {
 // only for a single node fetched on demand, e.g. via `getNode`.
 export type ApiNodeListItem = Omit<ApiNode, "content">;
 
+export type CardKind = "NOTE" | "PRACTICE";
+
 export type ApiCard = {
   id: string;
   nodeId: string;
   content: Record<string, unknown>;
+  kind: CardKind;
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -47,6 +54,28 @@ export type ApiResource = {
   title: string;
   url: string;
   orderIndex: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiIssue = {
+  id: string;
+  nodeId: string;
+  question: string;
+  resolved: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type NotificationType = "SYSTEM" | "CONNECTION";
+
+export type ApiNotification = {
+  id: string;
+  workspaceId: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  read: boolean;
   createdAt: string;
   updatedAt: string;
 };

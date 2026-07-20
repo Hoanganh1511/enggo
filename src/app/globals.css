@@ -37,6 +37,10 @@
   --shadow-panel-base: 0 20px 80px rgba(0, 0, 0, 0.1);
   --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.08);
   --shadow-focus-base: 0 0 0 3px rgba(59, 130, 246, 0.18);
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
 }
 
 @theme inline {
@@ -77,6 +81,10 @@
   --shadow-panel: var(--shadow-panel-base);
   --shadow-dropdown: var(--shadow-dropdown-base);
   --shadow-focus: var(--shadow-focus-base);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -111,6 +119,10 @@
     --shadow-panel-base: 0 20px 80px rgba(0, 0, 0, 0.55);
     --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.45);
     --shadow-focus-base: 0 0 0 3px rgba(59, 130, 246, 0.2);
+
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
   }
 }
 

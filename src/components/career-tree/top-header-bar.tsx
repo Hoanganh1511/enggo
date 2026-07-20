@@ -9,6 +9,7 @@ import {
   subscribeSidebarCollapsed,
 } from "@/lib/career-tree/sidebar-collapsed-store";
 import AppSwitcherMenu from "./app-switcher-menu";
+import NotificationBell from "./notification-bell";
 import Logo from "@/components/ui/logo";
 
 const TopHeaderBar = () => {
@@ -41,6 +42,9 @@ const TopHeaderBar = () => {
       <div className="flex items-center">
         <Logo orientation="icon-only" size={22} className="shrink-0" />
         <span className="ml-2 text-white font-bold text-xs">Tree Career</span>
+      </div>
+      <div className="ml-auto flex items-center">
+        <NotificationBell />
       </div>
     </header>
   );

@@ -12,7 +12,7 @@ type ToolbarProps = {
 
 const Toolbar = ({ onOpenSearch, workspace, workspaces }: ToolbarProps) => {
   return (
-    <div className="inline-flex items-center gap-1 rounded-sm border border-border px-1 py-1">
+    <div className="inline-flex items-center gap-1 rounded-sm border border-border p-1 2xl:p-1.5">
       <WorkspaceSwitcher workspace={workspace} workspaces={workspaces} />
       <div className="h-5 w-px bg-border" />
       <button
