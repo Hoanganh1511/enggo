@@ -10,7 +10,7 @@
   --primary-hover: #60a5fa;
   --primary-dark: #2563eb;
 
-  --overlay: rgba(0, 0, 0, 0.04);
+  --overlay: rgba(0, 0, 0, 0.3);
   --surface: #ffffff;
   --surface-muted: #f6f7f9;
   --surface-header: #f3f4f6;
@@ -92,7 +92,7 @@
     --background: #111318;
     --foreground: #f8fafc;
 
-    --overlay: rgba(0, 0, 0, 0.55);
+    --overlay: rgba(0, 0, 0, 0.75);
     --surface: #111318;
     --surface-muted: #161a22;
     --surface-header: #171c25;
@@ -130,6 +130,20 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* Hieu ung fade+scale luc node moi mount tren canvas - dung CSS thuan thay vi
+   framer-motion vi day chi la 1 animation chay dung 1 lan, khong can toolkit
+   dieu phoi phuc tap (nhieu node cung canvas = nhieu instance framer-motion). */
+@keyframes node-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Progressive disclosure: smooth reflow when nodes are hidden/revealed via collapse/expand */

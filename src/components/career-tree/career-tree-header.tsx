@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useCareerTree } from "@/lib/career-tree/career-tree-context";
+import { useCareerTreeStore } from "@/stores/career-tree-store";
 import { getCollapsedAncestorIds } from "@/lib/career-tree/get-child-nodes";
 import { updateNodeAction } from "@/actions/career-tree/update-node";
 import CommandPalette from "./command-palette";
@@ -15,8 +15,12 @@ const CareerTreeHeader = ({
   topbar,
   children,
 }: CareerTreeHeaderProps) => {
-  const { allNodes, isPaletteOpen, setIsPaletteOpen, setPendingFocusNodeId } =
-    useCareerTree();
+  const allNodes = useCareerTreeStore((s) => s.allNodes);
+  const isPaletteOpen = useCareerTreeStore((s) => s.isPaletteOpen);
+  const setIsPaletteOpen = useCareerTreeStore((s) => s.setIsPaletteOpen);
+  const setPendingFocusNodeId = useCareerTreeStore(
+    (s) => s.setPendingFocusNodeId,
+  );
 
   return (
     <>

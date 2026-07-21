@@ -12,6 +12,8 @@ export async function updateNodeAction(
     hiddenFromShare?: boolean;
     isCollapsed?: boolean;
     content?: Record<string, unknown>;
+    x?: number;
+    y?: number;
   },
 ) {
   const node = await updateNode(workspaceId, nodeId, patch);

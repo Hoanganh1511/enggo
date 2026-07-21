@@ -1,6 +1,5 @@
 "use client";
-
-import { useCareerTree } from "@/lib/career-tree/career-tree-context";
+import { useCareerTreeStore } from "@/stores/career-tree-store";
 import Toolbar from "./toolbar";
 import WorkspaceInfoBar from "./workspace-info-bar";
 import type { ApiWorkspace } from "@/lib/api/types";
@@ -15,7 +14,9 @@ type CanvasTopbarProps = {
 // workspace/workspaces đã được @topbar/page.tsx fetch sẵn ở server, truyền
 // xuống đây qua props, không cần fetch lại lần nữa.
 const CanvasTopbar = ({ workspace, workspaces }: CanvasTopbarProps) => {
-  const { allNodes, setIsPaletteOpen } = useCareerTree();
+  const allNodes = useCareerTreeStore((s) => s.allNodes);
+  const setIsPaletteOpen = useCareerTreeStore((s) => s.setIsPaletteOpen);
+  // const { allNodes, setIsPaletteOpen } = useCareerTree();
 
   return (
     <header className="border-b border-border bg-surface p-2.5">

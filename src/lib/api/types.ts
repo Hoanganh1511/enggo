@@ -6,6 +6,8 @@ export type ApiNode = {
   title: string;
   depth: number;
   orderIndex: number;
+  x: number | null;
+  y: number | null;
   hiddenFromShare: boolean;
   isCollapsed: boolean;
   content: Record<string, unknown> | null;
@@ -16,6 +18,11 @@ export type ApiNode = {
   resourceCount: number;
   openIssueCount: number;
   lastActivity: string | null;
+  streak: {
+    current: number;
+    longest: number;
+    last7: boolean[];
+  };
 };
 
 // Workspace tree list responses omit `content` (Tiptap JSON can be large and is

@@ -1,68 +1,46 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { ChevronDown, ChevronRight, GitBranch } from "lucide-react";
+import { ChevronDown, ChevronRight, GitBranch, TriangleAlert } from "lucide-react";
 import Spinner from "./spinner";
-import type { DelayStatus } from "@/lib/career-tree/constants";
-
-export type CardFrequency = "daily" | "weekly" | "monthly";
+import LearningStreak, { type LearningStreakData } from "./learning-streak";
+import type { NodeStatus } from "@/lib/career-tree/node-status";
 
 type GrowthCardProps = {
   icon: LucideIcon;
   title: string;
   subtitle: string;
   branches: number;
-  frequency: CardFrequency;
-  status: DelayStatus;
+  streak: LearningStreakData;
+  lastActivity: string | null;
   done: number;
   total: number;
+  status?: NodeStatus;
+  // true khi canvas dang zoom xa - an bot metadata phu, chi giu title/progress/status/streak.
+  zoomedOut?: boolean;
   isCollapsed?: boolean;
   isToggling?: boolean;
   onToggleCollapse?: () => void;
   onClick?: () => void;
 };
 
-const STATUS_BAR_COLOR: Record<DelayStatus, string> = {
-  success: "bg-success",
-  warning: "bg-warning",
-  danger: "bg-danger",
-};
-
-const STATUS_TEXT_COLOR: Record<DelayStatus, string> = {
-  success: "text-ink-muted",
-  warning: "text-warning",
-  danger: "text-danger",
-};
-
-const FREQUENCY_LABEL: Record<CardFrequency, string> = {
-  daily: "Hằng ngày",
-  weekly: "Hằng tuần",
-  monthly: "Thỉnh thoảng",
-};
-
-const FREQUENCY_LEVEL: Record<CardFrequency, 0 | 1 | 2> = {
-  monthly: 0,
-  weekly: 1,
-  daily: 2,
-};
-
-function FrequencyBars({
-  level,
-  status,
-}: {
-  level: 0 | 1 | 2;
-  status: DelayStatus;
-}) {
-  const heights = ["h-1.5", "h-2.5", "h-3.5"];
+function StatusDot({ status }: { status: NodeStatus }) {
+  if (status === "need-review") {
+    return (
+      <TriangleAlert
+        className="h-3 w-3 text-warning"
+        strokeWidth={2}
+        aria-label="Cần xem lại"
+      />
+    );
+  }
   return (
-    <span className="flex items-end gap-0.5">
-      {heights.map((h, i) => (
-        <span
-          key={i}
-          className={`w-1 rounded-sm ${h} ${i <= level ? STATUS_BAR_COLOR[status] : "bg-border"}`}
-        />
-      ))}
-    </span>
+    <span
+      aria-label={status === "learning" ? "Đang học" : "Không hoạt động"}
+      className={`block h-2 w-2 rounded-full ${
+        status === "learning" ? "bg-primary" : "bg-ink-disabled"
+      }`}
+    />
   );
 }
 
@@ -71,18 +49,17 @@ const GrowthCard = ({
   title,
   subtitle,
   branches,
-  frequency,
-  status,
+  streak,
+  lastActivity,
   done,
   total,
+  status,
+  zoomedOut,
   isCollapsed,
   isToggling,
   onToggleCollapse,
   onClick,
 }: GrowthCardProps) => {
-  const safeFrequency: CardFrequency = FREQUENCY_LABEL[frequency]
-    ? frequency
-    : "weekly";
   const percent = total > 0 ? Math.min(100, (done / total) * 100) : 0;
 
   return (
@@ -98,13 +75,25 @@ const GrowthCard = ({
       }}
       className="relative w-64 cursor-pointer rounded-xl border border-border bg-surface p-4 text-left shadow-sm transition-colors duration-150 ease-out hover:border-hover-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
+      {status && (
+        <span className="absolute top-2 right-2">
+          <StatusDot status={status} />
+        </span>
+      )}
+
       <div className="flex items-center gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted">
           <Icon className="h-4 w-4 text-icon-active" />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-ink">{title}</p>
-          <p className="truncate text-xs text-ink-muted">{subtitle}</p>
+          <p
+            className={`truncate text-xs text-ink-muted transition-opacity duration-300 ${
+              zoomedOut ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            {subtitle}
+          </p>
         </div>
       </div>
 
@@ -121,35 +110,35 @@ const GrowthCard = ({
       </div>
 
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-        {onToggleCollapse && branches > 0 ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleCollapse();
-            }}
-            className="nodrag flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 text-xs text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg"
-          >
-            {isCollapsed ? (
-              <ChevronRight className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronDown className="h-3.5 w-3.5" />
-            )}
-            <GitBranch className="h-3.5 w-3.5" />
-            {branches} nhánh
-          </button>
-        ) : (
-          <span className="flex items-center gap-1.5 text-xs text-ink-muted">
-            <GitBranch className="h-3.5 w-3.5" />
-            {branches} nhánh
-          </span>
-        )}
         <span
-          className={`flex items-center gap-1.5 text-xs ${STATUS_TEXT_COLOR[status]}`}
+          className={`transition-opacity duration-300 ${zoomedOut ? "pointer-events-none opacity-0" : "opacity-100"}`}
         >
-          <FrequencyBars level={FREQUENCY_LEVEL[safeFrequency]} status={status} />
-          {FREQUENCY_LABEL[safeFrequency]}
+          {onToggleCollapse && branches > 0 ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleCollapse();
+              }}
+              className="nodrag flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 text-xs text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg"
+            >
+              {isCollapsed ? (
+                <ChevronRight className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" />
+              )}
+              <GitBranch className="h-3.5 w-3.5" />
+              {branches} nhánh
+            </button>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-ink-muted">
+              <GitBranch className="h-3.5 w-3.5" />
+              {branches} nhánh
+            </span>
+          )}
         </span>
+
+        <LearningStreak streak={streak} lastActivity={lastActivity} />
       </div>
 
       {isToggling && (

@@ -30,6 +30,8 @@ export function updateNode(
     hiddenFromShare?: boolean;
     isCollapsed?: boolean;
     content?: Record<string, unknown>;
+    x?: number;
+    y?: number;
   },
 ): Promise<ApiNode> {
   return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes/${nodeId}`, {

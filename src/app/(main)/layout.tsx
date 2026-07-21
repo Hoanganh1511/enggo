@@ -1,16 +1,19 @@
 import Sidebar from "@/components/career-tree/sidebar";
 import TopHeaderBar from "@/components/career-tree/top-header-bar";
-import CareerTreeProvider from "@/lib/career-tree/career-tree-context";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+import { auth } from "@/auth";
+
+const Layout = async ({ children }: { children: React.ReactNode }) => {
+  const session = await auth();
+
   return (
-    <CareerTreeProvider>
-      <TopHeaderBar />
+    <>
+      <TopHeaderBar user={session?.user} />
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <Sidebar />
         {children}
       </div>
-    </CareerTreeProvider>
+    </>
   );
 };
 

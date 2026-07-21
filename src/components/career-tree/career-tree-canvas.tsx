@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Background,
@@ -11,20 +11,29 @@ import {
   ControlButton,
   type Node,
   type NodeTypes,
+  useNodesState,
+  useEdgesState,
+  type Viewport,
+  type ReactFlowInstance,
 } from "@xyflow/react";
 import { Map as MapIcon } from "lucide-react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import TreeGrowthNode from "./nodes/tree-growth-node";
 import { buildHierarchy } from "@/lib/career-tree/transform";
 import { computeTreeLayout } from "@/lib/career-tree/layout";
 import { createNodeAction } from "@/actions/career-tree/create-node";
 import { updateNodeAction } from "@/actions/career-tree/update-node";
+import { useCareerTreeStore } from "@/stores/career-tree-store";
 import {
   filterVisibleNodes,
   getRealChildrenCount,
 } from "@/lib/career-tree/filter-visible-nodes";
 import type { ApiNodeListItem } from "@/lib/api/types";
-import { resolveNodeRole, type AppNode } from "@/lib/career-tree/types";
-import { useCareerTree } from "@/lib/career-tree/career-tree-context";
+import {
+  resolveNodeRole,
+  type AppNode,
+  type AppEdge,
+} from "@/lib/career-tree/types";
 const nodeTypes: NodeTypes = {
   root: TreeGrowthNode,
   branch: TreeGrowthNode,
@@ -63,23 +72,57 @@ const CareerTreeCanvas = ({
   initialNodes,
 }: CareerTreeCanvasProps) => {
   const router = useRouter();
-  const {
-    setAllNodes,
-    nodes,
-    setNodes,
-    onNodesChange,
-    edges,
-    setEdges,
-    onEdgesChange,
-    lastViewport,
-    setLastViewport,
-    togglingNodeId,
-    setTogglingNodeId,
-    pendingFocusNodeId,
-    setPendingFocusNodeId,
-    reactFlowInstanceRef,
-  } = useCareerTree();
+  const [nodes, setNodes, onNodesChange] = useNodesState<AppNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<AppEdge>([]);
+  const [togglingNodeId, setTogglingNodeId] = useState<string | null>(null);
+  const [lastViewport, setLastViewport] = useState<Viewport | null>(null);
+  const reactFlowInstanceRef = useRef<ReactFlowInstance<
+    AppNode,
+    AppEdge
+  > | null>(null);
+
+  // FIeld thực sự dùng dung - lấy từ Zustand, mỗi field 1 selecteor riêng để canvas chỉ re-render khi dùng Field đó thoi
+
+  const setAllNodes = useCareerTreeStore((s) => s.setAllNodes);
+  const pendingFocusNodeId = useCareerTreeStore((s) => s.pendingFocusNodeId);
+  const setPendingFocusNodeId = useCareerTreeStore(
+    (s) => s.setPendingFocusNodeId,
+  );
   const [minimapSize, setMinimapSize] = useState<MinimapSize>("md");
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
+  // Cha/con suy tu edges (source->target) - khong can them field parentId
+  // rieng vao TreeNodeData, vi quan he cha-con da co san qua canh noi.
+  const { parentOf, childrenOf } = useMemo(() => {
+    const parentOf = new Map<string, string>();
+    const childrenOf = new Map<string, string[]>();
+    for (const e of edges) {
+      parentOf.set(e.target, e.source);
+      childrenOf.set(e.source, [...(childrenOf.get(e.source) ?? []), e.target]);
+    }
+    return { parentOf, childrenOf };
+  }, [edges]);
+
+  // Tap hop node duoc "sang" khi hover: chinh no + toan bo to tien (duong len
+  // goc) + toan bo hau due - dung de quyet dinh node/canh nao giu opacity 100%,
+  // phan con lai mo dan theo muc 1+7.
+  const highlightedSet = useMemo(() => {
+    if (!hoveredNodeId) return null;
+    const set = new Set<string>([hoveredNodeId]);
+    let cur = parentOf.get(hoveredNodeId);
+    while (cur) {
+      set.add(cur);
+      cur = parentOf.get(cur);
+    }
+    const stack = [...(childrenOf.get(hoveredNodeId) ?? [])];
+    while (stack.length > 0) {
+      const id = stack.pop();
+      if (!id || set.has(id)) continue;
+      set.add(id);
+      stack.push(...(childrenOf.get(id) ?? []));
+    }
+    return set;
+  }, [hoveredNodeId, parentOf, childrenOf]);
 
   const cycleMinimapSize = () => {
     setMinimapSize((prev) => {
@@ -152,38 +195,99 @@ const CareerTreeCanvas = ({
     await createNodeAction(workspaceId, rootId ?? null, "Node mới");
   };
 
-  const handleToggleCollapse = async (nodeId: string, current: boolean) => {
-    setTogglingNodeId(nodeId);
-    setPendingFocusNodeId(nodeId);
-    try {
-      await updateNodeAction(workspaceId, nodeId, { isCollapsed: !current });
-    } finally {
-      setTogglingNodeId(null);
-    }
-  };
+  // useCallback de giu nguyen 1 reference qua cac lan render - can thiet vi
+  // day la dependency cua nodesWithData ben duoi; neu doi reference moi lan
+  // render (nhu 1 arrow function thuong) se lam "data" cua tung node cung doi
+  // theo, pha vi memo() cua TreeGrowthNode.
+  const handleToggleCollapse = useCallback(
+    async (nodeId: string, current: boolean) => {
+      setTogglingNodeId(nodeId);
+      setPendingFocusNodeId(nodeId);
+      try {
+        await updateNodeAction(workspaceId, nodeId, { isCollapsed: !current });
+      } finally {
+        setTogglingNodeId(null);
+      }
+    },
+    [workspaceId, setTogglingNodeId, setPendingFocusNodeId],
+  );
 
   const handleNodeClick = (_event: React.MouseEvent, node: Node) => {
     router.push(`/w/${workspaceId}/nodes/${node.id}`);
   };
 
-  const displayNodes: AppNode[] = nodes.map((n) => ({
-    ...n,
-    data: {
-      ...n.data,
-      isToggling: n.id === togglingNodeId,
-      onToggleCollapse: () => handleToggleCollapse(n.id, n.data.isCollapsed),
-    },
-  }));
+  // Luu lai vi tri sau khi keo tha xong - lan fetch sau, layout.ts se doc
+  // dung x/y nay thay vi tinh lai auto-layout cho node nay.
+  const handleNodeDragStop = async (
+    _event: MouseEvent | TouchEvent,
+    node: Node,
+  ) => {
+    await updateNodeAction(workspaceId, node.id, {
+      x: node.position.x,
+      y: node.position.y,
+    });
+  };
+
+  // Tach rieng khoi buoc gan opacity ben duoi de "data" giu nguyen 1 reference
+  // qua cac lan hover doi (chi phu thuoc nodes/togglingNodeId/handleToggleCollapse,
+  // KHONG phu thuoc highlightedSet) - memo() cua TreeGrowthNode nho vay co the
+  // bo qua re-render khi chi co opacity doi, thay vi ca 30+ node re-render lai
+  // toan bo (Radix HoverCard/Tooltip, framer-motion...) moi lan chuot di qua.
+  const nodesWithData: AppNode[] = useMemo(() => {
+    return nodes.map((n) => ({
+      ...n,
+      data: {
+        ...n.data,
+        isToggling: n.id === togglingNodeId,
+        onToggleCollapse: () => handleToggleCollapse(n.id, n.data.isCollapsed),
+      },
+    }));
+  }, [nodes, togglingNodeId, handleToggleCollapse]);
+
+  const displayNodes: AppNode[] = useMemo(() => {
+    return nodesWithData.map((n) => {
+      const isFaded = highlightedSet !== null && !highlightedSet.has(n.id);
+      return {
+        ...n,
+        style: {
+          ...n.style,
+          opacity: isFaded ? 0.35 : 1,
+          transition: "opacity 180ms ease-out",
+        },
+      };
+    });
+  }, [nodesWithData, highlightedSet]);
+
+  const displayEdges: AppEdge[] = useMemo(() => {
+    return edges.map((e) => {
+      const isConnected =
+        highlightedSet !== null &&
+        highlightedSet.has(e.source) &&
+        highlightedSet.has(e.target);
+      const isFaded = highlightedSet !== null && !isConnected;
+      return {
+        ...e,
+        style: {
+          ...e.style,
+          opacity: isFaded ? 0.2 : 1,
+          transition: "opacity 180ms ease-out",
+        },
+      };
+    });
+  }, [edges, highlightedSet]);
 
   return (
-    <>
+    <Tooltip.Provider delayDuration={300}>
       <ReactFlow
         nodes={displayNodes}
-        edges={edges}
+        edges={displayEdges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
+        onNodeDragStop={handleNodeDragStop}
+        onNodeMouseEnter={(_, node) => setHoveredNodeId(node.id)}
+        onNodeMouseLeave={() => setHoveredNodeId(null)}
         onInit={(instance) => {
           reactFlowInstanceRef.current = instance;
         }}
@@ -225,15 +329,21 @@ const CareerTreeCanvas = ({
             }}
             className="bg-surface! border border-border! rounded-lg! overflow-hidden!"
             maskColor="var(--overlay)" // đổi vùng ngoài viewport sang overlay thay vì màu mặc định
-            nodeColor="var(--surface-muted)" // khối xám mặc định
-            nodeStrokeColor="var(--border)"
+            nodeColor={(n) =>
+              n.id === hoveredNodeId
+                ? "var(--color-primary)"
+                : "var(--surface-muted)"
+            }
+            nodeStrokeColor={(n) =>
+              n.id === hoveredNodeId ? "var(--color-primary)" : "var(--border)"
+            }
             nodeStrokeWidth={1}
             nodeBorderRadius={4} // bo góc nhẹ
           />
         )}
       </ReactFlow>
 
-      {nodes.length === 0 && (
+      {initialNodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
           <p className="text-sm text-ink-muted">
             Chưa có node nào — bắt đầu cây sự nghiệp của bạn
@@ -247,7 +357,7 @@ const CareerTreeCanvas = ({
           </button>
         </div>
       )}
-    </>
+    </Tooltip.Provider>
   );
 };
 

@@ -8,10 +8,16 @@ export type TreeNodeData = {
   role: NodeRole;
   depth: number;
   cardCount: number;
+  openIssueCount: number;
   lastActivity: string | null;
   hiddenFromShare: boolean;
   isCollapsed: boolean;
   childrenCount: number;
+  streak: {
+    current: number;
+    longest: number;
+    last7: boolean[];
+  };
   isToggling?: boolean;
   onToggleCollapse?: () => void;
 };

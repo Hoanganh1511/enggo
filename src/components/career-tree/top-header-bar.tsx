@@ -10,9 +10,18 @@ import {
 } from "@/lib/career-tree/sidebar-collapsed-store";
 import AppSwitcherMenu from "./app-switcher-menu";
 import NotificationBell from "./notification-bell";
+import AccountMenu from "./account-menu";
 import Logo from "@/components/ui/logo";
 
-const TopHeaderBar = () => {
+type TopHeaderBarProps = {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  } | null;
+};
+
+const TopHeaderBar = ({ user }: TopHeaderBarProps) => {
   const isCollapsed = useSyncExternalStore(
     subscribeSidebarCollapsed,
     getSidebarCollapsed,
@@ -43,8 +52,9 @@ const TopHeaderBar = () => {
         <Logo orientation="icon-only" size={22} className="shrink-0" />
         <span className="ml-2 text-white font-bold text-xs">Tree Career</span>
       </div>
-      <div className="ml-auto flex items-center">
+      <div className="ml-auto flex items-center gap-2">
         <NotificationBell />
+        <AccountMenu user={user} />
       </div>
     </header>
   );

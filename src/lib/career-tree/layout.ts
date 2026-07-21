@@ -61,7 +61,13 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
   const nodes: AppNode[] = root.descendants().map((d) => {
     const hasChildren = (d.children?.length ?? 0) > 0;
     const role = resolveNodeRole(d.data, hasChildren);
-    const position = positions.get(d.data.id) ?? { x: 0, y: 0 };
+    // Neu node da tung duoc keo tha va luu vi tri thu cong (x/y != null), giu
+    // dung vi tri do thay vi tinh lai auto-layout - dung dung x/y goc (absolute),
+    // khong phai toa do tuong doi ma layoutSubtree tinh cho auto-layout.
+    const hasManualPosition = d.data.x != null && d.data.y != null;
+    const position = hasManualPosition
+      ? { x: d.data.x as number, y: d.data.y as number }
+      : (positions.get(d.data.id) ?? { x: 0, y: 0 });
     return {
       id: d.data.id,
       type: role,
@@ -71,10 +77,12 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
         role,
         depth: d.data.depth,
         cardCount: d.data.cardCount,
+        openIssueCount: d.data.openIssueCount,
         lastActivity: d.data.lastActivity,
         hiddenFromShare: d.data.hiddenFromShare,
         isCollapsed: d.data.isCollapsed,
         childrenCount: d.children?.length ?? 0,
+        streak: d.data.streak,
       },
     };
   });

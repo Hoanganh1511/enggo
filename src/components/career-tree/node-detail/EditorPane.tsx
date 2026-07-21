@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -27,11 +28,10 @@ import {
   Redo2,
   type LucideIcon,
 } from "lucide-react";
-import SectionLabel from "./SectionLabel";
-
 type EditorPaneProps = {
   content: Record<string, unknown> | null;
   onContentChange: (json: Record<string, unknown>) => void;
+  editable: boolean;
 };
 
 type ToolbarButtonProps = {
@@ -70,7 +70,7 @@ function ToolbarDivider() {
   return <div className="mx-1 h-5 w-px shrink-0 bg-border" />;
 }
 
-const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
+const EditorPane = ({ content, onContentChange, editable }: EditorPaneProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -81,6 +81,7 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
       Link.configure({ openOnClick: false }),
     ],
     content: content ?? undefined,
+    editable,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onContentChange(editor.getJSON());
@@ -107,6 +108,12 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
     },
   });
 
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
+
   if (!editor) return null;
 
   const setLink = () => {
@@ -122,8 +129,8 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
 
   return (
     <div className="flex h-full flex-col">
-      <SectionLabel>Chi tiết node</SectionLabel>
-      <div className="mt-2 flex flex-wrap items-center gap-1 border-b border-border pb-2">
+      {editable && (
+      <div className="flex flex-wrap items-center gap-1 border-b border-border pb-2">
         <ToolbarButton
           label="Heading 1"
           isActive={editor.isActive("heading", { level: 1 })}
@@ -244,7 +251,10 @@ const EditorPane = ({ content, onContentChange }: EditorPaneProps) => {
           Icon={Redo2}
         />
       </div>
-      <div className="mt-3 flex-1 overflow-y-auto rounded-lg border border-border p-4">
+      )}
+      <div
+        className={`flex-1 overflow-y-auto rounded-lg border border-border p-4 ${editable ? "mt-3" : ""}`}
+      >
         <EditorContent editor={editor} />
       </div>
     </div>

@@ -6,7 +6,7 @@ import { ChevronDown, ChevronRight, Search } from "lucide-react";
 import type { ApiNodeListItem } from "@/lib/api/types";
 import { getChildNodes, hasChildren } from "@/lib/career-tree/get-child-nodes";
 import Spinner from "@/components/ui/spinner";
-import { useCareerTree } from "@/lib/career-tree/career-tree-context";
+import { useCareerTreeStore } from "@/stores/career-tree-store";
 type CommandPaletteProps = {
   onClose: () => void;
   allNodes: ApiNodeListItem[];
@@ -61,8 +61,9 @@ const CommandPalette = ({
   onSelect,
 }: CommandPaletteProps) => {
   const [query, setQuery] = useState("");
-  // const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const { expandedNodeIds, setExpandedNodeIds } = useCareerTree();
+  const expandedNodeIds = useCareerTreeStore((s) => s.expandedNodeIds);
+  const setExpandedNodeIds = useCareerTreeStore((s) => s.setExpandedNodeIds);
+
   const [focusingNodeId, setFocusingNodeId] = useState<string | null>(null);
 
   const visibleRows = useMemo(
@@ -204,14 +205,9 @@ const CommandPalette = ({
                             </span>
                           ) : null)
                         )}
-                        <span className="truncate opacity-90 transition-opacity text-[12.5px] 2xl:text-xl duration-150 ease-out group-hover:opacity-100">
+                        <span className="truncate opacity-90 transition-opacity text-[12.5px] 2xl:text-base duration-150 ease-out group-hover:opacity-100">
                           {node.title}
                         </span>
-                        <ChevronRight
-                          size={14}
-                          strokeWidth={1.75}
-                          className="ml-auto  shrink-0 text-icon opacity-0 transition-all duration-150 ease-out  group-hover:opacity-100"
-                        />
                       </span>
                     </button>
                   );

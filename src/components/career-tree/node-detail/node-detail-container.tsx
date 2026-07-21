@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Folder, FileText, Target } from "lucide-react";
-import NodeDetailView from "./NodeDetailView";
+import NodeDetailView, { type SaveStatus } from "./NodeDetailView";
 import type { Activity } from "./ActivityLog";
 import { getNodeCardsAction } from "@/actions/career-tree/get-node-cards";
 import { createCardAction } from "@/actions/career-tree/create-card";
@@ -75,8 +75,16 @@ const NodeDetailContainer = ({
     hasMore: initialCards.length === PAGE_SIZE,
   });
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const contentDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const goalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveStatusResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const markSaved = () => {
+    setSaveStatus("saved");
+    if (saveStatusResetRef.current) clearTimeout(saveStatusResetRef.current);
+    saveStatusResetRef.current = setTimeout(() => setSaveStatus("idle"), 2000);
+  };
 
   const handleAddResource = async (data: {
     type: ResourceType;
@@ -140,15 +148,19 @@ const NodeDetailContainer = ({
 
   const handleContentChange = (json: Record<string, unknown>) => {
     if (contentDebounceRef.current) clearTimeout(contentDebounceRef.current);
-    contentDebounceRef.current = setTimeout(() => {
-      updateNodeContentAction(workspaceId, node.id, json);
+    setSaveStatus("saving");
+    contentDebounceRef.current = setTimeout(async () => {
+      await updateNodeContentAction(workspaceId, node.id, json);
+      markSaved();
     }, 500);
   };
 
   const handleGoalChange = (goal: string) => {
     if (goalDebounceRef.current) clearTimeout(goalDebounceRef.current);
-    goalDebounceRef.current = setTimeout(() => {
-      updateNodeAction(workspaceId, node.id, { goal });
+    setSaveStatus("saving");
+    goalDebounceRef.current = setTimeout(async () => {
+      await updateNodeAction(workspaceId, node.id, { goal });
+      markSaved();
     }, 500);
   };
 
@@ -179,7 +191,10 @@ const NodeDetailContainer = ({
         hasMoreActivities: activitiesState.hasMore,
         isLoadingMoreActivities: isLoadingMore,
         updatedAt: node.updatedAt,
+        lastActivity: node.lastActivity,
+        streak: node.streak,
       }}
+      saveStatus={saveStatus}
       onContentChange={handleContentChange}
       onGoalChange={handleGoalChange}
       onAddChild={handleAddChild}
