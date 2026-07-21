@@ -16,7 +16,14 @@ import {
   type Viewport,
   type ReactFlowInstance,
 } from "@xyflow/react";
-import { Map as MapIcon } from "lucide-react";
+import { resetNodeLayoutAction } from "@/actions/career-tree/reset-node-layout";
+import {
+  Map as MapIcon,
+  Sparkles,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+} from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import TreeGrowthNode from "./nodes/tree-growth-node";
 import { buildHierarchy } from "@/lib/career-tree/transform";
@@ -34,6 +41,7 @@ import {
   type AppNode,
   type AppEdge,
 } from "@/lib/career-tree/types";
+import Spinner from "../ui/spinner";
 const nodeTypes: NodeTypes = {
   root: TreeGrowthNode,
   branch: TreeGrowthNode,
@@ -90,6 +98,7 @@ const CareerTreeCanvas = ({
   );
   const [minimapSize, setMinimapSize] = useState<MinimapSize>("md");
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [isResettingLayout, setIsResettingLayout] = useState(false);
 
   // Cha/con suy tu edges (source->target) - khong can them field parentId
   // rieng vao TreeNodeData, vi quan he cha-con da co san qua canh noi.
@@ -194,6 +203,17 @@ const CareerTreeCanvas = ({
   const handleAddNode = async () => {
     await createNodeAction(workspaceId, rootId ?? null, "Node mới");
   };
+  const handleResetLayout = async () => {
+    setIsResettingLayout(true);
+    try {
+      await resetNodeLayoutAction(workspaceId);
+    } finally {
+      setIsResettingLayout(false);
+    }
+  };
+  const handleZoomIn = () => reactFlowInstanceRef.current?.zoomIn();
+  const handleZoomOut = () => reactFlowInstanceRef.current?.zoomOut();
+  const handleFitView = () => reactFlowInstanceRef.current?.fitView();
 
   // useCallback de giu nguyen 1 reference qua cac lan render - can thiet vi
   // day la dependency cua nodesWithData ben duoi; neu doi reference moi lan
@@ -310,15 +330,108 @@ const CareerTreeCanvas = ({
         <Controls
           position="top-right"
           orientation="horizontal"
+          showZoom={false}
+          showFitView={false}
           showInteractive={false}
         >
-          <ControlButton
-            onClick={cycleMinimapSize}
-            title={`Minimap: ${MINIMAP_LABEL[minimapSize]} - bấm để đổi cỡ`}
-          >
-            <MapIcon size={14} strokeWidth={1.75} />
-          </ControlButton>
+          <Tooltip.Root delayDuration={100}>
+            <Tooltip.Trigger asChild>
+              <ControlButton onClick={handleZoomIn}>
+                <ZoomIn size={14} strokeWidth={1.75} />
+              </ControlButton>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                side="bottom"
+                sideOffset={6}
+                className="z-50 rounded-md border border-border bg-surface px-2 py-1 text-xs text-ink shadow-dropdown"
+              >
+                Phóng to
+                <Tooltip.Arrow className="fill-border" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+
+          <Tooltip.Root delayDuration={100}>
+            <Tooltip.Trigger asChild>
+              <ControlButton onClick={handleZoomOut}>
+                <ZoomOut size={14} strokeWidth={1.75} />
+              </ControlButton>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                side="bottom"
+                sideOffset={6}
+                className="z-50 rounded-md border border-border bg-surface px-2 py-1 text-xs text-ink shadow-dropdown"
+              >
+                Thu nhỏ
+                <Tooltip.Arrow className="fill-border" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+
+          <Tooltip.Root delayDuration={100}>
+            <Tooltip.Trigger asChild>
+              <ControlButton onClick={handleFitView}>
+                <Maximize2 size={14} strokeWidth={1.75} />
+              </ControlButton>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                side="bottom"
+                sideOffset={6}
+                className="z-50 rounded-md border border-border bg-surface px-2 py-1 text-xs text-ink shadow-dropdown"
+              >
+                Vừa khung hình
+                <Tooltip.Arrow className="fill-border" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+
+          <Tooltip.Root delayDuration={100}>
+            <Tooltip.Trigger asChild>
+              <ControlButton onClick={cycleMinimapSize}>
+                <MapIcon size={14} strokeWidth={1.75} />
+              </ControlButton>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                side="bottom"
+                sideOffset={6}
+                className="z-50 rounded-md border border-border bg-surface px-2 py-1 text-xs text-ink shadow-dropdown"
+              >
+                {`Minimap: ${MINIMAP_LABEL[minimapSize]} - bấm để đổi cỡ`}
+                <Tooltip.Arrow className="fill-border" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+
+          <Tooltip.Root delayDuration={100}>
+            <Tooltip.Trigger asChild>
+              <ControlButton
+                onClick={handleResetLayout}
+                disabled={isResettingLayout}
+              >
+                {isResettingLayout ? (
+                  <Spinner size={14} />
+                ) : (
+                  <Sparkles size={14} strokeWidth={1.75} />
+                )}
+              </ControlButton>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                side="bottom"
+                sideOffset={6}
+                className="z-50 rounded-md border border-border bg-surface px-2 py-1 text-xs text-ink shadow-dropdown"
+              >
+                Đặt lại vị trí các node
+                <Tooltip.Arrow className="fill-border" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
         </Controls>
+
         {minimapSize !== "hidden" && (
           <MiniMap
             pannable
@@ -342,6 +455,11 @@ const CareerTreeCanvas = ({
           />
         )}
       </ReactFlow>
+      {isResettingLayout && (
+        <div className="absolute inset-0 z-20 flex cursor-wait items-center justify-center bg-surface/60 backdrop-blur-[1px]">
+          <Spinner size={28} />
+        </div>
+      )}
 
       {initialNodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">

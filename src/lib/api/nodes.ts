@@ -45,3 +45,8 @@ export function deleteNode(workspaceId: string, nodeId: string): Promise<void> {
     method: "DELETE",
   });
 }
+export function resetNodeLayout(workspaceId: string): Promise<void> {
+  return apiFetch<void>(`/workspaces/${workspaceId}/nodes/reset-layout`, {
+    method: "PATCH",
+  });
+}
