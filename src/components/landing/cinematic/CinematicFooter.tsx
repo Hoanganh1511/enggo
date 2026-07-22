@@ -1,14 +1,14 @@
-import Logo from "@/components/ui/logo";
+import { LogoIcon } from "@/components/ui/logo";
 import { footer } from "@/content/landing";
 
-const Footer = () => {
+const CinematicFooter = () => {
   return (
-    <footer className="border-t border-border px-6 py-10">
+    <footer className="border-t border-white/10 px-6 py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
         <div className="flex items-center gap-2">
-          <Logo orientation="icon-only" size={20} />
-          <span className="text-xs font-medium text-ink-muted">
-            Career Tree
+          <LogoIcon size={20} />
+          <span className="text-xs font-medium text-slate-400">
+            CareerTree
           </span>
         </div>
         <nav className="flex items-center gap-5">
@@ -16,7 +16,7 @@ const Footer = () => {
             <a
               key={link.label}
               href={link.href}
-              className="text-xs text-ink-muted transition-colors duration-150 ease-out hover:text-ink"
+              className="text-xs text-slate-500 transition-colors duration-150 ease-out hover:text-white"
             >
               {link.label}
             </a>
@@ -27,4 +27,4 @@ const Footer = () => {
   );
 };
 
-export default Footer;
+export default CinematicFooter;

@@ -279,6 +279,22 @@ const CareerTreeCanvas = ({
     router.push(`/w/${workspaceId}/nodes/${nodeId}`);
   };
 
+  // useCallback vi day cung la dependency cua nodesWithData - giu nguyen
+  // reference giua cac lan render, giong het pattern handleToggleCollapse.
+  const handleTogglePin = useCallback(
+    async (nodeId: string, current: boolean) => {
+      await updateNodeAction(workspaceId, nodeId, { isPinned: !current });
+    },
+    [workspaceId],
+  );
+
+  const handleSelectNode = useCallback(
+    (nodeId: string) => {
+      router.push(`/w/${workspaceId}/nodes/${nodeId}`);
+    },
+    [router, workspaceId],
+  );
+
   // Luu lai vi tri sau khi keo tha xong - lan fetch sau, layout.ts se doc
   // dung x/y nay thay vi tinh lai auto-layout cho node nay.
   const handleNodeDragStop = async (
@@ -303,9 +319,11 @@ const CareerTreeCanvas = ({
         ...n.data,
         isToggling: n.id === togglingNodeId,
         onToggleCollapse: () => handleToggleCollapse(n.id, n.data.isCollapsed),
+        onTogglePin: () => handleTogglePin(n.id, n.data.isPinned),
+        onSelectNode: handleSelectNode,
       },
     }));
-  }, [nodes, togglingNodeId, handleToggleCollapse]);
+  }, [nodes, togglingNodeId, handleToggleCollapse, handleTogglePin, handleSelectNode]);
 
   const displayNodes: AppNode[] = useMemo(() => {
     return nodesWithData.map((n) => {

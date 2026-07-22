@@ -1,5 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { ApiNodeListItem, NodeKind } from "../api/types";
+import type { ApiNodeListItem, Difficulty, NodeKind } from "../api/types";
 
 export type NodeRole = "root" | "branch" | "leaf";
 
@@ -21,6 +21,15 @@ export type TreeNodeData = {
   };
   isToggling?: boolean;
   onToggleCollapse?: () => void;
+  category: string | null;
+  difficulty: Difficulty | null;
+  tags: string[];
+  isPinned: boolean;
+  // Danh sach con THO (chua object ApiNodeListItem day du) - de GrowthCard tu
+  // tinh "Next step" (node-narrative.ts) ma khong can query rieng.
+  childNodes: ApiNodeListItem[];
+  onTogglePin?: () => void;
+  onSelectNode?: (nodeId: string) => void;
 };
 
 export type AppNode = Node<TreeNodeData, NodeRole>;

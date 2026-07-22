@@ -45,13 +45,22 @@ const NodeQuickViewModal = ({
   const open = node !== null;
   const Icon = ROLE_ICON[role];
   const done = node ? Math.min(node.cardCount, MAX_EXPECTED_CARDS) : 0;
-  const percent = done > 0 ? Math.min(100, (done / MAX_EXPECTED_CARDS) * 100) : 0;
+  const percent =
+    done > 0 ? Math.min(100, (done / MAX_EXPECTED_CARDS) * 100) : 0;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-3rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-6 shadow-panel focus:outline-none">
+        <Dialog.Content
+          // Mac dinh Radix Dialog auto-focus phan tu focusable DAU TIEN trong
+          // Content - o day la nut LearningStreak (dung truoc input "Ten
+          // nhanh con" va nut "Xem chi tiet") - khien Tooltip cua no tu mo
+          // ngay khi modal mo (Radix Tooltip mo ca khi focus, khong chi hover).
+          // Chan lai de focus roi ve chinh Content thay vi 1 con trong ngau nhien.
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-3rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-6 shadow-panel focus:outline-none"
+        >
           {node && (
             <>
               <div className="flex items-center gap-3">
@@ -96,11 +105,11 @@ const NodeQuickViewModal = ({
                   <NotebookPen size={13} strokeWidth={1.75} />
                   {node.cardCount} ghi chú
                 </span>
-                <LearningStreak
+                {/* <LearningStreak
                   streak={node.streak}
                   lastActivity={node.lastActivity}
                   variant="inline"
-                />
+                /> */}
               </div>
 
               <div className="mt-5 border-t border-border pt-4">

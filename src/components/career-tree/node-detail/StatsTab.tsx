@@ -1,8 +1,16 @@
 "use client";
 
-import { NotebookPen, Laptop, BookOpen, CircleHelp, GitBranch } from "lucide-react";
+import {
+  NotebookPen,
+  Laptop,
+  BookOpen,
+  CircleHelp,
+  GitBranch,
+} from "lucide-react";
 import SectionLabel from "./SectionLabel";
-import LearningStreak, { type LearningStreakData } from "@/components/ui/learning-streak";
+import LearningStreak, {
+  type LearningStreakData,
+} from "@/components/ui/learning-streak";
 
 type StatsTabProps = {
   streak: LearningStreakData;
@@ -28,7 +36,9 @@ function StatTile({
   return (
     <div className="flex flex-col items-center gap-1 rounded-lg border border-border p-4 text-center">
       <Icon size={16} strokeWidth={1.75} className="text-icon-active" />
-      <span className="text-xl font-semibold tabular-nums text-ink">{value}</span>
+      <span className="text-xl font-semibold tabular-nums text-ink">
+        {value}
+      </span>
       <span className="text-xs text-ink-muted">{label}</span>
     </div>
   );
@@ -75,7 +85,11 @@ const StatsTab = ({
         <StatTile icon={NotebookPen} value={cardCount} label="Tổng ghi chú" />
         <StatTile icon={Laptop} value={practiceCount} label="Buổi thực hành" />
         <StatTile icon={BookOpen} value={resourceCount} label="Tài liệu" />
-        <StatTile icon={CircleHelp} value={openIssueCount} label="Vấn đề tồn đọng" />
+        <StatTile
+          icon={CircleHelp}
+          value={openIssueCount}
+          label="Vấn đề tồn đọng"
+        />
         <StatTile icon={GitBranch} value={branches} label="Nhánh con" />
       </div>
     </div>

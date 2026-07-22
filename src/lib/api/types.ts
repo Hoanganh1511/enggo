@@ -32,6 +32,8 @@ export type ApiNode = {
     longest: number;
     last7: boolean[];
   };
+  isPinned: boolean;
+  tags: string[];
 };
 
 // Workspace tree list responses omit `content` (Tiptap JSON can be large and is

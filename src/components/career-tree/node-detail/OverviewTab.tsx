@@ -6,19 +6,8 @@ import SectionLabel from "./SectionLabel";
 import ChecklistEditor from "./ChecklistEditor";
 import { TYPE_LABEL, TYPE_STYLE } from "./ResourcesTab";
 import { formatDate, formatRelativeTime } from "@/lib/career-tree/format-time";
+import { DIFFICULTY_LABEL, DIFFICULTY_STYLE } from "@/lib/career-tree/difficulty";
 import type { ApiResource, Difficulty } from "@/lib/api/types";
-
-const DIFFICULTY_LABEL: Record<Difficulty, string> = {
-  EASY: "Dễ",
-  MEDIUM: "Trung bình",
-  HARD: "Khó",
-};
-
-const DIFFICULTY_STYLE: Record<Difficulty, string> = {
-  EASY: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  MEDIUM: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  HARD: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
-};
 
 type OverviewTabProps = {
   editable: boolean;

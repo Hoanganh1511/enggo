@@ -146,6 +146,29 @@ body {
   }
 }
 
+/* Landing page cinematic background - hat sang nhap nhay nhe + card lo lung. */
+@keyframes cinematic-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes cinematic-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
 /* Progressive disclosure: smooth reflow when nodes are hidden/revealed via collapse/expand */
 .react-flow__node {
   transition: transform 300ms ease;

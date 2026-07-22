@@ -5,7 +5,7 @@ import GrowthCard from "@/components/ui/growth-card";
 
 export default function GrowthCardDemoPage() {
   return (
-    <Tooltip.Provider delayDuration={300}>
+    // <Tooltip.Provider delayDuration={300}>
     <div className="flex min-h-screen flex-wrap items-start gap-4 bg-gray-50 p-8">
       <GrowthCard
         icon={Target}
@@ -50,6 +50,6 @@ export default function GrowthCardDemoPage() {
         total={12}
       />
     </div>
-    </Tooltip.Provider>
+    // </Tooltip.Provider>
   );
 }

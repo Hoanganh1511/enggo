@@ -38,6 +38,8 @@ export function updateNode(
     estimatedTime?: string;
     prerequisites?: string[];
     learningOutcomes?: string[];
+    isPinned?: boolean;
+    tags?: string[];
   },
 ): Promise<ApiNode> {
   return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes/${nodeId}`, {

@@ -21,6 +21,8 @@ export async function updateNodeAction(
     estimatedTime?: string;
     prerequisites?: string[];
     learningOutcomes?: string[];
+    isPinned?: boolean;
+    tags?: string[];
   },
 ) {
   const node = await updateNode(workspaceId, nodeId, patch);

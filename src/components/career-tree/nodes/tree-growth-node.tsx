@@ -1,9 +1,10 @@
 import { memo } from "react";
 import { Folder, FileText, Target } from "lucide-react";
-import { Handle, Position, useStore } from "@xyflow/react";
+import { Handle, Position } from "@xyflow/react";
 import GrowthCard from "@/components/ui/growth-card";
 import { MAX_EXPECTED_CARDS } from "@/lib/career-tree/constants";
 import { getNodeStatus } from "@/lib/career-tree/node-status";
+import { getMasteryPercent } from "@/lib/career-tree/node-narrative";
 import type { NodeRole, TreeNodeData } from "@/lib/career-tree/types";
 
 const ROLE_ICON: Record<NodeRole, typeof Target> = {
@@ -12,23 +13,18 @@ const ROLE_ICON: Record<NodeRole, typeof Target> = {
   leaf: FileText,
 };
 
-// Duoi nguong nay coi nhu "zoom xa" - an bot metadata phu theo yeu cau muc 9.
-const ZOOM_OUT_THRESHOLD = 0.6;
-
 type TreeGrowthNodeProps = {
   data: TreeNodeData;
 };
 
 const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
-  // Selector tra ve boolean thay vi useViewport() (tra ve object moi lien tuc
-  // theo tung frame khi pan/zoom) - useStore chi re-render khi gia tri boolean
-  // nay THAT SU doi (vuot/lui qua nguong), khong phai moi lan viewport nhich 1 chut.
-  const zoomedOut = useStore((s) => s.transform[2] < ZOOM_OUT_THRESHOLD);
   const hasVisibleChildren = data.childrenCount > 0 && !data.isCollapsed;
   const done = Math.min(data.cardCount, MAX_EXPECTED_CARDS);
   const status = getNodeStatus({
     streakCurrent: data.streak.current,
     openIssueCount: data.openIssueCount,
+    masteryPercent: getMasteryPercent(data.cardCount),
+    lastActivity: data.lastActivity,
   });
 
   return (
@@ -46,10 +42,18 @@ const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
         done={done}
         total={MAX_EXPECTED_CARDS}
         status={status}
-        zoomedOut={zoomedOut}
         isCollapsed={data.isCollapsed}
         isToggling={data.isToggling}
         onToggleCollapse={data.onToggleCollapse}
+        category={data.category}
+        difficulty={data.difficulty}
+        tags={data.tags}
+        isPinned={data.isPinned}
+        onTogglePin={data.onTogglePin}
+        childNodes={data.childNodes}
+        openIssueCount={data.openIssueCount}
+        cardCount={data.cardCount}
+        onSelectNode={data.onSelectNode}
       />
 
       {hasVisibleChildren && (
