@@ -9,12 +9,12 @@ import {
   HoverCardTrigger,
   HoverCardContent,
 } from "@/components/ui/hover-card";
-import type { ApiNodeListItem } from "@/lib/api/types";
+import type { ApiNodeListItem, NodeKind } from "@/lib/api/types";
 
 type TopicsTabProps = {
   workspaceId: string;
   childNodes: ApiNodeListItem[];
-  onAddChild: (name: string) => void;
+  onAddChild: (name: string, kind: NodeKind) => void;
 };
 
 const Stat = ({

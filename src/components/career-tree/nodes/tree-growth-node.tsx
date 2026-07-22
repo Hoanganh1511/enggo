@@ -37,6 +37,7 @@ const TreeGrowthNode = ({ data }: TreeGrowthNodeProps) => {
 
       <GrowthCard
         icon={ROLE_ICON[data.role]}
+        role={data.role}
         title={data.title}
         subtitle={`${data.cardCount} ghi chú`}
         branches={data.childrenCount}

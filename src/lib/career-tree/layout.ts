@@ -59,8 +59,7 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
   const { positions } = layoutSubtree(root);
 
   const nodes: AppNode[] = root.descendants().map((d) => {
-    const hasChildren = (d.children?.length ?? 0) > 0;
-    const role = resolveNodeRole(d.data, hasChildren);
+    const role = resolveNodeRole(d.data);
     // Neu node da tung duoc keo tha va luu vi tri thu cong (x/y != null), giu
     // dung vi tri do thay vi tinh lai auto-layout - dung dung x/y goc (absolute),
     // khong phai toa do tuong doi ma layoutSubtree tinh cho auto-layout.
@@ -75,6 +74,7 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
       data: {
         title: d.data.title,
         role,
+        kind: d.data.kind,
         depth: d.data.depth,
         cardCount: d.data.cardCount,
         openIssueCount: d.data.openIssueCount,

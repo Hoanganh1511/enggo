@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { ApiNode, ApiNodeListItem } from "./types";
+import type { ApiNode, ApiNodeListItem, Difficulty, NodeKind } from "./types";
 
 export function getWorkspaceTree(
   workspaceId: string,
@@ -13,7 +13,7 @@ export function getNode(workspaceId: string, nodeId: string): Promise<ApiNode> {
 
 export function createNode(
   workspaceId: string,
-  data: { parentId: string | null; title: string },
+  data: { parentId: string | null; title: string; kind?: NodeKind },
 ): Promise<ApiNode> {
   return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes`, {
     method: "POST",
@@ -32,6 +32,12 @@ export function updateNode(
     content?: Record<string, unknown>;
     x?: number;
     y?: number;
+    kind?: NodeKind;
+    category?: string;
+    difficulty?: Difficulty;
+    estimatedTime?: string;
+    prerequisites?: string[];
+    learningOutcomes?: string[];
   },
 ): Promise<ApiNode> {
   return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes/${nodeId}`, {

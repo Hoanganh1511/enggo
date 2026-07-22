@@ -7,16 +7,17 @@ import {
   Pencil,
   Check,
   MoreVertical,
-  ChevronDown,
-  ChevronUp,
   NotebookPen,
   GitBranch,
   Clock,
   Loader2,
   CheckCircle2,
+  PlayCircle,
+  Shuffle,
 } from "lucide-react";
 import EditorPane from "./EditorPane";
-import SectionLabel from "./SectionLabel";
+import OverviewTab from "./OverviewTab";
+import StatsTab from "./StatsTab";
 import ActivityLog, { type Activity } from "./ActivityLog";
 import TopicsTab from "./TopicsTab";
 import IssuesTab from "./IssuesTab";
@@ -30,18 +31,28 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { formatRelativeTime } from "@/lib/career-tree/format-time";
-import type { ApiIssue, ApiNodeListItem } from "@/lib/api/types";
+import type { ApiIssue, ApiNodeListItem, Difficulty, NodeKind } from "@/lib/api/types";
 import type { LucideIcon } from "lucide-react";
 import ResourcesTab from "./ResourcesTab";
 import type { ApiResource, CardKind, ResourceType } from "@/lib/api/types";
 
-type TabKey = "topics" | "journal" | "resources" | "issues";
+type TabKey =
+  | "overview"
+  | "resources"
+  | "practice"
+  | "notes"
+  | "stats"
+  | "topics"
+  | "issues";
 export type SaveStatus = "idle" | "saving" | "saved";
 
-const TABS: { key: TabKey; label: string }[] = [
+const ALL_TABS: { key: TabKey; label: string }[] = [
+  { key: "overview", label: "Tổng quan" },
+  { key: "resources", label: "Tài liệu & Nguồn học" },
+  { key: "practice", label: "Công việc thực hành" },
+  { key: "notes", label: "Ghi chú" },
+  { key: "stats", label: "Thống kê" },
   { key: "topics", label: "Các chủ đề" },
-  { key: "journal", label: "Nhật ký hoạt động" },
-  { key: "resources", label: "Tài liệu sử dụng" },
   { key: "issues", label: "Vấn đề tồn đọng" },
 ];
 
@@ -60,15 +71,26 @@ type NodeDetailViewProps = {
     content: Record<string, unknown> | null;
     activities: Activity[];
     updatedAt: string;
+    createdAt: string;
     lastActivity: string | null;
     streak: LearningStreakData;
     hasMoreActivities?: boolean;
     isLoadingMoreActivities?: boolean;
+    kind: NodeKind;
+    category: string | null;
+    difficulty: Difficulty | null;
+    estimatedTime: string | null;
+    prerequisites: string[];
+    learningOutcomes: string[];
+    cardCount: number;
+    parentId: string | null;
   };
+  parentName: string | null;
+  branchName: string | null;
   saveStatus: SaveStatus;
   onContentChange: (json: Record<string, unknown>) => void;
   onGoalChange: (goal: string) => void;
-  onAddChild: (name: string) => void;
+  onAddChild: (name: string, kind: NodeKind) => void;
   onDelete: () => void;
   onAddActivity: (text: string, kind: CardKind) => void;
   onLoadMoreActivities: () => void;
@@ -83,6 +105,12 @@ type NodeDetailViewProps = {
   onAddIssue: (question: string) => void;
   onToggleIssue: (issueId: string, resolved: boolean) => void;
   onDeleteIssue: (issueId: string) => void;
+  onKindChange: (kind: NodeKind) => void;
+  onCategoryChange: (value: string) => void;
+  onDifficultyChange: (value: Difficulty) => void;
+  onEstimatedTimeChange: (value: string) => void;
+  onLearningOutcomesChange: (items: string[]) => void;
+  onPrerequisitesChange: (items: string[]) => void;
 };
 
 function SaveStatusBadge({ status }: { status: SaveStatus }) {
@@ -107,6 +135,8 @@ const NodeDetailView = ({
   workspaceId,
   childNodes,
   node,
+  parentName,
+  branchName,
   saveStatus,
   onContentChange,
   onGoalChange,
@@ -121,36 +151,53 @@ const NodeDetailView = ({
   onAddIssue,
   onToggleIssue,
   onDeleteIssue,
+  onKindChange,
+  onCategoryChange,
+  onDifficultyChange,
+  onEstimatedTimeChange,
+  onLearningOutcomesChange,
+  onPrerequisitesChange,
 }: NodeDetailViewProps) => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabKey>("topics");
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [menuOpen, setMenuOpen] = useState(false);
   const [goal, setGoal] = useState(node.goal ?? "");
-  // Node hoan toan trong (chua tung co goal/content) -> mo san de nhap lieu lan
-  // dau; nguoc lai thu gon thanh dang tom tat, bam "Xem chi tiet" moi mo ra.
-  const [isExpanded, setIsExpanded] = useState(
-    !node.goal && !node.content,
-  );
-  // Neu chua co du lieu san, mo san che do sua cho tung phan (khong co gi de
-  // "xem" ca) - nguoc lai mac dinh o che do xem, bam icon but moi vao sua.
-  const [isGoalEditing, setIsGoalEditing] = useState(!node.goal);
-  const [isContentEditing, setIsContentEditing] = useState(!node.content);
+  // 1 cong tac sua chung cho toan trang (Mo ta, checklist, Thong tin, Chi
+  // tiet node...) thay vi tung state rieng cho tung phan nhu ban cu.
+  const [editMode, setEditMode] = useState(false);
+
+  const percent = node.total > 0 ? Math.min(100, (node.done / node.total) * 100) : 0;
+  const Icon = node.icon;
 
   const handleGoalChange = (value: string) => {
     setGoal(value);
     onGoalChange(value);
   };
 
+  const handleStartLearning = () => {
+    setActiveTab("notes");
+    setEditMode(true);
+  };
+
+  const showTopicsTab = childNodes.length > 0 || node.kind === "BRANCH";
+  const tabs = ALL_TABS.filter((t) => t.key !== "topics" || showTopicsTab);
+
+  const noteActivities = node.activities.filter((a) => a.kind !== "PRACTICE");
+  const practiceActivities = node.activities.filter((a) => a.kind === "PRACTICE");
+
   return (
     <Tooltip.Provider delayDuration={300}>
     <div className="flex h-full w-full flex-col overflow-y-auto bg-surface">
-      <div className="flex items-start justify-between gap-4 px-8 pb-2 2xl:px-10">
-        <div className="min-w-0">
+      <div className="flex items-start justify-between gap-4 px-8 pt-6 pb-2 2xl:px-10">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted">
+              <Icon size={16} strokeWidth={1.75} className="text-icon-active" />
+            </span>
             <h1 className="truncate text-lg font-medium text-ink">
               {node.title}
             </h1>
-            {(isGoalEditing || isContentEditing) && (
+            {editMode && (
               <span className="shrink-0 rounded-full bg-active-bg px-2 py-0.5 text-[11px] font-medium text-primary">
                 Đang chỉnh sửa...
               </span>
@@ -184,23 +231,49 @@ const NodeDetailView = ({
               Cập nhật {formatRelativeTime(node.updatedAt)}
             </span>
           </div>
+
+          <div className="mt-3 flex max-w-md items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-xs font-medium tabular-nums text-ink-muted">
+              {Math.round(percent)}% hoàn thành
+            </span>
+          </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
-            title={isExpanded ? "Thu gọn" : "Chỉnh sửa"}
-            onClick={() => setIsExpanded((v) => !v)}
-            className="flex size-8 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
+            onClick={handleStartLearning}
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-primary-hover"
           >
-            <Pencil size={15} strokeWidth={1.75} />
+            <PlayCircle size={14} strokeWidth={1.75} />
+            Bắt đầu học
+          </button>
+
+          <button
+            type="button"
+            title={editMode ? "Xong" : "Sửa"}
+            onClick={() => setEditMode((v) => !v)}
+            className={`flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors duration-150 ease-out ${
+              editMode
+                ? "bg-active-bg text-primary"
+                : "text-icon hover:bg-hover-bg hover:text-icon-hover"
+            }`}
+          >
+            {editMode ? <Check size={14} strokeWidth={1.75} /> : <Pencil size={14} strokeWidth={1.75} />}
+            Sửa
           </button>
 
           <DropdownMenuRoot open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                title="Tùy chọn khác"
+                title="Khác"
                 className="flex size-8 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
               >
                 <MoreVertical size={15} strokeWidth={1.75} />
@@ -209,8 +282,19 @@ const NodeDetailView = ({
             <DropdownMenuContent
               open={menuOpen}
               align="end"
-              className="z-50 w-44 rounded-md border border-border bg-surface p-1 shadow-dropdown"
+              className="z-50 w-56 rounded-md border border-border bg-surface p-1 shadow-dropdown"
             >
+              <DropdownMenuItem
+                onSelect={() =>
+                  onKindChange(node.kind === "TOPIC" ? "BRANCH" : "TOPIC")
+                }
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-ink outline-none transition-colors duration-150 ease-out data-highlighted:bg-hover-bg"
+              >
+                <Shuffle size={14} strokeWidth={1.75} />
+                {node.kind === "TOPIC"
+                  ? "Chuyển thành nhánh kiến thức"
+                  : "Chuyển thành chủ đề cần học sâu"}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => setConfirmingDelete(true)}
                 className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-ink-disabled outline-none transition-colors duration-150 ease-out data-highlighted:bg-hover-bg data-highlighted:text-red-600"
@@ -247,101 +331,10 @@ const NodeDetailView = ({
         </div>
       )}
 
-      {isExpanded ? (
-        <>
-          {/* Mo ta ngan gon - moi trang thai (xem/sua) co icon but rieng */}
-          <div className="shrink-0 px-8 pb-4 2xl:px-10">
-            <div className="mb-1.5 flex items-center justify-between">
-              <SectionLabel>Mô tả ngắn</SectionLabel>
-              <button
-                type="button"
-                title={isGoalEditing ? "Xong" : "Sửa mô tả"}
-                onClick={() => setIsGoalEditing((v) => !v)}
-                className="flex size-6 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
-              >
-                {isGoalEditing ? (
-                  <Check size={13} strokeWidth={1.75} />
-                ) : (
-                  <Pencil size={13} strokeWidth={1.75} />
-                )}
-              </button>
-            </div>
-            {isGoalEditing ? (
-              <textarea
-                autoFocus
-                value={goal}
-                onChange={(e) => handleGoalChange(e.target.value)}
-                placeholder="Mô tả ngắn gọn về chủ đề này (ví dụ: Vai trò, mục tiêu, những gì cần làm...)"
-                rows={2}
-                className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm font-medium text-ink placeholder:text-ink-faint placeholder:font-normal focus:border-focus-border focus:outline-none"
-              />
-            ) : goal ? (
-              <p className="rounded-lg border border-border px-3 py-2 text-sm whitespace-pre-wrap text-ink">
-                {goal}
-              </p>
-            ) : (
-              <p className="rounded-lg border border-dashed border-hover-border px-3 py-2 text-sm text-ink-faint italic">
-                Chưa có mô tả — bấm biểu tượng bút để thêm.
-              </p>
-            )}
-          </div>
-
-          {/* Chi tiet node - full editor, chi hien toolbar khi dang sua */}
-          <div className="shrink-0 px-8 pb-4 2xl:px-10">
-            <div className="mb-1.5 flex items-center justify-between">
-              <SectionLabel>Chi tiết node</SectionLabel>
-              <button
-                type="button"
-                title={isContentEditing ? "Xong" : "Sửa chi tiết"}
-                onClick={() => setIsContentEditing((v) => !v)}
-                className="flex size-6 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
-              >
-                {isContentEditing ? (
-                  <Check size={13} strokeWidth={1.75} />
-                ) : (
-                  <Pencil size={13} strokeWidth={1.75} />
-                )}
-              </button>
-            </div>
-            <div className="h-56 2xl:h-64">
-              <EditorPane
-                content={node.content}
-                onContentChange={onContentChange}
-                editable={isContentEditing}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsExpanded(false)}
-              className="mt-2 flex cursor-pointer items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
-            >
-              <ChevronUp size={13} strokeWidth={1.75} />
-              Thu gọn
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className="shrink-0 px-8 pb-4 2xl:px-10">
-          {goal ? (
-            <p className="line-clamp-2 text-sm text-ink-muted">{goal}</p>
-          ) : (
-            <p className="text-sm text-ink-faint italic">Chưa có mô tả.</p>
-          )}
-          <button
-            type="button"
-            onClick={() => setIsExpanded(true)}
-            className="mt-1.5 flex cursor-pointer items-center gap-1 text-xs font-medium text-primary transition-colors duration-150 ease-out hover:underline"
-          >
-            Xem chi tiết
-            <ChevronDown size={13} strokeWidth={1.75} />
-          </button>
-        </div>
-      )}
-
-      {/* Tab list: Các chủ đề / Nhật ký hoạt động / Tài liệu sử dụng / Vấn đề tồn đọng */}
-      <div className="flex flex-col border-t border-border">
-        <div className="flex items-center gap-1 px-8 2xl:px-10">
-          {TABS.map((tab) => (
+      {/* Tab list */}
+      <div className="mt-4 flex flex-col border-t border-border">
+        <div className="flex flex-wrap items-center gap-1 px-8 2xl:px-10">
+          {tabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
@@ -358,21 +351,34 @@ const NodeDetailView = ({
         </div>
 
         <div className="px-8 py-6 2xl:px-10">
-          {activeTab === "topics" && (
-            <TopicsTab
+          {activeTab === "overview" && (
+            <OverviewTab
+              editable={editMode}
+              goal={goal}
+              onGoalChange={handleGoalChange}
+              learningOutcomes={node.learningOutcomes}
+              onLearningOutcomesChange={onLearningOutcomesChange}
+              prerequisites={node.prerequisites}
+              onPrerequisitesChange={onPrerequisitesChange}
+              category={node.category}
+              onCategoryChange={onCategoryChange}
+              difficulty={node.difficulty}
+              onDifficultyChange={onDifficultyChange}
+              estimatedTime={node.estimatedTime}
+              onEstimatedTimeChange={onEstimatedTimeChange}
               workspaceId={workspaceId}
-              childNodes={childNodes}
-              onAddChild={onAddChild}
-            />
-          )}
-          {activeTab === "journal" && (
-            <ActivityLog
-              activities={node.activities}
-              onAddActivity={onAddActivity}
-              hasMore={node.hasMoreActivities}
-              isLoadingMore={node.isLoadingMoreActivities}
-              onLoadMore={onLoadMoreActivities}
-              hideLabel
+              parentId={node.parentId}
+              parentName={parentName}
+              branchName={branchName}
+              createdAt={node.createdAt}
+              updatedAt={node.updatedAt}
+              done={node.done}
+              total={node.total}
+              lastActivity={node.lastActivity}
+              cardCount={node.cardCount}
+              resources={resources}
+              onViewAllResources={() => setActiveTab("resources")}
+              onViewStats={() => setActiveTab("stats")}
             />
           )}
           {activeTab === "resources" && (
@@ -380,6 +386,57 @@ const NodeDetailView = ({
               resources={resources}
               onAddResource={onAddResource}
               onDeleteResource={onDeleteResource}
+            />
+          )}
+          {activeTab === "practice" && (
+            <ActivityLog
+              activities={practiceActivities}
+              onAddActivity={onAddActivity}
+              fixedKind="PRACTICE"
+              hasMore={node.hasMoreActivities}
+              isLoadingMore={node.isLoadingMoreActivities}
+              onLoadMore={onLoadMoreActivities}
+              hideLabel
+            />
+          )}
+          {activeTab === "notes" && (
+            <div className="flex flex-col gap-4">
+              <div className="h-56 2xl:h-64">
+                <EditorPane
+                  content={node.content}
+                  onContentChange={onContentChange}
+                  editable={editMode}
+                />
+              </div>
+              <ActivityLog
+                activities={noteActivities}
+                onAddActivity={onAddActivity}
+                fixedKind="NOTE"
+                hasMore={node.hasMoreActivities}
+                isLoadingMore={node.isLoadingMoreActivities}
+                onLoadMore={onLoadMoreActivities}
+                hideLabel
+              />
+            </div>
+          )}
+          {activeTab === "stats" && (
+            <StatsTab
+              streak={node.streak}
+              lastActivity={node.lastActivity}
+              done={node.done}
+              total={node.total}
+              cardCount={node.cardCount}
+              practiceCount={practiceActivities.length}
+              resourceCount={resources.length}
+              openIssueCount={issues.filter((i) => !i.resolved).length}
+              branches={node.branches}
+            />
+          )}
+          {activeTab === "topics" && (
+            <TopicsTab
+              workspaceId={workspaceId}
+              childNodes={childNodes}
+              onAddChild={onAddChild}
             />
           )}
           {activeTab === "issues" && (

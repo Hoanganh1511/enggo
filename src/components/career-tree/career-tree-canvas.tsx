@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import TreeGrowthNode from "./nodes/tree-growth-node";
+import NodeQuickViewModal from "./NodeQuickViewModal";
 import { buildHierarchy } from "@/lib/career-tree/transform";
 import { computeTreeLayout } from "@/lib/career-tree/layout";
 import { createNodeAction } from "@/actions/career-tree/create-node";
@@ -35,7 +36,7 @@ import {
   filterVisibleNodes,
   getRealChildrenCount,
 } from "@/lib/career-tree/filter-visible-nodes";
-import type { ApiNodeListItem } from "@/lib/api/types";
+import type { ApiNodeListItem, NodeKind } from "@/lib/api/types";
 import {
   resolveNodeRole,
   type AppNode,
@@ -84,6 +85,10 @@ const CareerTreeCanvas = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState<AppEdge>([]);
   const [togglingNodeId, setTogglingNodeId] = useState<string | null>(null);
   const [lastViewport, setLastViewport] = useState<Viewport | null>(null);
+  // Node kind BRANCH/root khong dieu huong sang trang chi tiet khi click (xem
+  // handleNodeClick) - thay vao do mo modal xem nhanh + them nhanh con ngay
+  // tai cho.
+  const [quickViewNodeId, setQuickViewNodeId] = useState<string | null>(null);
   const reactFlowInstanceRef = useRef<ReactFlowInstance<
     AppNode,
     AppEdge
@@ -99,6 +104,25 @@ const CareerTreeCanvas = ({
   const [minimapSize, setMinimapSize] = useState<MinimapSize>("md");
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [isResettingLayout, setIsResettingLayout] = useState(false);
+
+  // Tra cuu nhanh node goc (ApiNodeListItem, co goal/kind/streak...) va so
+  // con THAT theo id - dung cho modal xem nhanh (khong can lay tu AppNode.data
+  // vi TreeNodeData khong mang field "goal").
+  const nodeById = useMemo(
+    () => new Map(initialNodes.map((n) => [n.id, n])),
+    [initialNodes],
+  );
+  const realChildrenCount = useMemo(
+    () => getRealChildrenCount(initialNodes),
+    [initialNodes],
+  );
+  const quickViewNode = quickViewNodeId
+    ? (nodeById.get(quickViewNodeId) ?? null)
+    : null;
+  const quickViewRole = quickViewNode ? resolveNodeRole(quickViewNode) : "branch";
+  const quickViewChildrenCount = quickViewNodeId
+    ? (realChildrenCount.get(quickViewNodeId) ?? 0)
+    : 0;
 
   // Cha/con suy tu edges (source->target) - khong can them field parentId
   // rieng vao TreeNodeData, vi quan he cha-con da co san qua canh noi.
@@ -164,9 +188,7 @@ const CareerTreeCanvas = ({
     const patchedNodes = layout.nodes.map((n) => {
       const childrenCount = realChildrenCount.get(n.id) ?? 0;
       const apiNode = apiNodeById.get(n.id);
-      const role = apiNode
-        ? resolveNodeRole(apiNode, childrenCount > 0)
-        : n.data.role;
+      const role = apiNode ? resolveNodeRole(apiNode) : n.data.role;
       return {
         ...n,
         type: role,
@@ -232,8 +254,29 @@ const CareerTreeCanvas = ({
     [workspaceId, setTogglingNodeId, setPendingFocusNodeId],
   );
 
+  // Chi node kind TOPIC (role "leaf") moi dieu huong sang trang chi tiet -
+  // branch/root mo modal xem nhanh + them nhanh con thay vi dieu huong, vi
+  // chung chi dung de to chuc cay (xem NodeQuickViewModal).
   const handleNodeClick = (_event: React.MouseEvent, node: Node) => {
-    router.push(`/w/${workspaceId}/nodes/${node.id}`);
+    const appNode = node as AppNode;
+    if (appNode.data.role === "leaf") {
+      router.push(`/w/${workspaceId}/nodes/${node.id}`);
+      return;
+    }
+    setQuickViewNodeId(node.id);
+  };
+
+  const handleAddChildFromQuickView = (
+    parentId: string,
+    name: string,
+    kind: NodeKind,
+  ) => {
+    createNodeAction(workspaceId, parentId, name, kind);
+  };
+
+  const handleViewQuickViewDetail = (nodeId: string) => {
+    setQuickViewNodeId(null);
+    router.push(`/w/${workspaceId}/nodes/${nodeId}`);
   };
 
   // Luu lai vi tri sau khi keo tha xong - lan fetch sau, layout.ts se doc
@@ -475,6 +518,15 @@ const CareerTreeCanvas = ({
           </button>
         </div>
       )}
+
+      <NodeQuickViewModal
+        node={quickViewNode}
+        role={quickViewRole}
+        childrenCount={quickViewChildrenCount}
+        onOpenChange={(open) => !open && setQuickViewNodeId(null)}
+        onAddChild={handleAddChildFromQuickView}
+        onViewDetail={handleViewQuickViewDetail}
+      />
     </Tooltip.Provider>
   );
 };

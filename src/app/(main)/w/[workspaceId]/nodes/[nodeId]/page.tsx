@@ -35,7 +35,7 @@ export default async function NodeDetailPage({ params }: PageProps) {
     : node;
 
   const childrenCount = getRealChildrenCount(allNodes).get(nodeId) ?? 0;
-  const role = resolveNodeRole(fullNode, childrenCount > 0);
+  const role = resolveNodeRole(fullNode);
   const childNodes = allNodes
     .filter((n) => n.parentId === nodeId)
     .sort((a, b) => a.orderIndex - b.orderIndex);
@@ -47,6 +47,7 @@ export default async function NodeDetailPage({ params }: PageProps) {
       role={role}
       childrenCount={childrenCount}
       childNodes={childNodes}
+      allNodes={allNodes}
       initialCards={initialCards}
       initialResources={initialResources}
       initialIssues={initialIssues}

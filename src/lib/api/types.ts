@@ -1,9 +1,18 @@
+export type NodeKind = "BRANCH" | "TOPIC";
+export type Difficulty = "EASY" | "MEDIUM" | "HARD";
+
 export type ApiNode = {
   id: string;
   workspaceId: string;
   parentId: string | null;
   goal: string | null;
   title: string;
+  kind: NodeKind;
+  category: string | null;
+  difficulty: Difficulty | null;
+  estimatedTime: string | null;
+  prerequisites: string[];
+  learningOutcomes: string[];
   depth: number;
   orderIndex: number;
   x: number | null;

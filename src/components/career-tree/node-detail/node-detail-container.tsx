@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Folder, FileText, Target } from "lucide-react";
 import NodeDetailView, { type SaveStatus } from "./NodeDetailView";
+import NodePathSidebar from "./NodePathSidebar";
 import type { Activity } from "./ActivityLog";
+import { buildAncestorPath } from "@/lib/career-tree/node-path";
 import { getNodeCardsAction } from "@/actions/career-tree/get-node-cards";
 import { createCardAction } from "@/actions/career-tree/create-card";
 import { createNodeAction } from "@/actions/career-tree/create-node";
@@ -25,6 +27,8 @@ import type {
   ApiNodeListItem,
   ApiResource,
   CardKind,
+  Difficulty,
+  NodeKind,
   ResourceType,
 } from "@/lib/api/types";
 import type { NodeRole } from "@/lib/career-tree/types";
@@ -51,6 +55,7 @@ type NodeDetailContainerProps = {
   role: NodeRole;
   childrenCount: number;
   childNodes: ApiNodeListItem[];
+  allNodes: ApiNodeListItem[];
   initialCards: ApiCard[];
   initialResources: ApiResource[];
   initialIssues: ApiIssue[];
@@ -62,11 +67,16 @@ const NodeDetailContainer = ({
   role,
   childrenCount,
   childNodes,
+  allNodes,
   initialCards,
   initialResources,
   initialIssues,
 }: NodeDetailContainerProps) => {
   const router = useRouter();
+  const ancestorPath = buildAncestorPath(allNodes, node.id);
+  const parentName =
+    ancestorPath.length >= 2 ? ancestorPath[ancestorPath.length - 2].title : null;
+  const branchName = ancestorPath.length >= 2 ? ancestorPath[1].title : null;
   const [resources, setResources] = useState<ApiResource[]>(initialResources);
   const [issues, setIssues] = useState<ApiIssue[]>(initialIssues);
   const [activitiesState, setActivitiesState] = useState({
@@ -78,6 +88,8 @@ const NodeDetailContainer = ({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const contentDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const goalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const categoryDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const estimatedTimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveStatusResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const markSaved = () => {
@@ -164,8 +176,51 @@ const NodeDetailContainer = ({
     }, 500);
   };
 
-  const handleAddChild = (name: string) => {
-    createNodeAction(workspaceId, node.id, name);
+  const handleAddChild = (name: string, kind: NodeKind) => {
+    createNodeAction(workspaceId, node.id, name, kind);
+  };
+
+  const handleKindChange = async (kind: NodeKind) => {
+    setSaveStatus("saving");
+    await updateNodeAction(workspaceId, node.id, { kind });
+    markSaved();
+  };
+
+  const handleCategoryChange = (category: string) => {
+    if (categoryDebounceRef.current) clearTimeout(categoryDebounceRef.current);
+    setSaveStatus("saving");
+    categoryDebounceRef.current = setTimeout(async () => {
+      await updateNodeAction(workspaceId, node.id, { category });
+      markSaved();
+    }, 500);
+  };
+
+  const handleDifficultyChange = async (difficulty: Difficulty) => {
+    setSaveStatus("saving");
+    await updateNodeAction(workspaceId, node.id, { difficulty });
+    markSaved();
+  };
+
+  const handleEstimatedTimeChange = (estimatedTime: string) => {
+    if (estimatedTimeDebounceRef.current)
+      clearTimeout(estimatedTimeDebounceRef.current);
+    setSaveStatus("saving");
+    estimatedTimeDebounceRef.current = setTimeout(async () => {
+      await updateNodeAction(workspaceId, node.id, { estimatedTime });
+      markSaved();
+    }, 500);
+  };
+
+  const handleLearningOutcomesChange = async (learningOutcomes: string[]) => {
+    setSaveStatus("saving");
+    await updateNodeAction(workspaceId, node.id, { learningOutcomes });
+    markSaved();
+  };
+
+  const handlePrerequisitesChange = async (prerequisites: string[]) => {
+    setSaveStatus("saving");
+    await updateNodeAction(workspaceId, node.id, { prerequisites });
+    markSaved();
   };
 
   const handleDelete = () => {
@@ -174,41 +229,61 @@ const NodeDetailContainer = ({
   };
 
   return (
-    <NodeDetailView
-      workspaceId={workspaceId}
-      childNodes={childNodes}
-      node={{
-        id: node.id,
-        icon: ROLE_ICON[role],
-        title: node.title,
-        goal: node.goal,
-        subtitle: `${node.cardCount} ghi chú`,
-        branches: childrenCount,
-        done: Math.min(node.cardCount, MAX_EXPECTED_CARDS),
-        total: MAX_EXPECTED_CARDS,
-        content: node.content,
-        activities: activitiesState.activities,
-        hasMoreActivities: activitiesState.hasMore,
-        isLoadingMoreActivities: isLoadingMore,
-        updatedAt: node.updatedAt,
-        lastActivity: node.lastActivity,
-        streak: node.streak,
-      }}
-      saveStatus={saveStatus}
-      onContentChange={handleContentChange}
-      onGoalChange={handleGoalChange}
-      onAddChild={handleAddChild}
-      onDelete={handleDelete}
-      onAddActivity={handleAddActivity}
-      onLoadMoreActivities={handleLoadMore}
-      resources={resources}
-      onAddResource={handleAddResource}
-      onDeleteResource={handleDeleteResource}
-      issues={issues}
-      onAddIssue={handleAddIssue}
-      onToggleIssue={handleToggleIssue}
-      onDeleteIssue={handleDeleteIssue}
-    />
+    <div className="flex h-full w-full">
+      <NodePathSidebar workspaceId={workspaceId} ancestorPath={ancestorPath} />
+      <NodeDetailView
+        workspaceId={workspaceId}
+        childNodes={childNodes}
+        node={{
+          id: node.id,
+          icon: ROLE_ICON[role],
+          title: node.title,
+          goal: node.goal,
+          subtitle: `${node.cardCount} ghi chú`,
+          branches: childrenCount,
+          done: Math.min(node.cardCount, MAX_EXPECTED_CARDS),
+          total: MAX_EXPECTED_CARDS,
+          content: node.content,
+          activities: activitiesState.activities,
+          hasMoreActivities: activitiesState.hasMore,
+          isLoadingMoreActivities: isLoadingMore,
+          updatedAt: node.updatedAt,
+          createdAt: node.createdAt,
+          lastActivity: node.lastActivity,
+          streak: node.streak,
+          kind: node.kind,
+          category: node.category,
+          difficulty: node.difficulty,
+          estimatedTime: node.estimatedTime,
+          prerequisites: node.prerequisites,
+          learningOutcomes: node.learningOutcomes,
+          cardCount: node.cardCount,
+          parentId: node.parentId,
+        }}
+        parentName={parentName}
+        branchName={branchName}
+        saveStatus={saveStatus}
+        onContentChange={handleContentChange}
+        onGoalChange={handleGoalChange}
+        onAddChild={handleAddChild}
+        onDelete={handleDelete}
+        onAddActivity={handleAddActivity}
+        onLoadMoreActivities={handleLoadMore}
+        resources={resources}
+        onAddResource={handleAddResource}
+        onDeleteResource={handleDeleteResource}
+        issues={issues}
+        onAddIssue={handleAddIssue}
+        onToggleIssue={handleToggleIssue}
+        onDeleteIssue={handleDeleteIssue}
+        onKindChange={handleKindChange}
+        onCategoryChange={handleCategoryChange}
+        onDifficultyChange={handleDifficultyChange}
+        onEstimatedTimeChange={handleEstimatedTimeChange}
+        onLearningOutcomesChange={handleLearningOutcomesChange}
+        onPrerequisitesChange={handlePrerequisitesChange}
+      />
+    </div>
   );
 };
 

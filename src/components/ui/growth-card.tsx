@@ -1,10 +1,16 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { ChevronDown, ChevronRight, GitBranch, TriangleAlert } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  GitBranch,
+  TriangleAlert,
+} from "lucide-react";
 import Spinner from "./spinner";
 import LearningStreak, { type LearningStreakData } from "./learning-streak";
 import type { NodeStatus } from "@/lib/career-tree/node-status";
+import type { NodeRole } from "@/lib/career-tree/types";
 
 type GrowthCardProps = {
   icon: LucideIcon;
@@ -16,12 +22,28 @@ type GrowthCardProps = {
   done: number;
   total: number;
   status?: NodeStatus;
+  // Quyet dinh badge "Chuyen muc"/"Chu de" duoi tieu de - giup phan biet
+  // truc quan node co the click vao chi tiet (leaf/TOPIC) voi node chi to
+  // chuc cay (root/branch), vi ca 2 gio deu la GrowthCard giong het nhau.
+  role?: NodeRole;
   // true khi canvas dang zoom xa - an bot metadata phu, chi giu title/progress/status/streak.
   zoomedOut?: boolean;
   isCollapsed?: boolean;
   isToggling?: boolean;
   onToggleCollapse?: () => void;
   onClick?: () => void;
+};
+
+const ROLE_BADGE_LABEL: Record<NodeRole, string> = {
+  root: "Lộ trình",
+  branch: "Chuyên mục",
+  leaf: "Chủ đề",
+};
+
+const ROLE_BADGE_STYLE: Record<NodeRole, string> = {
+  root: "bg-surface-muted text-ink-muted",
+  branch: "bg-surface-muted text-ink-muted",
+  leaf: "bg-primary/15 text-primary",
 };
 
 function StatusDot({ status }: { status: NodeStatus }) {
@@ -54,6 +76,7 @@ const GrowthCard = ({
   done,
   total,
   status,
+  role,
   zoomedOut,
   isCollapsed,
   isToggling,
@@ -75,11 +98,11 @@ const GrowthCard = ({
       }}
       className="relative w-64 cursor-pointer rounded-xl border border-border bg-surface p-4 text-left shadow-sm transition-colors duration-150 ease-out hover:border-hover-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
-      {status && (
+      {/* {status && (
         <span className="absolute top-2 right-2">
           <StatusDot status={status} />
         </span>
-      )}
+      )} */}
 
       <div className="flex items-center gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted">
@@ -87,6 +110,15 @@ const GrowthCard = ({
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-ink">{title}</p>
+          {role && (
+            <span
+              className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium transition-opacity duration-300 ${ROLE_BADGE_STYLE[role]} ${
+                zoomedOut ? "opacity-0" : "opacity-100"
+              }`}
+            >
+              {ROLE_BADGE_LABEL[role]}
+            </span>
+          )}
           <p
             className={`truncate text-xs text-ink-muted transition-opacity duration-300 ${
               zoomedOut ? "opacity-0" : "opacity-100"
