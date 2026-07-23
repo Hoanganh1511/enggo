@@ -1,16 +1,95 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { Home, LayoutGrid, Settings } from "lucide-react";
+import { useState, useSyncExternalStore, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Home,
+  Settings,
+  TreePine,
+  Building2,
+  Compass,
+  Hexagon,
+  Orbit,
+  Mountain,
+  History,
+  Trophy,
+  Target,
+  StickyNote,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Spinner from "@/components/ui/spinner";
 import {
   getServerSnapshot,
   getSidebarCollapsed,
   subscribeSidebarCollapsed,
 } from "@/lib/career-tree/sidebar-collapsed-store";
+import { profile } from "@/content/user-profile";
 
-const NAV_ITEMS = [
-  { title: "Trang chủ", icon: Home },
-  { title: "Bảng", icon: LayoutGrid },
+// Con "Skill Tree" nam trong nhom "My Town" ben duoi - cac muc nay TRUOC O
+// day la inner-nav rieng cua trang Skill Tree (SkillTreeSidebar.tsx), gio
+// gop het vao sidebar chinh de dieu huong nhat quan tu bat ky trang nao.
+// Chi "Skill Tree" co href/man hinh that, 7 muc con lai la placeholder
+// "Upcoming" (giu nguyen y nghia nhu ban INNER_NAV cu).
+type NavChild = {
+  key: string;
+  title: string;
+  icon: typeof Home;
+  href?: string;
+  matchPrefixes?: string[];
+  available: boolean;
+};
+
+const MY_TOWN_CHILDREN: NavChild[] = [
+  { key: "overview", title: "Overview", icon: Compass, available: false },
+  {
+    key: "skill-tree",
+    title: "Skill Tree",
+    icon: Hexagon,
+    href: "/skill-tree",
+    matchPrefixes: ["/skill-tree"],
+    available: true,
+  },
+  { key: "galaxy-view", title: "Galaxy View", icon: Orbit, available: false },
+  { key: "skyline", title: "Skyline", icon: Mountain, available: false },
+  { key: "timeline", title: "Timeline", icon: History, available: false },
+  {
+    key: "achievements",
+    title: "Achievements",
+    icon: Trophy,
+    available: false,
+  },
+  { key: "goals", title: "Goals", icon: Target, available: false },
+  { key: "notes", title: "Notes", icon: StickyNote, available: false },
+];
+
+// href co the thieu (Cai dat chua co route that) - cac item nay van la
+// button tinh nhu cu, chi item co href moi dieu huong that. "Career Tree" va
+// "Skill Tree" (trong "My Town") deu la trampoline (redirect sang workspace
+// dau tien) nen pathname THAT SU sau khi vao se khac han href. matchPrefixes
+// liet ke moi prefix duoc tinh la "dang o muc nay" de highlight dung, doc
+// lap voi href (noi dieu huong toi khi bam).
+const NAV_ITEMS: {
+  title: string;
+  icon: typeof Home;
+  href?: string;
+  matchPrefixes?: string[];
+  children?: NavChild[];
+}[] = [
+  { title: "Trang chủ", icon: Home, href: "/home" },
+  {
+    title: "Career Tree",
+    icon: TreePine,
+    href: "/career-tree",
+    matchPrefixes: ["/career-tree", "/w/"],
+  },
+  {
+    title: "My Town",
+    icon: Building2,
+    matchPrefixes: ["/skill-tree"],
+    children: MY_TOWN_CHILDREN,
+  },
   { title: "Cài đặt", icon: Settings },
 ];
 
@@ -20,34 +99,182 @@ const Sidebar = () => {
     getSidebarCollapsed,
     getServerSnapshot,
   );
+  const pathname = usePathname();
+
+  const router = useRouter();
+  // "/career-tree", "/home", "/skill-tree" deu la trampoline can fetch du
+  // lieu (workspace list, roi tiers/nodes cua trang dich) truoc khi render
+  // xong - Link thuan khong co phan hoi gi trong luc do nen cam giac "cham"
+  // du navigation thuc chat van chay. useTransition + router.push() (dung
+  // pattern da co o workspace-switcher.tsx) de hien spinner ngay tai item
+  // dang cho, thay vi im lang cho tan luc trang moi render.
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  // Mac dinh mo "My Town" neu dang o trong /skill-tree, nguoc lai thu gon -
+  // sau do nguoi dung tu bam mo/dong, khong dong bo lai theo pathname nua.
+  const [expandedGroup, setExpandedGroup] = useState(() =>
+    pathname.startsWith("/skill-tree"),
+  );
+
+  const handleNavigate = (href: string) => {
+    if (pathname === href) return;
+    setPendingHref(href);
+    startTransition(() => {
+      router.push(href);
+    });
+  };
 
   return (
     <nav
-      className={`z-10 flex shrink-0 flex-col gap-1 border-r border-border bg-surface py-3 transition-[width] duration-200 ${
-        isCollapsed ? "w-16 items-center" : "w-50 3xl:w-80"
+      className={`z-10 flex shrink-0 flex-col border-r border-white/10 px-1 py-2 transition-[width] duration-200 ${
+        isCollapsed ? "w-16 items-center" : "w-58"
       }`}
     >
-      <div className="px-2">
-        {NAV_ITEMS.map(({ title, icon: Icon }) => (
-          <button
-            key={title}
-            type="button"
-            title={title}
-            className={`flex h-9 3xl:h-10 shrink-0 cursor-pointer items-center rounded-sm gap-1 text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover ${
-              isCollapsed ? "w-10 justify-center" : "w-full px-2"
-            }`}
-          >
-            <div className="flex size-5 3xl:size-6 shrink-0 items-center justify-center">
-              <Icon strokeWidth={1.75} className="size-4 3xl:size-5 shrink-0" />
-            </div>
+      <div className="flex flex-1 flex-col gap-1.5 p-2">
+        {NAV_ITEMS.map(
+          ({ title, icon: Icon, href, matchPrefixes, children }) => {
+            const isActive = matchPrefixes
+              ? matchPrefixes.some((prefix) => pathname.startsWith(prefix))
+              : !!href && pathname === href;
+            const isItemPending = isPending && pendingHref === href;
+            const className = cn(
+              "flex h-11 shrink-0 cursor-pointer items-center gap-3 rounded-md border border-transparent transition-all duration-200 hover:bg-white/4",
+              isActive ? "bg-primary/10 text-primary" : "text-icon",
+              isCollapsed ? "w-11 justify-center" : "w-full px-4",
+            );
 
-            {!isCollapsed && (
-              <span className="flex-1 text-left truncate font-medium text-[13px] 3xl:text-sm text-ink">
-                {title}
-              </span>
-            )}
-          </button>
-        ))}
+            const content = (
+              <>
+                {isItemPending ? (
+                  <Spinner size={18} className="shrink-0" />
+                ) : (
+                  <Icon strokeWidth={1.75} className="size-4.5 shrink-0" />
+                )}
+
+                {!isCollapsed && (
+                  <span className="flex-1 truncate text-left text-[13px] font-semibold tracking-[0.01em]">
+                    {title}
+                  </span>
+                )}
+                {!isCollapsed &&
+                  children &&
+                  (expandedGroup ? (
+                    <ChevronDown
+                      size={14}
+                      strokeWidth={1.75}
+                      className="shrink-0"
+                    />
+                  ) : (
+                    <ChevronRight
+                      size={14}
+                      strokeWidth={1.75}
+                      className="shrink-0"
+                    />
+                  ))}
+              </>
+            );
+
+            const handleClick = () => {
+              if (children) {
+                // Sidebar dang thu gon (chi con icon) thi khong co cho hien
+                // danh sach con - bam vao thi di thang toi "Skill Tree" (muc
+                // duy nhat co man hinh that trong nhom).
+                if (isCollapsed) {
+                  const skillTree = children.find((c) => c.href);
+                  if (skillTree?.href) handleNavigate(skillTree.href);
+                } else {
+                  setExpandedGroup((v) => !v);
+                }
+                return;
+              }
+              if (href) handleNavigate(href);
+            };
+
+            return (
+              <div key={title}>
+                <button
+                  type="button"
+                  title={title}
+                  disabled={!href && !children}
+                  onClick={handleClick}
+                  className={cn(
+                    className,
+                    !href && !children && "cursor-default",
+                  )}
+                >
+                  {content}
+                </button>
+
+                {children && expandedGroup && !isCollapsed && (
+                  <div className="mt-1 flex flex-col gap-0.5 pl-4">
+                    {children.map((child) => {
+                      const childActive = child.matchPrefixes
+                        ? child.matchPrefixes.some((prefix) =>
+                            pathname.startsWith(prefix),
+                          )
+                        : !!child.href && pathname === child.href;
+                      const childPending =
+                        isPending && pendingHref === child.href;
+                      return (
+                        <button
+                          key={child.key}
+                          type="button"
+                          title={child.title}
+                          disabled={!child.href || childPending}
+                          onClick={() =>
+                            child.href && handleNavigate(child.href)
+                          }
+                          className={cn(
+                            "flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-md px-3 text-left text-[13px] font-medium transition-colors duration-150 ease-out",
+                            childActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-ink-muted hover:bg-white/4 hover:text-ink",
+                            !child.href && "cursor-default",
+                          )}
+                        >
+                          {childPending ? (
+                            <Spinner size={14} className="shrink-0" />
+                          ) : (
+                            <child.icon
+                              size={14}
+                              strokeWidth={1.75}
+                              className="shrink-0"
+                            />
+                          )}
+                          <span className="flex-1 truncate">{child.title}</span>
+                          <span
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                              child.available
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                : "bg-surface-muted text-ink-faint"
+                            }`}
+                          >
+                            {child.available ? "Available" : "Upcoming"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          },
+        )}
+      </div>
+      <div className="flex items-center gap-2 p-2">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-sky-500 text-sm font-semibold text-white">
+          {profile.name.charAt(0)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-semibold text-ink">
+              {profile.name}
+            </p>
+            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              {profile.planLabel}
+            </span>
+          </div>
+        </div>
       </div>
     </nav>
   );

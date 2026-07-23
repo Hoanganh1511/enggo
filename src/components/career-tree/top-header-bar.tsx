@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import {
   getServerSnapshot,
@@ -10,18 +10,19 @@ import {
 } from "@/lib/career-tree/sidebar-collapsed-store";
 import AppSwitcherMenu from "./app-switcher-menu";
 import NotificationBell from "./notification-bell";
-import AccountMenu from "./account-menu";
 import Logo from "@/components/ui/logo";
 
 type TopHeaderBarProps = {
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  } | null;
+  // Nhan san <Suspense><CurrentUser/></Suspense> tu layout.tsx (Server
+  // Component) thay vi tu import CurrentUser o day - vi day la "use client",
+  // neu tu import va render 1 Server Component ngay trong JSX cua no thi
+  // Server Component do MAT request context (headers()/cookies() ben trong
+  // auth() se bao loi "outside a request scope"). Server Component chi duoc
+  // compose vao Client Component qua props/children dung tu phia Server.
+  accountSlot: ReactNode;
 };
 
-const TopHeaderBar = ({ user }: TopHeaderBarProps) => {
+const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const isCollapsed = useSyncExternalStore(
     subscribeSidebarCollapsed,
     getSidebarCollapsed,
@@ -54,7 +55,7 @@ const TopHeaderBar = ({ user }: TopHeaderBarProps) => {
       </div>
       <div className="ml-auto flex items-center gap-2">
         <NotificationBell />
-        <AccountMenu user={user} />
+        {accountSlot}
       </div>
     </header>
   );

@@ -89,7 +89,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #111318;
+    --background: #080f16;
     --foreground: #f8fafc;
 
     --overlay: rgba(0, 0, 0, 0.75);
@@ -146,6 +146,20 @@ body {
   }
 }
 
+/* Skill Tree detail panel - noi dung khong thuc su "loading" (da co san trong
+   bo nho, khong goi API khi chon node khac), nen dung fade nhe thay vi
+   spinner gia: chi de content moi khong "nhay" dot ngot khi doi node. */
+@keyframes skill-detail-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Landing page cinematic background - hat sang nhap nhay nhe + card lo lung. */
 @keyframes cinematic-twinkle {
   0%,
@@ -166,6 +180,39 @@ body {
   }
   50% {
     transform: translateY(-14px);
+  }
+}
+
+/* SkillCard (trang Skill Tree) - vien "ong kinh" quay + anh sang luot qua mat
+   kinh. Dat o global thay vi inject <style> luc runtime (nhu ban tham khao
+   ban dau lam) de tranh flash luc hydrate va dung dung quy uoc cua repo (cac
+   keyframe khac cung dat tai day). */
+@keyframes skillcard-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes skillcard-sheen {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+    opacity: 0;
   }
 }
 

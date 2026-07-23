@@ -23,9 +23,11 @@ export async function updateNodeAction(
     learningOutcomes?: string[];
     isPinned?: boolean;
     tags?: string[];
+    tierId?: string;
   },
 ) {
   const node = await updateNode(workspaceId, nodeId, patch);
   revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/skill-tree/${workspaceId}`);
   return node;
 }

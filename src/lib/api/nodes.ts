@@ -13,7 +13,12 @@ export function getNode(workspaceId: string, nodeId: string): Promise<ApiNode> {
 
 export function createNode(
   workspaceId: string,
-  data: { parentId: string | null; title: string; kind?: NodeKind },
+  data: {
+    parentId: string | null;
+    title: string;
+    kind?: NodeKind;
+    tierId?: string;
+  },
 ): Promise<ApiNode> {
   return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes`, {
     method: "POST",
@@ -40,6 +45,7 @@ export function updateNode(
     learningOutcomes?: string[];
     isPinned?: boolean;
     tags?: string[];
+    tierId?: string;
   },
 ): Promise<ApiNode> {
   return apiFetch<ApiNode>(`/workspaces/${workspaceId}/nodes/${nodeId}`, {

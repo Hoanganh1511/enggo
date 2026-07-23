@@ -14,7 +14,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
   if (isLoggedIn && isLoginPage) {
-    return NextResponse.redirect(new URL("/topics", req.nextUrl));
+    return NextResponse.redirect(new URL("/career-tree", req.nextUrl));
   }
 });
 

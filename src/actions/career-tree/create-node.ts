@@ -9,8 +9,15 @@ export async function createNodeAction(
   parentId: string | null,
   title: string,
   kind?: NodeKind,
+  tierId?: string,
 ) {
-  const node = await createNode(workspaceId, { parentId, title, kind });
+  const node = await createNode(workspaceId, {
+    parentId,
+    title,
+    kind,
+    tierId,
+  });
   revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/skill-tree/${workspaceId}`);
   return node;
 }

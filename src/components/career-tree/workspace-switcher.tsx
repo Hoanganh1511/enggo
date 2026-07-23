@@ -10,11 +10,16 @@ import type { ApiWorkspace } from "@/lib/api/types";
 type WorkspaceSwitcherProps = {
   workspace: ApiWorkspace;
   workspaces: ApiWorkspace[];
+  // Career Tree canvas dung "/w", Skill Tree dung "/skill-tree" - cung 1
+  // danh sach Workspace that (1 Workspace = 1 "Skill Set"), chi khac duong
+  // dan dieu huong khi chon.
+  basePath?: string;
 };
 
 const WorkspaceSwitcher = ({
   workspace,
   workspaces,
+  basePath = "/w",
 }: WorkspaceSwitcherProps) => {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -39,7 +44,7 @@ const WorkspaceSwitcher = ({
     setOpen(false);
     if (id === workspace.id) return;
     startTransition(() => {
-      router.push(`/w/${id}`);
+      router.push(`${basePath}/${id}`);
     });
   };
 
