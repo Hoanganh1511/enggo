@@ -2,57 +2,87 @@
 @import "@xyflow/react/dist/style.css" layer(xyflow);
 
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
-  --active: #3b82f6;
+  /* Cool neutral + brand blue (0090E3) - he mau "product SaaS" trung tinh,
+     xam co anh hoi xanh thay vi xam am nau nhu ban truoc. */
+  --background: #f6f8fa;
+  --foreground: #1b1f23;
+  --active: #0090e3;
 
-  --primary: #3b82f6;
-  --primary-hover: #60a5fa;
-  --primary-dark: #2563eb;
+  --primary: #0090e3;
+  --primary-hover: #007fd1;
+  --primary-dark: #006bb0;
 
-  --overlay: rgba(0, 0, 0, 0.3);
+  --overlay: rgba(17, 24, 39, 0.45);
   --surface: #ffffff;
-  --surface-muted: #f6f7f9;
-  --surface-header: #f3f4f6;
-  --hover-bg: rgba(17, 24, 39, 0.04);
-  --press-bg: rgba(17, 24, 39, 0.08);
-  --active-bg: rgba(59, 130, 246, 0.12);
-  --active-bg-strong: rgba(59, 130, 246, 0.16);
+  --surface-muted: #fafbfc;
+  --surface-header: #fafbfc;
+  --hover-bg: #f3f6f8;
+  --press-bg: #eef2f5;
+  --active-bg: #eaf7ff;
+  --active-bg-strong: #d8f0ff;
+  --active-border: #b6e3ff;
 
-  --ink: #111827;
-  --ink-muted: #6b7280;
-  --ink-faint: #9ca3af;
-  --ink-disabled: #d1d5db;
+  --ink: black;
+  --ink-muted: #59636e;
+  --ink-faint: #7f8b96;
+  --ink-disabled: #c6cdd5;
 
-  --border: #e5e7eb;
-  --search-border: #d1d5db;
-  --hover-border: #d1d5db;
-  --focus-border: #3b82f6;
-  --tree-line: #e5e7eb;
+  --border: #e3e8ee;
+  --search-border: #e3e8ee;
+  --hover-border: #cbd5df;
+  --focus-border: #0090e3;
+  --tree-line: #edf1f5;
 
-  --icon: #6b7280;
-  --icon-hover: #374151;
-  --icon-active: #3b82f6;
+  --icon: #59636e;
+  --icon-hover: #1b1f23;
+  --icon-active: #0090e3;
 
-  --shadow-panel-base: 0 20px 80px rgba(0, 0, 0, 0.1);
-  --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.08);
-  --shadow-focus-base: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  --shadow-panel-base: 0 20px 48px rgba(16, 24, 40, 0.12);
+  --shadow-dropdown-base: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --shadow-focus-base: 0 0 0 3px rgba(0, 144, 227, 0.2);
 
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
+  --success: #28a745;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --notification: #ef4444;
+
+  /* Nut/chip dang "selected" tone brand (Note trong PostComposer khi active) */
+  --outline-bg: #eaf7ff;
+  --outline-border: #b6e3ff;
+  --outline-hover: #d8f0ff;
+
+  /* Nut Follow - vien brand tren nen trang, fill nhe khi hover */
+  --follow-bg: #ffffff;
+  --follow-border: #b6e3ff;
+  --follow-hover: #eaf7ff;
+
+  /* Nut Primary (Post) - dung thang mau brand solid, khong tach rieng nua */
+  --button-primary-bg: var(--primary);
+  --button-primary-hover: var(--primary-hover);
+
+  /* Tag/chip - Badge Gray trung tinh */
+  --tag-bg: #f6f8fa;
+  --tag-border: #edf1f5;
+  --tag-text: #59636e;
+
+  /* Cac slot duoc goi ten tuong minh, alias cua token o tren */
+  --feed-background: var(--background);
+  --sidebar-background: var(--surface-header);
+  --header-background: var(--surface-header);
+  --card-background: var(--surface);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-active: var(--active);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-dark: var(--primary-dark);
+  --color-primary-active: var(--primary-dark);
 
   --color-overlay: var(--overlay);
   --color-surface: var(--surface);
@@ -62,6 +92,7 @@
   --color-press-bg: var(--press-bg);
   --color-active-bg: var(--active-bg);
   --color-active-bg-strong: var(--active-bg-strong);
+  --color-active-border: var(--active-border);
 
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
@@ -85,44 +116,79 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-notification: var(--notification);
+
+  --color-outline-bg: var(--outline-bg);
+  --color-outline-border: var(--outline-border);
+  --color-outline-hover: var(--outline-hover);
+
+  --color-follow-bg: var(--follow-bg);
+  --color-follow-border: var(--follow-border);
+  --color-follow-hover: var(--follow-hover);
+
+  --color-button-primary-bg: var(--button-primary-bg);
+  --color-button-primary-hover: var(--button-primary-hover);
+
+  --color-tag-bg: var(--tag-bg);
+  --color-tag-border: var(--tag-border);
+  --color-tag-text: var(--tag-text);
+
+  --color-feed-background: var(--feed-background);
+  --color-sidebar-background: var(--sidebar-background);
+  --color-header-background: var(--header-background);
+  --color-card-background: var(--card-background);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #080f16;
+    --background: #02060a;
     --foreground: #f8fafc;
 
     --overlay: rgba(0, 0, 0, 0.75);
-    --surface: #111318;
+    --surface: rgba(100, 100, 100, 0.09);
     --surface-muted: #161a22;
     --surface-header: #171c25;
     --hover-bg: rgba(255, 255, 255, 0.05);
     --press-bg: rgba(255, 255, 255, 0.08);
-    --active-bg: rgba(59, 130, 246, 0.12);
-    --active-bg-strong: rgba(59, 130, 246, 0.16);
+    --active-bg: rgba(0, 144, 227, 0.16);
+    --active-bg-strong: rgba(0, 144, 227, 0.22);
+    --active-border: rgba(0, 144, 227, 0.35);
 
     --ink: #f8fafc;
     --ink-muted: #a1a1aa;
     --ink-faint: #8a93a5;
     --ink-disabled: #6b7280;
 
-    --border: #2a3140;
+    --border: #161617;
     --search-border: #2c3444;
     --hover-border: #3a4356;
-    --focus-border: #3b82f6;
+    --focus-border: #0090e3;
     --tree-line: #313847;
 
     --icon: #9ca3af;
     --icon-hover: #d1d5db;
-    --icon-active: #3b82f6;
+    --icon-active: #3db5ff;
 
     --shadow-panel-base: 0 20px 80px rgba(0, 0, 0, 0.55);
     --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.45);
-    --shadow-focus-base: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    --shadow-focus-base: 0 0 0 3px rgba(0, 144, 227, 0.25);
 
     --success: #4ade80;
     --warning: #fbbf24;
     --danger: #f87171;
+    --notification: #f87171;
+
+    --outline-bg: rgba(0, 144, 227, 0.1);
+    --outline-border: rgba(0, 144, 227, 0.35);
+    --outline-hover: rgba(0, 144, 227, 0.16);
+
+    --follow-bg: rgba(255, 255, 255, 0.02);
+    --follow-border: rgba(0, 144, 227, 0.3);
+    --follow-hover: rgba(0, 144, 227, 0.1);
+
+    --tag-bg: rgba(255, 255, 255, 0.05);
+    --tag-border: rgba(255, 255, 255, 0.08);
+    --tag-text: #a1a1aa;
   }
 }
 
@@ -143,6 +209,20 @@ body {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* PostComposer - form rieng theo tung loai bai fade nhe khi doi loai (xem
+   PostComposer.tsx), tranh cam giac giat cuc khi cac field khac nhau xuat
+   hien/bien mat. */
+@keyframes compose-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

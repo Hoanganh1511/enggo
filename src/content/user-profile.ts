@@ -4,4 +4,6 @@
 export const profile = {
   name: "Tuấn Anh",
   planLabel: "Pro",
+  username: "tuananh.fe",
+  avatarUrl: "https://i.pravatar.cc/150?img=52",
 };

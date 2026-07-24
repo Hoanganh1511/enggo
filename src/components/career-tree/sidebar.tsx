@@ -17,15 +17,21 @@ import {
   StickyNote,
   ChevronDown,
   ChevronRight,
+  Lock,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import {
   getServerSnapshot,
   getSidebarCollapsed,
+  setSidebarCollapsed,
   subscribeSidebarCollapsed,
 } from "@/lib/career-tree/sidebar-collapsed-store";
 import { profile } from "@/content/user-profile";
+import AppSwitcherMenu from "./app-switcher-menu";
+import Logo from "../ui/logo";
 
 // Con "Skill Tree" nam trong nhom "My Town" ben duoi - cac muc nay TRUOC O
 // day la inner-nav rieng cua trang Skill Tree (SkillTreeSidebar.tsx), gio
@@ -77,7 +83,12 @@ const NAV_ITEMS: {
   matchPrefixes?: string[];
   children?: NavChild[];
 }[] = [
-  { title: "Trang chủ", icon: Home, href: "/home" },
+  {
+    title: "Trang chủ",
+    icon: Home,
+    href: "/home",
+    matchPrefixes: ["/home"],
+  },
   {
     title: "Career Tree",
     icon: TreePine,
@@ -90,7 +101,18 @@ const NAV_ITEMS: {
     matchPrefixes: ["/skill-tree"],
     children: MY_TOWN_CHILDREN,
   },
-  { title: "Cài đặt", icon: Settings },
+  {
+    title: "Bookmarks",
+    icon: Home,
+    href: "/bookmarks",
+    matchPrefixes: ["/bookmarks"],
+  },
+  {
+    title: "Cài đặt",
+    icon: Settings,
+    href: "/settings",
+    matchPrefixes: ["/settings"],
+  },
 ];
 
 const Sidebar = () => {
@@ -99,6 +121,7 @@ const Sidebar = () => {
     getSidebarCollapsed,
     getServerSnapshot,
   );
+  const toggleCollapsed = () => setSidebarCollapsed(!isCollapsed);
   const pathname = usePathname();
 
   const router = useRouter();
@@ -112,8 +135,9 @@ const Sidebar = () => {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   // Mac dinh mo "My Town" neu dang o trong /skill-tree, nguoc lai thu gon -
   // sau do nguoi dung tu bam mo/dong, khong dong bo lai theo pathname nua.
-  const [expandedGroup, setExpandedGroup] = useState(() =>
-    pathname.startsWith("/skill-tree"),
+  const [expandedGroup, setExpandedGroup] = useState(
+    () => true,
+    // pathname.startsWith("/skill-tree"),
   );
 
   const handleNavigate = (href: string) => {
@@ -126,11 +150,40 @@ const Sidebar = () => {
 
   return (
     <nav
-      className={`z-10 flex shrink-0 flex-col border-r border-white/10 px-1 py-2 transition-[width] duration-200 ${
-        isCollapsed ? "w-16 items-center" : "w-58"
+      className={`z-10 fixed inset-y-0 shadow-sm left-0 flex shrink-0 flex-col overflow-y-auto border-r border-border bg-surface px-4 py-2 transition-[width] duration-200 ${
+        isCollapsed ? "w-16 items-center" : "w-66"
       }`}
     >
-      <div className="flex flex-1 flex-col gap-1.5 p-2">
+      <div
+        className={`flex items-center gap-1 ${isCollapsed ? "justify-center" : "w-58"}`}
+      >
+        {!isCollapsed && (
+          <>
+            <AppSwitcherMenu />
+            <div className="flex items-center">
+              <Logo orientation="icon-only" className="size-6 shrink-0" />
+              <span className="ml-1 text-sm font-bold text-ink">
+                Tree Career
+              </span>
+            </div>
+          </>
+        )}
+        <button
+          type="button"
+          title={isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+          onClick={toggleCollapsed}
+          className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover ${
+            isCollapsed ? "" : "ml-auto"
+          }`}
+        >
+          {isCollapsed ? (
+            <PanelLeftOpen strokeWidth={1.75} className="size-4.5" />
+          ) : (
+            <PanelLeftClose strokeWidth={1.75} className="size-4.5" />
+          )}
+        </button>
+      </div>
+      <div className="py-4 flex flex-1 flex-col gap-1.5">
         {NAV_ITEMS.map(
           ({ title, icon: Icon, href, matchPrefixes, children }) => {
             const isActive = matchPrefixes
@@ -138,8 +191,8 @@ const Sidebar = () => {
               : !!href && pathname === href;
             const isItemPending = isPending && pendingHref === href;
             const className = cn(
-              "flex h-11 shrink-0 cursor-pointer items-center gap-3 rounded-md border border-transparent transition-all duration-200 hover:bg-white/4",
-              isActive ? "bg-primary/10 text-primary" : "text-icon",
+              "flex h-11 shrink-0 cursor-pointer items-center gap-3 rounded-md border border-transparent transition-all duration-200 hover:bg-hover-bg",
+              isActive ? "bg-active-bg text-primary" : "text-icon",
               isCollapsed ? "w-11 justify-center" : "w-full px-4",
             );
 
@@ -148,7 +201,10 @@ const Sidebar = () => {
                 {isItemPending ? (
                   <Spinner size={18} className="shrink-0" />
                 ) : (
-                  <Icon strokeWidth={1.75} className="size-4.5 shrink-0" />
+                  <Icon
+                    strokeWidth={isActive ? 2.5 : 1.75}
+                    className="size-4.5 shrink-0"
+                  />
                 )}
 
                 {!isCollapsed && (
@@ -227,8 +283,8 @@ const Sidebar = () => {
                           className={cn(
                             "flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-md px-3 text-left text-[13px] font-medium transition-colors duration-150 ease-out",
                             childActive
-                              ? "bg-primary/10 text-primary"
-                              : "text-ink-muted hover:bg-white/4 hover:text-ink",
+                              ? "bg-active-bg text-primary"
+                              : "text-ink-muted hover:bg-hover-bg hover:text-ink",
                             !child.href && "cursor-default",
                           )}
                         >
@@ -243,13 +299,13 @@ const Sidebar = () => {
                           )}
                           <span className="flex-1 truncate">{child.title}</span>
                           <span
-                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                            className={`shrink-0 rounded-full   text-[10px] font-medium ${
                               child.available
-                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                                : "bg-surface-muted text-ink-faint"
+                                ? " text-emerald-600 dark:text-emerald-400"
+                                : " text-ink-faint"
                             }`}
                           >
-                            {child.available ? "Available" : "Upcoming"}
+                            {child.available ? <></> : <Lock size={13} />}
                           </span>
                         </button>
                       );
@@ -261,20 +317,27 @@ const Sidebar = () => {
           },
         )}
       </div>
-      <div className="flex items-center gap-2 p-2">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-sky-500 text-sm font-semibold text-white">
+      <div
+        className={`flex items-center gap-2 p-2 ${isCollapsed ? "justify-center" : ""}`}
+      >
+        <span
+          title={isCollapsed ? profile.name : undefined}
+          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-sky-500 text-sm font-semibold text-white"
+        >
           {profile.name.charAt(0)}
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <p className="truncate text-sm font-semibold text-ink">
-              {profile.name}
-            </p>
-            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-              {profile.planLabel}
-            </span>
+        {!isCollapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <p className="truncate text-sm font-semibold text-ink">
+                {profile.name}
+              </p>
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                {profile.planLabel}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </nav>
   );

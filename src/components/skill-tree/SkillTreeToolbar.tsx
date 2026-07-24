@@ -1,8 +1,6 @@
 "use client";
 
 import { Search, Sparkles, Eye, EyeOff } from "lucide-react";
-import type { ApiCategory } from "@/lib/api/types";
-import CreateSkillModal from "./CreateSkillModal";
 import CreateCategoryModal from "./CreateCategoryModal";
 import CreateMenu from "./CreateMenu";
 import ViewMenu from "./ViewMenu";
@@ -18,8 +16,6 @@ type SkillTreeToolbarProps = {
   // tru "+ Category" (tao Category moi khong hop ly khi dang o trong 1 block).
   mode: "overview" | "block";
   workspaceId: string;
-  rootNodeId: string | null;
-  categories: ApiCategory[];
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   filters: SkillFilters;
@@ -41,8 +37,6 @@ type SkillTreeToolbarProps = {
 const SkillTreeToolbar = ({
   mode,
   workspaceId,
-  rootNodeId,
-  categories,
   searchQuery,
   onSearchQueryChange,
   filters,
@@ -58,27 +52,21 @@ const SkillTreeToolbar = ({
 }: SkillTreeToolbarProps) => {
   return (
     <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-3">
-      {/* Group 1 - Creation */}
-      <div className="flex shrink-0 items-center gap-1">
-        {mode === "block" && (
-          <CreateSkillModal
-            workspaceId={workspaceId}
-            rootNodeId={rootNodeId}
-            categories={categories}
-          />
-        )}
-        {mode === "overview" && (
-          <>
+      {/* Group 1 - Creation (chi con "+ Knowledge Block" o overview - "+
+          Skill" cua block da chuyen len SkillTreeHeader.tsx, dat canh tieu
+          de block theo dung anh mau thay vi nam trong toolbar duoi) */}
+      {mode === "overview" && (
+        <>
+          <div className="flex shrink-0 items-center gap-1">
             <CreateCategoryModal
               workspaceId={workspaceId}
               label="Knowledge Block"
             />
             <CreateMenu />
-          </>
-        )}
-      </div>
-
-      <div className="h-5 w-px shrink-0 bg-border" />
+          </div>
+          <div className="h-5 w-px shrink-0 bg-border" />
+        </>
+      )}
 
       {/* Group 2 - Layout (chi co y nghia trong 1 block - overview khong co
           tier/skill nao de mo rong/thu gon hay doi mat do) */}

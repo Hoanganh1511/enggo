@@ -7,10 +7,10 @@ import type {
   ApiWorkspace,
 } from "@/lib/api/types";
 import SkillTreeHeader from "./SkillTreeHeader";
-import SkillTreeSidebar from "./SkillTreeSidebar";
 import SkillTreeCanvas from "./SkillTreeCanvas";
 import SkillTreeToolbar from "./SkillTreeToolbar";
 import SkillDetailPanel from "./SkillDetailPanel";
+import BlockAboutPanel from "./BlockAboutPanel";
 import {
   createEmptyFilters,
   type CardSize,
@@ -64,6 +64,8 @@ const SkillTreePage = ({
         workspaceId={workspace.id}
         category={category}
         nodes={nodes}
+        rootNodeId={rootNodeId}
+        isPreviewMode={isPreviewMode}
       />
       {isPreviewMode && (
         <div className="flex h-9 shrink-0 items-center justify-center gap-2 bg-primary/10 text-xs font-medium text-primary">
@@ -78,13 +80,10 @@ const SkillTreePage = ({
         </div>
       )}
       <div className="flex min-h-0 flex-1">
-        {/* <SkillTreeSidebar /> */}
         <div className="flex min-h-0 flex-1 flex-col">
           <SkillTreeToolbar
             mode="block"
             workspaceId={workspace.id}
-            rootNodeId={rootNodeId}
-            categories={categories}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             filters={filters}
@@ -95,9 +94,7 @@ const SkillTreePage = ({
             onCardSizeChange={setCardSize}
             onExpandAll={() => setCollapsedTierIds(new Set())}
             onCollapseAll={() =>
-              setCollapsedTierIds(
-                new Set(categories.flatMap((c) => c.tiers.map((t) => t.id))),
-              )
+              setCollapsedTierIds(new Set(category.tiers.map((t) => t.id)))
             }
             isPreviewMode={isPreviewMode}
             onTogglePreview={() => setIsPreviewMode((v) => !v)}
@@ -105,7 +102,7 @@ const SkillTreePage = ({
           <SkillTreeCanvas
             workspaceId={workspace.id}
             rootNodeId={rootNodeId}
-            categories={categories}
+            category={category}
             nodes={nodes}
             selectedNodeId={selectedNodeId}
             onSelectNode={setSelectedNodeId}
@@ -118,7 +115,11 @@ const SkillTreePage = ({
             onToggleTierCollapse={toggleTierCollapse}
           />
         </div>
-        <SkillDetailPanel workspaceId={workspace.id} node={selectedNode} />
+        {selectedNode ? (
+          <SkillDetailPanel workspaceId={workspace.id} node={selectedNode} />
+        ) : (
+          <BlockAboutPanel category={category} nodes={nodes} />
+        )}
       </div>
     </div>
   );

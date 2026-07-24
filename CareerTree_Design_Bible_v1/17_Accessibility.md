@@ -1,2 +1,0 @@
-# Accessibility
-Keyboard, focus, ARIA.

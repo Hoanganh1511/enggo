@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { Folder, ArrowRight } from "lucide-react";
 import type { ApiCategory } from "@/lib/api/types";
 import type { CategoryStats } from "@/lib/skill-tree/category-stats";
-import { getStatusStyle, hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { getBlockAccentColor } from "@/lib/skill-tree/block-accent";
 import { formatRelativeTime } from "@/lib/career-tree/format-time";
 import TechTag from "@/components/ui/tech-tag";
 import HexBadge from "./HexBadge";
@@ -28,10 +29,11 @@ type KnowledgeBlockCardProps = {
 
 // Card lon, ca card bam duoc (Link that - keyboard accessible mien phi, Enter
 // mo duoc, focus ring ke thua tu he thong co san) - khong dung button rieng
-// nhu spec yeu cau "Do NOT display buttons". Bo cuc theo dung anh mau: icon
-// lon (tai dung HexBadge da co) rieng 1 hang o tren, ten block xuong hang
-// duoi, roi skills/mastery+progress, tech tag, va trang thai dat RIENG o
-// day card (khac ban dau minh lam la nhet canh ten).
+// nhu spec yeu cau "Do NOT display buttons". Toan bo mau sac cua card (icon/
+// vien/glow/progress bar/% /nhan trang thai) dung CHUNG 1 "mau danh tinh"
+// rieng cua block (getBlockAccentColor) thay vi mau status - khop anh mau:
+// 2 block cung trang thai "Growing" van co mau khac han nhau vi la 2 block
+// khac nhau, khong phai vi trang thai khac nhau.
 const KnowledgeBlockCard = ({
   workspaceId,
   category,
@@ -41,7 +43,9 @@ const KnowledgeBlockCard = ({
   isFadedOut,
   onEnter,
 }: KnowledgeBlockCardProps) => {
-  const style = getStatusStyle(stats.status);
+  const accent = getBlockAccentColor(category.orderIndex, category.color);
+  const statusLabel =
+    stats.status === "need-review" ? "Needs review" : stats.status;
   const visibleTech = stats.skillTitles.slice(0, TECH_PREVIEW_LIMIT);
   const extraTechCount = stats.skillTitles.length - visibleTech.length;
   const href = `/skill-tree/${workspaceId}/${category.id}`;
@@ -71,26 +75,25 @@ const KnowledgeBlockCard = ({
             : {
                 y: -4,
                 scale: 1.015,
-                boxShadow: `0 16px 40px -10px ${hexToRgba(style.hex, 0.45)}`,
+                boxShadow: `0 16px 40px -10px ${hexToRgba(accent, 0.45)}`,
               }
         }
         whileFocus={
           isEntering || isFadedOut
             ? undefined
-            : {
-                boxShadow: `0 16px 40px -10px ${hexToRgba(style.hex, 0.45)}`,
-              }
+            : { boxShadow: `0 16px 40px -10px ${hexToRgba(accent, 0.45)}` }
         }
         transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
         style={{
-          boxShadow: `0 4px 16px -10px ${hexToRgba(style.hex, 0.2)}`,
+          boxShadow: `0 4px 16px -10px ${hexToRgba(accent, 0.2)}`,
+          borderColor: hexToRgba(accent, 0.35),
           background:
             "linear-gradient(160deg, rgba(15,23,42,0.9), rgba(10,15,28,0.95))",
         }}
-        className={`flex h-full flex-col rounded-[18px] border p-5 ${style.borderClass} group-focus-visible:ring-2 group-focus-visible:ring-primary`}
+        className="flex h-full flex-col rounded-[18px] border p-5 group-focus-visible:ring-2 group-focus-visible:ring-primary"
       >
         <div className="flex items-start justify-between">
-          <HexBadge size={56} status={stats.status}>
+          <HexBadge size={56} colorHex={accent} bold>
             <Folder size={24} strokeWidth={1.75} />
           </HexBadge>
           <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-ink-faint opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
@@ -112,15 +115,19 @@ const KnowledgeBlockCard = ({
               {stats.skillCount} skills
             </span>
             <span
-              className={`text-lg font-bold tabular-nums ${style.textClass}`}
+              className="text-lg font-bold tabular-nums"
+              style={{ color: accent }}
             >
               {stats.avgMasteryPercent}%
             </span>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
             <div
-              className={`h-full rounded-full ${style.barClass}`}
-              style={{ width: `${stats.avgMasteryPercent}%` }}
+              className="h-full rounded-full"
+              style={{
+                width: `${stats.avgMasteryPercent}%`,
+                background: accent,
+              }}
             />
           </div>
         </div>
@@ -143,9 +150,10 @@ const KnowledgeBlockCard = ({
 
         <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2.5">
           <span
-            className={`text-xs font-bold tracking-wide uppercase ${style.textClass}`}
+            className="text-xs font-bold tracking-wide uppercase"
+            style={{ color: accent }}
           >
-            {stats.status === "need-review" ? "Needs review" : stats.status}
+            {statusLabel}
           </span>
           <span className="text-[11px] text-ink-faint">
             {stats.lastActivity

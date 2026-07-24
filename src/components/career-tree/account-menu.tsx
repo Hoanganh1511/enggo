@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Settings, SunMoon, User, Users, LogOut } from "lucide-react";
-import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { signOutAction } from "@/actions/auth/sign-out-action";
 
 type AccountUser = {
@@ -54,11 +58,11 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
         <button
           type="button"
           title="Tài khoản"
-          className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out ${
+          className={`flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out ${
             open ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-border"
           }`}
         >
-          <Avatar user={user} size={28} />
+          <Avatar user={user} size={34} />
         </button>
       </PopoverTrigger>
 
@@ -93,7 +97,11 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
               type="submit"
               className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
             >
-              <LogOut size={16} strokeWidth={1.75} className="shrink-0 text-icon" />
+              <LogOut
+                size={16}
+                strokeWidth={1.75}
+                className="shrink-0 text-icon"
+              />
               Log out
             </button>
           </form>

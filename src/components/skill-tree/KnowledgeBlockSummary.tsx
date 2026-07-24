@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowUpRight, Folder } from "lucide-react";
 import type { ApiCategory } from "@/lib/api/types";
 import type { CategoryStats } from "@/lib/skill-tree/category-stats";
-import { getStatusStyle, hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { getBlockAccentColor } from "@/lib/skill-tree/block-accent";
 import { formatRelativeTime } from "@/lib/career-tree/format-time";
 
 type KnowledgeBlockSummaryProps = {
@@ -30,7 +31,9 @@ const KnowledgeBlockSummary = ({
     );
   }
 
-  const style = getStatusStyle(stats.status);
+  const accent = getBlockAccentColor(category.orderIndex, category.color);
+  const statusLabel =
+    stats.status === "need-review" ? "Needs review" : stats.status;
 
   return (
     <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l border-border bg-surface p-4">
@@ -41,7 +44,7 @@ const KnowledgeBlockSummary = ({
         <div className="flex items-center gap-2">
           <span
             className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: hexToRgba(style.hex, 0.15), color: style.hex }}
+            style={{ background: hexToRgba(accent, 0.15), color: accent }}
           >
             <Folder size={16} strokeWidth={1.75} />
           </span>
@@ -51,10 +54,14 @@ const KnowledgeBlockSummary = ({
         </div>
 
         <span
-          className={`flex w-fit items-center gap-1 text-xs font-medium ${style.textClass}`}
+          className="flex w-fit items-center gap-1 text-xs font-medium"
+          style={{ color: accent }}
         >
-          <span className={`size-1.5 rounded-full ${style.dotClass}`} />
-          {stats.status === "need-review" ? "Needs review" : stats.status}
+          <span
+            className="size-1.5 rounded-full"
+            style={{ background: accent }}
+          />
+          {statusLabel}
         </span>
 
         {category.description ? (
@@ -69,15 +76,19 @@ const KnowledgeBlockSummary = ({
               Mastery
             </span>
             <span
-              className={`text-2xl font-bold tabular-nums ${style.textClass}`}
+              className="text-2xl font-bold tabular-nums"
+              style={{ color: accent }}
             >
               {stats.avgMasteryPercent}%
             </span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-muted">
             <div
-              className={`h-full rounded-full ${style.barClass}`}
-              style={{ width: `${stats.avgMasteryPercent}%` }}
+              className="h-full rounded-full"
+              style={{
+                width: `${stats.avgMasteryPercent}%`,
+                background: accent,
+              }}
             />
           </div>
         </div>

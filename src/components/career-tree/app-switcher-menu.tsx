@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { Grid2x2 } from "lucide-react";
-import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 const AppSwitcherMenu = () => {
   const [open, setOpen] = useState(false);
@@ -18,9 +22,8 @@ const AppSwitcherMenu = () => {
             `}
         >
           <Grid2x2
-            size={18}
             strokeWidth={1.75}
-            className={`${open ? "text-primary" : ""}`}
+            className={`size-5 ${open ? "text-primary" : ""}`}
           />
         </button>
       </PopoverTrigger>

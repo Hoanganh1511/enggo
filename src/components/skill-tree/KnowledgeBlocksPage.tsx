@@ -107,8 +107,6 @@ const KnowledgeBlocksPage = ({
           <SkillTreeToolbar
             mode="overview"
             workspaceId={workspace.id}
-            rootNodeId={null}
-            categories={categories}
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             filters={createEmptyFilters()}

@@ -1,6 +1,13 @@
 "use client";
 
-import { Target, Folder, FileText, X, ChevronDown, ChevronRight } from "lucide-react";
+import {
+  Target,
+  Folder,
+  FileText,
+  X,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import type { ApiCategory, ApiNodeListItem } from "@/lib/api/types";
 import { resolveNodeRole, type NodeRole } from "@/lib/career-tree/types";
 import { getNodeStatus, type NodeStatus } from "@/lib/career-tree/node-status";
