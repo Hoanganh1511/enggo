@@ -51,7 +51,7 @@ const SkillTreeToolbar = ({
   onTogglePreview,
 }: SkillTreeToolbarProps) => {
   return (
-    <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-3">
+    <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border ">
       {/* Group 1 - Creation (chi con "+ Knowledge Block" o overview - "+
           Skill" cua block da chuyen len SkillTreeHeader.tsx, dat canh tieu
           de block theo dung anh mau thay vi nam trong toolbar duoi) */}

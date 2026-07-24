@@ -50,8 +50,8 @@ type NavChild = {
 const MY_TOWN_CHILDREN: NavChild[] = [
   { key: "overview", title: "Overview", icon: Compass, available: false },
   {
-    key: "skill-tree",
-    title: "Skill Tree",
+    key: "skill",
+    title: "Skill",
     icon: Hexagon,
     href: "/skill-tree",
     matchPrefixes: ["/skill-tree"],

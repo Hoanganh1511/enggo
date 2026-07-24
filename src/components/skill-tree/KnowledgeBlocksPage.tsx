@@ -97,8 +97,8 @@ const KnowledgeBlocksPage = ({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="border-b border-border px-6 pt-5 pb-4">
+        <div className="flex min-h-0  flex-col  flex-1 rounded-lg bg-surface border border-border px-6">
+          <div className="border-b border-border  pt-5 pb-4">
             <h1 className="text-xl font-bold text-ink">Knowledge Blocks</h1>
             <p className="mt-0.5 text-sm text-ink-faint">
               Click a block to explore its skills
@@ -120,7 +120,7 @@ const KnowledgeBlocksPage = ({
             isPreviewMode={false}
             onTogglePreview={() => {}}
           />
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto py-6">
             {visibleCategories.length === 0 && (
               <p className="text-sm text-ink-faint">
                 {categories.length === 0

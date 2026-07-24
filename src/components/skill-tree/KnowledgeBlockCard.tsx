@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Folder, ArrowRight } from "lucide-react";
+import { Folder } from "lucide-react";
 import type { ApiCategory } from "@/lib/api/types";
 import type { CategoryStats } from "@/lib/skill-tree/category-stats";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
 import { getBlockAccentColor } from "@/lib/skill-tree/block-accent";
 import { formatRelativeTime } from "@/lib/career-tree/format-time";
 import TechTag from "@/components/ui/tech-tag";
-import HexBadge from "./HexBadge";
+import Hex3DBadge from "./Hex3DBadge";
 
 const TECH_PREVIEW_LIMIT = 6;
 
@@ -70,42 +70,16 @@ const KnowledgeBlockCard = ({
           scale: isEntering ? 1.03 : 1,
         }}
         whileHover={
-          isEntering || isFadedOut
-            ? undefined
-            : {
-                y: -4,
-                scale: 1.015,
-                boxShadow: `0 16px 40px -10px ${hexToRgba(accent, 0.45)}`,
-              }
-        }
-        whileFocus={
-          isEntering || isFadedOut
-            ? undefined
-            : { boxShadow: `0 16px 40px -10px ${hexToRgba(accent, 0.45)}` }
+          isEntering || isFadedOut ? undefined : { y: -4, scale: 1.015 }
         }
         transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
-        style={{
-          boxShadow: `0 4px 16px -10px ${hexToRgba(accent, 0.2)}`,
-          borderColor: hexToRgba(accent, 0.35),
-          background:
-            "linear-gradient(160deg, rgba(15,23,42,0.9), rgba(10,15,28,0.95))",
-        }}
-        className="flex h-full flex-col rounded-[18px] border p-5 group-focus-visible:ring-2 group-focus-visible:ring-primary"
+        className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 transition-shadow duration-200 ease-out group-hover:shadow-dropdown group-focus-visible:ring-2 group-focus-visible:ring-primary"
       >
-        <div className="flex items-start justify-between">
-          <HexBadge size={56} colorHex={accent} bold>
-            <Folder size={24} strokeWidth={1.75} />
-          </HexBadge>
-          <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-ink-faint opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
-            Click to enter
-            <ArrowRight size={12} strokeWidth={1.75} />
-          </span>
-        </div>
-
-        <p
-          className="mt-3 truncate text-lg font-semibold"
-          style={{ color: "#e2e8f0" }}
-        >
+        <Hex3DBadge size={64} colorHex={accent}>
+          <Folder size={28} strokeWidth={1.75} />
+        </Hex3DBadge>
+        <div className="" />
+        <p className="truncate text-lg font-semibold text-ink">
           {category.name}
         </p>
 
@@ -126,7 +100,7 @@ const KnowledgeBlockCard = ({
               className="h-full rounded-full"
               style={{
                 width: `${stats.avgMasteryPercent}%`,
-                background: accent,
+                background: `linear-gradient(90deg, ${hexToRgba(accent, 0.55)}, ${accent})`,
               }}
             />
           </div>

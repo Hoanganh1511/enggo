@@ -263,6 +263,20 @@ body {
   }
 }
 
+/* Hex3DBadge (Knowledge Blocks) - hat sparkle nhap nhay quanh badge 3D. Dat o
+   global (khong inject <style> luc runtime) - dung quy uoc cua repo. */
+@keyframes hex3d-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(8deg);
+  }
+}
+
 /* SkillCard (trang Skill Tree) - vien "ong kinh" quay + anh sang luot qua mat
    kinh. Dat o global thay vi inject <style> luc runtime (nhu ban tham khao
    ban dau lam) de tranh flash luc hydrate va dung dung quy uoc cua repo (cac
