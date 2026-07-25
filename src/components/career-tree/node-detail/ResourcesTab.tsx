@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ExternalLink, Trash2 } from "lucide-react";
 import type { ApiResource, ResourceType } from "@/lib/api/types";
 
-const TYPE_LABEL: Record<ResourceType, string> = {
+export const TYPE_LABEL: Record<ResourceType, string> = {
   ARTICLE: "Article",
   VIDEO: "Video",
   DOC: "Doc",
@@ -12,7 +12,7 @@ const TYPE_LABEL: Record<ResourceType, string> = {
   BOOK: "Book",
 };
 
-const TYPE_STYLE: Record<ResourceType, string> = {
+export const TYPE_STYLE: Record<ResourceType, string> = {
   ARTICLE: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   VIDEO: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
   DOC: "bg-blue-500/15 text-blue-600 dark:text-blue-400",

@@ -1,60 +1,58 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useSyncExternalStore, type ReactNode } from "react";
+import { Search } from "lucide-react";
 import {
   getServerSnapshot,
   getSidebarCollapsed,
-  setSidebarCollapsed,
   subscribeSidebarCollapsed,
 } from "@/lib/career-tree/sidebar-collapsed-store";
-import AppSwitcherMenu from "./app-switcher-menu";
 import NotificationBell from "./notification-bell";
-import AccountMenu from "./account-menu";
-import Logo from "@/components/ui/logo";
 
 type TopHeaderBarProps = {
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  } | null;
+  // Nhan san <Suspense><CurrentUser/></Suspense> tu layout.tsx (Server
+  // Component) thay vi tu import CurrentUser o day - vi day la "use client",
+  // neu tu import va render 1 Server Component ngay trong JSX cua no thi
+  // Server Component do MAT request context (headers()/cookies() ben trong
+  // auth() se bao loi "outside a request scope"). Server Component chi duoc
+  // compose vao Client Component qua props/children dung tu phia Server.
+  accountSlot: ReactNode;
 };
 
-const TopHeaderBar = ({ user }: TopHeaderBarProps) => {
+// Sidebar gio la "fixed inset-y-0 left-0" (cot doc full chieu cao, khong con
+// nam trong luong flex chung voi header) - Header phai tu chua margin-left
+// bang dung chieu rong hien tai cua Sidebar de khong bi de len, VA margin
+// nay phai doi theo dung luc Sidebar thu gon/mo rong (cung doc chung 1
+// isCollapsed tu sidebar-collapsed-store, dong bo voi MainContentArea.tsx -
+// ca 3 noi deu doc chung 1 nguon de khong bao gio lech nhau).
+const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const isCollapsed = useSyncExternalStore(
     subscribeSidebarCollapsed,
     getSidebarCollapsed,
     getServerSnapshot,
   );
 
-  const toggleCollapsed = () => setSidebarCollapsed(!isCollapsed);
-
   return (
-    <header className="z-10 flex h-12 shrink-0 items-center gap-1 border-b border-border bg-surface px-3">
-      {/* <div className="h-5 w-px shrink-0 bg-border" /> */}
-      <button
-        type="button"
-        title={isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-        onClick={toggleCollapsed}
-        className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover
-
-          `}
-      >
-        {isCollapsed ? (
-          <PanelLeftOpen strokeWidth={1.75} className="size-4.5 2xl:size-5" />
-        ) : (
-          <PanelLeftClose strokeWidth={1.75} className="size-4.5 2xl:size-5" />
-        )}
-      </button>
-      <AppSwitcherMenu />
-      <div className="flex items-center">
-        <Logo orientation="icon-only" size={22} className="shrink-0" />
-        <span className="ml-2 text-white font-bold text-xs">Tree Career</span>
+    <header
+      className={`z-10 flex h-15 shrink-0 shadow-sm items-center px-6 transition-[margin] duration-200 bg-white ${
+        isCollapsed ? "ml-16" : "ml-66"
+      }`}
+    >
+      <div className="flex flex-1 items-center justify-start">
+        <div className="flex h-10 w-full max-w-lg items-center gap-2 rounded-lg border border-border bg-surface px-3 text-ink-faint">
+          <Search size={15} strokeWidth={1.75} className="shrink-0" />
+          <input
+            placeholder="Tìm kiếm các kỹ năng, con người..."
+            className="min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
+          />
+          <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[10px] text-ink-faint">
+            ⌘K
+          </span>
+        </div>
       </div>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex w-80 items-center justify-end gap-2">
         <NotificationBell />
-        <AccountMenu user={user} />
+        {accountSlot}
       </div>
     </header>
   );

@@ -8,3 +8,10 @@ export function getWorkspace(workspaceId: string): Promise<ApiWorkspace> {
 export function listWorkspaces(): Promise<ApiWorkspace[]> {
   return apiFetch<ApiWorkspace[]>(`/workspaces`);
 }
+
+export function createWorkspace(name: string): Promise<ApiWorkspace> {
+  return apiFetch<ApiWorkspace>(`/workspaces`, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}

@@ -32,6 +32,14 @@ export function formatDayLabel(iso: string): string {
   });
 }
 
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export function formatTimeOnly(iso: string): string {
   const date = new Date(iso);
   const hh = date.getHours().toString().padStart(2, "0");

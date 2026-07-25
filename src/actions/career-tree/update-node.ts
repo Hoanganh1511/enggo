@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { updateNode } from "@/lib/api/nodes";
+import type { Difficulty, NodeKind } from "@/lib/api/types";
 
 export async function updateNodeAction(
   workspaceId: string,
@@ -14,9 +15,19 @@ export async function updateNodeAction(
     content?: Record<string, unknown>;
     x?: number;
     y?: number;
+    kind?: NodeKind;
+    category?: string;
+    difficulty?: Difficulty;
+    estimatedTime?: string;
+    prerequisites?: string[];
+    learningOutcomes?: string[];
+    isPinned?: boolean;
+    tags?: string[];
+    tierId?: string;
   },
 ) {
   const node = await updateNode(workspaceId, nodeId, patch);
   revalidatePath(`/w/${workspaceId}`);
+  revalidatePath(`/skill-tree/${workspaceId}`);
   return node;
 }

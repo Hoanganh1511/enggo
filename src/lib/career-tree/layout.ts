@@ -3,8 +3,13 @@ import type { ApiNodeListItem } from "../api/types";
 
 import { resolveNodeRole, type AppEdge, type AppNode } from "./types";
 
-const NODE_WIDTH = 300;
-const LEVEL_HEIGHT = 200;
+// Layout nay tu dung (khong dung dagre/elk/d3.tree() de auto-space), nen
+// khoang cach giua cac node hoan toan do 2 hang so duoi quyet dinh - tang/giam
+// truc tiep 2 so nay la cach duy nhat de chinh khoang cach. GrowthCard rong
+// w-84 (336px) cao ~390-440px; ban 560/600 truoc qua rong, giam lai muc vua
+// phai (van cach ro rang hon ban goc 450/490 nhung khong lech qua xa).
+const NODE_WIDTH = 450;
+const LEVEL_HEIGHT = 400;
 // Một node có nhiều hơn số này con sẽ xuống hàng thay vì trải dài 1 hàng ngang.
 const MAX_NODES_PER_ROW = 4;
 
@@ -59,8 +64,7 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
   const { positions } = layoutSubtree(root);
 
   const nodes: AppNode[] = root.descendants().map((d) => {
-    const hasChildren = (d.children?.length ?? 0) > 0;
-    const role = resolveNodeRole(d.data, hasChildren);
+    const role = resolveNodeRole(d.data);
     // Neu node da tung duoc keo tha va luu vi tri thu cong (x/y != null), giu
     // dung vi tri do thay vi tinh lai auto-layout - dung dung x/y goc (absolute),
     // khong phai toa do tuong doi ma layoutSubtree tinh cho auto-layout.
@@ -75,6 +79,7 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
       data: {
         title: d.data.title,
         role,
+        kind: d.data.kind,
         depth: d.data.depth,
         cardCount: d.data.cardCount,
         openIssueCount: d.data.openIssueCount,
@@ -83,6 +88,11 @@ export function computeTreeLayout(root: HierarchyNode<ApiNodeListItem>): {
         isCollapsed: d.data.isCollapsed,
         childrenCount: d.children?.length ?? 0,
         streak: d.data.streak,
+        category: d.data.category,
+        difficulty: d.data.difficulty,
+        tags: d.data.tags,
+        isPinned: d.data.isPinned,
+        childNodes: d.children?.map((c) => c.data) ?? [],
       },
     };
   });

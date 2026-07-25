@@ -1,9 +1,43 @@
+export type NodeKind = "BRANCH" | "TOPIC";
+export type Difficulty = "EASY" | "MEDIUM" | "HARD";
+
+export type ApiTier = {
+  id: string;
+  categoryId: string;
+  label: string;
+  sublabel: string;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Skill Tree: tang phan cap giua Workspace va Tier - 1 Workspace co nhieu
+// Category (vd "Frontend", "Backend"), MOI Category co bo Tier rieng cua no.
+export type ApiCategory = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  orderIndex: number;
+  tiers: ApiTier[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ApiNode = {
   id: string;
   workspaceId: string;
   parentId: string | null;
   goal: string | null;
   title: string;
+  kind: NodeKind;
+  category: string | null;
+  difficulty: Difficulty | null;
+  estimatedTime: string | null;
+  prerequisites: string[];
+  learningOutcomes: string[];
   depth: number;
   orderIndex: number;
   x: number | null;
@@ -11,6 +45,11 @@ export type ApiNode = {
   hiddenFromShare: boolean;
   isCollapsed: boolean;
   content: Record<string, unknown> | null;
+  // Skill Tree: null khi node chua duoc dat vao tier nao (vd node cu cua
+  // Career Tree canvas) - "tier" chi tra ve khi backend include quan he nay
+  // (xem findTreeForWorkspace), khong phai luon co mat.
+  tierId: string | null;
+  tier?: ApiTier | null;
   createdAt: string;
   updatedAt: string;
   cardCount: number;
@@ -23,6 +62,8 @@ export type ApiNode = {
     longest: number;
     last7: boolean[];
   };
+  isPinned: boolean;
+  tags: string[];
 };
 
 // Workspace tree list responses omit `content` (Tiptap JSON can be large and is

@@ -2,11 +2,97 @@ import { BellRing, Layers, NotebookPen, Share2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const hero = {
+  badge: "Biến ghi chú thành sức mạnh",
   headline: "Nhìn thấy sự trưởng thành của bạn, không chỉ ghi chú nó",
   subheadline:
     "Biến mỗi mục tiêu học tập thành một cái cây — tách nhánh khi cần đào sâu, biết ngay chỗ nào đang bị bỏ quên.",
   ctaPrimaryLabel: "Bắt đầu miễn phí",
-  ctaSecondary: { label: "Xem demo", href: "#how-it-works" },
+  ctaSecondary: { label: "Xem demo", href: "#product-preview" },
+  trustBadges: [
+    "Không cần thẻ tín dụng",
+    "Thiết lập trong 30 giây",
+    "Đồng bộ mọi thiết bị",
+  ],
+};
+
+export const nav = {
+  links: [
+    { label: "Tính năng", href: "#features" },
+    { label: "Giải pháp", href: "#product-preview" },
+    { label: "Giá", href: "#pricing" },
+    { label: "Tài nguyên", href: "#faq" },
+  ],
+};
+
+// Card minh hoa cho hero + product preview - du lieu tinh, khong lay tu API
+// that (trang landing khong dang nhap), nhung dung dung ngon ngu du lieu that
+// cua GrowthCard (mastery %, nhanh, ghi chu, streak) de nguoi dung hinh dung
+// dung san pham that.
+export const heroCards: {
+  title: string;
+  meta: string;
+  score: number;
+  mastery: number;
+  accent: "blue" | "emerald" | "violet";
+}[] = [
+  { title: "Sự nghiệp của tôi", meta: "12 ghi chú · 3 nhánh", score: 94, mastery: 40, accent: "blue" },
+  { title: "Backend", meta: "9 ghi chú · 3 nhánh", score: 100, mastery: 45, accent: "emerald" },
+  { title: "System Design", meta: "7 ghi chú · 2 nhánh", score: 87, mastery: 55, accent: "violet" },
+];
+
+export const trustedBy = [
+  "Google",
+  "Microsoft",
+  "Vercel",
+  "Netflix",
+  "TikTok",
+  "Notion",
+  "GitHub",
+];
+
+export const testimonials: {
+  quote: string;
+  name: string;
+  role: string;
+}[] = [
+  {
+    quote:
+      "Lần đầu tiên em nhìn được cả lộ trình học Backend của mình dưới dạng 1 cái cây — biết ngay nhánh nào đang bị bỏ quên.",
+    name: "Minh Anh",
+    role: "Backend Developer",
+  },
+  {
+    quote:
+      "Trước đây ghi chú rải rác Notion với sổ tay, giờ mọi thứ nằm gọn trong 1 cây duy nhất, ôn tập theo đúng tần suất từng nhánh.",
+    name: "Quốc Bảo",
+    role: "Data Analyst",
+  },
+  {
+    quote:
+      "Cảm giác thấy % mastery tăng dần theo từng nhánh tạo động lực học đều hơn hẳn so với to-do list thông thường.",
+    name: "Thảo Vy",
+    role: "Product Designer",
+  },
+];
+
+export const pricingTeaser = {
+  headline: "Bắt đầu miễn phí, nâng cấp khi cần",
+  plans: [
+    {
+      name: "Free",
+      price: "0₫",
+      period: "/ mãi mãi",
+      description: "Đủ dùng cho 1 workspace cá nhân, không giới hạn số node.",
+      highlighted: false,
+    },
+    {
+      name: "Pro",
+      price: "Sắp ra mắt",
+      period: "",
+      description: "Chia sẻ workspace, AI insight nâng cao, xuất dữ liệu không giới hạn.",
+      highlighted: true,
+    },
+  ],
 };
 
 export const problems: { title: string; description: string }[] = [

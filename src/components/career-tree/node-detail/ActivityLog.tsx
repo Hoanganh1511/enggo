@@ -22,6 +22,10 @@ type ActivityLogProps = {
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
   hideLabel?: boolean;
+  // Khi co, an segmented control NOTE/PRACTICE va luon submit dung kind nay -
+  // dung khi ActivityLog duoc nhung vao 1 tab da chuyen dung theo kind
+  // (vd tab "Cong viec thuc hanh" chi hien PRACTICE).
+  fixedKind?: CardKind;
 };
 
 type DayGroup = {
@@ -51,14 +55,15 @@ const ActivityLog = ({
   isLoadingMore,
   onLoadMore,
   hideLabel,
+  fixedKind,
 }: ActivityLogProps) => {
   const [text, setText] = useState("");
-  const [kind, setKind] = useState<CardKind>("NOTE");
+  const [kind, setKind] = useState<CardKind>(fixedKind ?? "NOTE");
 
   const handleSubmit = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    onAddActivity(trimmed, kind);
+    onAddActivity(trimmed, fixedKind ?? kind);
     setText("");
   };
 
@@ -79,30 +84,32 @@ const ActivityLog = ({
           placeholder="Hôm nay học được gì?"
           className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
         />
-        <div className="flex shrink-0 rounded-lg border border-border p-0.5">
-          <button
-            type="button"
-            onClick={() => setKind("NOTE")}
-            className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
-              kind === "NOTE"
-                ? "bg-active-bg text-ink"
-                : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            Ghi chú
-          </button>
-          <button
-            type="button"
-            onClick={() => setKind("PRACTICE")}
-            className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
-              kind === "PRACTICE"
-                ? "bg-active-bg text-ink"
-                : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            Thực hành
-          </button>
-        </div>
+        {!fixedKind && (
+          <div className="flex shrink-0 rounded-lg border border-border p-0.5">
+            <button
+              type="button"
+              onClick={() => setKind("NOTE")}
+              className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
+                kind === "NOTE"
+                  ? "bg-active-bg text-ink"
+                  : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              Ghi chú
+            </button>
+            <button
+              type="button"
+              onClick={() => setKind("PRACTICE")}
+              className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
+                kind === "PRACTICE"
+                  ? "bg-active-bg text-ink"
+                  : "text-ink-muted hover:text-ink"
+              }`}
+            >
+              Thực hành
+            </button>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
