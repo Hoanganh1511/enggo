@@ -10,10 +10,8 @@ import {
   PenLine,
   Users,
 } from "lucide-react";
-import { TRENDING_SKILLS, PEOPLE_TO_FOLLOW } from "@/content/home-feed-mock";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { PEOPLE_TO_FOLLOW } from "@/content/home-feed-mock";
 import { getAvatarColor } from "@/lib/discover/avatar-color";
-import Sparkline from "./Sparkline";
 
 function formatCompact(n: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -60,20 +58,6 @@ function MatchRing({ percent }: { percent: number }) {
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <div className="mb-3 flex items-center justify-between">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      <button
-        type="button"
-        className="cursor-pointer text-xs font-medium text-ink-faint transition-colors duration-150 ease-out hover:text-ink"
-      >
-        View all
-      </button>
-    </div>
-  );
-}
-
 function FollowButton() {
   const [following, setFollowing] = useState(false);
   return (
@@ -91,10 +75,10 @@ function FollowButton() {
   );
 }
 
-// Cot phai cua layout Trang chu - chi con 2 section theo yeu cau: Trending
-// Knowledge (bang xep hang + sparkline) va People you may learn from (carousel
-// cuon ngang). Dat trong layout dung chung 3 tab nen khong bi remount khi doi
-// tab.
+// Cot phai cua layout Trang chu - chi con 1 section "Co the ban quan tam"
+// (carousel cuon ngang). "Kien thuc duoc de cap nhieu" da chuyen thanh
+// TrendingPulseStrip o dau feed thay vi nam o day. Dat trong layout dung
+// chung 3 tab nen khong bi remount khi doi tab.
 const HomeRightPanel = () => {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -103,42 +87,10 @@ const HomeRightPanel = () => {
   };
 
   return (
-    <aside className="flex w-140 shrink-0 flex-col gap-6 overflow-y-auto pl-6">
-      <div className="rounded-lg border border-border bg-surface p-4">
-        <SectionHeader title="Kiến thức được đề cập nhiều" />
-        <div className="flex flex-col gap-3">
-          {TRENDING_SKILLS.map((skill, i) => (
-            <div key={skill.name} className="flex items-center gap-2.5">
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[10px] font-semibold text-ink-faint tabular-nums">
-                {i + 1}
-              </span>
-              <span
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg"
-                style={{
-                  background: hexToRgba(skill.accent, 0.15),
-                  color: skill.accent,
-                }}
-              >
-                <skill.icon size={15} strokeWidth={1.75} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-ink">
-                  {skill.name}
-                </p>
-                <p className="text-[10px] text-ink-faint">
-                  {skill.posts.toLocaleString("en-US")} saves · Trending #
-                  {i + 1}
-                </p>
-              </div>
-              <Sparkline values={skill.trend} color={skill.accent} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-border bg-surface p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold text-ink">Có thể bạn quan tâm</p>
+    <aside className="flex w-75 shrink-0 flex-col overflow-y-auto">
+      <div className="rounded-xl border border-border bg-surface p-4">
+        <div className="mb-3.5 flex items-center justify-between">
+          <p className="text-sm font-bold text-ink">Có thể bạn quan tâm</p>
           <div className="flex items-center gap-1">
             <button
               type="button"

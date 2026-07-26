@@ -3,6 +3,7 @@ import Sidebar from "@/components/career-tree/sidebar";
 import TopHeaderBar from "@/components/career-tree/top-header-bar";
 import CurrentUser from "@/components/career-tree/current-user";
 import MainContentArea from "@/components/career-tree/main-content-area";
+import AppShellRow from "@/components/career-tree/app-shell-row";
 
 // Khong con async/await auth() o day - CurrentUser (Server Component rieng,
 // tu goi auth()) duoc dung va boc Suspense NGAY TAI DAY (layout van la Server
@@ -24,10 +25,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           </Suspense>
         }
       />
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <Sidebar />
+      <AppShellRow sidebar={<Sidebar />}>
         <MainContentArea>{children}</MainContentArea>
-      </div>
+      </AppShellRow>
     </>
   );
 };

@@ -141,54 +141,66 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #02060a;
-    --foreground: #f8fafc;
+    /* Dark theme rieng - theo dung concept trang tailwindcss.com: nen den-slate
+       sau (slate-950), card slate-900, accent sky-blue (brand cua Tailwind)
+       thay vi xanh duong brand rieng cua light mode. Chi override trong khoi
+       dark nay - light mode khong doi. */
+    --primary: #0ea5e9;
+    --primary-hover: #38bdf8;
+    --primary-dark: #0284c7;
 
-    --overlay: rgba(0, 0, 0, 0.75);
-    --surface: rgba(100, 100, 100, 0.09);
-    --surface-muted: #161a22;
-    --surface-header: #171c25;
+    --background: #010208;
+    --foreground: #f1f5f9;
+
+    --overlay: rgba(0, 0, 0, 0.8);
+    /* Nen da gan den tuyet doi (--background) nen surface/surface-muted chi
+       nhich len rat nhe - giu cam giac "flat", dong bo mau nhu tailwindcss.com
+       (khong dung card sang han len nhu 1 khoi rieng biet), border mong la
+       thu tach lop chinh thay vi chenh mau lon. */
+    --surface: #070b14;
+    --surface-muted: #10151f;
+    --surface-header: #010208;
     --hover-bg: rgba(255, 255, 255, 0.05);
     --press-bg: rgba(255, 255, 255, 0.08);
-    --active-bg: rgba(0, 144, 227, 0.16);
-    --active-bg-strong: rgba(0, 144, 227, 0.22);
-    --active-border: rgba(0, 144, 227, 0.35);
+    --active-bg: rgba(14, 165, 233, 0.14);
+    --active-bg-strong: rgba(14, 165, 233, 0.22);
+    --active-border: rgba(14, 165, 233, 0.4);
 
-    --ink: #f8fafc;
-    --ink-muted: #a1a1aa;
-    --ink-faint: #8a93a5;
-    --ink-disabled: #6b7280;
+    --ink: #f1f5f9;
+    --ink-muted: #94a3b8;
+    --ink-faint: #64748b;
+    --ink-disabled: #475569;
 
-    --border: #161617;
-    --search-border: #2c3444;
-    --hover-border: #3a4356;
-    --focus-border: #0090e3;
-    --tree-line: #313847;
+    --border: #1c2333;
+    --search-border: #232b3d;
+    --hover-border: #334155;
+    --focus-border: rgba(14, 165, 233, 0.4);
+    --tree-line: #232b3d;
 
-    --icon: #9ca3af;
-    --icon-hover: #d1d5db;
-    --icon-active: #3db5ff;
+    --icon: #94a3b8;
+    --icon-hover: #e2e8f0;
+    --icon-active: #38bdf8;
 
-    --shadow-panel-base: 0 20px 80px rgba(0, 0, 0, 0.55);
-    --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.45);
-    --shadow-focus-base: 0 0 0 3px rgba(0, 144, 227, 0.25);
+    --shadow-panel-base: 0 24px 80px rgba(0, 0, 0, 0.7);
+    --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.6);
+    --shadow-focus-base: 0 0 0 3px rgba(14, 165, 233, 0.28);
 
-    --success: #4ade80;
+    --success: #34d399;
     --warning: #fbbf24;
     --danger: #f87171;
     --notification: #f87171;
 
-    --outline-bg: rgba(0, 144, 227, 0.1);
-    --outline-border: rgba(0, 144, 227, 0.35);
-    --outline-hover: rgba(0, 144, 227, 0.16);
+    --outline-bg: rgba(14, 165, 233, 0.12);
+    --outline-border: rgba(14, 165, 233, 0.4);
+    --outline-hover: rgba(14, 165, 233, 0.18);
 
     --follow-bg: rgba(255, 255, 255, 0.02);
-    --follow-border: rgba(0, 144, 227, 0.3);
-    --follow-hover: rgba(0, 144, 227, 0.1);
+    --follow-border: rgba(14, 165, 233, 0.35);
+    --follow-hover: rgba(14, 165, 233, 0.12);
 
     --tag-bg: rgba(255, 255, 255, 0.05);
     --tag-border: rgba(255, 255, 255, 0.08);
-    --tag-text: #a1a1aa;
+    --tag-text: #94a3b8;
   }
 }
 

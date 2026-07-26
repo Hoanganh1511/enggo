@@ -44,7 +44,10 @@ const NotificationBell = () => {
     getWorkspaceNotificationsAction(workspaceId).then(setNotifications);
   }, [workspaceId]);
 
-  const delayedTopics = getDelayedTopics(allNodes);
+  // allNodes la store global (khong tu reset khi roi workspace) - chi tinh
+  // delayedTopics khi dang trong 1 workspace, tranh hien thi lai chu de tre
+  // cua workspace vua roi di kem link "/w/null/..." bi hong khi o /home.
+  const delayedTopics = workspaceId ? getDelayedTopics(allNodes) : [];
   const unreadSystemCount = notifications.filter((n) => !n.read).length;
   const badgeCount = unreadSystemCount + delayedTopics.length;
 
@@ -55,8 +58,6 @@ const NotificationBell = () => {
       prev.map((n) => (n.id === updated.id ? updated : n)),
     );
   };
-
-  if (!workspaceId) return null;
 
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>

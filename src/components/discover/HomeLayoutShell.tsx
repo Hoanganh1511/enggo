@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import PostComposer from "./PostComposer";
 import HomeRightPanel from "./HomeRightPanel";
+import TrendingPulseStrip from "./TrendingPulseStrip";
 
 const TABS = [
   { href: "/home", label: "For you" },
@@ -21,17 +22,15 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+    // Viec gioi han + can giua max-width da chuyen len AppShellRow (gom ca
+    // Sidebar) - o day chi con la flex-1 binh thuong, chi bo sung py-2 cho
+    // thoang tren/duoi.
+    <div className="flex min-h-0 min-w-0 flex-1 gap-6 overflow-hidden ">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="">
-          <PostComposer />
-        </div>
-        <div className="mt-4 flex-1 rounded-lg bg-surface border border-border px-6">
-          {/* Tab kieu gach chan (khop anh mau) thay vi pill nen mau - tab dang
-              active mau primary + 1 vach mau primary duoi, tab con lai dung
-              token thich ung (text-ink/hover:text-ink-muted) de tu doi theo
-              light/dark thay vi hex co dinh. */}
-          <div className="flex shrink-0 items-center gap-5">
+        {/* <TrendingPulseStrip /> */}
+        <PostComposer />
+        <div className="mt-6 flex-1 rounded-xl border border-border bg-surface px-6">
+          <div className=" -mx-6 flex shrink-0 items-center gap-7 border-b border-border  px-6">
             {TABS.map((tab) => {
               const active = pathname === tab.href;
               return (
@@ -53,9 +52,7 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
           {/* 1 box chung cho ca 3 tab - moi post la 1 hang ngan cach bang
               duong ke (divide-y), khong con la card rieng co border/bo goc
               cua tung bai nhu truoc, de style thong nhat va gon hon. */}
-          <div className="divide-y divide-border border-t border-border">
-            {children}
-          </div>
+          <div className="divide-y divide-border">{children}</div>
         </div>
       </div>
 

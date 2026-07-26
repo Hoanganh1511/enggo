@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
@@ -18,20 +18,10 @@ import {
   ChevronDown,
   ChevronRight,
   Lock,
-  PanelLeftOpen,
-  PanelLeftClose,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
-import {
-  getServerSnapshot,
-  getSidebarCollapsed,
-  setSidebarCollapsed,
-  subscribeSidebarCollapsed,
-} from "@/lib/career-tree/sidebar-collapsed-store";
 import { profile } from "@/content/user-profile";
-import AppSwitcherMenu from "./app-switcher-menu";
-import Logo from "../ui/logo";
 
 // Con "Skill Tree" nam trong nhom "My Town" ben duoi - cac muc nay TRUOC O
 // day la inner-nav rieng cua trang Skill Tree (SkillTreeSidebar.tsx), gio
@@ -69,6 +59,12 @@ const MY_TOWN_CHILDREN: NavChild[] = [
   { key: "goals", title: "Goals", icon: Target, available: false },
   { key: "notes", title: "Notes", icon: StickyNote, available: false },
 ];
+
+// Danh sach ten cac muc con dang khoa - dung de gop lai thanh 1 cau mo ta
+// duy nhat trong pro-banner thay vi lap icon 🔒 tren tung hang rieng le.
+const LOCKED_TITLES = MY_TOWN_CHILDREN.filter((c) => !c.available).map(
+  (c) => c.title,
+);
 
 // href co the thieu (Cai dat chua co route that) - cac item nay van la
 // button tinh nhu cu, chi item co href moi dieu huong that. "Career Tree" va
@@ -116,12 +112,6 @@ const NAV_ITEMS: {
 ];
 
 const Sidebar = () => {
-  const isCollapsed = useSyncExternalStore(
-    subscribeSidebarCollapsed,
-    getSidebarCollapsed,
-    getServerSnapshot,
-  );
-  const toggleCollapsed = () => setSidebarCollapsed(!isCollapsed);
   const pathname = usePathname();
 
   const router = useRouter();
@@ -149,41 +139,8 @@ const Sidebar = () => {
   };
 
   return (
-    <nav
-      className={`z-10 fixed inset-y-0 shadow-sm left-0 flex shrink-0 flex-col overflow-y-auto border-r border-border bg-surface px-4 py-2 transition-[width] duration-200 ${
-        isCollapsed ? "w-16 items-center" : "w-66"
-      }`}
-    >
-      <div
-        className={`flex items-center gap-1 ${isCollapsed ? "justify-center" : "w-58"}`}
-      >
-        {!isCollapsed && (
-          <>
-            <AppSwitcherMenu />
-            <div className="flex items-center">
-              <Logo orientation="icon-only" className="size-6 shrink-0" />
-              <span className="ml-1 text-sm font-bold text-ink">
-                Tree Career
-              </span>
-            </div>
-          </>
-        )}
-        <button
-          type="button"
-          title={isCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
-          onClick={toggleCollapsed}
-          className={`flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover ${
-            isCollapsed ? "" : "ml-auto"
-          }`}
-        >
-          {isCollapsed ? (
-            <PanelLeftOpen strokeWidth={1.75} className="size-4.5" />
-          ) : (
-            <PanelLeftClose strokeWidth={1.75} className="size-4.5" />
-          )}
-        </button>
-      </div>
-      <div className="py-4 flex flex-1 flex-col gap-1.5">
+    <nav className="flex w-58  flex-col overflow-y-auto   px-3 py-3">
+      <div className="flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map(
           ({ title, icon: Icon, href, matchPrefixes, children }) => {
             const isActive = matchPrefixes
@@ -191,9 +148,8 @@ const Sidebar = () => {
               : !!href && pathname === href;
             const isItemPending = isPending && pendingHref === href;
             const className = cn(
-              "flex h-11 shrink-0 cursor-pointer items-center gap-3 rounded-md border border-transparent transition-all duration-200 hover:bg-hover-bg",
-              isActive ? "bg-active-bg text-primary" : "text-icon",
-              isCollapsed ? "w-11 justify-center" : "w-full px-4",
+              "flex h-10.5 w-full shrink-0 cursor-pointer items-center gap-3 rounded-lg border border-transparent px-3 transition-all duration-200 hover:bg-hover-bg",
+              isActive ? "bg-white/5 text-primary" : "text-icon",
             );
 
             const content = (
@@ -207,13 +163,15 @@ const Sidebar = () => {
                   />
                 )}
 
-                {!isCollapsed && (
-                  <span className="flex-1 truncate text-left text-[13px] font-semibold tracking-[0.01em]">
-                    {title}
-                  </span>
-                )}
-                {!isCollapsed &&
-                  children &&
+                <span
+                  className={cn(
+                    "flex-1 truncate text-left text-[13px] tracking-[0.01em]",
+                    isActive ? "font-bold" : "font-medium",
+                  )}
+                >
+                  {title}
+                </span>
+                {children &&
                   (expandedGroup ? (
                     <ChevronDown
                       size={14}
@@ -232,15 +190,7 @@ const Sidebar = () => {
 
             const handleClick = () => {
               if (children) {
-                // Sidebar dang thu gon (chi con icon) thi khong co cho hien
-                // danh sach con - bam vao thi di thang toi "Skill Tree" (muc
-                // duy nhat co man hinh that trong nhom).
-                if (isCollapsed) {
-                  const skillTree = children.find((c) => c.href);
-                  if (skillTree?.href) handleNavigate(skillTree.href);
-                } else {
-                  setExpandedGroup((v) => !v);
-                }
+                setExpandedGroup((v) => !v);
                 return;
               }
               if (href) handleNavigate(href);
@@ -261,8 +211,8 @@ const Sidebar = () => {
                   {content}
                 </button>
 
-                {children && expandedGroup && !isCollapsed && (
-                  <div className="mt-1 flex flex-col gap-0.5 pl-4">
+                {children && expandedGroup && (
+                  <div className="mt-0.5 flex flex-col gap-0.5 pl-4.5">
                     {children.map((child) => {
                       const childActive = child.matchPrefixes
                         ? child.matchPrefixes.some((prefix) =>
@@ -281,32 +231,19 @@ const Sidebar = () => {
                             child.href && handleNavigate(child.href)
                           }
                           className={cn(
-                            "flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-md px-3 text-left text-[13px] font-medium transition-colors duration-150 ease-out",
+                            "flex h-8.5 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-left text-[13px] font-medium transition-colors duration-150 ease-out",
                             childActive
                               ? "bg-active-bg text-primary"
                               : "text-ink-muted hover:bg-hover-bg hover:text-ink",
                             !child.href && "cursor-default",
                           )}
                         >
-                          {childPending ? (
-                            <Spinner size={14} className="shrink-0" />
-                          ) : (
-                            <child.icon
-                              size={14}
-                              strokeWidth={1.75}
-                              className="shrink-0"
-                            />
-                          )}
+                          <child.icon
+                            size={14}
+                            strokeWidth={1.75}
+                            className="shrink-0"
+                          />
                           <span className="flex-1 truncate">{child.title}</span>
-                          <span
-                            className={`shrink-0 rounded-full   text-[10px] font-medium ${
-                              child.available
-                                ? " text-emerald-600 dark:text-emerald-400"
-                                : " text-ink-faint"
-                            }`}
-                          >
-                            {child.available ? <></> : <Lock size={13} />}
-                          </span>
                         </button>
                       );
                     })}
@@ -317,27 +254,45 @@ const Sidebar = () => {
           },
         )}
       </div>
-      <div
-        className={`flex items-center gap-2 p-2 ${isCollapsed ? "justify-center" : ""}`}
-      >
-        <span
-          title={isCollapsed ? profile.name : undefined}
-          className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-sky-500 text-sm font-semibold text-white"
-        >
+
+      {/* Gop toan bo cac muc con dang khoa (7/8 muc trong My Town) thanh 1
+          banner duy nhat thay vi lap icon 🔒 tren tung hang - gon hon va van
+          truyen dat dung y nghia "con nhieu tinh nang sap toi". */}
+      {LOCKED_TITLES.length > 0 && (
+        <div className="mt-3.5 rounded-xl border border-border bg-linear-to-br from-primary/15 to-violet-500/10 p-3.5">
+          <p className="flex items-center gap-1.5 text-[13px] font-bold text-ink">
+            <Lock size={13} strokeWidth={2} className="shrink-0 text-primary" />
+            Mở khoá Career Tree
+          </p>
+          <p className="mt-1.5 text-xs text-ink-muted">
+            {LOCKED_TITLES.slice(0, 2).join(", ")}
+            {LOCKED_TITLES.length > 2 &&
+              ` và ${LOCKED_TITLES.length - 2} công cụ khác`}{" "}
+            đang chờ bạn.
+          </p>
+          <button
+            type="button"
+            className="mt-2.5 w-full cursor-pointer rounded-lg bg-button-primary-bg py-2 text-xs font-bold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover"
+          >
+            Nâng cấp Pro
+          </button>
+        </div>
+      )}
+
+      <div className="mt-2 flex items-center gap-2 border-t border-border p-2 pt-3.5">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-sky-500 text-sm font-semibold text-white">
           {profile.name.charAt(0)}
         </span>
-        {!isCollapsed && (
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="truncate text-sm font-semibold text-ink">
-                {profile.name}
-              </p>
-              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                {profile.planLabel}
-              </span>
-            </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-semibold text-ink">
+              {profile.name}
+            </p>
+            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              {profile.planLabel}
+            </span>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );
