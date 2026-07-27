@@ -17,7 +17,7 @@ export function NoteBody({ post }: { post: NotePost }) {
       <p className="mt-1.5 text-base leading-snug font-semibold text-ink">
         {post.title}
       </p>
-      <p className="mt-1 text-[16px] text-ink-muted">{post.content}</p>
+      <p className="mt-1 text-sm text-ink-muted">{post.content}</p>
     </div>
   );
 }

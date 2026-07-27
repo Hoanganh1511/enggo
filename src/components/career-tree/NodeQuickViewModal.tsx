@@ -77,7 +77,7 @@ const NodeQuickViewModal = ({
               </div>
 
               {node.goal ? (
-                <p className="mt-3 text-sm text-ink-muted">{node.goal}</p>
+                <p className="mt-3 text-xs text-ink-muted">{node.goal}</p>
               ) : (
                 <p className="mt-3 text-sm text-ink-faint italic">
                   Chưa có mô tả.

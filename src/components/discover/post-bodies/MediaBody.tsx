@@ -15,7 +15,7 @@ type VideoPost = Extract<Post, { kind: "video" }>;
 // rieng).
 export function TextBody({ post }: { post: TextPost }) {
   return (
-    <p className="mt-1 text-[16px] wrap-break-word text-ink">{post.content}</p>
+    <p className="mt-1 text-sm wrap-break-word text-ink">{post.content}</p>
   );
 }
 
@@ -23,9 +23,7 @@ export function ImageBody({ post }: { post: ImagePost }) {
   return (
     <>
       {post.content && (
-        <p className="mt-1 text-[18px] wrap-break-word text-ink">
-          {post.content}
-        </p>
+        <p className="mt-1 text-sm wrap-break-word text-ink">{post.content}</p>
       )}
       <div className="mt-3 overflow-hidden rounded-xl border border-border">
         <Image
@@ -46,9 +44,7 @@ export function GalleryBody({ post }: { post: GalleryPost }) {
   return (
     <>
       {post.content && (
-        <p className="mt-1 text-[16px] wrap-break-word text-ink">
-          {post.content}
-        </p>
+        <p className="mt-1 text-sm wrap-break-word text-ink">{post.content}</p>
       )}
       <div className="mt-3 grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-border">
         {visible.map((img, i) => (
@@ -79,9 +75,7 @@ export function VideoBody({ post }: { post: VideoPost }) {
   return (
     <>
       {post.content && (
-        <p className="mt-1 text-[16px] wrap-break-word text-ink">
-          {post.content}
-        </p>
+        <p className="mt-1 text-sm wrap-break-word text-ink">{post.content}</p>
       )}
       <div className="group relative mt-3 cursor-pointer overflow-hidden rounded-xl border border-border">
         <Image

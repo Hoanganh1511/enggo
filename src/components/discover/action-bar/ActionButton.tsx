@@ -4,7 +4,11 @@ import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 
 export type ActionTone =
-  "danger" | "primary" | "warning" | "success" | "neutral";
+  | "danger"
+  | "primary"
+  | "warning"
+  | "success"
+  | "neutral";
 
 const toneActiveClass: Record<ActionTone, string> = {
   danger: "text-rose-500",
@@ -48,8 +52,8 @@ export function ActionButton({ slot }: { slot: ActionSlot }) {
       type="button"
       disabled={!isInteractive}
       onClick={isInteractive ? () => setActive((v) => !v) : undefined}
-      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors duration-150 ease-out ${
-        isInteractive ? "cursor-pointer hover:bg-hover-bg" : "cursor-default"
+      className={`flex h-9 shrink-0 items-center gap-1.5 rounded-md  text-xs font-medium transition-colors duration-150 ease-out ${
+        isInteractive ? "cursor-pointer " : "cursor-default"
       } ${isActive ? toneActiveClass[slot.tone] : "text-ink-faint"}`}
     >
       <slot.icon

@@ -146,7 +146,7 @@ const CreateSkillModal = ({
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg"
+                className="cursor-pointer rounded-lg px-3 py-1.5 text-xs text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg"
               >
                 Huỷ
               </button>

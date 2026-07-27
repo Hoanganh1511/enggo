@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import PostCard from "@/components/discover/PostCard";
+import FeedColumns from "@/components/discover/FeedColumns";
 import {
   getPosts,
   subscribeFeed,
@@ -16,11 +16,5 @@ export default function ForYouPage() {
     getPosts,
     getServerSnapshot,
   );
-  return (
-    <>
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
-      ))}
-    </>
-  );
+  return <FeedColumns posts={posts} />;
 }

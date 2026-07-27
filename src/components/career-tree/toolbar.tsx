@@ -19,7 +19,7 @@ const Toolbar = ({ onOpenSearch, workspace, workspaces }: ToolbarProps) => {
         type="button"
         onClick={onOpenSearch}
         title="Tìm kiếm node (Ctrl+K)"
-        className="flex cursor-pointer items-center gap-2 rounded-sm px-2 text-[12px] 3xl:text-sm text-ink-muted transition-colors duration-150 ease-out hover:text-ink"
+        className="flex cursor-pointer items-center gap-2 rounded-sm px-2 text-[12px] 3xl:text-xs text-ink-muted transition-colors duration-150 ease-out hover:text-ink"
       >
         <Search size={16} strokeWidth={1.75} />
         Tìm kiếm

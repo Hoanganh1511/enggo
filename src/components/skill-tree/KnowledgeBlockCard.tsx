@@ -34,6 +34,11 @@ type KnowledgeBlockCardProps = {
 // rieng cua block (getBlockAccentColor) thay vi mau status - khop anh mau:
 // 2 block cung trang thai "Growing" van co mau khac han nhau vi la 2 block
 // khac nhau, khong phai vi trang thai khac nhau.
+//
+// Visual treatment: "floating glass slab" — nen gradient mo nhe + vien
+// trang mo + shadow nhieu lop de tao chieu sau, highlight tren dinh gia
+// lap anh sang chieu tu tren xuong, va mot lop "fake thickness" mo o day
+// card de tao cam giac card co do day vat ly khi hover.
 const KnowledgeBlockCard = ({
   workspaceId,
   category,
@@ -59,9 +64,14 @@ const KnowledgeBlockCard = ({
       }}
       onMouseEnter={() => onHoverChange(category.id)}
       onMouseLeave={() => onHoverChange(null)}
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+        e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+      }}
       onFocus={() => onHoverChange(category.id)}
       onBlur={() => onHoverChange(null)}
-      className="group block h-72 focus:outline-none"
+      className="group block  focus:outline-none"
     >
       <motion.div
         initial={false}
@@ -70,29 +80,89 @@ const KnowledgeBlockCard = ({
           scale: isEntering ? 1.03 : 1,
         }}
         whileHover={
-          isEntering || isFadedOut ? undefined : { y: -4, scale: 1.015 }
+          {
+            // rotateX: 1.5,
+            // rotateY: -1.5,
+          }
         }
         transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
-        className="flex h-full flex-col rounded-2xl border border-border bg-surface p-5 transition-shadow duration-200 ease-out group-hover:shadow-dropdown group-focus-visible:ring-2 group-focus-visible:ring-primary"
+        style={{
+          background: `
+radial-gradient(
+circle at top,
+${hexToRgba(accent, 0.1)},
+transparent 45%
+),
+linear-gradient(
+180deg,
+rgba(255,255,255,.03),
+rgba(255,255,255,.01)
+),
+var(--surface)
+`,
+        }}
+        className="
+         relative overflow-visible group/card
+       
+flex flex-col
+rounded-sm
+border border-white/[0.08]
+px-5 py-5
+transition-all duration-300 ease-out
+bg-gradient-to-b
+from-white/[0.035]
+via-white/[0.02]
+to-white/[0.01]
+shadow-[0_6px_16px_rgba(0,0,0,.18),0_20px_42px_rgba(0,0,0,.28)]
+hover:border-white/[0.12]
+hover:ring-1 hover:ring-white/[0.05]
+hover:shadow-[0_10px_24px_rgba(0,0,0,.24),0_28px_56px_rgba(0,0,0,.34)]
+        "
       >
-        <Hex3DBadge size={64} colorHex={accent}>
-          <Folder size={28} strokeWidth={1.75} />
-        </Hex3DBadge>
-        <div className="" />
-        <p className="truncate text-lg font-semibold text-ink">
+        <div
+          className="absolute left-2 top-2 rounded-full px-2 py-1 text-[10px] font-semibold tracking-wide"
+          style={{
+            background: hexToRgba(accent, 0.12),
+            color: accent,
+            border: `1px solid ${hexToRgba(accent, 0.25)}`,
+          }}
+        >
+          TOP
+        </div>
+        <div
+          className="pointer-events-none absolute inset-0  opacity-0 transition-opacity duration-300 group-hover/card:opacity-100"
+          style={{
+            background:
+              "radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.06), transparent 55%)",
+          }}
+        />
+
+        <div className="flex justify-center">
+          <Hex3DBadge size={56} colorHex={accent}>
+            <Folder size={20} strokeWidth={1.75} />
+          </Hex3DBadge>
+          <span
+            className="absolute right-2 top-2 rounded-md border border-white/10 px-2 py-0.5 text-[10px] font-semibold backdrop-blur"
+            style={{
+              background: hexToRgba(accent, 0.15),
+              color: accent,
+            }}
+          >
+            Lv.{Math.floor(stats.avgMasteryPercent / 10) + 1}
+          </span>
+        </div>
+        <p className="mt-5 text-center text-[14px] font-semibold tracking-tight text-slate-50">
           {category.name}
         </p>
 
         <div className="mt-2">
-          <div className="flex items-end justify-between">
-            <span className="text-xs text-ink-faint">
-              {stats.skillCount} skills
+          <div className="mt-2 flex justify-between text-[11px]">
+            <span className="text-ink-faint">
+              {4}/{stats.skillCount} skills
             </span>
-            <span
-              className="text-lg font-bold tabular-nums"
-              style={{ color: accent }}
-            >
-              {stats.avgMasteryPercent}%
+
+            <span style={{ color: accent }} className="font-medium">
+              {stats.avgMasteryPercent * 4}/400 XP
             </span>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-muted">
@@ -120,6 +190,23 @@ const KnowledgeBlockCard = ({
               +{extraTechCount} more
             </span>
           )}
+          <div
+            className="mt-4 rounded-xl border border-white/5 p-3"
+            style={{
+              background: hexToRgba(accent, 0.05),
+            }}
+          >
+            <div
+              className="text-[11px] uppercase tracking-wider"
+              style={{ color: accent }}
+            >
+              AI Insight
+            </div>
+
+            <p className="mt-1 text-xs text-slate-300">
+              Continue learning Next.js to unlock SSR optimization.
+            </p>
+          </div>
         </div>
 
         <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2.5">

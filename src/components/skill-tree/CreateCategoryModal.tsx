@@ -61,7 +61,7 @@ const CreateCategoryModal = ({
           <Dialog.Title className="text-base font-medium text-ink">
             Tạo {label} mới
           </Dialog.Title>
-          <p className="mt-1 text-sm text-ink-muted">
+          <p className="mt-1 text-xs text-ink-muted">
             {label} chứa bộ Tier riêng - vd &ldquo;Frontend&rdquo;,
             &ldquo;Backend&rdquo;, &ldquo;DevOps&rdquo;.
           </p>
@@ -99,7 +99,7 @@ const CreateCategoryModal = ({
             <Dialog.Close asChild>
               <button
                 type="button"
-                className="cursor-pointer rounded-lg px-3 py-1.5 text-sm text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg"
+                className="cursor-pointer rounded-lg px-3 py-1.5 text-xs text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg"
               >
                 Huỷ
               </button>

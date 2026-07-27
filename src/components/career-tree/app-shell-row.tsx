@@ -31,7 +31,7 @@ const AppShellRow = ({ sidebar, children }: AppShellRowProps) => {
   return (
     <div className="flex min-h-0 flex-1 justify-center overflow-hidden">
       <div className="flex min-h-0 w-full max-w-380 overflow-hidden">
-        {sidebar}
+        {/* {sidebar} */}
         {children}
       </div>
     </div>

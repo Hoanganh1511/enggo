@@ -62,7 +62,7 @@ const CreateSkillSetModal = () => {
           <Dialog.Title className="text-base font-medium text-ink">
             Tạo Skill Set mới
           </Dialog.Title>
-          <p className="mt-1 text-sm text-ink-muted">
+          <p className="mt-1 text-xs text-ink-muted">
             Bắt đầu từ 1 mẫu có sẵn rồi tuỳ chỉnh sau, hoặc tự dựng từ đầu.
           </p>
 

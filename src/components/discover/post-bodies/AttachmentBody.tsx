@@ -11,7 +11,7 @@ type ResourcePost = Extract<Post, { kind: "resource" }>;
 // (anh/video) vi day la vat the "dinh kem" chu khong phai noi dung chinh.
 function Caption({ content }: { content?: string }) {
   if (!content) return null;
-  return <p className="mt-1 text-[16px] wrap-break-word text-ink">{content}</p>;
+  return <p className="mt-1 text-sm wrap-break-word text-ink">{content}</p>;
 }
 
 const attachmentShellClass =
@@ -56,7 +56,7 @@ export function LinkBody({ post }: { post: LinkPost }) {
           <post.link.icon size={24} strokeWidth={1.75} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-semibold text-ink">
+          <p className="truncate text-sm font-semibold text-ink">
             {post.link.title}
           </p>
           <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-ink-faint">

@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/popover";
 import { PostBody } from "./post-bodies";
 import { ActionBar } from "./action-bar";
+import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
+import { hexToRgba } from "@/lib/skill-tree/status-style";
 
 type PostCardProps = {
   post: Post;
@@ -29,22 +31,38 @@ type PostCardProps = {
 // text-ink-faint) de tu doi mau theo prefers-color-scheme thay vi hex co dinh.
 const PostCard = ({ post }: PostCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const kindMeta = POST_KIND_META[post.kind];
 
   return (
     <article className="py-4 first:pt-5 last:pb-5">
       <div className="flex items-start gap-3">
+        {/* Marker loai bai viet - ngoi tren duong ke doc cua FeedColumn
+            (xem FeedColumns.tsx), luon dung icon/mau THEO KIND (khong phai
+            icon rieng cua tung post) de nhan dien nhat quan khi luot feed. */}
+        <div className="flex w-5 shrink-0 justify-center">
+          <span
+            title={kindMeta.label}
+            className="relative z-10 mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full"
+            style={{
+              background: hexToRgba(kindMeta.accent, 0.16),
+              color: kindMeta.accent,
+            }}
+          >
+            <kindMeta.icon size={11} strokeWidth={2.25} />
+          </span>
+        </div>
         <Image
           src={post.author.avatarUrl}
           alt={post.author.name}
-          width={52}
-          height={52}
-          className="size-13 shrink-0 rounded-full object-cover"
+          width={40}
+          height={40}
+          className="size-10 shrink-0 rounded-full object-cover"
         />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <span className="truncate text-[18px] font-semibold text-ink">
+              <span className="truncate text-[14px] font-semibold text-ink">
                 {post.author.name}
               </span>
               {post.author.verified && (
@@ -54,7 +72,7 @@ const PostCard = ({ post }: PostCardProps) => {
                   className="shrink-0 text-primary"
                 />
               )}
-              <span className="truncate text-sm text-ink-muted">
+              <span className="truncate text-xs text-ink-muted">
                 @{post.author.username}
               </span>
               <span className="text-ink-faint">·</span>

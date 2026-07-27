@@ -1,7 +1,13 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { NotebookPen, BookOpen, Laptop, CircleHelp, Folder } from "lucide-react";
+import {
+  NotebookPen,
+  BookOpen,
+  Laptop,
+  CircleHelp,
+  Folder,
+} from "lucide-react";
 import AddChildBox from "./AddChildBox";
 import LearningStreak from "@/components/ui/learning-streak";
 import {
@@ -128,7 +134,7 @@ const TopicsTab = ({ workspaceId, childNodes, onAddChild }: TopicsTabProps) => {
       {childNodes.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
           <Folder size={20} strokeWidth={1.75} className="text-ink-disabled" />
-          <p className="text-sm text-ink-muted">Chưa có nhánh con nào.</p>
+          <p className="text-xs text-ink-muted">Chưa có nhánh con nào.</p>
           <p className="text-xs text-ink-faint">
             Thêm nhánh con để bắt đầu xây dựng cây sự nghiệp của bạn.
           </p>

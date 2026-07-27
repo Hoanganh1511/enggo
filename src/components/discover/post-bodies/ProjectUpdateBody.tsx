@@ -37,7 +37,7 @@ export function ProjectUpdateBody({ post }: { post: ProjectUpdatePost }) {
         {post.changes.map((change) => (
           <div
             key={change}
-            className="flex items-center gap-2 text-sm text-ink-muted"
+            className="flex items-center gap-2 text-xs text-ink-muted"
           >
             <Check
               size={14}

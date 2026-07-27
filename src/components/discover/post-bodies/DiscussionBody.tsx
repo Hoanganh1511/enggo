@@ -30,7 +30,7 @@ export function PollBody({ post }: { post: PollPost }) {
 
   return (
     <div className="mt-2">
-      <p className="text-base font-semibold text-ink">{post.question}</p>
+      <p className="text-sm font-semibold text-ink">{post.question}</p>
       <div className="mt-2 flex flex-col gap-2">
         {post.options.map((option) => {
           const votes = option.votes + (voted === option.label ? 1 : 0);

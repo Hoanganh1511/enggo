@@ -58,8 +58,8 @@ export function EventBody({ post }: { post: EventPost }) {
         <CalendarDays size={20} strokeWidth={1.75} />
       </span>
       <div className="min-w-0">
-        <p className="text-base font-semibold text-ink">{post.title}</p>
-        <p className="text-sm text-ink-muted">{post.when}</p>
+        <p className="text-sm font-semibold text-ink">{post.title}</p>
+        <p className="text-xs text-ink-muted">{post.when}</p>
         {post.location && (
           <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-faint">
             <MapPin size={11} strokeWidth={1.75} className="shrink-0" />

@@ -12,6 +12,7 @@ import KnowledgeBlockCard from "./KnowledgeBlockCard";
 import KnowledgeBlockSummary from "./KnowledgeBlockSummary";
 import { computeCategoryStats } from "@/lib/skill-tree/category-stats";
 import { createEmptyFilters, type SortKey } from "./toolbar-types";
+import { GemIcon } from "lucide-react";
 
 // Thoi gian cho hieu ung "phong to card duoc bam + mo card khac" truoc khi
 // dieu huong that (Interaction Story trong spec) - route van la Next.js route
@@ -95,14 +96,27 @@ const KnowledgeBlocksPage = ({
     : null;
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-0 h-full min-w-0 flex-1 flex-col overflow-hidden">
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-h-0  flex-col  flex-1 rounded-lg bg-surface border border-border px-6">
+        <div className="flex min-h-0  flex-col  flex-1 rounded-md bg-surface border border-border px-6">
           <div className="border-b border-border  pt-5 pb-4">
-            <h1 className="text-xl font-bold text-ink">Knowledge Blocks</h1>
-            <p className="mt-0.5 text-sm text-ink-faint">
-              Click a block to explore its skills
-            </p>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/15 to-blue-500/10">
+                  <GemIcon className="h-4 w-4 text-cyan-400" />
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-slate-500">
+                    Knowledge Collection
+                  </p>
+                  <p className=" text-xs leading-6 text-slate-400">
+                    Khám phá, nâng cấp và mở khóa những lĩnh vực kiến thức quan
+                    trọng trên hành trình phát triển của bạn.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           <SkillTreeToolbar
             mode="overview"
@@ -120,7 +134,7 @@ const KnowledgeBlocksPage = ({
             isPreviewMode={false}
             onTogglePreview={() => {}}
           />
-          <div className="flex-1 overflow-auto py-6">
+          <div className="flex-1 overflow-auto py-4">
             {visibleCategories.length === 0 && (
               <p className="text-sm text-ink-faint">
                 {categories.length === 0
@@ -134,7 +148,7 @@ const KnowledgeBlocksPage = ({
                 (tung gap loi tuong tu voi luoi SkillCard, da sua cung 1 cach
                 truoc do trong SkillTreeCanvas.tsx). auto-fill tu tinh so cot
                 vua khit, khong bao gio hep hon 280px/card. */}
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
               {visibleCategories.map((category) => (
                 <KnowledgeBlockCard
                   key={category.id}
@@ -153,11 +167,11 @@ const KnowledgeBlocksPage = ({
             </div>
           </div>
         </div>
-        <KnowledgeBlockSummary
+        {/* <KnowledgeBlockSummary
           workspaceId={workspace.id}
           category={summaryCategory}
           stats={summaryStats}
-        />
+        /> */}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import PostCard from "@/components/discover/PostCard";
+import FeedColumns from "@/components/discover/FeedColumns";
 import {
   getPosts,
   subscribeFeed,
@@ -18,14 +18,9 @@ export default function FollowingPage() {
   );
   const posts = allPosts.filter((p) => p.following);
   return (
-    <>
-      {posts.length === 0 ? (
-        <p className="py-5 text-sm text-ink-faint">
-          Bạn chưa follow ai có bài đăng mới.
-        </p>
-      ) : (
-        posts.map((post) => <PostCard key={post.id} post={post} />)
-      )}
-    </>
+    <FeedColumns
+      posts={posts}
+      emptyMessage="Bạn chưa follow ai có bài đăng mới."
+    />
   );
 }

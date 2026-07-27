@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import PostComposer from "./PostComposer";
 import HomeRightPanel from "./HomeRightPanel";
 import TrendingPulseStrip from "./TrendingPulseStrip";
+import { MoonIcon, Plus } from "lucide-react";
 
 const TABS = [
   { href: "/home", label: "For you" },
@@ -28,8 +29,27 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-0 min-w-0 flex-1 gap-6 overflow-hidden ">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* <TrendingPulseStrip /> */}
+        <div className="z-99 backdrop-blur-lg border-primary border border-b-0 rounded-t-lg bg-[rgba(13,19,28,0.7)] min-w-200 min-h-10 justify-between flex items-center gap-3 px-3 py-3  fixed bottom-0 left-1/2 -translate-x-1/2">
+          <div className="flex-1 px-2 bg-white/10  h-full rounded-lg">
+            <button className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100/5">
+              <MoonIcon className="size-4" />
+            </button>
+          </div>
+          <button
+            type="button"
+            className="flex min-w-20 h-8 shrink-0 cursor-pointer  justify-center items-center rounded-md bg-button-primary-bg px-3.5 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Đăng bài
+            <Plus size={16} strokeWidth={3} className="ml-1" />
+          </button>
+          <div className=" px-2 bg-white/10  h-full rounded-lg">
+            <button className="size-8 flex items-center justify-center rounded-lg hover:bg-gray-100/5">
+              <MoonIcon className="size-4" />
+            </button>
+          </div>
+        </div>
         <PostComposer />
-        <div className="mt-6 flex-1 rounded-xl border border-border bg-surface px-6">
+        <div className="mt-4 flex-1 rounded-xl border border-border bg-gray-700/5 px-6">
           <div className=" -mx-6 flex shrink-0 items-center gap-7 border-b border-border  px-6">
             {TABS.map((tab) => {
               const active = pathname === tab.href;
@@ -51,8 +71,10 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
           </div>
           {/* 1 box chung cho ca 3 tab - moi post la 1 hang ngan cach bang
               duong ke (divide-y), khong con la card rieng co border/bo goc
-              cua tung bai nhu truoc, de style thong nhat va gon hon. */}
-          <div className="divide-y divide-border">{children}</div>
+              cua tung bai nhu truoc, de style thong nhat va gon hon. Viec
+              chia 2 cot theo loai bai viet nam trong FeedColumns.tsx (tung
+              page tu truyen posts vao do), o day chi con render 1 lan. */}
+          {children}
         </div>
       </div>
 

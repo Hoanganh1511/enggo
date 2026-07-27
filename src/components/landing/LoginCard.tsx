@@ -9,7 +9,7 @@ const LoginCard = () => {
         <Logo orientation="icon-only" size={28} />
       </span>
       <h2 className="mt-3 text-xl font-semibold text-ink">Career Tree</h2>
-      <p className="text-sm text-ink-muted">Đăng nhập để tiếp tục</p>
+      <p className="text-xs text-ink-muted">Đăng nhập để tiếp tục</p>
 
       <form action={signInAction} className="mt-6 w-full">
         <button

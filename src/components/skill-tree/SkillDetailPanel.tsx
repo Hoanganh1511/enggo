@@ -57,7 +57,7 @@ const SkillDetailPanel = ({ workspaceId, node }: SkillDetailPanelProps) => {
           <HexBadge size={36} status={status}>
             <SkillIcon title={node.title} fallback={Icon} size={16} />
           </HexBadge>
-          <p className="min-w-0 flex-1 truncate text-base font-semibold text-ink">
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
             {node.title}
           </p>
         </div>
@@ -84,7 +84,7 @@ const SkillDetailPanel = ({ workspaceId, node }: SkillDetailPanelProps) => {
         </div>
 
         {node.goal ? (
-          <p className="text-sm text-ink-muted">{node.goal}</p>
+          <p className="text-xs text-ink-muted">{node.goal}</p>
         ) : (
           <p className="text-sm text-ink-faint italic">Chưa có mô tả.</p>
         )}

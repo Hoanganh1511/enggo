@@ -29,7 +29,7 @@ const BlockAboutPanel = ({ category, nodes }: BlockAboutPanelProps) => {
       </div>
 
       {category.description ? (
-        <p className="text-sm text-ink-muted">{category.description}</p>
+        <p className="text-xs text-ink-muted">{category.description}</p>
       ) : (
         <p className="text-sm text-ink-faint italic">Chưa có mô tả.</p>
       )}
@@ -43,7 +43,7 @@ const BlockAboutPanel = ({ category, nodes }: BlockAboutPanelProps) => {
             {keyTopics.map((title) => (
               <li
                 key={title}
-                className="flex items-center gap-2 text-sm text-ink-muted"
+                className="flex items-center gap-2 text-xs text-ink-muted"
               >
                 <span className="size-1 shrink-0 rounded-full bg-ink-faint" />
                 {title}

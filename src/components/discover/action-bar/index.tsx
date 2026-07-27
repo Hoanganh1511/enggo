@@ -8,7 +8,7 @@ import { getActionBarLayout } from "./action-bar-config";
 export function ActionBar({ post }: { post: Post }) {
   const { left, right } = getActionBarLayout(post);
   return (
-    <div className="mt-3 flex items-center gap-1">
+    <div className="mt-3 flex items-center gap-5">
       {left.map((slot) => (
         <ActionButton key={slot.key} slot={slot} />
       ))}

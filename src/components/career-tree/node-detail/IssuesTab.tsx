@@ -45,7 +45,7 @@ const IssuesTab = ({
       </div>
 
       {issues.length === 0 ? (
-        <p className="text-sm text-ink-muted">Chưa có vấn đề tồn đọng nào.</p>
+        <p className="text-xs text-ink-muted">Chưa có vấn đề tồn đọng nào.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {issues.map((issue) => (

@@ -119,7 +119,9 @@ const CareerTreeCanvas = ({
   const quickViewNode = quickViewNodeId
     ? (nodeById.get(quickViewNodeId) ?? null)
     : null;
-  const quickViewRole = quickViewNode ? resolveNodeRole(quickViewNode) : "branch";
+  const quickViewRole = quickViewNode
+    ? resolveNodeRole(quickViewNode)
+    : "branch";
   const quickViewChildrenCount = quickViewNodeId
     ? (realChildrenCount.get(quickViewNodeId) ?? 0)
     : 0;
@@ -323,7 +325,13 @@ const CareerTreeCanvas = ({
         onSelectNode: handleSelectNode,
       },
     }));
-  }, [nodes, togglingNodeId, handleToggleCollapse, handleTogglePin, handleSelectNode]);
+  }, [
+    nodes,
+    togglingNodeId,
+    handleToggleCollapse,
+    handleTogglePin,
+    handleSelectNode,
+  ]);
 
   const displayNodes: AppNode[] = useMemo(() => {
     return nodesWithData.map((n) => {
@@ -524,7 +532,7 @@ const CareerTreeCanvas = ({
 
       {initialNodes.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-          <p className="text-sm text-ink-muted">
+          <p className="text-xs text-ink-muted">
             Chưa có node nào — bắt đầu cây sự nghiệp của bạn
           </p>
           <button

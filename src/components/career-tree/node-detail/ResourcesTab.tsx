@@ -84,7 +84,7 @@ const ResourcesTab = ({
       </div>
 
       {resources.length === 0 ? (
-        <p className="text-sm text-ink-muted">Chưa có tài liệu nào.</p>
+        <p className="text-xs text-ink-muted">Chưa có tài liệu nào.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {resources.map((resource) => (

@@ -26,7 +26,7 @@ export function AchievementBody({ post }: { post: AchievementPost }) {
         <post.icon size={28} strokeWidth={1.75} />
       </span>
       <p className="text-lg font-bold text-ink">{post.title}</p>
-      <p className="text-sm text-ink-muted">{post.description}</p>
+      <p className="text-xs text-ink-muted">{post.description}</p>
     </div>
   );
 }
@@ -35,9 +35,7 @@ export function MilestoneBody({ post }: { post: MilestonePost }) {
   return (
     <>
       {post.content && (
-        <p className="mt-1 text-[16px] wrap-break-word text-ink">
-          {post.content}
-        </p>
+        <p className="mt-1 text-sm wrap-break-word text-ink">{post.content}</p>
       )}
       <div className="mt-2 rounded-xl border border-border p-4">
         <p className="text-sm font-semibold text-ink">{post.title}</p>
@@ -66,10 +64,8 @@ export function CareerUpdateBody({ post }: { post: CareerUpdatePost }) {
         <Briefcase size={20} strokeWidth={1.75} />
       </span>
       <div className="min-w-0">
-        <p className="text-base font-semibold text-ink">
-          Joined {post.company}
-        </p>
-        <p className="text-sm text-ink-muted">{post.role}</p>
+        <p className="text-sm font-semibold text-ink">Joined {post.company}</p>
+        <p className="text-xs text-ink-muted">{post.role}</p>
       </div>
     </div>
   );
@@ -105,7 +101,7 @@ export function NodeCreatedBody({ post }: { post: NodeCreatedPost }) {
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <Hexagon size={16} strokeWidth={1.75} />
       </span>
-      <p className="text-sm text-ink-muted">
+      <p className="text-xs text-ink-muted">
         Created <span className="font-semibold text-ink">{post.nodeName}</span>{" "}
         trong {post.blockName}
       </p>

@@ -195,7 +195,7 @@ const FilterMenu = ({ filters, onChange }: FilterMenuProps) => {
             <button
               type="button"
               onClick={() => onChange(createEmptyFilters())}
-              className="flex w-full cursor-pointer items-center justify-center rounded-md px-2 py-1.5 text-sm text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+              className="flex w-full cursor-pointer items-center justify-center rounded-md px-2 py-1.5 text-xs text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
             >
               Xoá bộ lọc
             </button>

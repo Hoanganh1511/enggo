@@ -48,7 +48,7 @@ const KnowledgeBlockSummary = ({
           >
             <Folder size={16} strokeWidth={1.75} />
           </span>
-          <p className="min-w-0 flex-1 truncate text-base font-semibold text-ink">
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">
             {category.name}
           </p>
         </div>
@@ -65,7 +65,7 @@ const KnowledgeBlockSummary = ({
         </span>
 
         {category.description ? (
-          <p className="text-sm text-ink-muted">{category.description}</p>
+          <p className="text-xs text-ink-muted">{category.description}</p>
         ) : (
           <p className="text-sm text-ink-faint italic">Chưa có mô tả.</p>
         )}

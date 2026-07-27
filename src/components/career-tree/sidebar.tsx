@@ -139,7 +139,7 @@ const Sidebar = () => {
   };
 
   return (
-    <nav className="flex w-58  flex-col overflow-y-auto   px-3 py-3">
+    <nav className="flex w-56  flex-col overflow-y-auto   px-3 py-1">
       <div className="flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map(
           ({ title, icon: Icon, href, matchPrefixes, children }) => {
