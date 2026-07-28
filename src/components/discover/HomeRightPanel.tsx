@@ -12,13 +12,7 @@ import {
 } from "lucide-react";
 import { PEOPLE_TO_FOLLOW } from "@/content/home-feed-mock";
 import { getAvatarColor } from "@/lib/discover/avatar-color";
-
-function formatCompact(n: number): string {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(n);
-}
+import { formatCompact } from "@/lib/format-number";
 
 // Vong tron % match - dung 1 mau primary duy nhat cho moi card (KHONG doi
 // mau theo tung nguoi nhu anh mau, tranh cam giac "cau vong" khong chu dich).

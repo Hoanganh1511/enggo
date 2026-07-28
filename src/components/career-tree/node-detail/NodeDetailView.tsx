@@ -188,7 +188,7 @@ const NodeDetailView = ({
   return (
     <Tooltip.Provider delayDuration={300}>
     <div className="flex h-full w-full flex-col overflow-y-auto bg-surface">
-      <div className="flex items-start justify-between gap-4 px-8 pt-6 pb-2 2xl:px-10">
+      <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted">
@@ -308,7 +308,7 @@ const NodeDetailView = ({
       </div>
 
       {confirmingDelete && (
-        <div className="mx-8 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs 2xl:mx-10">
+        <div className="mx-6 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs">
           <span className="text-ink-muted">
             Xóa node và {node.branches} nhánh con? Không thể hoàn tác.
           </span>
@@ -333,7 +333,7 @@ const NodeDetailView = ({
 
       {/* Tab list */}
       <div className="mt-4 flex flex-col border-t border-border">
-        <div className="flex flex-wrap items-center gap-1 px-8 2xl:px-10">
+        <div className="flex flex-wrap items-center gap-1 px-6">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -350,7 +350,7 @@ const NodeDetailView = ({
           ))}
         </div>
 
-        <div className="px-8 py-6 2xl:px-10">
+        <div className="px-6 py-6">
           {activeTab === "overview" && (
             <OverviewTab
               editable={editMode}

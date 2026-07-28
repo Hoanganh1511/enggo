@@ -27,30 +27,65 @@ const FeedColumns = ({
 
   return (
     <div className="flex items-start gap-8">
-      <FeedColumn posts={left} />
-      <FeedColumn posts={right} />
+      <TimelineColumn posts={left} />
+      <CardColumn posts={right} />
     </div>
   );
 };
 
-// 1 cot: co 1 duong ke doc chay xuyen suot (canh voi tam marker loai bai
-// viet trong PostCard - marker rong w-5/20px nen duong ke dat o left-[10px]),
-// ve TRUOC posts trong DOM nen tu nhien nam DUOI noi dung (khong can z-index)
-// - marker/avatar/text deu co nen dac nen se de len duong ke o cho no di qua.
-const FeedColumn = ({ posts }: { posts: Post[] }) => {
-  if (posts.length === 0) return <div className="min-w-0 flex-1" />;
-
+function ColumnHeading({ label }: { label: string }) {
   return (
-    <div className="relative min-w-0 flex-1">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute top-0 bottom-0 left-[10px] w-px bg-border"
-      />
-      <div className="divide-y divide-border">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
-      </div>
+    <p className="pb-3 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
+      {label}
+    </p>
+  );
+}
+
+// Cot trai - hang thuong noi tiep nhau (dong feed ca nhan pho bien), co 1
+// duong ke doc chay xuyen suot (canh voi tam marker loai bai viet trong
+// PostCard - marker rong w-5/20px nen duong ke dat o left-[10px]), ve TRUOC
+// posts trong DOM nen tu nhien nam DUOI noi dung (khong can z-index) - marker/
+// avatar/text deu co nen dac nen se de len duong ke o cho no di qua.
+const TimelineColumn = ({ posts }: { posts: Post[] }) => {
+  return (
+    <div className="min-w-0 flex-1">
+      <ColumnHeading label="Hoạt động & chia sẻ" />
+      {posts.length === 0 ? (
+        <p className="text-sm text-ink-faint">Chưa có bài viết nào.</p>
+      ) : (
+        <div className="relative">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute top-0 bottom-0 left-2.5 w-px bg-border"
+          />
+          <div className="divide-y divide-border">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Cot phai - moi post la 1 the doc lap (variant="card" trong PostCard, dan
+// dau bang badge loai bai thay vi avatar), xep cach nhau bang gap thay vi
+// divide-y, CO CHU DICH nhin khac han cot trai de ro "day la nhom tu lieu/
+// cap nhat" thay vi dong feed thong thuong.
+const CardColumn = ({ posts }: { posts: Post[] }) => {
+  return (
+    <div className="min-w-0 flex-1">
+      <ColumnHeading label="Tư liệu & cập nhật" />
+      {posts.length === 0 ? (
+        <p className="text-sm text-ink-faint">Chưa có bài viết nào.</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} variant="card" />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

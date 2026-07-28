@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { BadgeCheck, MoreHorizontal, Link2, Flag } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
 import {
@@ -16,6 +17,13 @@ import { hexToRgba } from "@/lib/skill-tree/status-style";
 
 type PostCardProps = {
   post: Post;
+  // "timeline" (mac dinh) - hang thuong trong feed, avatar+ten dan dau, co
+  // marker tron nho ngoi tren duong ke doc cua cot (dung cho cot trai - cac
+  // dang chia se thuong gap, xem FeedColumns.tsx). "card" - the doc lap co
+  // vien/bo goc rieng, BADGE LOAI BAI dan dau thay vi avatar, tac gia lui
+  // xuong thanh footer nho - dung cho cot phai de tao "ca tinh rieng" ro
+  // rang voi cot trai (tu lieu/tham khao thay vi dong chia se ca nhan).
+  variant?: "timeline" | "card";
 };
 
 // Card 1 bai post trong feed Trang chu - MOCK data (xem content/home-feed-mock.ts).
@@ -29,9 +37,100 @@ type PostCardProps = {
 // Card nam tren bg-surface (box thich ung ca light/dark, xem HomeLayoutShell.tsx)
 // nen toan bo mau chu O DAY dung token ngu nghia (text-ink/text-ink-muted/
 // text-ink-faint) de tu doi mau theo prefers-color-scheme thay vi hex co dinh.
-const PostCard = ({ post }: PostCardProps) => {
+const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const kindMeta = POST_KIND_META[post.kind];
+
+  const menu = (
+    <PopoverRoot open={menuOpen} onOpenChange={setMenuOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={`flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out ${
+            menuOpen
+              ? "bg-hover-bg text-ink"
+              : "text-ink-faint hover:bg-hover-bg hover:text-ink-muted"
+          }`}
+        >
+          <MoreHorizontal size={16} strokeWidth={1.75} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        open={menuOpen}
+        align="end"
+        className="z-50 w-44 rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
+      >
+        <button
+          type="button"
+          onClick={() => setMenuOpen(false)}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+        >
+          <Link2 size={14} strokeWidth={1.75} />
+          Copy link
+        </button>
+        <button
+          type="button"
+          onClick={() => setMenuOpen(false)}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-red-500 transition-colors duration-150 ease-out hover:bg-hover-bg"
+        >
+          <Flag size={14} strokeWidth={1.75} />
+          Báo cáo
+        </button>
+      </PopoverContent>
+    </PopoverRoot>
+  );
+
+  if (variant === "card") {
+    return (
+      <article className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted/50 p-4 transition-colors duration-150 ease-out hover:border-hover-border">
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+            style={{
+              background: hexToRgba(kindMeta.accent, 0.14),
+              color: kindMeta.accent,
+            }}
+          >
+            <kindMeta.icon size={12} strokeWidth={2.25} />
+            {kindMeta.label}
+          </span>
+          {menu}
+        </div>
+
+        <PostBody post={post} />
+        <ActionBar post={post} />
+
+        <div className="flex min-w-0 items-center gap-1.5 border-t border-border pt-3">
+          <Link href={`/u/${post.author.username}`} className="shrink-0">
+            <Image
+              src={post.author.avatarUrl}
+              alt={post.author.name}
+              width={20}
+              height={20}
+              className="size-5 shrink-0 rounded-full object-cover"
+            />
+          </Link>
+          <Link
+            href={`/u/${post.author.username}`}
+            className="truncate text-xs font-medium text-ink-muted hover:underline"
+          >
+            {post.author.name}
+          </Link>
+          {post.author.verified && (
+            <BadgeCheck
+              size={11}
+              strokeWidth={2}
+              className="shrink-0 text-primary"
+            />
+          )}
+          <span className="text-ink-faint">·</span>
+          <span className="shrink-0 text-xs text-ink-faint">
+            {post.timeAgo} trước
+          </span>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="py-4 first:pt-5 last:pb-5">
@@ -51,20 +150,25 @@ const PostCard = ({ post }: PostCardProps) => {
             <kindMeta.icon size={11} strokeWidth={2.25} />
           </span>
         </div>
-        <Image
-          src={post.author.avatarUrl}
-          alt={post.author.name}
-          width={40}
-          height={40}
-          className="size-10 shrink-0 rounded-full object-cover"
-        />
+        <Link href={`/u/${post.author.username}`} className="shrink-0">
+          <Image
+            src={post.author.avatarUrl}
+            alt={post.author.name}
+            width={40}
+            height={40}
+            className="size-10 shrink-0 rounded-full object-cover"
+          />
+        </Link>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <span className="truncate text-[14px] font-semibold text-ink">
+              <Link
+                href={`/u/${post.author.username}`}
+                className="truncate text-base font-semibold text-ink hover:underline"
+              >
                 {post.author.name}
-              </span>
+              </Link>
               {post.author.verified && (
                 <BadgeCheck
                   size={13}
@@ -72,51 +176,19 @@ const PostCard = ({ post }: PostCardProps) => {
                   className="shrink-0 text-primary"
                 />
               )}
-              <span className="truncate text-xs text-ink-muted">
+              <Link
+                href={`/u/${post.author.username}`}
+                className="truncate text-xs text-ink-muted hover:underline"
+              >
                 @{post.author.username}
-              </span>
+              </Link>
               <span className="text-ink-faint">·</span>
               <span className="shrink-0 text-xs text-ink-muted">
                 {post.timeAgo} trước
               </span>
             </div>
 
-            <PopoverRoot open={menuOpen} onOpenChange={setMenuOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={`flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out ${
-                    menuOpen
-                      ? "bg-hover-bg text-ink"
-                      : "text-ink-faint hover:bg-hover-bg hover:text-ink-muted"
-                  }`}
-                >
-                  <MoreHorizontal size={16} strokeWidth={1.75} />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                open={menuOpen}
-                align="end"
-                className="z-50 w-44 rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
-              >
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
-                >
-                  <Link2 size={14} strokeWidth={1.75} />
-                  Copy link
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-red-500 transition-colors duration-150 ease-out hover:bg-hover-bg"
-                >
-                  <Flag size={14} strokeWidth={1.75} />
-                  Báo cáo
-                </button>
-              </PopoverContent>
-            </PopoverRoot>
+            {menu}
           </div>
 
           <PostBody post={post} />

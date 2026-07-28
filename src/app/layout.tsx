@@ -34,7 +34,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex h-dvh flex-col overflow-hidden">
+      <body className="flex h-dvh flex-col overflow-hidden bg-background">
         {children}
         <Toaster />
       </body>

@@ -17,7 +17,7 @@ export default async function NodeDetailTopbarSlot({ params }: PageProps) {
   const node = allNodes.find((n) => n.id === nodeId);
 
   return (
-    <header className="bg-surface px-8 2xl:px-10 py-6 2xl:py-6">
+    <header className="bg-surface px-6 py-6">
       <nav className="flex items-center gap-1.5 text-xs">
         <Link
           href={`/w/${workspaceId}`}

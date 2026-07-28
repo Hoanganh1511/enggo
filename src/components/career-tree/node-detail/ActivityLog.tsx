@@ -17,7 +17,7 @@ export type Activity = {
 type ActivityLogProps = {
   activities: Activity[];
   isLoading?: boolean;
-  onAddActivity: (text: string, kind: CardKind) => void;
+  onAddActivity?: (text: string, kind: CardKind) => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
@@ -26,6 +26,10 @@ type ActivityLogProps = {
   // dung khi ActivityLog duoc nhung vao 1 tab da chuyen dung theo kind
   // (vd tab "Cong viec thuc hanh" chi hien PRACTICE).
   fixedKind?: CardKind;
+  // An han khoi nhap/them hoat dong - dung khi nhung ActivityLog vao 1 noi
+  // CHI XEM (vd modal xem nhanh note that tu 1 bai bao cao trong feed), nhu
+  // vay khong can duplicate lai toan bo UI danh sach + group-theo-ngay o day.
+  readOnly?: boolean;
 };
 
 type DayGroup = {
@@ -56,13 +60,14 @@ const ActivityLog = ({
   onLoadMore,
   hideLabel,
   fixedKind,
+  readOnly,
 }: ActivityLogProps) => {
   const [text, setText] = useState("");
   const [kind, setKind] = useState<CardKind>(fixedKind ?? "NOTE");
 
   const handleSubmit = () => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || !onAddActivity) return;
     onAddActivity(trimmed, fixedKind ?? kind);
     setText("");
   };
@@ -75,42 +80,44 @@ const ActivityLog = ({
   return (
     <div>
       {!hideLabel && <SectionLabel>Nhật ký hoạt động</SectionLabel>}
-      <div className={`flex items-center gap-2 ${hideLabel ? "" : "mt-2"}`}>
-        <input
-          type="text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          placeholder="Hôm nay học được gì?"
-          className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
-        />
-        {!fixedKind && (
-          <div className="flex shrink-0 rounded-lg border border-border p-0.5">
-            <button
-              type="button"
-              onClick={() => setKind("NOTE")}
-              className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
-                kind === "NOTE"
-                  ? "bg-active-bg text-ink"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              Ghi chú
-            </button>
-            <button
-              type="button"
-              onClick={() => setKind("PRACTICE")}
-              className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
-                kind === "PRACTICE"
-                  ? "bg-active-bg text-ink"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              Thực hành
-            </button>
-          </div>
-        )}
-      </div>
+      {!readOnly && (
+        <div className={`flex items-center gap-2 ${hideLabel ? "" : "mt-2"}`}>
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            placeholder="Hôm nay học được gì?"
+            className="flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
+          />
+          {!fixedKind && (
+            <div className="flex shrink-0 rounded-lg border border-border p-0.5">
+              <button
+                type="button"
+                onClick={() => setKind("NOTE")}
+                className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
+                  kind === "NOTE"
+                    ? "bg-active-bg text-ink"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                Ghi chú
+              </button>
+              <button
+                type="button"
+                onClick={() => setKind("PRACTICE")}
+                className={`cursor-pointer rounded px-2 py-1 text-xs font-medium transition-colors duration-150 ease-out ${
+                  kind === "PRACTICE"
+                    ? "bg-active-bg text-ink"
+                    : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                Thực hành
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="mt-3 flex min-h-32 flex-col items-center justify-center gap-2 text-xs text-ink-muted">

@@ -15,6 +15,7 @@ import {
 } from "./StatusBodies";
 import { CodeSnippetBody } from "./CodeSnippetBody";
 import { TutorialBody, ExperimentBody, EventBody } from "./ExpandedBodies";
+import { SkillReportBody } from "./SkillReportBody";
 
 // Dispatcher: moi "kind" co 1 body component rieng (xem cac file trong thu
 // muc nay) - PostCard.tsx chi lo phan chung (header/actions), khong biet gi
@@ -67,5 +68,7 @@ export function PostBody({ post }: { post: Post }) {
       return <ExperimentBody post={post} />;
     case "event":
       return <EventBody post={post} />;
+    case "skill-report":
+      return <SkillReportBody post={post} />;
   }
 }

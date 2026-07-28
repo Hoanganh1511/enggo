@@ -8,6 +8,58 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-07-28 — Post kind "skill-report": fetch-on-demand trong client component mà không đụng `react-hooks/set-state-in-effect`
+
+**Vấn đề:** Thêm kind mới cho feed ("Báo cáo kỹ năng" - báo cáo hôm nay hoàn
+thành gì trong 1 skill/node THẬT của workspace, kèm modal xem chi tiết note
+thật). 2 chỗ cần fetch dữ liệu thật theo 1 "trigger" nào đó thay vì lúc mount:
+`PostComposer.tsx` cần tải workspace/category/node khi người dùng chọn kind
+này hoặc đổi `<select>` cha; `SkillReportDetailModal.tsx` cần tải node/cards
+khi modal mở. Cách viết tự nhiên đầu tiên - `useEffect` theo dõi
+`activeKind`/`open` rồi gọi `setState` ngay dòng đầu effect để bật cờ loading
+- bị ESLint chặn cứng (lỗi, không phải warning):
+`react-hooks/set-state-in-effect` ("Calling setState synchronously within an
+effect can trigger cascading renders").
+
+**Các hướng đã cân nhắc:**
+1. Giữ `useEffect` + gọi `setState` trong `.then()/.finally()` thay vì đầu
+   effect. → Vẫn bị chặn, vì rule flag đúng dòng `setState` ĐỒNG BỘ đầu tiên
+   trong thân effect (dòng bật cờ loading), bất kể phần async phía sau.
+2. Bọc `setState` đầu effect trong `Promise.resolve().then(...)` để "trì
+   hoãn" 1 microtask, đánh lừa rule. → Hoạt động nhưng là hack, không giải
+   quyết gốc (rule tồn tại vì effect vốn không nên là nơi khởi phát 1 hành
+   động - nó nên là nơi *đồng bộ* với hệ thống ngoài).
+3. **Chuyển trigger từ effect sang thẳng event handler** (đã chọn cho
+   PostComposer) - việc "chọn kind Báo cáo kỹ năng" hay "đổi workspace" vốn
+   dĩ LÀ 1 hành động người dùng rõ ràng (click/onChange), nên gọi fetch ngay
+   trong handler đó (`loadReportWorkspaces()`, `handleSelectReportWorkspace()`)
+   thay vì suy luận lại từ state đã đổi qua effect. Đúng bản chất hơn, và né
+   hoàn toàn rule vì không còn effect nào gọi setState nữa.
+4. **Tách component con chỉ mount khi cần** (đã chọn cho
+   SkillReportDetailModal) - trigger "mở modal" không nằm trong chính modal
+   (nó nhận `open` như 1 prop từ cha), nên không thể áp dụng hướng 3 y hệt.
+   Thay vào đó tách phần fetch+render nội dung thành `SkillReportDetailBody`,
+   chỉ render khi `open` true (`{open && <SkillReportDetailBody .../>}`) -
+   Radix `Dialog.Content` vốn cũng chỉ mount con khi `open`. Nhờ vậy: (a) effect
+   fetch bên trong Body dùng `useTransition` thay vì `setState` tay để bật cờ
+   loading (`isPending` do React tự quản, không tính là "setState trong
+   effect" theo rule này), và (b) không cần effect "reset về idle khi đóng
+   modal" nữa - unmount/remount tự nhiên đã reset state.
+
+**Bài học chung:** rule này về cơ bản đang ép 2 nguyên tắc: effect data-fetch
+chỉ nên *đồng bộ hoá theo dependency đã đổi*, không nên là nơi *khởi phát*
+hành động - nếu có 1 sự kiện người dùng rõ ràng đứng sau, gọi thẳng từ handler
+sự kiện đó; và nếu cờ loading chỉ tồn tại để hiện spinner trong lúc chờ 1
+async call, ưu tiên `useTransition`/`isPending` thay vì tự tạo `useState` +
+tự `setState` nó ở đầu/cuối effect.
+
+**Phát hiện phụ (không phải bug, chỉ ghi lại vì không hiển nhiên khi đọc
+type):** `ApiNode`/`ApiNodeListItem` KHÔNG có field `categoryId` - 1 node
+thuộc về 1 Category chỉ gián tiếp qua `node.tierId ∈ category.tiers[].id`
+(logic này đã có sẵn trong `computeCategoryStats` ở `category-stats.ts`,
+được tách ra thành `filterNodesByCategory` dùng chung cho cả trang Skill Tree
+lẫn composer picker mới, tránh viết lại lần 3).
+
 ## 2026-07-19 — Header nháy sai UI khi vào trang chi tiết node (F5 / chuyển route)
 
 **Vấn đề:** `CareerTreeHeader` (dùng chung cho cả canvas và trang chi tiết

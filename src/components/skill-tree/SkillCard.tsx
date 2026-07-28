@@ -56,7 +56,7 @@ function ProgressRail({
 }) {
   const s = getStatusStyle(status);
   return (
-    <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-white/10">
+    <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
       <div
         className="h-full rounded-full transition-[width] duration-500 ease-out"
         style={{
@@ -192,13 +192,13 @@ const SkillCard = ({
           padding: d.pad,
           borderRadius: `calc(${d.radius} - 1.5px)`,
           background: active
-            ? `linear-gradient(160deg, rgba(15,23,42,0.98), ${hexToRgba(s.hex, 0.12)})`
-            : "linear-gradient(160deg, rgba(15,23,42,0.98), rgba(10,15,28,0.99))",
+            ? `linear-gradient(160deg, var(--surface), ${hexToRgba(s.hex, 0.12)})`
+            : "linear-gradient(160deg, var(--surface), var(--surface-muted))",
         }}
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            className="absolute top-[-40%] left-0 h-[180%] w-[35%] animate-[skillcard-sheen_4.7s_ease-in-out_infinite] bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.10),transparent)]"
+            className="absolute top-[-40%] left-0 h-[180%] w-[35%] animate-[skillcard-sheen_4.7s_ease-in-out_infinite] bg-[linear-gradient(90deg,transparent,rgba(0,0,0,0.06),transparent)] dark:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.10),transparent)]"
             style={{ animationDelay: `${(title.length % 5) * 0.3}s` }}
           />
         </div>
@@ -212,7 +212,7 @@ const SkillCard = ({
             <div className="flex items-start justify-between gap-2">
               <div
                 className="truncate font-semibold tracking-tight"
-                style={{ fontSize: d.title, color: "#e2e8f0" }}
+                style={{ fontSize: d.title, color: "var(--ink)" }}
               >
                 {title}
               </div>
@@ -240,7 +240,7 @@ const SkillCard = ({
         {layout === "icon" && (
           <div
             className="text-[10.5px] font-medium"
-            style={{ color: "#94a3b8" }}
+            style={{ color: "var(--ink-muted)" }}
           >
             {percent}%
           </div>

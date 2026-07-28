@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
@@ -17,11 +17,13 @@ import {
   StickyNote,
   ChevronDown,
   ChevronRight,
-  Lock,
+  Plus,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
-import { profile } from "@/content/user-profile";
+import Logo from "@/components/ui/logo";
+import NotificationBell from "./notification-bell";
 
 // Con "Skill Tree" nam trong nhom "My Town" ben duoi - cac muc nay TRUOC O
 // day la inner-nav rieng cua trang Skill Tree (SkillTreeSidebar.tsx), gio
@@ -59,12 +61,6 @@ const MY_TOWN_CHILDREN: NavChild[] = [
   { key: "goals", title: "Goals", icon: Target, available: false },
   { key: "notes", title: "Notes", icon: StickyNote, available: false },
 ];
-
-// Danh sach ten cac muc con dang khoa - dung de gop lai thanh 1 cau mo ta
-// duy nhat trong pro-banner thay vi lap icon 🔒 tren tung hang rieng le.
-const LOCKED_TITLES = MY_TOWN_CHILDREN.filter((c) => !c.available).map(
-  (c) => c.title,
-);
 
 // href co the thieu (Cai dat chua co route that) - cac item nay van la
 // button tinh nhu cu, chi item co href moi dieu huong that. "Career Tree" va
@@ -111,7 +107,15 @@ const NAV_ITEMS: {
   },
 ];
 
-const Sidebar = () => {
+type SidebarProps = {
+  // Nhan san <Suspense><CurrentUser/></Suspense> tu layout.tsx (Server
+  // Component) - cung ly do nhu accountSlot cua TopHeaderBar cu (xem
+  // layout.tsx): Sidebar la "use client" nen khong tu import CurrentUser
+  // truc tiep duoc (auth() se mat request context).
+  accountSlot?: ReactNode;
+};
+
+const Sidebar = ({ accountSlot }: SidebarProps) => {
   const pathname = usePathname();
 
   const router = useRouter();
@@ -138,8 +142,28 @@ const Sidebar = () => {
     });
   };
 
+  // Nut "Dang bai": neu dang o /home thi focus thang vao PostComposer dang
+  // co san (id "post-composer-input", xem PostComposer.tsx); tu trang khac
+  // thi dieu huong ve /home kem query "compose=1" de PostComposer tu mo +
+  // focus ngay sau khi mount (khong co composer o cac trang ngoai /home).
+  const handleCompose = () => {
+    if (pathname.startsWith("/home")) {
+      document.getElementById("post-composer-input")?.focus();
+      return;
+    }
+    router.push("/home?compose=1");
+  };
+
   return (
     <nav className="flex w-56  flex-col overflow-y-auto   px-3 py-1">
+      {/* Logo - chuyen tu TopHeaderBar cu vao day (xem layout.tsx, header
+          ngang da comment lai, layout gio la 3 cot Sidebar/noi dung/panel
+          phai). */}
+      <div className="flex h-14 shrink-0 items-center gap-1 px-1">
+        <Logo orientation="icon-only" className="size-6 shrink-0" />
+        <span className="ml-1 text-sm font-bold text-ink">Tree Career</span>
+      </div>
+
       <div className="flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map(
           ({ title, icon: Icon, href, matchPrefixes, children }) => {
@@ -253,45 +277,34 @@ const Sidebar = () => {
             );
           },
         )}
+        <button
+          type="button"
+          onClick={handleCompose}
+          className="mt-3 flex h-10 w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-button-primary-bg text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+          Đăng bài
+        </button>
       </div>
 
-      {/* Gop toan bo cac muc con dang khoa (7/8 muc trong My Town) thanh 1
-          banner duy nhat thay vi lap icon 🔒 tren tung hang - gon hon va van
-          truyen dat dung y nghia "con nhieu tinh nang sap toi". */}
-      {LOCKED_TITLES.length > 0 && (
-        <div className="mt-3.5 rounded-xl border border-border bg-linear-to-br from-primary/15 to-violet-500/10 p-3.5">
-          <p className="flex items-center gap-1.5 text-[13px] font-bold text-ink">
-            <Lock size={13} strokeWidth={2} className="shrink-0 text-primary" />
-            Mở khoá Career Tree
-          </p>
-          <p className="mt-1.5 text-xs text-ink-muted">
-            {LOCKED_TITLES.slice(0, 2).join(", ")}
-            {LOCKED_TITLES.length > 2 &&
-              ` và ${LOCKED_TITLES.length - 2} công cụ khác`}{" "}
-            đang chờ bạn.
-          </p>
+      {/* Nut Dang bai - dua nguoi dung ve /home va mo composer (xem
+          handleCompose ben tren va PostComposer.tsx, doc query "compose"). */}
+
+      {/* Cum ben phai cu (chat/thong bao/account) chuyen tu TopHeaderBar
+          xuong day. AccountMenu (accountSlot) da tu hien avatar + dropdown
+          ten/email/logout that (xem current-user.tsx), nen khong can hien
+          lai profile mock rieng nhu truoc nua. */}
+      <div className="mt-2 flex items-center justify-between gap-1  p-2 pt-3">
+        {accountSlot}
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            className="mt-2.5 w-full cursor-pointer rounded-lg bg-button-primary-bg py-2 text-xs font-bold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover"
+            title="Tin nhắn (sắp ra mắt)"
+            className="relative flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
           >
-            Nâng cấp Pro
+            <MessageCircle strokeWidth={1.75} className="size-4.5" />
           </button>
-        </div>
-      )}
-
-      <div className="mt-2 flex items-center gap-2 border-t border-border p-2 pt-3.5">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-sky-500 text-sm font-semibold text-white">
-          {profile.name.charAt(0)}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <p className="truncate text-sm font-semibold text-ink">
-              {profile.name}
-            </p>
-            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-              {profile.planLabel}
-            </span>
-          </div>
+          <NotificationBell />
         </div>
       </div>
     </nav>

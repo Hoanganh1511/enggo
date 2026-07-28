@@ -23,7 +23,7 @@ type TopHeaderBarProps = {
 // nua (da bo hoan toan logic collapse).
 const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   return (
-    <header className="z-10 flex h-15 shrink-0 shadow-sm items-center gap-4 px-6 bg-surface-header">
+    <header className="z-10 flex h-15  items-center gap-4 px-6 ">
       <div className="flex shrink-0 items-center gap-1">
         <div className="flex items-center">
           <Logo orientation="icon-only" className="size-6 shrink-0" />

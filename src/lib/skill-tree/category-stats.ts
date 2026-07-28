@@ -23,12 +23,23 @@ export type CategoryStats = {
 // Tinh 1 lan cac chi so cap Category (= "Knowledge Block") dung chung cho ca
 // KnowledgeBlockCard (hien tat) va KnowledgeBlockSummary (hien chi tiet hon
 // khi hover) - tranh moi noi tu loc/gop lai tu dau, dung dung 1 nguon.
+// Dung chung cho computeCategoryStats (duoi day) va cho node picker cua
+// composer "Bao cao ky nang" (PostComposer.tsx) - 1 node thuoc ve 1 Category
+// khi tierId cua no nam trong danh sach tier cua Category do (KHONG co field
+// categoryId truc tiep tren node).
+export function filterNodesByCategory(
+  category: ApiCategory,
+  nodes: ApiNodeListItem[],
+): ApiNodeListItem[] {
+  const tierIds = new Set(category.tiers.map((t) => t.id));
+  return nodes.filter((n) => n.tierId && tierIds.has(n.tierId));
+}
+
 export function computeCategoryStats(
   category: ApiCategory,
   nodes: ApiNodeListItem[],
 ): CategoryStats {
-  const tierIds = new Set(category.tiers.map((t) => t.id));
-  const categoryNodes = nodes.filter((n) => n.tierId && tierIds.has(n.tierId));
+  const categoryNodes = filterNodesByCategory(category, nodes);
 
   const entries = categoryNodes.map((node) => ({
     id: node.id,

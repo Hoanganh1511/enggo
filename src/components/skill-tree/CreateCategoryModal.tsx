@@ -46,7 +46,7 @@ const CreateCategoryModal = ({
       <Dialog.Trigger asChild>
         <button
           type="button"
-          className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+          className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
         >
           <Plus size={14} strokeWidth={2} />
           {label}

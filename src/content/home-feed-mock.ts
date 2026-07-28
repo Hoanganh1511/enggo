@@ -12,15 +12,20 @@ import {
   BookOpen,
 } from "lucide-react";
 
-// Trang chu (Home feed) - TOAN BO du lieu la MOCK CUNG, chua noi API/DB nao.
-// Khi lam feed that se thay file nay bang fetch tu backend.
+// Trang chu (Home feed) - TOAN BO du lieu la MOCK CUNG, chua noi API/DB nao,
+// NGOAI TRU kind "skill-report": ban than post van la client-side/khong
+// persist nhu cac kind khac, nhung workspaceId/categoryId/nodeId ben trong no
+// tro toi du lieu THAT (fetch qua Server Action - xem PostComposer.tsx +
+// SkillReportDetailModal.tsx) vi noi dung "xem chi tiet" can hien dung
+// note/goal that cua node, khong the gia duoc. Khi lam feed that se thay file
+// nay bang fetch tu backend.
 //
 // Post la discriminated union theo "kind" - MOI kind co body rieng (xem
 // src/components/discover/post-bodies/) thay vi 1 "attachment" chung chung
 // cho tat ca: Text/Image/Gallery/Video/File/Link/Resource/Note/ProjectUpdate/
 // Achievement/Milestone/Question/Poll/CareerUpdate/SkillUpdate/NodeCreated/
-// KnowledgeBlock/TimelineEvent deu co dang trinh bay rieng, nhan dien duoc
-// ngay ca khi khong doc text.
+// KnowledgeBlock/TimelineEvent/SkillReport deu co dang trinh bay rieng, nhan
+// dien duoc ngay ca khi khong doc text.
 type Author = {
   name: string;
   username: string;
@@ -130,6 +135,17 @@ export type Post =
     })
   | (PostCommon & { kind: "timeline-event"; event: string })
   | (PostCommon & {
+      kind: "skill-report";
+      content: string;
+      workspaceId: string;
+      workspaceName: string;
+      categoryId: string;
+      categoryName: string;
+      categoryAccent: string;
+      nodeId: string;
+      nodeTitle: string;
+    })
+  | (PostCommon & {
       kind: "code-snippet";
       language: string;
       title?: string;
@@ -203,6 +219,47 @@ export const POSTS: Post[] = [
     timeAgo: "2h",
     content: "Hôm nay mình finally hiểu được Event Loop sau 2 ngày vật lộn.",
     stats: { likes: 236, comments: 28, reposts: 12 },
+    following: true,
+  },
+  // 1b/1c. Bao cao ky nang (skill-report) - VI DU MAU tro toi du lieu THAT
+  // trong workspace "My Career Tree" (00000000-0000-0000-0000-000000000001,
+  // owner: anhht.fe@gmail.com) de test ngay khong can tu soan qua composer:
+  // categoryAccent tinh dung bang getBlockAccentColor(orderIndex, color) cho
+  // tung category that (Backend Development orderIndex=2 -> "#8b5cf6",
+  // Database & Storage orderIndex=3 -> "#f59e0b"), node deu da co san note
+  // that (Authentication 13 note, Redis 14 note) de "Xem chi tiết" khong rong.
+  {
+    id: "p1b",
+    kind: "skill-report",
+    author: TUAN_ANH,
+    timeAgo: "1h",
+    content:
+      "Hôm nay ôn lại luồng refresh token và fix xong lỗi race condition khi 2 request cùng refresh 1 lúc - dùng mutex lock phía backend.",
+    workspaceId: "00000000-0000-0000-0000-000000000001",
+    workspaceName: "My Career Tree",
+    categoryId: "2431b880-0236-47c1-98f2-4695489a637e",
+    categoryName: "Backend Development",
+    categoryAccent: "#8b5cf6",
+    nodeId: "21d5dacb-b7e1-4add-a280-b24ed358b8c1",
+    nodeTitle: "Authentication",
+    stats: { likes: 18, comments: 3, reposts: 0 },
+    following: true,
+  },
+  {
+    id: "p1c",
+    kind: "skill-report",
+    author: TUAN_ANH,
+    timeAgo: "5h",
+    content:
+      "Thử cache-aside với Redis cho API list workspace tree, giảm p95 latency đáng kể cho request lặp lại. Còn thiếu invalidation khi node bị move.",
+    workspaceId: "00000000-0000-0000-0000-000000000001",
+    workspaceName: "My Career Tree",
+    categoryId: "8db17580-bc8f-455a-a9d3-78ff735da690",
+    categoryName: "Database & Storage",
+    categoryAccent: "#f59e0b",
+    nodeId: "28e621f3-ca51-4302-a217-32b81a8afdcf",
+    nodeTitle: "Redis",
+    stats: { likes: 24, comments: 5, reposts: 1 },
     following: true,
   },
   // 2. Text + 1 anh - case pho bien nhat.

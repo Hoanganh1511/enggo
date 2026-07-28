@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Settings, SunMoon, User, Users, LogOut } from "lucide-react";
 import {
   PopoverRoot,
@@ -8,6 +9,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { signOutAction } from "@/actions/auth/sign-out-action";
+import { profile } from "@/content/user-profile";
 
 type AccountUser = {
   name?: string | null;
@@ -82,8 +84,18 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
         </div>
 
         <div className="flex flex-col gap-0.5 p-2">
-          <MenuRow icon={User} label="Profile" disabled />
-          <MenuRow icon={Settings} label="Account settings" disabled />
+          <MenuRow
+            icon={User}
+            label="Profile"
+            href={`/u/${profile.username}`}
+            onNavigate={() => setOpen(false)}
+          />
+          <MenuRow
+            icon={Settings}
+            label="Account settings"
+            href="/settings"
+            onNavigate={() => setOpen(false)}
+          />
           <MenuRow icon={SunMoon} label="Theme" disabled />
         </div>
 
@@ -111,26 +123,45 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
   );
 };
 
+const menuRowClass =
+  "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent";
+
 function MenuRow({
   icon: Icon,
   label,
+  href,
   disabled,
+  onNavigate,
 }: {
   icon: typeof User;
   label: string;
+  href?: string;
   disabled?: boolean;
+  onNavigate?: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
-    >
+  const inner = (
+    <>
       <Icon size={16} strokeWidth={1.75} className="shrink-0 text-icon" />
       {label}
       {disabled && (
         <span className="ml-auto text-[10px] text-ink-faint">Sắp có</span>
       )}
+    </>
+  );
+
+  // Muc da co trang that thi render Link (dieu huong duoc, middle-click mo tab
+  // moi duoc); muc chua lam van la button disabled kem nhan "Sắp có".
+  if (href && !disabled) {
+    return (
+      <Link href={href} onClick={onNavigate} className={menuRowClass}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" disabled={disabled} className={menuRowClass}>
+      {inner}
     </button>
   );
 }
