@@ -12,7 +12,9 @@ export function CodeSnippetBody({ post }: { post: CodeSnippetPost }) {
           {post.language}
         </span>
         {post.title && (
-          <span className="text-xs font-medium text-ink">{post.title}</span>
+          <span className="truncate text-xs font-semibold text-ink">
+            {post.title}
+          </span>
         )}
       </div>
       <pre className="overflow-x-auto p-3 text-xs leading-relaxed text-ink">

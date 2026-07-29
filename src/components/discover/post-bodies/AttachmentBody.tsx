@@ -1,6 +1,7 @@
 import { FileDown, Globe, Star } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
 
 type FilePost = Extract<Post, { kind: "file" }>;
 type LinkPost = Extract<Post, { kind: "link" }>;
@@ -42,6 +43,7 @@ export function FileBody({ post }: { post: FilePost }) {
 }
 
 export function LinkBody({ post }: { post: LinkPost }) {
+  const kindMeta = POST_KIND_META[post.kind];
   return (
     <>
       <Caption content={post.content} />
@@ -49,11 +51,11 @@ export function LinkBody({ post }: { post: LinkPost }) {
         <span
           className="flex size-14 shrink-0 items-center justify-center rounded-lg"
           style={{
-            background: hexToRgba(post.link.accent, 0.15),
-            color: post.link.accent,
+            background: hexToRgba(kindMeta.accent, 0.15),
+            color: kindMeta.accent,
           }}
         >
-          <post.link.icon size={24} strokeWidth={1.75} />
+          <kindMeta.icon size={24} strokeWidth={1.75} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-ink">
@@ -75,16 +77,17 @@ export function LinkBody({ post }: { post: LinkPost }) {
 // Save da chuyen xuong action bar (xem action-bar/action-bar-config.tsx,
 // case "resource") nen o day chi con thong tin, khong lap lai nut Save.
 export function ResourceBody({ post }: { post: ResourcePost }) {
+  const kindMeta = POST_KIND_META[post.kind];
   return (
     <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-surface-muted p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-hover-border hover:shadow-dropdown">
       <span
         className="flex size-14 shrink-0 items-center justify-center rounded-lg"
         style={{
-          background: hexToRgba(post.resource.accent, 0.15),
-          color: post.resource.accent,
+          background: hexToRgba(kindMeta.accent, 0.15),
+          color: kindMeta.accent,
         }}
       >
-        <post.resource.icon size={24} strokeWidth={1.75} />
+        <kindMeta.icon size={24} strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">

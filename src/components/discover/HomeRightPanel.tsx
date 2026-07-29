@@ -10,7 +10,7 @@ import {
   PenLine,
   Users,
 } from "lucide-react";
-import { PEOPLE_TO_FOLLOW } from "@/content/home-feed-mock";
+import { PEOPLE_TO_FOLLOW } from "@/content/people-to-follow-mock";
 import { getAvatarColor } from "@/lib/discover/avatar-color";
 import { formatCompact } from "@/lib/format-number";
 

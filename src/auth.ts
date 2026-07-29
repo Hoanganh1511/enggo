@@ -17,6 +17,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           googleId: profile.sub as string,
           email: profile.email as string,
           name: profile.name as string,
+          avatarUrl: profile.picture as string | undefined,
         });
         token.userId = backendUser.id;
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import type { UserProfileData } from "@/content/user-profile";
 import type { Post } from "@/content/home-feed-mock";
 import {
@@ -8,102 +8,130 @@ import {
   subscribeFeed,
   getServerSnapshot,
 } from "@/lib/discover/feed-store";
-import {
-  POST_KIND_META,
-  type HomeTab,
-} from "@/lib/discover/post-kind-meta";
 import PostCard from "@/components/discover/PostCard";
 import ProfileHeader from "./ProfileHeader";
-import ProfileCareerSnapshot from "./ProfileCareerSnapshot";
+import ProfileNav, { type ProfileTab } from "./ProfileNav";
+import ProfileFooter from "./ProfileFooter";
+import {
+  AboutCard,
+  BadgesCard,
+  CollectionsCard,
+  ConnectionsCard,
+  StatsCard,
+} from "./ProfileSideCards";
 
-// Tab cua profile: "all" (moi bai cua nguoi nay) + 3 nhom loc lai DUNG bang
-// homeTab da dinh nghia trong post-kind-meta.ts - khong tu che bang phan loai
-// thu 2 de tranh 2 nguon su that lech nhau. "saved" chi hien voi chinh chu.
-type ProfileTab = "all" | Extract<HomeTab, "achievements" | "progress" | "for-it"> | "saved";
+const TAB_HEADING: Record<ProfileTab, string> = {
+  home: "Bài đăng mới nhất",
+  posts: "Tất cả bài đăng",
+  playlists: "Danh sách phát",
+  collections: "Bộ sưu tập",
+  likes: "Bài viết đã thích",
+  history: "Lịch sử xem",
+};
 
-const TABS: { key: ProfileTab; label: string; selfOnly?: boolean }[] = [
-  { key: "all", label: "Tất cả" },
-  { key: "achievements", label: "Thành tích" },
-  { key: "progress", label: "Tiến độ" },
-  { key: "for-it", label: "For IT" },
-  { key: "saved", label: "Đã lưu", selfOnly: true },
-];
+// Loc bai theo tab + tu khoa tim kiem trong trang. "playlists"/"collections"
+// chua co du lieu that nen tra ve rong (hien trang thai trong, khong gia lap).
+function selectPosts(
+  posts: Post[],
+  profile: UserProfileData,
+  tab: ProfileTab,
+  query: string,
+): Post[] {
+  const own = posts.filter((p) => p.author.username === profile.username);
 
-function filterForTab(posts: Post[], tab: ProfileTab): Post[] {
-  if (tab === "all") return posts;
-  if (tab === "saved") return posts.filter((p) => p.saved);
-  return posts.filter((p) => POST_KIND_META[p.kind].homeTab === tab);
+  let base: Post[];
+  switch (tab) {
+    case "home":
+      base = own.slice(0, 10);
+      break;
+    case "posts":
+      base = own;
+      break;
+    case "likes":
+      base = posts.filter((p) => p.liked);
+      break;
+    case "history":
+      base = posts.slice(0, 8);
+      break;
+    default:
+      base = [];
+  }
+
+  const q = query.trim().toLowerCase();
+  if (!q) return base;
+  return base.filter((p) => JSON.stringify(p).toLowerCase().includes(q));
 }
 
 const ProfileView = ({ profile }: { profile: UserProfileData }) => {
-  const [tab, setTab] = useState<ProfileTab>("all");
+  const [tab, setTab] = useState<ProfileTab>("home");
+  const [query, setQuery] = useState("");
   const allPosts = useSyncExternalStore(
     subscribeFeed,
     getPosts,
     getServerSnapshot,
   );
 
-  const visibleTabs = TABS.filter((t) => !t.selfOnly || profile.isSelf);
-  const ownPosts = allPosts.filter(
-    (p) => p.author.username === profile.username,
+  const posts = useMemo(
+    () => selectPosts(allPosts, profile, tab, query),
+    [allPosts, profile, tab, query],
   );
-  const posts = filterForTab(ownPosts, tab);
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4">
+    <div className="flex flex-col">
       <ProfileHeader profile={profile} />
+      <ProfileNav
+        active={tab}
+        onChange={setTab}
+        isSelf={profile.isSelf}
+        query={query}
+        onQueryChange={setQuery}
+      />
 
-      {/* 2 cot: feed ben trai, ho so nang luc ben phai - tren man hinh hep
-          thi xep doc, snapshot xuong duoi feed. */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      {/* Than trang: feed ben trai, cac the thong tin ben phai */}
+      <div className="flex flex-col gap-4 py-4 lg:flex-row lg:items-start">
         <div className="min-w-0 flex-1">
           <div className="rounded-lg border border-border bg-surface">
-            <div className="flex items-center gap-1 overflow-x-auto border-b border-border px-3">
-              {visibleTabs.map((t) => {
-                const active = tab === t.key;
-                return (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    className={`-mb-px shrink-0 cursor-pointer border-b-2 px-3 py-2.5 text-sm font-medium transition-colors duration-150 ease-out ${
-                      active
-                        ? "border-primary text-ink"
-                        : "border-transparent text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })}
+            <div className="border-b border-border px-4 py-3">
+              <h2 className="text-sm font-bold text-ink">{TAB_HEADING[tab]}</h2>
             </div>
 
             <div className="px-4">
               {posts.length === 0 ? (
-                <p className="py-10 text-center text-sm text-ink-faint">
-                  Chưa có bài viết nào ở mục này.
+                <p className="py-12 text-center text-sm text-ink-faint">
+                  {query.trim()
+                    ? "Không tìm thấy nội dung phù hợp."
+                    : "Chưa có nội dung nào ở mục này."}
                 </p>
               ) : (
-                <div className="relative">
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute top-0 bottom-0 left-2.5 w-px bg-border"
-                  />
-                  <div className="divide-y divide-border">
-                    {posts.map((post) => (
-                      <PostCard key={post.id} post={post} />
-                    ))}
-                  </div>
+                <div className="divide-y divide-border">
+                  {posts.map((post) => (
+                    <PostCard key={post.id} post={post} />
+                  ))}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="w-full shrink-0 lg:w-80">
-          <ProfileCareerSnapshot career={profile.career} />
-        </div>
+        <aside className="flex w-full shrink-0 flex-col gap-4 lg:w-72">
+          <StatsCard career={profile.career} />
+          <AboutCard paragraphs={profile.bioLong} links={profile.links} />
+          <BadgesCard badges={profile.badges} total={profile.badgeCount} />
+          <ConnectionsCard
+            title="Đang theo dõi"
+            count={profile.followingCount}
+            users={profile.followingPreview}
+          />
+          <ConnectionsCard
+            title="Người theo dõi"
+            count={profile.followerCount}
+            users={profile.followerPreview}
+          />
+          <CollectionsCard collections={profile.collections} />
+        </aside>
       </div>
+
+      <ProfileFooter displayName={profile.displayName} />
     </div>
   );
 };

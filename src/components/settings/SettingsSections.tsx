@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import GoogleIcon from "@/components/ui/google-icon";
+import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
 import type { UserProfileData } from "@/content/user-profile";
 import {
   SelectField,
@@ -260,17 +261,21 @@ export function SecuritySection() {
         />
       </SettingsRow>
 
+      {/* Day la muc DUY NHAT trong Settings da noi backend that (POST
+          /users/me/revoke-sessions) - cac muc con lai van chi la state cuc bo. */}
       <SettingsRow
         label="Thiết bị đang đăng nhập"
-        hint="Đăng xuất khỏi mọi thiết bị nếu bạn nghi ngờ tài khoản bị truy cập trái phép."
+        hint="Đăng xuất khỏi mọi thiết bị nếu bạn nghi ngờ tài khoản bị truy cập trái phép. Bạn cũng sẽ bị đăng xuất khỏi thiết bị này."
       >
-        <button
-          type="button"
-          className="flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
-        >
-          <MonitorSmartphone size={14} strokeWidth={1.75} />
-          Đăng xuất mọi thiết bị
-        </button>
+        <form action={revokeSessionsAction}>
+          <button
+            type="submit"
+            className="flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+          >
+            <MonitorSmartphone size={14} strokeWidth={1.75} />
+            Đăng xuất mọi thiết bị
+          </button>
+        </form>
       </SettingsRow>
     </SettingsSection>
   );

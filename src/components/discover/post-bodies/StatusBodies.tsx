@@ -1,6 +1,7 @@
 import { Briefcase, Clock, Hexagon, Sparkles } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
 
 type AchievementPost = Extract<Post, { kind: "achievement" }>;
 type MilestonePost = Extract<Post, { kind: "milestone" }>;
@@ -14,16 +15,17 @@ type TimelineEventPost = Extract<Post, { kind: "timeline-event" }>;
 // (khong co doan van dai), moi loai co bo cuc rieng de nhan ra ngay.
 
 export function AchievementBody({ post }: { post: AchievementPost }) {
+  const kindMeta = POST_KIND_META[post.kind];
   return (
     <div className="mt-2 flex flex-col items-center gap-2 rounded-xl border border-border bg-gradient-to-b from-warning/10 to-transparent py-6 text-center">
       <span
         className="flex size-14 items-center justify-center rounded-full"
         style={{
-          background: hexToRgba(post.accent, 0.15),
-          color: post.accent,
+          background: hexToRgba(kindMeta.accent, 0.15),
+          color: kindMeta.accent,
         }}
       >
-        <post.icon size={28} strokeWidth={1.75} />
+        <kindMeta.icon size={28} strokeWidth={1.75} />
       </span>
       <p className="text-lg font-bold text-ink">{post.title}</p>
       <p className="text-xs text-ink-muted">{post.description}</p>
@@ -63,9 +65,11 @@ export function CareerUpdateBody({ post }: { post: CareerUpdatePost }) {
       <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
         <Briefcase size={20} strokeWidth={1.75} />
       </span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-ink">Joined {post.company}</p>
-        <p className="text-xs text-ink-muted">{post.role}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-ink">
+          Joined {post.company}
+        </p>
+        <p className="truncate text-xs text-ink-muted">{post.role}</p>
       </div>
     </div>
   );
@@ -110,23 +114,24 @@ export function NodeCreatedBody({ post }: { post: NodeCreatedPost }) {
 }
 
 export function KnowledgeBlockBody({ post }: { post: KnowledgeBlockPost }) {
+  const kindMeta = POST_KIND_META[post.kind];
   return (
     <div className="mt-2 flex items-center gap-3 rounded-xl border border-border p-3">
       <span
         className="flex size-10 shrink-0 items-center justify-center rounded-lg"
         style={{
-          background: hexToRgba(post.accent, 0.15),
-          color: post.accent,
+          background: hexToRgba(kindMeta.accent, 0.15),
+          color: kindMeta.accent,
         }}
       >
-        <post.icon size={18} strokeWidth={1.75} />
+        <kindMeta.icon size={18} strokeWidth={1.75} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">{post.block}</p>
         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
           <div
             className="h-full rounded-full"
-            style={{ width: `${post.progress}%`, background: post.accent }}
+            style={{ width: `${post.progress}%`, background: kindMeta.accent }}
           />
         </div>
       </div>

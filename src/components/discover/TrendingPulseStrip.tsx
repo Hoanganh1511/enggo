@@ -1,4 +1,4 @@
-import { TRENDING_SKILLS } from "@/content/home-feed-mock";
+import { TRENDING_SKILLS } from "@/content/people-to-follow-mock";
 
 // Dai "pulse" ngang o dau feed - thay cho card "Kien thuc duoc de cap nhieu"
 // truoc day nam o cot phai (da bo de cot phai chi con "Co the ban quan tam").

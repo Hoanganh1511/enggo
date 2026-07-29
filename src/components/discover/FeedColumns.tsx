@@ -1,13 +1,30 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
 import type { Post } from "@/content/home-feed-mock";
 import PostCard from "./PostCard";
 import { splitPostsIntoColumns } from "@/lib/discover/post-kind-meta";
+import { getFeedStatus, subscribeFeed } from "@/lib/discover/feed-store";
+
+function FeedSkeleton() {
+  return (
+    <div className="flex flex-col gap-3 py-2">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="h-20 animate-pulse rounded-lg bg-surface-muted"
+        />
+      ))}
+    </div>
+  );
+}
 
 // Feed 2 cot: chia POSTS thanh 2 nhom noi dung theo "kind" (xem
 // post-kind-meta.ts: "personal" = hoat dong/chia se ca nhan, "resource" =
 // tu lieu/tham khao), moi cot render rieng thay vi hien trung lap 1 danh
-// sach o ca 2 ben nhu ban truoc (xem HomeLayoutShell.tsx). Dung chung cho
-// ca 3 tab For you/Following/Trending - tung page tu loc/sap xep "posts"
-// truoc khi truyen vao day.
+// sach o ca 2 ben nhu ban truoc (xem HomeLayoutShell.tsx). Dung chung cho ca
+// 4 tab con lai (Thanh tich/Tien do/For IT/Vote) - tung page tu loc "posts"
+// tu feed-store (du lieu that) truoc khi truyen vao day.
 const FeedColumns = ({
   posts,
   emptyMessage,
@@ -15,6 +32,15 @@ const FeedColumns = ({
   posts: Post[];
   emptyMessage?: string;
 }) => {
+  // fetch dat o HomeLayoutShell (dung chung moi tab), o day chi doc trang
+  // thai de biet hien skeleton hay "chua co bai" - tranh nhap nhay "Chua co
+  // bai viet nao" trong luc dang cho response dau tien.
+  const status = useSyncExternalStore(subscribeFeed, getFeedStatus, () => "idle" as const);
+
+  if (posts.length === 0 && status === "loading") {
+    return <FeedSkeleton />;
+  }
+
   if (posts.length === 0) {
     return (
       <p className="py-5 text-sm text-ink-faint">

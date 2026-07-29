@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/popover";
 import { PostBody } from "./post-bodies";
 import { ActionBar } from "./action-bar";
+import { TopicBreadcrumb } from "./TopicBreadcrumb";
 import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { formatRelativeTime } from "@/lib/career-tree/format-time";
 
 type PostCardProps = {
   post: Post;
@@ -26,8 +28,8 @@ type PostCardProps = {
   variant?: "timeline" | "card";
 };
 
-// Card 1 bai post trong feed Trang chu - MOCK data (xem content/home-feed-mock.ts).
-// PostCard chi lo phan CHUNG cho moi loai post: avatar/ten/badge/username/
+// Card 1 bai post trong feed Trang chu - du lieu THAT tu backend (xem
+// lib/discover/feed-store.ts). PostCard chi lo phan CHUNG cho moi loai post: avatar/ten/badge/username/
 // thoi gian/menu 3 cham o header. Phan noi dung chinh (van ban/anh/video/
 // file/link/resource/note/...) giao het cho PostBody (post-bodies/index.tsx),
 // va cum action duoi cung giao het cho ActionBar (action-bar/index.tsx) - moi
@@ -80,39 +82,51 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
     </PopoverRoot>
   );
 
+  // bg-surface (trang dac) chu KHONG phai surface-muted/50: nen trang la
+  // #f6f8fa, ma surface-muted o 50% ra gan dung mau do -> card bi "tan" vao
+  // nen. Them shadow nhe de tach lop o light mode; dark mode nen gan den nen
+  // shadow khong an thua, chinh border moi la thu tach lop.
   if (variant === "card") {
     return (
-      <article className="flex flex-col gap-3 rounded-lg border border-border bg-surface-muted/50 p-4 transition-colors duration-150 ease-out hover:border-hover-border">
+      <article className="font-card flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_1px_3px_rgba(16,24,40,0.1)] transition-[box-shadow,border-color] duration-150 ease-out hover:border-hover-border hover:shadow-[0_4px_14px_rgba(16,24,40,0.1)]">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-            style={{
-              background: hexToRgba(kindMeta.accent, 0.14),
-              color: kindMeta.accent,
-            }}
-          >
-            <kindMeta.icon size={12} strokeWidth={2.25} />
-            {kindMeta.label}
+          {/* Icon nam trong khoi tron dac mau accent, nhan chi la chu thuong
+              (khong con pill nen mau) - doi theo phong cach the mau nguoi
+              dung gui, gon va bot "on" mau hon ban pill truoc. */}
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className="flex size-5 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: kindMeta.accent }}
+            >
+              <kindMeta.icon size={11} strokeWidth={2.25} />
+            </span>
+            <span className="text-xs font-semibold text-ink">
+              {kindMeta.label}
+            </span>
           </span>
           {menu}
         </div>
 
-        <PostBody post={post} />
-        <ActionBar post={post} />
+        {post.topic && <TopicBreadcrumb topic={post.topic} />}
 
+        <PostBody post={post} />
+
+        {/* Cum thong tin nguoi dang len TRUOC action bar (Like/Comment/
+            Repost/Save) - dao thu tu theo yeu cau, nhan dien "ai dang" truoc
+            khi tuong tac thay vi nguoc lai nhu ban cu. */}
         <div className="flex min-w-0 items-center gap-1.5 border-t border-border pt-3">
           <Link href={`/u/${post.author.username}`} className="shrink-0">
             <Image
               src={post.author.avatarUrl}
               alt={post.author.name}
-              width={20}
-              height={20}
-              className="size-5 shrink-0 rounded-full object-cover"
+              width={24}
+              height={24}
+              className="size-6 shrink-0 rounded-full object-cover"
             />
           </Link>
           <Link
             href={`/u/${post.author.username}`}
-            className="truncate text-xs font-medium text-ink-muted hover:underline"
+            className="min-w-0 truncate text-sm font-semibold text-ink hover:underline"
           >
             {post.author.name}
           </Link>
@@ -125,15 +139,17 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
           )}
           <span className="text-ink-faint">·</span>
           <span className="shrink-0 text-xs text-ink-faint">
-            {post.timeAgo} trước
+            {formatRelativeTime(post.createdAt)}
           </span>
         </div>
+
+        <ActionBar post={post} />
       </article>
     );
   }
 
   return (
-    <article className="py-4 first:pt-5 last:pb-5">
+    <article className="font-card py-4 first:pt-5 last:pb-5">
       <div className="flex items-start gap-3">
         {/* Marker loai bai viet - ngoi tren duong ke doc cua FeedColumn
             (xem FeedColumns.tsx), luon dung icon/mau THEO KIND (khong phai
@@ -184,12 +200,18 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
               </Link>
               <span className="text-ink-faint">·</span>
               <span className="shrink-0 text-xs text-ink-muted">
-                {post.timeAgo} trước
+                {formatRelativeTime(post.createdAt)}
               </span>
             </div>
 
             {menu}
           </div>
+
+          {post.topic && (
+            <div className="mt-0.5">
+              <TopicBreadcrumb topic={post.topic} />
+            </div>
+          )}
 
           <PostBody post={post} />
           <ActionBar post={post} />

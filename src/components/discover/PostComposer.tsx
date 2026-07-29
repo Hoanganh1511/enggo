@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import { profile } from "@/content/user-profile";
 import { addPost } from "@/lib/discover/feed-store";
-import type { Post } from "@/content/home-feed-mock";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -387,22 +386,18 @@ const PLACEHOLDER_BY_KIND: Partial<Record<ComposableKind, string>> = {
   "skill-report": "Hôm nay bạn đã hoàn thành gì trong skill này?",
 };
 
-// Icon/mau accent mac dinh cho cac kind can (link/resource/project-update/
-// tutorial) - khong lam UI chon icon rieng de giu composer gon, dung 1 bo mac
-// dinh hop ly theo tung loai.
-const DEFAULT_ACCENT: Partial<
-  Record<ComposableKind, { icon: LucideIcon; accent: string }>
-> = {
-  link: { icon: Globe, accent: "#38bdf8" },
-  resource: { icon: BookOpen, accent: "#8b5cf6" },
-  "project-update": { icon: Rocket, accent: "#0090e3" },
-  tutorial: { icon: Wrench, accent: "#38bdf8" },
-};
-
+// Du lieu rieng theo tung kind de gui len backend (POST /posts, xem
+// lib/api/posts.ts) - CHI cac field noi dung, KHONG con "base" (id/author/
+// timeAgo/stats/following) nhu ban truoc: nhung field do server tu sinh
+// (id/createdAt) hoac lay tu @CurrentUserId() (author), khong phai thu client
+// duoc tu bia. icon/accent cua 6 kind (link/resource/achievement/
+// project-update/knowledge-block/tutorial) cung KHONG con gui di - PostCard
+// tu lay theo POST_KIND_META[kind] luc render (xem home-feed-mock.ts).
+//
 // reportData chi can cho case "skill-report" - la du lieu THAT da fetch san
 // qua Server Action (xem cac useEffect trong PostComposer ben duoi), khong
 // phai draft text nen khong nam trong FieldsState.
-function buildPost(
+function buildPostData(
   kind: ComposableKind,
   content: string,
   f: FieldsState,
@@ -411,36 +406,21 @@ function buildPost(
     categories: ApiCategory[];
     nodes: ApiNodeListItem[];
   },
-): Post | null {
-  const base = {
-    id: `local-${Date.now()}`,
-    author: {
-      name: profile.name,
-      username: profile.username,
-      verified: false,
-      avatarUrl: profile.avatarUrl,
-    },
-    timeAgo: "Vừa xong",
-    stats: { likes: 0, comments: 0, reposts: 0 },
-    following: true,
-  };
-
+): Record<string, unknown> | null {
   switch (kind) {
     case "text":
       if (!content.trim()) return null;
-      return { ...base, kind: "text", content };
+      return { content };
     case "question":
       if (!content.trim()) return null;
-      return { ...base, kind: "question", content };
+      return { content };
     case "idea":
       if (!content.trim()) return null;
-      return { ...base, kind: "idea", content };
+      return { content };
     case "poll": {
       const options = f.pollOptions.filter((o) => o.trim());
       if (!content.trim() || options.length < 2) return null;
       return {
-        ...base,
-        kind: "poll",
         question: content,
         options: options.map((label) => ({ label, votes: 0 })),
       };
@@ -448,8 +428,6 @@ function buildPost(
     case "image":
       if (!f.imageUrl.trim()) return null;
       return {
-        ...base,
-        kind: "image",
         content: content || undefined,
         image: { url: f.imageUrl, alt: f.imageAlt || "Ảnh đính kèm" },
       };
@@ -457,8 +435,6 @@ function buildPost(
       const urls = f.galleryUrls.filter((u) => u.trim());
       if (urls.length < 1) return null;
       return {
-        ...base,
-        kind: "gallery",
         content: content || undefined,
         images: urls.map((url, i) => ({ url, alt: `Ảnh ${i + 1}` })),
       };
@@ -466,8 +442,6 @@ function buildPost(
     case "video":
       if (!f.videoThumbnailUrl.trim()) return null;
       return {
-        ...base,
-        kind: "video",
         content: content || undefined,
         video: {
           thumbnailUrl: f.videoThumbnailUrl,
@@ -477,8 +451,6 @@ function buildPost(
     case "file":
       if (!f.fileName.trim()) return null;
       return {
-        ...base,
-        kind: "file",
         content: content || undefined,
         file: {
           name: f.fileName,
@@ -489,34 +461,26 @@ function buildPost(
     case "link":
       if (!f.linkTitle.trim() || !f.linkDomain.trim()) return null;
       return {
-        ...base,
-        kind: "link",
         content: content || undefined,
         link: {
           domain: f.linkDomain,
           title: f.linkTitle,
           description: f.linkDescription,
-          ...(DEFAULT_ACCENT.link ?? { icon: Globe, accent: "#38bdf8" }),
         },
       };
     case "resource":
       if (!f.resourceTitle.trim()) return null;
       return {
-        ...base,
-        kind: "resource",
         content: content || undefined,
         resource: {
           title: f.resourceTitle,
           kindLabel: f.resourceKindLabel || "Tài liệu",
           rating: Number(f.resourceRating) || 0,
-          ...(DEFAULT_ACCENT.resource ?? { icon: BookOpen, accent: "#8b5cf6" }),
         },
       };
     case "note":
       if (!f.noteTitle.trim() || !content.trim()) return null;
       return {
-        ...base,
-        kind: "note",
         title: f.noteTitle,
         content,
         tag: f.noteTag || "TIL",
@@ -524,18 +488,13 @@ function buildPost(
     case "tutorial":
       if (!f.tutorialTitle.trim()) return null;
       return {
-        ...base,
-        kind: "tutorial",
         title: f.tutorialTitle,
         description: f.tutorialDescription,
         steps: Number(f.steps) || 1,
-        ...(DEFAULT_ACCENT.tutorial ?? { icon: Wrench, accent: "#38bdf8" }),
       };
     case "code-snippet":
       if (!content.trim()) return null;
       return {
-        ...base,
-        kind: "code-snippet",
         language: f.language || "Plain text",
         title: f.snippetTitle || undefined,
         code: content,
@@ -544,26 +503,16 @@ function buildPost(
       const changes = f.changes.filter((c) => c.trim());
       if (!f.project.trim() || changes.length === 0) return null;
       return {
-        ...base,
-        kind: "project-update",
         project: f.project,
         version: f.version || "v1.0",
         changes,
-        ...(DEFAULT_ACCENT["project-update"] ?? {
-          icon: Rocket,
-          accent: "#0090e3",
-        }),
       };
     }
     case "achievement":
       if (!f.achievementTitle.trim()) return null;
       return {
-        ...base,
-        kind: "achievement",
         title: f.achievementTitle,
         description: f.achievementDescription,
-        icon: Trophy,
-        accent: "#f59e0b",
       };
     case "milestone": {
       const items = f.milestoneItems.filter(
@@ -571,8 +520,6 @@ function buildPost(
       );
       if (!f.milestoneTitle.trim() || items.length === 0) return null;
       return {
-        ...base,
-        kind: "milestone",
         content: content || undefined,
         title: f.milestoneTitle,
         items,
@@ -581,8 +528,6 @@ function buildPost(
     case "experiment":
       if (!f.experimentTitle.trim() || !f.result.trim()) return null;
       return {
-        ...base,
-        kind: "experiment",
         title: f.experimentTitle,
         hypothesis: f.hypothesis,
         result: f.result,
@@ -590,8 +535,6 @@ function buildPost(
     case "event":
       if (!f.eventTitle.trim() || !f.when.trim()) return null;
       return {
-        ...base,
-        kind: "event",
         title: f.eventTitle,
         when: f.when,
         location: f.location || undefined,
@@ -613,8 +556,6 @@ function buildPost(
       const node = reportData.nodes.find((n) => n.id === f.reportNodeId);
       if (!workspace || !category || !node) return null;
       return {
-        ...base,
-        kind: "skill-report",
         content,
         workspaceId: workspace.id,
         workspaceName: workspace.name,
@@ -640,6 +581,7 @@ const PostComposer = () => {
   const [fields, setFields] = useState<FieldsState>(INITIAL_FIELDS);
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [videoProcessing, setVideoProcessing] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
   // Thu gon mac dinh, mo rong khi focus vao o nhap hoac bam 1 trong 2 quick
   // shortcut (Anh/Code snippet) - giup composer gon hang dau feed, chi "no
   // ra" khi nguoi dung thuc su muon soan bai.
@@ -664,7 +606,7 @@ const PostComposer = () => {
   ) => setFields((f) => ({ ...f, [key]: value }));
 
   const activeType = ALL_TYPES.find((t) => t.key === activeKind)!;
-  const draft = buildPost(activeKind, content, fields, {
+  const draft = buildPostData(activeKind, content, fields, {
     workspaces: reportWorkspaces,
     categories: reportCategories,
     nodes: reportNodes,
@@ -718,8 +660,8 @@ const PostComposer = () => {
 
   // Bam ra ngoai composer trong luc chua co draft hop le (bat ke dang o kind
   // nao - vd mo "Ảnh" roi doi y khong upload gi) thi tu thu gon lai, tranh de
-  // 1 form rong choan feed. Dung thang "draft" (ket qua buildPost, null khi
-  // thieu du lieu bat buoc) thay vi chi kiem tra rieng kind "text" nhu truoc -
+  // 1 form rong choan feed. Dung thang "draft" (ket qua buildPostData, null
+  // khi thieu du lieu bat buoc) thay vi chi kiem tra rieng kind "text" nhu truoc -
   // truoc day mo "Ảnh"/"Link"/... roi bam ra ngoai ma khong nhap gi se bi ket
   // lai o trang thai mo, phai tu bam thu gon.
   useEffect(() => {
@@ -736,7 +678,7 @@ const PostComposer = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [draft]);
 
-  // Nut "Dang bai" o Sidebar (tu trang ngoai /home) dieu huong ve day kem
+  // Nut "Dang bai" tren header (tu trang ngoai /home) dieu huong ve day kem
   // query "?compose=1" - tu mo composer + focus ngay khi mount, roi don
   // sach query khoi URL (khong dung useSearchParams de khoi phai boc
   // Suspense, doc thang tu window.location vi chi can 1 lan luc mount).
@@ -767,9 +709,15 @@ const PostComposer = () => {
     });
   };
 
-  const handlePost = () => {
-    if (!draft) return;
-    addPost(draft);
+  // Dang bai that: cho backend xac nhan (addPost goi POST /posts) roi moi
+  // reset form - neu that bai (mat mang, 401,...) giu nguyen draft de nguoi
+  // dung khong mat noi dung da go va co the bam dang lai.
+  const handlePost = async () => {
+    if (!draft || isPosting) return;
+    setIsPosting(true);
+    const ok = await addPost(activeKind, draft);
+    setIsPosting(false);
+    if (!ok) return;
     setContent("");
     setFields(INITIAL_FIELDS);
     setActiveKind("text");
@@ -1505,11 +1453,11 @@ const PostComposer = () => {
             </button>
             <button
               type="button"
-              disabled={!draft}
+              disabled={!draft || isPosting}
               onClick={handlePost}
               className="flex h-8 shrink-0 cursor-pointer items-center rounded-md bg-button-primary-bg px-3.5 text-xs font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Đăng bài
+              {isPosting ? "Đang đăng..." : "Đăng bài"}
             </button>
           </div>
         </div>

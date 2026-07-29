@@ -1,6 +1,11 @@
 import { signSyncToken } from "./sign-internal-token";
 
-type SyncUserInput = { googleId: string; email: string; name: string };
+type SyncUserInput = {
+  googleId: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+};
 
 export async function syncUserToBackend(
   input: SyncUserInput,

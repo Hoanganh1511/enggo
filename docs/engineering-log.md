@@ -186,3 +186,62 @@ không chủ động thiết kế modal xem nhanh bù lại thì tính năng s�
 hỏng dù code hoàn toàn đúng theo yêu cầu. Tương tự, khi ảnh mẫu có 2 con số
 trông giống nhau (Mastery/Health), đừng vội gộp làm 1 — hỏi xem chúng có thực
 sự đo cùng 1 thứ không trước khi tối giản.
+
+---
+
+## 2026-07-29 — Follow/Block giữa các tài khoản: áp dụng lý do của FlockDB (Twitter), không copy kiến trúc
+
+**Vấn đề:** Thiết kế quan hệ follow cho career-tree sau khi nghiên cứu FlockDB
+(hệ thống social graph nội bộ Twitter xây từ 2010). Follower/following đều là
+truy vấn nóng ngang nhau (mỗi lần render feed/profile), và block phải là ràng
+buộc cứng chặn được follow — cần đạt cả 2 yêu cầu đó trên 1 Postgres đơn,
+không phải hạ tầng sharded như Twitter.
+
+**Các hướng đã cân nhắc:**
+1. Copy nguyên FlockDB: ghi 2 dòng vật lý mỗi lần follow (forward + backward
+   edge). → Loại bỏ: Twitter làm vậy vì họ sharded MySQL ngang hàng (Gizzard),
+   không có composite index xuyên node nhanh; ở quy mô 1 Postgres, ghi đúp là
+   chi phí thừa (mỗi follow/unfollow phải đồng bộ 2 bản ghi, dễ lệch nếu 1
+   trong 2 ghi thất bại).
+2. **Composite PK `(followerId, followeeId)` + 2 index riêng chiều**
+   (`[followeeId, createdAt]` và `[followerId, createdAt]`) thay cho 2 dòng
+   vật lý. Postgres tự chọn đúng index theo chiều truy vấn, đạt cùng hiệu năng
+   đọc 2 chiều mà chỉ 1 bản ghi/quan hệ — composite PK còn kiêm luôn vai trò
+   chống follow trùng ở tầng DB (bắt lỗi Prisma P2002 ở service thay vì tự
+   check tồn tại trước khi insert).
+3. Check block SAU khi tạo follow rồi rollback nếu vi phạm. → Loại bỏ: tạo ra
+   khoảng hở thời gian follow tồn tại dù bị block. Chọn: `isBlockedEitherDirection()`
+   luôn gọi TRƯỚC bất kỳ ghi nào, 1 câu `OR` duy nhất (không phải 2 query
+   riêng theo từng chiều) vì chỉ cần biết "có block giữa 2 người không", không
+   cần biết ai block ai.
+4. `followerCount`/`followingCount`: đếm real-time bằng `COUNT(*)` mỗi lần
+   render, hay cache field cập nhật increment/decrement. → Chọn cache, với
+   điều kiện bắt buộc đi kèm: mọi write phải nằm trong CÙNG 1 `$transaction`
+   với thao tác tạo/xoá `UserFollow` — thiếu điều kiện này, counter sẽ lệch
+   dần khỏi số dòng thật mà không ai phát hiện cho tới khi user thắc mắc.
+5. Trả lỗi thật (403/lộ lý do) khi bị block, hay che giấu. → Chọn che giấu:
+   trả `404 NotFoundException` giống hệt case "user không tồn tại" (cùng
+   message) khi bị block chặn follow — nối lại đúng pattern 404-thay-403 đã
+   dùng ở auth, để người bị chặn không phân biệt được "tài khoản không tồn
+   tại" với "tôi bị chặn".
+6. Tách `UserProfile` riêng (bio/cover/followerCount...) như thiết kế đích
+   trong `user-schema-design.md`, hay giữ `followerCount`/`followingCount`
+   thẳng trên `User`. → Chọn giữ trên `User` cho phạm vi hiện tại — tách
+   `UserProfile` là 1 tính năng riêng (trang profile đầy đủ), chưa cần để
+   Follow chạy được, tránh mở rộng phạm vi cho bài toán chưa thực sự tới.
+
+**Phát hiện phụ (không phải bug, chỉ ghi lại vì không hiển nhiên lúc đầu):**
+`blockUser` phải tự động unfollow cả 2 chiều (hệ quả bắt buộc của nguyên tắc
+"block thắng follow" — không thể để tồn tại đồng thời 1 block và 1 follow
+ngược hướng). Bản phác thảo đầu dùng `userFollow.deleteMany({ OR: [...] })`
+xoá gộp cả 2 chiều trong 1 câu — nhưng như vậy không còn biết CHIỀU NÀO thực
+sự bị xoá, nên không biết trừ counter của ai. Phải tách thành 2 lần
+`findUnique` + `delete` riêng từng chiều, dài hơn nhưng biết chắc chiều nào
+tồn tại mới trừ đúng `followerCount`/`followingCount` của đúng người.
+
+**Cách tư duy rút ra:** Nghiên cứu kiến trúc hệ thống lớn nên tách 2 lớp:
+**lý do kỹ thuật đằng sau quyết định** (đọc 2 chiều nhanh ngang nhau, block
+phải thắng follow, đừng tối ưu bài toán chưa xảy ra) đúng ở mọi quy mô; còn
+**cách hiện thực cụ thể** (2 bản ghi vật lý, sharded graph DB, fanout
+push/pull) chỉ hợp lý ở đúng quy mô hệ thống gốc đang giải quyết. Copy lý do
+mà bỏ qua bối cảnh quy mô sẽ dẫn tới over-engineering sớm.

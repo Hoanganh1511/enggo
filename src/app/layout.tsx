@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 
@@ -11,6 +11,15 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Font rieng cho PostCard (xem globals.css --font-card / class "font-card")
+// - thiet ke danh rieng cho tieng Viet (subset "vietnamese"), net tron/than
+// thien gan giong anh mau nguoi dung gui, KHONG doi font toan app.
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam-pro",
+  subsets: ["vietnamese", "latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -32,9 +41,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${beVietnamPro.variable} h-full antialiased`}
     >
-      <body className="flex h-dvh flex-col overflow-hidden bg-background">
+      <body className="flex h-dvh flex-col overflow-hidden ">
         {children}
         <Toaster />
       </body>

@@ -1,7 +1,7 @@
 import { LEGEND_ITEMS, getStatusStyle } from "@/lib/skill-tree/status-style";
 
 // Muc dieu huong (Overview/Skill Tree/Galaxy View/.../Notes) da chuyen het
-// sang sidebar chinh (career-tree/sidebar.tsx), long trong nhom "My Town" -
+// sang header chinh (career-tree/top-header-bar.tsx), trong dropdown "My Town" -
 // component nay gio chi con Legend trang thai, khong con nhan props gi.
 const SkillTreeSidebar = () => {
   return (

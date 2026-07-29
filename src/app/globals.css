@@ -78,6 +78,10 @@
   --color-active: var(--active);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  /* Font rieng cho PostCard (class "font-card") - xem layout.tsx, KHONG dung
+     lam --font-sans mac dinh vi chi ap dung cho card post, khong doi font
+     toan app. */
+  --font-card: var(--font-be-vietnam-pro);
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);

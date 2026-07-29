@@ -36,11 +36,17 @@ export type PostColumnGroup = "personal" | "resource";
 
 // Tab dieu huong tren cung trang Home (xem HomeLayoutShell.tsx) - THAY the
 // bo 3 tab cu "For you/Following/Trending" (loc theo trang thai follow/diem
-// tuong tac, khong lien quan "loai" post) bang 5 tab loc THANG theo "kind":
+// tuong tac, khong lien quan "loai" post) bang 6 tab loc THANG theo "kind":
 // "posts" = chia se thuong ngay, "achievements" = thanh tich/cot moc,
 // "progress" = cap nhat tien do dang lam do, "for-it" = tu lieu/kien thuc ky
-// thuat, "vote" = binh chon.
-export type HomeTab = "posts" | "achievements" | "progress" | "for-it" | "vote";
+// thuat, "vote" = binh chon, "events" = su kien/announcement.
+export type HomeTab =
+  | "posts"
+  | "achievements"
+  | "progress"
+  | "for-it"
+  | "vote"
+  | "events";
 
 type PostKindMeta = {
   icon: LucideIcon;
@@ -62,7 +68,7 @@ export const POST_KIND_META: Record<Post["kind"], PostKindMeta> = {
   video: { icon: Video, accent: "#ef4444", label: "Video", group: "personal", homeTab: "posts" },
   question: { icon: HelpCircle, accent: "#a855f7", label: "Question", group: "personal", homeTab: "posts" },
   idea: { icon: Lightbulb, accent: "#facc15", label: "Idea", group: "personal", homeTab: "posts" },
-  event: { icon: CalendarDays, accent: "#ec4899", label: "Event", group: "resource", homeTab: "posts" },
+  event: { icon: CalendarDays, accent: "#ec4899", label: "Event", group: "resource", homeTab: "events" },
 
   achievement: { icon: Trophy, accent: "#f59e0b", label: "Achievement", group: "personal", homeTab: "achievements" },
   milestone: { icon: Milestone, accent: "#22c55e", label: "Milestone", group: "personal", homeTab: "achievements" },

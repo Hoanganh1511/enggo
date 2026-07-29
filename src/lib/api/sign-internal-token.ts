@@ -2,17 +2,36 @@ import { SignJWT } from "jose";
 
 const secret = new TextEncoder().encode(process.env.INTERNAL_API_SECRET);
 
+// Ca 2 loai token deu ky bang CUNG 1 secret, nen phai co claim phan biet ro -
+// neu khong, token loai nay co the lot qua guard cua loai kia. Truoc day chi
+// dua vao viec token sync "tinh co" khong co `sub` (nen truot JwtAuthGuard) -
+// do la may, khong phai thiet ke. Gio tach han bang `aud`, va `iss` de backend
+// tu choi token khong phai do web app nay phat hanh.
+//
+// 2 hang so nay phai KHOP voi phia NestJS (src/auth/token-audience.ts).
+export const TOKEN_ISSUER = "enggo-web";
+export const AUDIENCE_API = "career-tree-api";
+export const AUDIENCE_SYNC = "career-tree-api/sync";
+
+// Token goi API thay mat 1 user cu the. `sub` PHAI luon lay tu auth(), tuyet
+// doi khong tu input client - xem client.ts.
 export function signInternalToken(userId: string): Promise<string> {
   return new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(AUDIENCE_API)
     .setIssuedAt()
     .setExpirationTime("60s")
     .sign(secret);
 }
 
+// Token rieng cho buoc dong bo user luc dang nhap - luc do CHUA biet userId
+// (dang di lay chinh no) nen khong co `sub`.
 export function signSyncToken(): Promise<string> {
   return new SignJWT({ purpose: "sync" })
     .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(AUDIENCE_SYNC)
     .setIssuedAt()
     .setExpirationTime("60s")
     .sign(secret);

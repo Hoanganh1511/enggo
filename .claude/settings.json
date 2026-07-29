@@ -1,13 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc --noEmit *)",
+      "Bash(npx tsc *)",
       "Bash(npx eslint *)",
+      "Bash(npx prettier *)",
+      "Bash(npx next build*)",
       "Bash(curl -s -o /dev/null -w *)",
       "Bash(npm run dev)",
       "Bash(npx playwright test *)",
       "Bash(npm run typecheck *)",
-      "Bash(npm run start:dev)"
+      "Bash(npm run lint*)",
+      "Bash(npm run build*)",
+      "Bash(npm run start:dev)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm build*)",
+      "Bash(pnpm typecheck*)"
     ]
   }
 }

@@ -1,12 +1,14 @@
 import { Check } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
 
 type ProjectUpdatePost = Extract<Post, { kind: "project-update" }>;
 
 // Project Update - dang GitHub Release: header co icon + ten project + badge
 // version (monospace), duoi la changelog dang checklist.
 export function ProjectUpdateBody({ post }: { post: ProjectUpdatePost }) {
+  const kindMeta = POST_KIND_META[post.kind];
   return (
     <div className="mt-2 overflow-hidden rounded-xl border border-border">
       <div className="flex items-center justify-between gap-2 border-b border-border bg-surface-muted px-4 py-3">
@@ -14,11 +16,11 @@ export function ProjectUpdateBody({ post }: { post: ProjectUpdatePost }) {
           <span
             className="flex size-8 shrink-0 items-center justify-center rounded-md"
             style={{
-              background: hexToRgba(post.accent, 0.15),
-              color: post.accent,
+              background: hexToRgba(kindMeta.accent, 0.15),
+              color: kindMeta.accent,
             }}
           >
-            <post.icon size={16} strokeWidth={1.75} />
+            <kindMeta.icon size={16} strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
             <p className="text-[10px] font-medium tracking-wide text-ink-faint uppercase">
