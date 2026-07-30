@@ -12,7 +12,7 @@ const LINKS = [
 // profile duoc dong khung tron ven tu tren xuong duoi.
 const ProfileFooter = ({ displayName }: { displayName: string }) => {
   return (
-    <div className="-mx-6 -mb-4 border-t border-border bg-surface px-6 py-5">
+    <div className=" -mb-4 border-t border-border bg-surface py-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

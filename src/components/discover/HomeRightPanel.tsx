@@ -13,6 +13,10 @@ import {
 import { PEOPLE_TO_FOLLOW } from "@/content/people-to-follow-mock";
 import { getAvatarColor } from "@/lib/discover/avatar-color";
 import { formatCompact } from "@/lib/format-number";
+import {
+  followUserAction,
+  unfollowUserAction,
+} from "@/actions/discover/follow-user";
 
 // Vong tron % match - dung 1 mau primary duy nhat cho moi card (KHONG doi
 // mau theo tung nguoi nhu anh mau, tranh cam giac "cau vong" khong chu dich).
@@ -52,12 +56,21 @@ function MatchRing({ percent }: { percent: number }) {
   );
 }
 
-function FollowButton() {
+function FollowButton({ username }: { username: string }) {
   const [following, setFollowing] = useState(false);
+  async function handleClick() {
+    const next = !following;
+    setFollowing(next);
+    try {
+      await (next ? followUserAction(username) : unfollowUserAction(username));
+    } catch {
+      setFollowing(!next);
+    }
+  }
   return (
     <button
       type="button"
-      onClick={() => setFollowing((v) => !v)}
+      onClick={handleClick}
       className={`h-7 w-full shrink-0 cursor-pointer rounded-md border text-xs font-medium transition-colors duration-150 ease-out ${
         following
           ? "border-border text-ink-muted hover:bg-hover-bg"
@@ -173,7 +186,7 @@ const HomeRightPanel = () => {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <FollowButton />
+                <FollowButton username={person.username} />
                 <button
                   type="button"
                   title="Lưu"

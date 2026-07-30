@@ -5,16 +5,26 @@ import type { Post } from "@/content/home-feed-mock";
 import PostCard from "./PostCard";
 import { splitPostsIntoColumns } from "@/lib/discover/post-kind-meta";
 import { getFeedStatus, subscribeFeed } from "@/lib/discover/feed-store";
+import PostCardSkeleton from "./PostCardSkeleton";
 
+// Khop dung bo cuc that: cot trai "timeline" (avatar+ten dan dau, khong
+// vien), cot phai "card" (the doc lap co vien) - xem TimelineColumn/CardColumn
+// duoi day.
 function FeedSkeleton() {
   return (
-    <div className="flex flex-col gap-3 py-2">
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="h-20 animate-pulse rounded-lg bg-surface-muted"
-        />
-      ))}
+    <div className="flex items-start gap-8">
+      <div className="min-w-0 flex-1">
+        <div className="divide-y divide-border">
+          {[0, 1, 2].map((i) => (
+            <PostCardSkeleton key={i} variant="timeline" />
+          ))}
+        </div>
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        {[0, 1, 2].map((i) => (
+          <PostCardSkeleton key={i} variant="card" />
+        ))}
+      </div>
     </div>
   );
 }

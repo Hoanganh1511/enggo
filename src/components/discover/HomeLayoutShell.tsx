@@ -101,7 +101,7 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 gap-6 overflow-hidden ">
+    <div className="flex min-h-0 min-w-0 flex-1 px-6 gap-6 overflow-hidden ">
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* <TrendingPulseStrip /> */}
         {/* Toolbar noi - truoc la thanh ngang neo giua-duoi man hinh, gio

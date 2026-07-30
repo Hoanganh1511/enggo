@@ -5,11 +5,30 @@ import type { Post } from "@/content/home-feed-mock";
 import PostCard from "./PostCard";
 import MasonryGrid from "@/components/ui/masonry-grid";
 import { getFeedStatus, subscribeFeed } from "@/lib/discover/feed-store";
+import PostCardSkeleton from "./PostCardSkeleton";
 
 // Khai bao ngoai component: truyen inline arrow vao MasonryGrid se tao ham moi
 // moi lan render -> useMemo tinh lai layout vo ich.
 const getPostKey = (post: Post) => post.id;
 const renderPost = (post: Post) => <PostCard post={post} variant="card" />;
+
+// Skeleton phai di qua DUNG MasonryGrid (khong tu flex-wrap rieng) de tinh
+// so cot GIONG HET feed that (theo minColumnWidth=280 ben duoi) - flex-wrap
+// tu trinh duyet tinh so cot khac thuat toan cua MasonryGrid, gay lech so
+// cot giua luc loading va luc co du lieu that.
+type SkeletonItem = { id: string; bodyHeight: string };
+const SKELETON_ITEMS: SkeletonItem[] = [
+  "h-24",
+  "h-40",
+  "h-32",
+  "h-56",
+  "h-28",
+  "h-44",
+].map((bodyHeight, i) => ({ id: `skeleton-${i}`, bodyHeight }));
+const getSkeletonKey = (item: SkeletonItem) => item.id;
+const renderSkeleton = (item: SkeletonItem) => (
+  <PostCardSkeleton variant="card" bodyHeight={item.bodyHeight} />
+);
 
 // Feed 1 luong duy nhat, xep theo masonry (xem masonry-grid.tsx).
 //
@@ -29,14 +48,13 @@ const MasonryFeed = ({
 
   if (posts.length === 0 && status === "loading") {
     return (
-      <div className="flex flex-wrap gap-4 py-2">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-40 w-full max-w-80 flex-1 animate-pulse rounded-lg bg-surface-muted"
-          />
-        ))}
-      </div>
+      <MasonryGrid
+        items={SKELETON_ITEMS}
+        getKey={getSkeletonKey}
+        renderItem={renderSkeleton}
+        minColumnWidth={280}
+        gap={16}
+      />
     );
   }
 

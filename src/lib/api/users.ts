@@ -8,3 +8,28 @@ export function revokeAllSessions(): Promise<{ revokedAt: string }> {
     method: "POST",
   });
 }
+
+export type UserProfileApiShape = {
+  id: string;
+  username: string | null;
+  displayName: string;
+  avatarUrl: string;
+  isVerified: boolean;
+  createdAt: string;
+  followerCount: number;
+  followingCount: number;
+  bio: string | null;
+  coverImageUrl: string | null;
+  location: string | null;
+  websiteUrl: string | null;
+  pronouns: string | null;
+  postCount: number;
+  isSelf: boolean;
+  isFollowing: boolean;
+};
+
+export function getProfileByUsername(
+  username: string,
+): Promise<UserProfileApiShape> {
+  return apiFetch<UserProfileApiShape>(`/users/${username}`);
+}

@@ -37,7 +37,7 @@ type PostCommon = {
   // liked/saved: CHUA co bang Like/Save that o backend (xem quyet dinh "seed
   // data thật" - chi so tinh, khong tuong tac that) nen 2 field nay hien
   // luon undefined tu API - giu lai trong type de UI (vd tab "Đã thích" o
-  // ProfileView) khong vo, don gian hien rong thay vi bao loi.
+  // u/[username]/likes/page.tsx) khong vo, don gian hien rong thay vi bao loi.
   liked?: boolean;
   saved?: boolean;
   // Breadcrumb "danh muc kien thuc" THUAN HIEN THI (vd ["Backend", "Node.js"])
