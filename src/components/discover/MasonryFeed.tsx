@@ -40,13 +40,19 @@ const renderSkeleton = (item: SkeletonItem) => (
 const MasonryFeed = ({
   posts,
   emptyMessage,
+  loading,
 }: {
   posts: Post[];
   emptyMessage?: string;
+  // Ghi de trang thai loading cua feed-store dung chung - dung khi component
+  // cha (vd trang /home/category/[slug]) tu fetch rieng (API loc that theo
+  // category), khong doc tu feed-store nen can tu bao trang thai loading.
+  loading?: boolean;
 }) => {
   const status = useSyncExternalStore(subscribeFeed, getFeedStatus, () => "idle" as const);
+  const isLoading = loading ?? status === "loading";
 
-  if (posts.length === 0 && status === "loading") {
+  if (posts.length === 0 && isLoading) {
     return (
       <MasonryGrid
         items={SKELETON_ITEMS}

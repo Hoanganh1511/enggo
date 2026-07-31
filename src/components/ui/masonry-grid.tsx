@@ -26,6 +26,9 @@ type MasonryGridProps<T> = {
   // Be ngang toi thieu cua 1 cot - so cot suy ra tu day + be ngang container.
   minColumnWidth?: number;
   gap?: number;
+  // Ep cung 1 so cot cu the (bo qua minColumnWidth) - dung khi nguoi dung tu
+  // chon so cot qua UI thay vi de component tu tinh theo be ngang man hinh.
+  columnCount?: number;
 };
 
 export function MasonryGrid<T>({
@@ -34,6 +37,7 @@ export function MasonryGrid<T>({
   renderItem,
   minColumnWidth = 320,
   gap = 16,
+  columnCount: forcedColumnCount,
 }: MasonryGridProps<T>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -89,10 +93,9 @@ export function MasonryGrid<T>({
     if (containerWidth === 0) {
       return { positions: new Map<string, { x: number; y: number }>(), columnWidth: 0, height: 0 };
     }
-    const columnCount = Math.max(
-      1,
-      Math.floor((containerWidth + gap) / (minColumnWidth + gap)),
-    );
+    const columnCount =
+      forcedColumnCount ??
+      Math.max(1, Math.floor((containerWidth + gap) / (minColumnWidth + gap)));
     const columnWidth = (containerWidth - gap * (columnCount - 1)) / columnCount;
     const columnHeights = new Array<number>(columnCount).fill(0);
     const positions = new Map<string, { x: number; y: number }>();
@@ -115,7 +118,7 @@ export function MasonryGrid<T>({
       columnWidth,
       height: Math.max(...columnHeights) - gap,
     };
-  }, [containerWidth, heights, items, getKey, gap, minColumnWidth]);
+  }, [containerWidth, heights, items, getKey, gap, minColumnWidth, forcedColumnCount]);
 
   return (
     <div

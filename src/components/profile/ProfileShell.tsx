@@ -1,11 +1,12 @@
 "use client";
 
-import { startTransition, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ProfileHeader from "./ProfileHeader";
 import ProfileNav from "./ProfileNav";
 import ProfileFooter from "./ProfileFooter";
 import ProfileContentWrap from "./ProfileContentWrap";
+import ProfileSidePanel from "./ProfileSidePanel";
 import { UserProfileApiShape } from "@/lib/api/users";
 import {
   followUserAction,
@@ -27,7 +28,7 @@ const ProfileShell = ({
 }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [isPending, setTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   //
   const [following, setFollowing] = useState(profile.isFollowing);
@@ -92,11 +93,12 @@ const ProfileShell = ({
         />
 
         <div
-          className={`flex-1 py-4 transition-opacity duration-150 ease-out ${
+          className={`flex flex-1 gap-4 py-4 transition-opacity duration-150 ease-out ${
             isPending ? "pointer-events-none opacity-50" : "opacity-100"
           }`}
         >
-          {children}
+          <div className="min-w-0 flex-1">{children}</div>
+          <ProfileSidePanel />
         </div>
 
         <ProfileFooter displayName={profile.displayName} />

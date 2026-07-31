@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import PostComposer from "./PostComposer";
 import HomeRightPanel from "./HomeRightPanel";
 import TrendingPulseStrip from "./TrendingPulseStrip";
+import HomeCategoryBar from "./HomeCategoryBar";
 import {
   MoonIcon,
   Plus,
@@ -18,28 +20,35 @@ import {
 } from "lucide-react";
 import { ensureFeedLoaded } from "@/lib/discover/feed-store";
 
-// Mau accent rieng cho tab "Sự kiện" - dung chung mau da dinh nghia cho kind
-// "event" trong post-kind-meta.ts (POST_KIND_META.event.accent) de nhat
-// quan, khong bia mau moi. Cac tab con lai KHONG co iconColor rieng - icon tu
-// nhan mau theo trang thai active/inactive cua ca tab (xem className Link).
-const EVENT_ACCENT = "#ec4899";
-
+// Moi tab 1 mau icon rieng (sang/pastel), CO DINH khong doi theo active -
+// dung dung pattern iconColor cua ProfileNav.tsx (xem file do de biet quy
+// uoc chon mau).
 const TABS: {
   href: string;
   label: string;
   icon: typeof FileText;
-  iconColor?: string;
+  iconColor: string;
 }[] = [
-  { href: "/home", label: "Bài đăng", icon: FileText },
-  { href: "/home/achievements", label: "Thành tích mới", icon: Trophy },
-  { href: "/home/progress", label: "Tiến độ", icon: BarChart3 },
-  { href: "/home/for-it", label: "For IT", icon: Code2 },
-  { href: "/home/vote", label: "Vote", icon: Star },
+  { href: "/home", label: "Bài đăng", icon: FileText, iconColor: "#38bdf8" },
+  {
+    href: "/home/achievements",
+    label: "Thành tích",
+    icon: Trophy,
+    iconColor: "#fbbf24",
+  },
+  {
+    href: "/home/progress",
+    label: "Tiến độ",
+    icon: BarChart3,
+    iconColor: "#818cf8",
+  },
+  { href: "/home/for-it", label: "For IT", icon: Code2, iconColor: "#c084fc" },
+  { href: "/home/vote", label: "Vote", icon: Star, iconColor: "#fb7185" },
   {
     href: "/home/events",
     label: "Sự kiện",
     icon: CalendarDays,
-    iconColor: EVENT_ACCENT,
+    iconColor: "#ec4899",
   },
 ];
 
@@ -54,6 +63,7 @@ const TABS: {
 // sach post rieng cua tung tab.
 const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   // Cac trang tab render tuc thi (client, doc tu feed-store) nen loading.tsx
   // khong bao gio hien - khong co gi de suspend. Nhung React transition van
@@ -62,6 +72,9 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
   // kem spinner + lam mo noi dung cu trong luc cho.
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  // Rieng cho nut Dong/Noi bat trong HomeCategoryBar - khac pendingHref vi
+  // khong doi pathname, chi doi query string "mode" tren trang hien tai.
+  const [pendingMode, setPendingMode] = useState<string | null>(null);
 
   // Fetch feed That 1 LAN duy nhat cho ca 5 tab - dat o layout dung chung
   // (khong phai tung page.tsx) vi cac tab la sibling doc chung 1 feed-store,
@@ -74,6 +87,13 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
   // Khong can useEffect de don pendingHref: transition xong -> isPending false
   // -> tu dong roi ve pathname (luc nay da la route moi).
   const activeHref = isPending && pendingHref ? pendingHref : pathname;
+  // HomeCategoryBar hien o ca /home va cac trang Linh vuc con
+  // (/home/category/[slug]) - deu la "che do duyet theo Bai dang".
+  const isHomeTab = activeHref === "/home" || activeHref.startsWith("/home/category/");
+
+  const activeMode =
+    (isPending && pendingMode !== null ? pendingMode : searchParams.get("mode")) ??
+    "activity";
 
   const handleTabClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -83,9 +103,23 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
     // thuong de tu dieu huong kem trang thai cho.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
-    if (pathname === href) return;
+    if (activeHref === href) return;
     setPendingHref(href);
     startTransition(() => router.push(href));
+  };
+
+  // Rieng nut Dong/Noi bat - chi doi query string "mode" tren CUNG pathname
+  // hien tai (khong dung pendingHref, tranh lam sai lech activeHref cua
+  // TABS/Linh vuc dang dua vao so sanh chuoi thuan pathname).
+  const handleModeChange = (mode: string) => {
+    setPendingMode(mode);
+    const qs = new URLSearchParams(searchParams.toString());
+    if (mode === "activity") qs.delete("mode");
+    else qs.set("mode", mode);
+    const query = qs.toString();
+    startTransition(() =>
+      router.push(`${pathname}${query ? `?${query}` : ""}`),
+    );
   };
 
   // Cuon toi + focus thang vao PostComposer dang co san ben duoi (id
@@ -101,8 +135,8 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 px-6 gap-6 overflow-hidden ">
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <div className="flex min-h-0 min-w-0 flex-1 px-6 gap-6 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scrollbar-gutter-stable">
         {/* <TrendingPulseStrip /> */}
         {/* Toolbar noi - truoc la thanh ngang neo giua-duoi man hinh, gio
             chuyen thanh dock doc neo giua-phai man hinh (khong choan noi
@@ -131,32 +165,60 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
           {/* Nen trang + vien + shadow GIONG PostCard variant="card" (xem
               PostCard.tsx) - dung chinh gia tri shadow do de dong bo "the
               trang" trong toan app, khong tu bia bo gia tri rieng o day. */}
-          <div className="mb-4 flex shrink-0 items-center gap-1 rounded-lg border border-border bg-surface px-2 py-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_1px_3px_rgba(16,24,40,0.1)]">
-            {TABS.map((tab) => {
-              const active = activeHref === tab.href;
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  onClick={(e) => handleTabClick(e, tab.href)}
-                  className={`relative flex h-9 shrink-0 items-center gap-1.5 rounded-md px-3.5 text-sm transition-colors duration-150 ease-out ${
-                    active
-                      ? "font-semibold text-primary"
-                      : "font-medium text-ink-muted hover:bg-hover-bg hover:text-ink"
-                  }`}
+          <div className="my-6 grid grid-cols-[3fr_1fr] gap-4 px-35">
+            {/* Grid-cols GIU CO DINH (khong doi theo isHomeTab) - doi ngay
+                lap tuc se lam layout co lai truoc khi AnimatePresence chay
+                xong animation exit (150ms), gay giat/nhay vi tri. Chi noi
+                dung o cell dau tien an/hien co animation, khung cot khong
+                bao gio xe dich.
+                HomeCategoryBar chi hien o "Bai dang" + cac trang Linh vuc con
+                (/home/category/[slug]) - cac tab khac (Thanh tich/Tien do/
+                For IT/Vote/Su kien) khong co nghia loc theo chuyen muc nay. */}
+            <AnimatePresence>
+              {isHomeTab && (
+                <motion.div
+                  key="home-category-bar"
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -12 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
                 >
-                  <tab.icon
-                    size={15}
-                    strokeWidth={active ? 2.25 : 1.75}
-                    style={tab.iconColor ? { color: tab.iconColor } : undefined}
+                  <HomeCategoryBar
+                    mode={activeMode}
+                    onModeChange={handleModeChange}
+                    activeHref={activeHref}
+                    onNavClick={handleTabClick}
                   />
-                  {tab.label}
-                  {active && (
-                    <span className="absolute inset-x-3.5 bottom-0 h-0.5 rounded-full bg-primary" />
-                  )}
-                </Link>
-              );
-            })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="grid min-w-0 grid-cols-3 gap-1">
+              {TABS.map((tab) => {
+                const active =
+                  activeHref === tab.href ||
+                  (tab.href === "/home" && activeHref.startsWith("/home/category/"));
+                return (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    onClick={(e) => handleTabClick(e, tab.href)}
+                    className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs transition-colors duration-150 ease-out ${
+                      active
+                        ? "bg-active-bg font-semibold text-primary"
+                        : "font-medium text-ink-muted hover:bg-hover-bg hover:text-ink"
+                    }`}
+                  >
+                    <tab.icon
+                      size={16}
+                      strokeWidth={2.25}
+                      style={{ color: tab.iconColor }}
+                    />
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
           {/* Noi dung rieng cua tung tab. Lam mo trong luc chuyen tab de
               nguoi dung thay ro "danh sach cu sap bi thay", thay vi man hinh
@@ -164,7 +226,7 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
               Tab "Bài đăng" dung MasonryFeed (1 luong, kieu Pinterest); 4 tab
               con lai van dung FeedColumns (2 cot theo nghia). */}
           <div
-            className={`transition-opacity duration-150 ease-out ${
+            className={`px-35 transition-opacity duration-150 ease-out ${
               isPending ? "pointer-events-none opacity-50" : "opacity-100"
             }`}
           >

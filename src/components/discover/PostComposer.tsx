@@ -37,6 +37,10 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import type { ApiWorkspace, ApiCategory, ApiNodeListItem } from "@/lib/api/types";
+import {
+  NGHE_NGHIEP,
+  slugToCategoryEnum,
+} from "@/lib/discover/category-taxonomy";
 import { listWorkspacesAction } from "@/actions/career-tree/list-workspaces";
 import { getWorkspaceCategoriesAction } from "@/actions/career-tree/get-workspace-categories";
 import { getWorkspaceTreeAction } from "@/actions/career-tree/get-workspace-tree";
@@ -582,6 +586,12 @@ const PostComposer = () => {
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [videoProcessing, setVideoProcessing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
+  // Linh vuc (category that, xem category-taxonomy.ts) gan cho bai dang -
+  // optional, KHAC "reportCategoryId" ben duoi (do la Knowledge Block cua
+  // Skill Tree, chi dung rieng cho kind "skill-report", 2 khai niem khac
+  // nhau du trung chu "category").
+  const [postCategorySlug, setPostCategorySlug] = useState<string | null>(null);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   // Thu gon mac dinh, mo rong khi focus vao o nhap hoac bam 1 trong 2 quick
   // shortcut (Anh/Code snippet) - giup composer gon hang dau feed, chi "no
   // ra" khi nguoi dung thuc su muon soan bai.
@@ -715,12 +725,16 @@ const PostComposer = () => {
   const handlePost = async () => {
     if (!draft || isPosting) return;
     setIsPosting(true);
-    const ok = await addPost(activeKind, draft);
+    const category = postCategorySlug
+      ? slugToCategoryEnum(postCategorySlug)
+      : undefined;
+    const ok = await addPost(activeKind, draft, category);
     setIsPosting(false);
     if (!ok) return;
     setContent("");
     setFields(INITIAL_FIELDS);
     setActiveKind("text");
+    setPostCategorySlug(null);
     setIsOpen(false);
   };
 
@@ -1428,6 +1442,72 @@ const PostComposer = () => {
                         />
                         <span className="flex-1 truncate">{type.label}</span>
                         {activeKind === type.key && (
+                          <Check
+                            size={14}
+                            strokeWidth={2}
+                            className="shrink-0 text-primary"
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </PopoverContent>
+            </PopoverRoot>
+
+            <PopoverRoot open={categoryMenuOpen} onOpenChange={setCategoryMenuOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={`flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors duration-150 ease-out ${
+                    categoryMenuOpen
+                      ? "border-outline-border bg-outline-bg text-primary"
+                      : postCategorySlug
+                        ? "border-primary text-primary"
+                        : "border-border text-ink-muted hover:bg-hover-bg"
+                  }`}
+                >
+                  {NGHE_NGHIEP.flatMap((n) => n.linhVuc).find(
+                    (lv) => lv.slug === postCategorySlug,
+                  )?.label ?? "Lĩnh vực"}
+                  <ChevronDown size={13} strokeWidth={1.75} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                open={categoryMenuOpen}
+                align="start"
+                className="z-50 max-h-96 w-64 overflow-y-auto rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
+              >
+                {postCategorySlug && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPostCategorySlug(null);
+                      setCategoryMenuOpen(false);
+                    }}
+                    className="mb-1 flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-danger transition-colors duration-150 ease-out hover:bg-hover-bg"
+                  >
+                    <X size={14} strokeWidth={1.75} className="shrink-0" />
+                    Bỏ chọn
+                  </button>
+                )}
+                {NGHE_NGHIEP.map((nghe) => (
+                  <div key={nghe.slug} className="mb-1 last:mb-0">
+                    <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-ink-faint uppercase">
+                      {nghe.label}
+                    </p>
+                    {nghe.linhVuc.map((lv) => (
+                      <button
+                        key={lv.slug}
+                        type="button"
+                        onClick={() => {
+                          setPostCategorySlug(lv.slug);
+                          setCategoryMenuOpen(false);
+                        }}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+                      >
+                        <span className="flex-1 truncate">{lv.label}</span>
+                        {postCategorySlug === lv.slug && (
                           <Check
                             size={14}
                             strokeWidth={2}

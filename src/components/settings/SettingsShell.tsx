@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Bell,
-  KeyRound,
-  Lock,
-  UserRound,
-  type LucideIcon,
-} from "lucide-react";
+import { Bell, KeyRound, Lock, UserRound, type LucideIcon } from "lucide-react";
 import type { UserProfileData } from "@/content/user-profile";
 import {
   AccountSection,
@@ -42,7 +36,7 @@ const SettingsShell = ({
   const [section, setSection] = useState<SectionKey>("profile");
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-5">
+    <div className="mx-auto flex max-w-5xl flex-col gap-5 pt-4">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-ink">Cài đặt</h1>
         <p className="mt-1 text-sm text-ink-muted">

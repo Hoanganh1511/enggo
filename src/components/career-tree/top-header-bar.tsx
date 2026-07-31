@@ -56,7 +56,12 @@ const MY_TOWN_CHILDREN: NavChild[] = [
   { key: "galaxy-view", title: "Galaxy View", icon: Orbit, available: false },
   { key: "skyline", title: "Skyline", icon: Mountain, available: false },
   { key: "timeline", title: "Timeline", icon: History, available: false },
-  { key: "achievements", title: "Achievements", icon: Trophy, available: false },
+  {
+    key: "achievements",
+    title: "Achievements",
+    icon: Trophy,
+    available: false,
+  },
   { key: "goals", title: "Goals", icon: Target, available: false },
   { key: "notes", title: "Notes", icon: StickyNote, available: false },
 ];
@@ -151,112 +156,116 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
       </div>
 
       {/* Nhom dieu huong chinh */}
-      <nav className="ml-2 flex shrink-0 items-center gap-0.5">
-        {NAV_ITEMS.map(({ title, icon: Icon, href, matchPrefixes, children }) => {
-          const isActive = matchPrefixes
-            ? matchPrefixes.some((prefix) => pathname.startsWith(prefix))
-            : !!href && pathname === href;
-          const isItemPending = isPending && pendingHref === href;
+      <nav className="ml-6 flex shrink-0 items-center gap-2">
+        {NAV_ITEMS.map(
+          ({ title, icon: Icon, href, matchPrefixes, children }) => {
+            const isActive = matchPrefixes
+              ? matchPrefixes.some((prefix) => pathname.startsWith(prefix))
+              : !!href && pathname === href;
+            const isItemPending = isPending && pendingHref === href;
 
-          const itemClass = cn(
-            "flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ease-out",
-            isActive
-              ? "bg-active-bg font-semibold text-primary"
-              : "font-medium text-ink-muted hover:bg-hover-bg hover:text-ink",
-          );
-
-          const label = (
-            <span className="hidden truncate lg:inline">{title}</span>
-          );
-
-          if (children) {
-            return (
-              <PopoverRoot
-                key={title}
-                open={townOpen}
-                onOpenChange={setTownOpen}
-              >
-                <PopoverTrigger asChild>
-                  <button type="button" title={title} className={itemClass}>
-                    <Icon
-                      strokeWidth={isActive ? 2.25 : 1.75}
-                      className="size-4.5 shrink-0"
-                    />
-                    {label}
-                    <ChevronDown
-                      size={13}
-                      strokeWidth={1.75}
-                      className="shrink-0"
-                    />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  open={townOpen}
-                  align="start"
-                  className="z-50 w-56 rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
-                >
-                  {children.map((child) => {
-                    const childActive = child.matchPrefixes
-                      ? child.matchPrefixes.some((p) => pathname.startsWith(p))
-                      : !!child.href && pathname === child.href;
-                    return (
-                      <button
-                        key={child.key}
-                        type="button"
-                        disabled={!child.href}
-                        onClick={() => {
-                          if (!child.href) return;
-                          setTownOpen(false);
-                          handleNavigate(child.href);
-                        }}
-                        className={cn(
-                          "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 ease-out",
-                          childActive
-                            ? "bg-active-bg font-medium text-primary"
-                            : "text-ink hover:bg-hover-bg",
-                          !child.href &&
-                            "cursor-not-allowed text-ink-faint hover:bg-transparent",
-                        )}
-                      >
-                        <child.icon
-                          size={15}
-                          strokeWidth={1.75}
-                          className="shrink-0"
-                        />
-                        <span className="flex-1 truncate">{child.title}</span>
-                        {!child.available && (
-                          <span className="text-[10px] text-ink-faint">
-                            Sắp có
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </PopoverContent>
-              </PopoverRoot>
+            const itemClass = cn(
+              "flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ease-out",
+              isActive
+                ? "bg-active-bg font-semibold text-primary"
+                : "font-medium text-ink-muted hover:bg-hover-bg hover:text-ink",
             );
-          }
 
-          return (
-            <button
-              key={title}
-              type="button"
-              title={title}
-              onClick={() => href && handleNavigate(href)}
-              className={itemClass}
-            >
-              {isItemPending ? (
-                <Spinner size={18} className="shrink-0" />
-              ) : (
-                <Icon
-                  strokeWidth={isActive ? 2.25 : 1.75}
-                  className="size-4.5 shrink-0"
-                />
-              )}
-              {label}
-            </button>
-          );
-        })}
+            const label = (
+              <span className="hidden truncate lg:inline">{title}</span>
+            );
+
+            if (children) {
+              return (
+                <PopoverRoot
+                  key={title}
+                  open={townOpen}
+                  onOpenChange={setTownOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <button type="button" title={title} className={itemClass}>
+                      <Icon
+                        strokeWidth={isActive ? 2.25 : 1.75}
+                        className="size-4.5 shrink-0"
+                      />
+                      {label}
+                      <ChevronDown
+                        size={13}
+                        strokeWidth={1.75}
+                        className="shrink-0"
+                      />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    open={townOpen}
+                    align="start"
+                    className="z-50 w-56 rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
+                  >
+                    {children.map((child) => {
+                      const childActive = child.matchPrefixes
+                        ? child.matchPrefixes.some((p) =>
+                            pathname.startsWith(p),
+                          )
+                        : !!child.href && pathname === child.href;
+                      return (
+                        <button
+                          key={child.key}
+                          type="button"
+                          disabled={!child.href}
+                          onClick={() => {
+                            if (!child.href) return;
+                            setTownOpen(false);
+                            handleNavigate(child.href);
+                          }}
+                          className={cn(
+                            "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 ease-out",
+                            childActive
+                              ? "bg-active-bg font-medium text-primary"
+                              : "text-ink hover:bg-hover-bg",
+                            !child.href &&
+                              "cursor-not-allowed text-ink-faint hover:bg-transparent",
+                          )}
+                        >
+                          <child.icon
+                            size={15}
+                            strokeWidth={1.75}
+                            className="shrink-0"
+                          />
+                          <span className="flex-1 truncate">{child.title}</span>
+                          {!child.available && (
+                            <span className="text-[10px] text-ink-faint">
+                              Sắp có
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </PopoverContent>
+                </PopoverRoot>
+              );
+            }
+
+            return (
+              <button
+                key={title}
+                type="button"
+                title={title}
+                onClick={() => href && handleNavigate(href)}
+                className={itemClass}
+              >
+                {isItemPending ? (
+                  <Spinner size={18} className="shrink-0" />
+                ) : (
+                  <Icon
+                    strokeWidth={isActive ? 2.25 : 1.75}
+                    className="size-4.5 shrink-0"
+                  />
+                )}
+                {label}
+              </button>
+            );
+          },
+        )}
       </nav>
 
       {/* O tim kiem - chiem phan con lai, gioi han be ngang cho de doc */}

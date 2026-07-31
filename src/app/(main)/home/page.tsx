@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import { useSearchParams } from "next/navigation";
 import MasonryFeed from "@/components/discover/MasonryFeed";
 import { SidebarPlaceholder } from "@/components/discover/SidebarPlaceholder";
 import {
@@ -31,14 +32,26 @@ export default function PostsTabPage() {
     getPosts,
     getServerSnapshot,
   );
-  const posts = filterPostsByHomeTab(allPosts, "posts");
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode") ?? "activity";
+
+  const posts = useMemo(() => {
+    let list = filterPostsByHomeTab(allPosts, "posts");
+    // "hot" - sap xep theo luot thich giam dan thay vi thu tu mac dinh (moi
+    // nhat truoc, tu API).
+    if (mode === "hot") {
+      list = [...list].sort((a, b) => b.stats.likes - a.stats.likes);
+    }
+    return list;
+  }, [allPosts, mode]);
+
   return (
-    <div className="flex items-start gap-6">
-      <SidebarPlaceholder label="Sidebar trái" widthClass="w-48" />
-      <div className="min-w-0 flex-1">
+    <div className="grid grid-cols-[3fr_1fr] items-start gap-6">
+      {/* <SidebarPlaceholder label="Sidebar trái" widthClass="w-48" /> */}
+      <div className="min-w-0">
         <MasonryFeed posts={posts} />
       </div>
-      <SidebarPlaceholder label="Sidebar phải" widthClass="w-[205px]" />
+      <SidebarPlaceholder label="Sidebar phải" widthClass="w-full" />
     </div>
   );
 }

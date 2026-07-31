@@ -35,8 +35,12 @@ export function subscribeFeed(callback: () => void) {
 
 // Component nay chi chay client ("use client" o moi noi tieu thu), khong co
 // gi de hydrate tu server ca - mang rong la snapshot server hop le duy nhat.
+// PHAI la 1 tham chieu CO DINH (khong tao [] moi moi lan goi) - React yeu cau
+// getServerSnapshot tra ve gia tri cache duoc, neu khong se render loop lien
+// tuc (xem docs useSyncExternalStore).
+const EMPTY_POSTS: Post[] = [];
 export function getServerSnapshot(): Post[] {
-  return [];
+  return EMPTY_POSTS;
 }
 
 // Goi 1 LAN duy nhat (idempotent - cac lan goi sau khi da loading/loaded deu
@@ -61,9 +65,10 @@ export async function ensureFeedLoaded(): Promise<void> {
 export async function addPost(
   kind: Post["kind"],
   data: Record<string, unknown>,
+  category?: string,
 ): Promise<boolean> {
   try {
-    const created = await createPostAction(kind, data);
+    const created = await createPostAction(kind, data, category);
     posts = [created, ...posts];
     notify();
     return true;

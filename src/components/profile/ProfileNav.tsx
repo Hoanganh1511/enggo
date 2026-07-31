@@ -65,15 +65,18 @@ function CountLink({
   value,
   label,
   isActive,
+  onNavClick,
 }: {
   href: string;
   value: number;
   label: string;
   isActive: boolean;
+  onNavClick: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={(e) => onNavClick(e, href)}
       className={`flex shrink-0 items-baseline gap-1 hover:underline ${
         isActive ? "text-primary" : ""
       }`}
@@ -230,11 +233,13 @@ const ProfileNav = ({
               value={followingCount}
               label="Đang theo dõi"
               isActive={activeHref === `${base}/following`}
+              onNavClick={onNavClick}
             />
             <CountLink
               href={`${base}/followers`}
               value={followerCount}
               label="Người theo dõi"
+              onNavClick={onNavClick}
               isActive={activeHref === `${base}/followers`}
             />
           </div>

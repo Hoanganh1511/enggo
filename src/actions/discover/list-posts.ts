@@ -5,6 +5,7 @@ export async function listPostsAction(params?: {
   cursor?: string;
   limit?: number;
   authorUsername?: string;
+  category?: string;
 }) {
   return listPosts(params);
 }
