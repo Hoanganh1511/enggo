@@ -1,13 +1,22 @@
 import type { Post } from "@/content/home-feed-mock";
 import type { ContentType } from "@/lib/discover/post-kind-meta";
 import PostCard from "../PostCard";
-import { NoteCard } from "./NoteCard";
+import { NoteCard, NoteCardSkeleton } from "./NoteCard";
 
-function SkeletonBlock({ className }: { className: string }) {
-  return (
-    <div className={`animate-pulse rounded-xl bg-surface-muted ${className}`} />
-  );
-}
+// Nhan tieng Viet rieng cho thong bao rong - CONTENT_TYPES.label (post-kind-
+// meta.ts) dung tieng Anh (Post/Resource/...) cho dropdown chon loai, khong
+// hop de nhet thang vao 1 cau tieng Viet ("Chua co Post nao phu hop." doc gau
+// trong).
+const EMPTY_STATE_LABEL: Record<ContentType, string> = {
+  post: "bài viết",
+  resource: "tài nguyên",
+  project: "dự án",
+  question: "câu hỏi",
+  achievement: "thành tích",
+  progress: "cập nhật tiến độ",
+  event: "sự kiện",
+  vote: "bình chọn",
+};
 
 // Danh sach don gian dung khi nguoi dung DA chon 1 Content Type cu the o
 // thanh loc duoi HomeSidebar (khong doi thanh do) - dung chung 1 khuon
@@ -26,14 +35,25 @@ export function SingleTypeFeedList({
   loading: boolean;
   type: ContentType;
 }) {
-  if (loading && posts.length === 0) {
-    return <SkeletonBlock className="h-72 w-full" />;
+  // "loading" thoi, khong kem "&& posts.length === 0" - cung ly do nhu
+  // EditorialFeed.tsx (xem comment o do): tranh mat skeleton tu lan doi
+  // filter thu 2 tro di vi "posts" con giu du lieu cu chua bi xoa.
+  if (loading) {
+    // Cung 1 luoi auto-fill nhu khi render that (xem ben duoi) - the
+    // NoteCardSkeleton dung khung anh + tieu de + tac gia voi NoteCard that.
+    return (
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-4 gap-y-6">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <NoteCardSkeleton key={i} className="w-full" />
+        ))}
+      </div>
+    );
   }
 
   if (posts.length === 0) {
     return (
       <p className="py-12 text-center text-sm text-ink-faint">
-        Chưa có bài viết nào phù hợp.
+        Chưa có {EMPTY_STATE_LABEL[type]} nào phù hợp.
       </p>
     );
   }

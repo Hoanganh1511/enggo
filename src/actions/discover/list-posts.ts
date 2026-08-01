@@ -5,8 +5,10 @@ export async function listPostsAction(params?: {
   cursor?: string;
   limit?: number;
   authorUsername?: string;
-  category?: string;
+  category?: string[];
   kind?: string[];
+  careerCategory?: string[];
+  careerGroup?: string;
 }) {
   return listPosts(params);
 }

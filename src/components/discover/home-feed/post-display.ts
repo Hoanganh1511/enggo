@@ -33,12 +33,14 @@ export function getPostTitle(post: Post): string {
   return "Bài đăng";
 }
 
-// Anh that duy nhat lay tu chinh du lieu post (image/gallery/video) - cac
-// kind khac (resource/project/topic...) khong co anh that, xu ly rieng o
-// ContentTile.tsx (fallback gradient+icon).
+// Uu tien anh THAT rieng cua kind (image/gallery/video), sau do moi toi
+// coverImage (seed chung cho MOI kind con lai - xem prisma/seed-posts.ts
+// career-tree-api, buildCoverImageSeed()). Kind nao van khong co ca 2 (vd
+// data cu chua seed lai) thi tra undefined, ContentTile.tsx tu fallback ve
+// gradient+icon.
 export function getPostImageUrl(post: Post): string | undefined {
   if (post.kind === "image") return post.image.url;
   if (post.kind === "gallery") return post.images[0]?.url;
   if (post.kind === "video") return post.video.thumbnailUrl;
-  return undefined;
+  return post.coverImage;
 }

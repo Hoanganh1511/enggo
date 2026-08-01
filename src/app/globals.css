@@ -368,6 +368,22 @@ body {
   background-color: var(--hover-border);
 }
 
+/* An hoan toan scrollbar (dung cho carousel ngang, xem HorizontalScroller.tsx)
+   - class rieng thay vi Tailwind arbitrary [&::-webkit-scrollbar]:hidden vi
+   cach do KHONG thang duoc rule *::-webkit-scrollbar-thumb o tren trong thuc
+   te (van thay thanh cuon tron mau border). !important de chac chan thang
+   bat ke Tailwind v4 co xep unlayered CSS nay vao dau trong cascade layer
+   hay khong - tranh phai doan lai thu tu nguon moi lan doi ban Tailwind. */
+.scrollbar-none {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .react-flow__controls {
   box-shadow: none;
   border: 1px solid var(--border);

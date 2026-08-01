@@ -52,6 +52,12 @@ type PostCommon = {
   // loc o GET /posts?category=..., KHAC "topic" o tren (chi hien thi, tu do,
   // khong loc duoc). Xem src/lib/discover/knowledge-worlds.ts.
   category?: string | null;
+  // Anh dai dien CHUNG cho MOI kind (seed rieng cho cac kind KHONG co anh
+  // that nhu image/gallery/video - xem prisma/seed-posts.ts career-tree-api,
+  // buildCoverImageSeed()). Dung lam fallback anh trong
+  // components/discover/home-feed/post-display.ts (getPostImageUrl) khi kind
+  // khong co field anh rieng.
+  coverImage?: string;
 };
 
 export type ImageAsset = { url: string; alt: string };

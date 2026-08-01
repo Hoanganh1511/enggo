@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutGrid,
-  Flame,
-  Star,
+  Compass,
+  Hash,
   ChevronDown,
   ChevronRight,
   SlidersHorizontal,
@@ -17,30 +19,27 @@ import {
   TrendingUp,
   CalendarDays,
   BarChart3,
-  Hammer,
-  Brain,
-  Bot,
+  Cpu,
   Palette,
-  Rocket,
+  Megaphone,
   Briefcase,
+  Wallet,
+  Users,
+  GraduationCap,
+  Sparkles,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import {
-  KNOWLEDGE_WORLDS,
-  getWorldByTopicSlug,
-} from "@/lib/discover/knowledge-worlds";
+import type { FeedCategoryGroup } from "@/lib/api/feed-categories";
 import { CONTENT_TYPES, type ContentType } from "@/lib/discover/post-kind-meta";
 
-export type FeedMode = "activity" | "hot";
-
-// Icon rieng cho tung Content Type - CHI la UI cua component nay (tach biet
-// khoi data nhu quy uoc WORLD_ICON o duoi), truoc day nam trong
-// HomeLayoutShell.tsx, dong bo dua ve day cung voi Content Type list.
+// Icon rieng cho tung Content Type - CHI la UI cua component nay, truoc day
+// nam trong HomeLayoutShell.tsx, dong bo dua ve day cung voi Content Type list.
 const CONTENT_TYPE_ICON: Record<
   ContentType,
   { icon: typeof FileText; color: string }
@@ -55,18 +54,22 @@ const CONTENT_TYPE_ICON: Record<
   vote: { icon: BarChart3, color: "#fb7185" },
 };
 
-const WORLD_ICON: Record<string, typeof Hammer> = {
-  build: Hammer,
-  think: Brain,
-  ai: Bot,
-  create: Palette,
-  career: Rocket,
-  business: Briefcase,
+// Icon nhom nghe nghiep - map tu `icon` (slug lucide) backend tra ve. Dung
+// map tuong minh thay vi tra cuu dong trong lucide-react de tree-shaking van
+// hoat dong va khong bao gio render ra undefined.
+const GROUP_ICON: Record<string, LucideIcon> = {
+  cpu: Cpu,
+  palette: Palette,
+  megaphone: Megaphone,
+  briefcase: Briefcase,
+  wallet: Wallet,
+  users: Users,
+  "graduation-cap": GraduationCap,
 };
 
 const rowClass =
   "flex h-9 w-full shrink-0 cursor-pointer items-center gap-2 rounded-md px-3 text-left text-sm font-medium transition-colors duration-150 ease-out";
-const rowActive = "bg-active-bg text-primary";
+const rowActive = "text-primary";
 const rowInactive = "text-ink-muted hover:bg-hover-bg hover:text-ink";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -77,103 +80,134 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Sidebar dieu huong trai cua trang Home - THAY the "Knowledge Discovery Bar"
-// ngang truoc day (HomeCategoryBar.tsx da xoa) bang danh sach doc, tham khao
-// dung layout sidebar that cua note.com: muc "Tat ca" tren cung, danh sach
-// phang, nhom Knowledge World thu gon/mo rong duoc (accordion). Logic loc
-// (query param world/topic/type/mode, quy tac reset Topic khi doi World) GIU
-// NGUYEN Y HET - chi doi hinh thuc trinh bay tu ngang/pill sang doc/list, va
-// gop them Content Type (truoc o rieng luoi trong HomeLayoutShell.tsx) vao
-// chung sidebar nay.
 export function HomeSidebar({
-  mode,
-  onModeChange,
-  world,
-  topic,
-  onWorldChange,
-  onTopicChange,
+  categoryTree,
+  group,
+  field,
+  onGroupChange,
+  onFieldChange,
   type,
   onTypeChange,
+  onClearAll,
 }: {
-  mode: FeedMode | string;
-  onModeChange: (mode: FeedMode) => void;
-  world: string | null;
-  topic: string | null;
-  onWorldChange: (world: string | null) => void;
-  onTopicChange: (topic: string | null) => void;
+  // Cay nghe nghiep 2 tang lay tu GET /feed/categories/tree (fetch o layout,
+  // xem home/layout.tsx) - THAY THE cay "Khám phá chủ đề" (Knowledge Worlds)
+  // hardcode truoc day. Backend da an san nhom rong va sap nhom soi dong nhat
+  // len dau nen o day chi render theo dung thu tu nhan duoc.
+  categoryTree: FeedCategoryGroup[];
+  group: string | null;
+  field: string | null;
+  onGroupChange: (group: string | null) => void;
+  onFieldChange: (field: string | null) => void;
   type: ContentType | null;
   onTypeChange: (type: ContentType) => void;
+  // Xoa CA group+field+type trong 1 lan push (khong the ghep tu cac handler
+  // rieng le - neu group/field von da rong san thi lenh do khong doi gi URL
+  // ca, con onTypeChange chi biet TOGGLE 1 type cu the chu khong biet cach
+  // "xoa hang bat ky dang chon" - day chinh la bug "bam Tat ca khong thay gi"
+  // da gap).
+  onClearAll: () => void;
 }) {
+  const pathname = usePathname();
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+  // Mac dinh MO HET moi nhom lan dau load (yeu cau da chot). Tach rieng khoi
+  // filter dang chon: bam ten nhom = loc theo ca nhom, bam mui ten = chi
+  // mo/dong danh sach con.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    () => new Set(categoryTree.map((g) => g.slug)),
+  );
 
-  // Topic (neu co) luon "thang" world truyen tu URL - phong truong hop URL bi
-  // sua tay lech nhau (topic thuoc world khac voi world param).
-  const activeWorldSlug = topic
-    ? (getWorldByTopicSlug(topic)?.slug ?? world)
-    : world;
-  const isAll = !activeWorldSlug && !type;
+  // Sidebar dung chung cho /home, /series va /contest (xem HomeLayoutShell.tsx)
+  // nen trang thai active phai xet CA route: cac bo loc chi thuoc ve feed.
+  const onSeries = pathname.startsWith("/series");
+  const onContest = pathname.startsWith("/contest");
+  const onFeed = !onSeries && !onContest;
 
-  const handleAllClick = () => {
-    onWorldChange(null);
-    onTopicChange(null);
+  // Nhom cha dang active: suy tu field dang chon neu co, khong thi lay group.
+  const activeGroupSlug =
+    (field
+      ? categoryTree.find((g) => g.categories.some((c) => c.slug === field))
+          ?.slug
+      : null) ?? group;
+  const isAll = onFeed && !activeGroupSlug && !field && !type;
+
+  // Goi DUY NHAT onGroupChange - handleGroupChange ben HomeLayoutShell.tsx da
+  // tu xoa `field` ATOMIC trong cung 1 pushParams (tach lam 2 lenh se dinh
+  // dung race condition da sua o ban Knowledge World truoc day: searchParams
+  // chua kip cap nhat giua 2 lenh nen lenh sau doc lai URL cu roi de mat thay
+  // doi cua lenh truoc).
+  const handleGroupClick = (slug: string) => {
+    onGroupChange(slug === activeGroupSlug ? null : slug);
   };
 
-  const handleWorldClick = (slug: string) => {
-    if (slug === activeWorldSlug) {
-      onWorldChange(null);
-      onTopicChange(null);
-    } else {
-      onWorldChange(slug);
-      onTopicChange(null);
-    }
-  };
-
-  const handleTopicClick = (slug: string) => {
-    onTopicChange(slug === topic ? null : slug);
+  const handleFieldClick = (slug: string) => {
+    onFieldChange(slug === field ? null : slug);
   };
 
   return (
-    <aside className="flex w-46 shrink-0 flex-col gap-1 overflow-y-auto pb-6">
+    // sticky top-4: dinh sidebar tai vi tri cach dinh vung cuon 16px (khop
+    // pt-4 cua hang cha trong HomeLayoutShell.tsx), khong troi theo feed khi
+    // cuon xuong. max-h+overflow-y-auto rieng de van tu cuon duoc NEU noi dung
+    // sidebar cao hon man hinh, khong bi cat mat.
+    <aside className="sticky top-4 flex max-h-[calc(100vh-2rem)] w-56 shrink-0 flex-col gap-1 overflow-y-auto pb-6">
       <button
         type="button"
-        onClick={handleAllClick}
-        className={cn(rowClass, isAll ? rowActive : rowInactive)}
+        onClick={onClearAll}
+        className={cn(rowClass, isAll ? "text-sky-500" : rowInactive)}
       >
-        <LayoutGrid size={15} strokeWidth={1.75} className="shrink-0" />
+        <span
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-full text-white transition-opacity duration-150 ease-out",
+            !isAll && "opacity-40",
+          )}
+          style={{ background: "#0ea5e9" }}
+        >
+          <LayoutGrid size={13} strokeWidth={2.25} />
+        </span>
         Tất cả
       </button>
 
       <div className="my-1 h-px shrink-0 bg-border" />
 
-      <button
-        type="button"
-        onClick={() => onModeChange("activity")}
-        className={cn(
-          rowClass,
-          mode === "activity" ? "bg-active-bg text-amber-500" : rowInactive,
-        )}
+      {/* 2 route rieng (khong phai filter cua feed) nen active xet theo
+          PATHNAME chu khong theo query param nhu cac hang con lai. */}
+      <Link
+        href="/series"
+        className={cn(rowClass, onSeries ? "text-amber-500" : rowInactive)}
       >
-        <Flame size={15} strokeWidth={1.75} className="shrink-0" />
-        Live
-      </button>
-      <button
-        type="button"
-        onClick={() => onModeChange("hot")}
-        className={cn(
-          rowClass,
-          mode === "hot" ? "bg-active-bg text-violet-500" : rowInactive,
-        )}
+        <span
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-full text-white transition-opacity duration-150 ease-out",
+            !onSeries && "opacity-40",
+          )}
+          style={{ background: "#f59e0b" }}
+        >
+          <Compass size={13} strokeWidth={2.25} />
+        </span>
+        Đi cùng mọi người
+      </Link>
+
+      <Link
+        href="/contest"
+        className={cn(rowClass, onContest ? "text-rose-500" : rowInactive)}
       >
-        <Star size={15} strokeWidth={1.75} className="shrink-0" />
-        Trending
-      </button>
+        <span
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-full text-white transition-opacity duration-150 ease-out",
+            !onContest && "opacity-40",
+          )}
+          style={{ background: "#f43f5e" }}
+        >
+          <Hash size={13} strokeWidth={2.25} />
+        </span>
+        Chủ đề & Cuộc thi
+      </Link>
 
       <div className="my-1 h-px shrink-0 bg-border" />
 
       {/* Loai noi dung thu gon thanh 1 dropdown (thay vi 8 hang lien tiep) -
-          8 hang day chiem qua nhieu chieu cao, day han "Kham pha chu de"
-          xuong duoi phai cuon moi thay - trong khi Content Type la truc loc
-          PHU, dung it hon Topic. */}
+          8 hang day chiem qua nhieu chieu cao, day han cay linh vuc xuong
+          duoi phai cuon moi thay - trong khi Content Type la truc loc PHU. */}
       <PopoverRoot open={typeMenuOpen} onOpenChange={setTypeMenuOpen}>
         <PopoverTrigger asChild>
           <button
@@ -181,9 +215,15 @@ export function HomeSidebar({
             className={cn(rowClass, type ? rowActive : rowInactive)}
           >
             {(() => {
-              const TriggerIcon = type ? CONTENT_TYPE_ICON[type].icon : SlidersHorizontal;
+              const TriggerIcon = type
+                ? CONTENT_TYPE_ICON[type].icon
+                : SlidersHorizontal;
               return (
-                <TriggerIcon size={15} strokeWidth={1.75} className="shrink-0" />
+                <TriggerIcon
+                  size={15}
+                  strokeWidth={1.75}
+                  className="shrink-0"
+                />
               );
             })()}
             <span className="flex-1 truncate">
@@ -226,7 +266,7 @@ export function HomeSidebar({
                 className={cn(
                   "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150 ease-out",
                   active
-                    ? "bg-active-bg font-medium text-primary"
+                    ? "font-medium text-primary"
                     : "text-ink hover:bg-hover-bg",
                 )}
               >
@@ -245,50 +285,101 @@ export function HomeSidebar({
 
       <div className="my-1 h-px shrink-0 bg-border" />
 
-      <SectionLabel>Khám phá chủ đề</SectionLabel>
-      {KNOWLEDGE_WORLDS.map((w) => {
-        const Icon = WORLD_ICON[w.slug];
-        const active = w.slug === activeWorldSlug;
-        return (
-          <div key={w.slug} className="flex flex-col">
+      <SectionLabel>Lĩnh vực nghề nghiệp</SectionLabel>
+      {categoryTree.map((g) => {
+        // "Chia sẻ chung" (bai khong gan nganh nghe) khong co nhom con - render
+        // nhu 1 hang phang, khong co mui ten mo/dong.
+        const isLeafGroup = g.categories.length === 0;
+        const Icon = GROUP_ICON[g.icon ?? ""] ?? Sparkles;
+        const active = g.slug === activeGroupSlug;
+        const isOpen = expandedGroups.has(g.slug);
+
+        if (isLeafGroup) {
+          return (
             <button
+              key={g.slug}
               type="button"
-              onClick={() => handleWorldClick(w.slug)}
-              className={cn(rowClass, active ? rowActive : rowInactive)}
+              onClick={() => handleFieldClick(g.slug)}
+              className={cn(
+                rowClass,
+                g.slug === field ? rowActive : rowInactive,
+              )}
             >
               <Icon size={15} strokeWidth={1.75} className="shrink-0" />
-              <span className="flex-1 truncate">{w.label}</span>
-              {active ? (
-                <ChevronDown
-                  size={14}
-                  strokeWidth={1.75}
-                  className="shrink-0"
-                />
-              ) : (
-                <ChevronRight
-                  size={14}
-                  strokeWidth={1.75}
-                  className="shrink-0"
-                />
-              )}
+              <span className="flex-1 truncate">{g.name}</span>
+              <span className="shrink-0 text-[11px] text-ink-faint">
+                {g.postCount}
+              </span>
             </button>
-            {active && (
+          );
+        }
+
+        return (
+          <div key={g.slug} className="flex flex-col">
+            {/* Hang chia 2 vung bam doc lap: icon+ten LOC theo ca nhom, mui
+                ten CHI mo/dong danh sach con - khong dung cham filter. */}
+            <div
+              className={cn(
+                "flex h-9 w-full shrink-0 items-center rounded-md text-sm font-medium transition-colors duration-150 ease-out",
+                active ? rowActive : rowInactive,
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => handleGroupClick(g.slug)}
+                className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 px-3 text-left"
+              >
+                <Icon size={15} strokeWidth={1.75} className="shrink-0" />
+                <span className="flex-1 truncate">{g.name}</span>
+              </button>
+              <button
+                type="button"
+                aria-label={isOpen ? "Thu gọn" : "Mở rộng"}
+                onClick={() =>
+                  setExpandedGroups((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(g.slug)) next.delete(g.slug);
+                    else next.add(g.slug);
+                    return next;
+                  })
+                }
+                className="flex h-full w-8 shrink-0 cursor-pointer items-center justify-center"
+              >
+                {isOpen ? (
+                  <ChevronDown
+                    size={14}
+                    strokeWidth={1.75}
+                    className="shrink-0"
+                  />
+                ) : (
+                  <ChevronRight
+                    size={14}
+                    strokeWidth={1.75}
+                    className="shrink-0"
+                  />
+                )}
+              </button>
+            </div>
+            {isOpen && (
               <div className="flex flex-col gap-0.5 py-1 pl-9">
-                {w.topics.map((t) => {
-                  const topicActive = t.slug === topic;
+                {g.categories.map((c) => {
+                  const fieldActive = c.slug === field;
                   return (
                     <button
-                      key={t.slug}
+                      key={c.slug}
                       type="button"
-                      onClick={() => handleTopicClick(t.slug)}
+                      onClick={() => handleFieldClick(c.slug)}
                       className={cn(
-                        "flex h-7 shrink-0 cursor-pointer items-center rounded-md px-2 text-left text-xs font-medium transition-colors duration-150 ease-out",
-                        topicActive
-                          ? "bg-active-bg text-primary"
+                        "flex h-7 shrink-0 cursor-pointer items-center gap-2 rounded-md px-2 text-left text-xs font-medium transition-colors duration-150 ease-out",
+                        fieldActive
+                          ? "text-primary"
                           : "text-ink-faint hover:bg-hover-bg hover:text-ink-muted",
                       )}
                     >
-                      {t.label}
+                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                      <span className="shrink-0 text-[10px] text-ink-faint">
+                        {c.postCount}
+                      </span>
                     </button>
                   );
                 })}

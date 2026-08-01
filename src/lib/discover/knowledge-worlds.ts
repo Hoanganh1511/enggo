@@ -100,14 +100,6 @@ export function getTopicBySlug(slug: string): Topic | undefined {
   return undefined;
 }
 
-// Tra cuu World chua 1 Topic - dung de biet Topic dang chon co con thuoc
-// World moi hay khong (quy tac reset: doi World thi reset Topic, TRU KHI
-// topic hien tai van thuoc world moi - trong taxonomy nay moi topic chi
-// thuoc dung 1 world nen thuc te luon reset khi doi world).
-export function getWorldByTopicSlug(slug: string): KnowledgeWorld | undefined {
-  return KNOWLEDGE_WORLDS.find((w) => w.topics.some((t) => t.slug === slug));
-}
-
 // "ai-agents" -> "AI_AGENTS", "system-design" -> "SYSTEM_DESIGN". Khop dung
 // enum PostCategory o backend vi ca 2 noi dung cung 1 quy uoc dat ten (thay
 // "-" bang "_", viet hoa).

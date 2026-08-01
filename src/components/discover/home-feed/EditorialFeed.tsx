@@ -10,7 +10,7 @@ import {
 } from "@/lib/discover/knowledge-worlds";
 import { SectionHeader } from "./SectionHeader";
 import { HorizontalScroller } from "./HorizontalScroller";
-import { NoteCard } from "./NoteCard";
+import { NoteCard, NoteCardSkeleton } from "./NoteCard";
 import { TrendingTopicCard } from "./TrendingTopicCard";
 import { TOPIC_DESCRIPTION } from "./topic-descriptions";
 
@@ -66,8 +66,21 @@ const ACHIEVEMENT_KINDS = new Set<Post["kind"]>([
   "career-update",
 ]);
 
-function SkeletonBlock({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-xl bg-surface-muted ${className}`} />;
+// Skeleton mo phong DUNG hinh dang thuc te se hien ra (nhieu section, moi
+// section 1 hang carousel the NoteCardSkeleton) - thay vi 3 block chu nhat
+// chung chung truoc day (khong an khop layout section+carousel hien tai nen
+// user khong nhan ra day la skeleton cua feed).
+function SectionSkeleton({ cards = 5 }: { cards?: number }) {
+  return (
+    <section>
+      <div className="mb-4 h-6 w-48 animate-pulse rounded bg-surface-muted" />
+      <div className="flex gap-4 overflow-hidden">
+        {Array.from({ length: cards }).map((_, i) => (
+          <NoteCardSkeleton key={i} />
+        ))}
+      </div>
+    </section>
+  );
 }
 
 // Layout editorial cho trang Home khi KHONG co Content Type nao dang chon -
@@ -113,12 +126,18 @@ export function EditorialFeed({
       return { featured, latest, resources, projects, questions, achievements, trendingTopics };
     }, [posts]);
 
-  if (loading && posts.length === 0) {
+  // "loading" thoi, KHONG kem "&& posts.length === 0" - neu chi kiem tra
+  // posts rong thi tu lan doi filter (Topic/World/Content Type) thu 2 tro di
+  // se khong bao gio hien skeleton nua, vi "posts" luc do van con du lieu CU
+  // tu lan fetch truoc (chua bi xoa) - noi dung cu dung im roi "nhay coc"
+  // sang noi dung moi thay vi qua skeleton, day la dieu user bao "fetch ma
+  // khong co skeleton".
+  if (loading) {
     return (
       <div className="flex flex-col gap-10">
-        <SkeletonBlock className="h-64 w-full" />
-        <SkeletonBlock className="h-40 w-full" />
-        <SkeletonBlock className="h-80 w-full" />
+        <SectionSkeleton />
+        <SectionSkeleton />
+        <SectionSkeleton />
       </div>
     );
   }

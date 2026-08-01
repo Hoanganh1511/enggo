@@ -1,28 +1,35 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { HomeSidebar } from "./HomeSidebar";
-import SectionContainer from "@/components/ui/section-container";
+import type { FeedCategoryGroup } from "@/lib/api/feed-categories";
 import type { ContentType } from "@/lib/discover/post-kind-meta";
-import { MoonIcon, Plus, MessageCircle } from "lucide-react";
 
 // Layout cho trang Home duy nhat (page.tsx) - dieu khien toan bo UI loc qua
 // query param tren CUNG 1 route, KHONG con dieu huong giua nhieu route con
 // nhu ban truoc (xem lich su git: 5 route /achievements /progress /for-it
-// /vote /events da gop lai). 3 truc query DOC LAP voi nhau:
-// - mode: Live/Trending (HomeSidebar) - doi kieu sap xep.
-// - world/topic: Knowledge World/Topic (HomeSidebar) - "chu de".
+// /vote /events da gop lai). 2 truc query DOC LAP voi nhau:
+// - group/field: linh vuc nghe nghiep 2 tang (HomeSidebar).
 // - type: Content Type (HomeSidebar) - "dinh dang noi dung".
-// Doi type/mode KHONG dong cham world/topic va nguoc lai - moi handler chi
+// Doi type KHONG dong cham group/field va nguoc lai - moi handler chi
 // set/xoa dung param cua no, giu nguyen phan con lai cua query string.
 //
-// Sidebar trai (HomeSidebar.tsx) thay the "Knowledge Discovery Bar" ngang
-// truoc day (HomeCategoryBar.tsx da xoa) - theo dung layout sidebar cua
-// note.com, danh sach doc thay vi pill ngang phia tren feed.
-const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
-  const pathname = usePathname();
+// `world`/`topic` (Knowledge Worlds) KHONG con loi vao tu sidebar nua (da bi
+// cay nghe nghiep thay the) nhung home/page.tsx VAN doc chung, vi section
+// "Chủ đề đang được quan tâm" trong EditorialFeed.tsx con link toi
+// /home?topic=... - nen pushParams o day khong duoc xoa 2 param do.
+//
+// Shell nay dung CHUNG cho /home, /series va /contest de sidebar khong bien
+// mat khi chuyen giua cac trang do.
+const HomeLayoutShell = ({
+  children,
+  categoryTree,
+}: {
+  children: React.ReactNode;
+  categoryTree: FeedCategoryGroup[];
+}) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   // Chi de lam mo noi dung + optimistic label trong luc transition (doi query
@@ -38,14 +45,18 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
       ? pendingParams[key]
       : searchParams.get(key)) ?? null;
 
-  const mode = getParam("mode") ?? "activity";
-  const world = getParam("world");
-  const topic = getParam("topic");
+  const group = getParam("group");
+  const field = getParam("field");
   const type = getParam("type") as ContentType | null;
 
-  // Set/xoa 1 nhom param, giu nguyen cac param con lai - dung chung cho ca 4
-  // loai thay doi (mode/world/topic/type) de khong lap lai logic build query
-  // string 4 lan.
+  // Set/xoa 1 nhom param, giu nguyen cac param con lai - dung chung cho ca 3
+  // loai thay doi (group/field/type) de khong lap lai logic build query
+  // string 3 lan.
+  //
+  // Luon dieu huong ve "/home" chu KHONG dung usePathname(): shell nay con
+  // duoc dung o /series va /contest, ma cac bo loc chi co y nghia voi feed
+  // bai viet - bam 1 linh vuc khi dang o /contest phai dua nguoi dung ve feed
+  // dang loc theo linh vuc do, khong phai gan query vo nghia vao /contest.
   const pushParams = (patch: Record<string, string | null>) => {
     setPendingParams(patch);
     const qs = new URLSearchParams(searchParams.toString());
@@ -54,22 +65,37 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
       else qs.set(key, value);
     }
     const query = qs.toString();
-    startTransition(() =>
-      router.push(`${pathname}${query ? `?${query}` : ""}`),
-    );
+    startTransition(() => router.push(`/home${query ? `?${query}` : ""}`));
   };
 
-  const handleModeChange = (nextMode: string) =>
-    pushParams({ mode: nextMode === "activity" ? null : nextMode });
+  // Xoa CA group+field trong 1 lan push - KHONG duoc tach thanh 2 lenh rieng
+  // (pushParams({group}) roi pushParams({field:null})): "searchParams" tu
+  // useSearchParams() chua kip cap nhat giua 2 lenh (chi cap nhat sau khi
+  // React render lai), nen lenh thu 2 se doc lai URL CU (chua co group moi)
+  // roi build lai tu do - de mat luon thay doi cua lenh thu 1. Day chinh la
+  // bug "bam nhom khong thay gi doi" da gap o ban Knowledge World truoc day.
+  const handleGroupChange = (nextGroup: string | null) =>
+    pushParams({ group: nextGroup, field: null });
 
-  const handleWorldChange = (nextWorld: string | null) =>
-    pushParams({ world: nextWorld });
-
-  const handleTopicChange = (nextTopic: string | null) =>
-    pushParams({ topic: nextTopic });
+  const handleFieldChange = (nextField: string | null) =>
+    pushParams({ field: nextField, group: null });
 
   const handleTypeChange = (nextType: ContentType) =>
     pushParams({ type: nextType === type ? null : nextType });
+
+  // "Tat ca" - xoa CA 5 param trong 1 lan push (khong the ghep tu cac handler
+  // rieng le: neu param nao von da rong san thi lenh do khong doi URL ti nao,
+  // con type thi khong co handler nao xoa duoc no ngoai toggle theo dung 1
+  // gia tri dang chon). Xoa luon world/topic vi nguoi dung co the dang o
+  // /home?topic=... den tu section "Chủ đề đang được quan tâm".
+  const handleClearAll = () =>
+    pushParams({
+      group: null,
+      field: null,
+      type: null,
+      world: null,
+      topic: null,
+    });
 
   // Cuon toi + focus thang vao PostComposer dang co san ben duoi (id
   // "post-composer"/"post-composer-input") - component nay chi render trong
@@ -83,56 +109,26 @@ const HomeLayoutShell = ({ children }: { children: React.ReactNode }) => {
     document.getElementById("post-composer-input")?.focus();
   };
 
+  // KHONG con overflow-hidden/overflow-y-auto o day - de sidebar va feed
+  // CUNG cuon trong 1 vung cuon DUY NHAT la MainContentArea (ancestor, xem
+  // main-content-area.tsx) thay vi feed tu cuon rieng trong 1 hop con. Sidebar
+  // "sticky" CAN dieu nay: overflow khac "visible" o bat ky to tien nao nam
+  // giua sticky element va vung cuon that su deu lam gay sticky (khong con
+  // "dinh" duoc nua) - day chinh la ly do sticky khong hoat dong truoc do.
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 px-6 pt-4 gap-6 overflow-hidden">
+    <div className="flex min-w-0 flex-1 gap-6 px-4 pt-4">
       <HomeSidebar
-        mode={mode}
-        onModeChange={handleModeChange}
-        world={world}
-        topic={topic}
-        onWorldChange={handleWorldChange}
-        onTopicChange={handleTopicChange}
+        categoryTree={categoryTree}
+        group={group}
+        field={field}
+        onGroupChange={handleGroupChange}
+        onFieldChange={handleFieldChange}
         type={type}
         onTypeChange={handleTypeChange}
+        onClearAll={handleClearAll}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto scrollbar-gutter-stable">
-        {/* Toolbar noi - neo giua-phai man hinh (khong choan noi dung), dung
-            style icon-button vuong (rounded-md) nhu phan con lai cua app
-            thay vi pill tron. */}
-        <div className="fixed top-1/2 right-5 z-50 flex -translate-y-1/2 flex-col items-center gap-1 rounded-lg border border-border bg-surface/80 p-1.5 shadow-dropdown backdrop-blur-lg">
-          <button
-            type="button"
-            title="Đăng bài"
-            onClick={handleComposeClick}
-            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md bg-button-primary-bg text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-          </button>
-          <span className="my-0.5 h-px w-6 shrink-0 bg-border" />
-          <button
-            type="button"
-            title="Tin nhắn (sắp ra mắt)"
-            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
-          >
-            <MessageCircle size={16} strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            title="Chuyển giao diện sáng/tối"
-            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
-          >
-            <MoonIcon size={16} strokeWidth={1.75} />
-          </button>
-        </div>
-        <div className="flex-1 rounded-xl">
-          {/* Noi dung feed (page.tsx) - lam mo trong luc chuyen filter de
-              nguoi dung thay ro "danh sach cu sap bi thay", thay vi man hinh
-              dung im roi nhay coc sang noi dung moi. */}
-
-          {children}
-        </div>
-      </div>
+      <div className="min-w-0 flex-1 rounded-md">{children}</div>
     </div>
   );
 };

@@ -40,11 +40,38 @@ export function NoteCard({
         className="aspect-1280/670 w-full"
         iconSize={32}
       />
-      <h3 className="line-clamp-2 text-sm leading-snug font-semibold text-ink">
+      <h3 className="line-clamp-3 text-base leading-snug font-semibold text-ink">
         {title}
       </h3>
-      <AuthorLine author={post.author} createdAt={post.createdAt} avatarSize={18} />
+      <AuthorLine
+        author={post.author}
+        createdAt={post.createdAt}
+        avatarSize={18}
+      />
       <CompactStats likes={post.stats.likes} comments={post.stats.comments} />
     </Link>
+  );
+}
+
+// Skeleton cung khung voi NoteCard that (anh ti le 1280/670 + 2 dong tieu de
+// + hang tac gia + hang stat) - thay cho cac SkeletonBlock hinh chu nhat
+// chung chung truoc day khong giong hinh dang layout hien tai (carousel/luoi
+// the anh), khien luc dang tai trong nhu 1 khoi xam vo nghia thay vi "bong
+// dang" cua feed sap hien ra.
+export function NoteCardSkeleton({
+  className = "w-56 shrink-0",
+}: {
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col gap-2", className)}>
+      <div className="aspect-1280/670 w-full animate-pulse rounded-xl bg-surface-muted" />
+      <div className="h-4 w-full animate-pulse rounded bg-surface-muted" />
+      <div className="h-4 w-2/3 animate-pulse rounded bg-surface-muted" />
+      <div className="flex items-center gap-2 pt-1">
+        <div className="size-4.5 shrink-0 animate-pulse rounded-full bg-surface-muted" />
+        <div className="h-3 w-24 animate-pulse rounded bg-surface-muted" />
+      </div>
+    </div>
   );
 }
