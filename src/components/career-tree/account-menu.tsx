@@ -92,7 +92,7 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
           />
           <MenuRow
             icon={Settings}
-            label="Account settings"
+            label="Cài đặt"
             href="/settings"
             onNavigate={() => setOpen(false)}
           />

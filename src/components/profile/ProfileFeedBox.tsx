@@ -12,12 +12,12 @@ const ProfileFeedBox = ({
   posts: Post[];
 }) => {
   return (
-    <div className="rounded-lg border border-border bg-surface">
-      <div className="border-b border-border px-4 py-3">
+    <div className="rounded-lg  bg-surface">
+      <div className="border-b border-border py-3">
         <h2 className="text-sm font-bold text-ink">{heading}</h2>
       </div>
 
-      <div className="px-4">
+      <div className="">
         {posts.length === 0 ? (
           <p className="py-12 text-center text-sm text-ink-faint">
             Chưa có nội dung nào ở mục này.

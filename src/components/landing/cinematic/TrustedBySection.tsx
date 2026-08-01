@@ -1,11 +1,12 @@
 import { trustedBy } from "@/content/landing";
+import SectionContainer from "@/components/ui/section-container";
 
 // Wordmark minh hoa (khong dung logo thuong hieu that de tranh van de ban
 // quyen tren 1 trang demo) - thay bang ten cong ty that + asset SVG that khi
 // trien khai production.
 const TrustedBySection = () => {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-10">
+    <SectionContainer className="py-10">
       <p className="text-center text-xs font-medium tracking-widest text-slate-500 uppercase">
         Được tin dùng bởi hàng ngàn lập trình viên
       </p>
@@ -19,7 +20,7 @@ const TrustedBySection = () => {
           </span>
         ))}
       </div>
-    </section>
+    </SectionContainer>
   );
 };
 

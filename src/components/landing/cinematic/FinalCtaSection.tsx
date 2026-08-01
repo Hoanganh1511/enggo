@@ -1,9 +1,10 @@
 import { ctaFinal } from "@/content/landing";
 import LoginModal from "../LoginModal";
+import SectionContainer from "@/components/ui/section-container";
 
 const FinalCtaSection = () => {
   return (
-    <section className="mx-auto max-w-5xl px-6 py-16">
+    <SectionContainer className="py-16">
       <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-blue-500/10 via-violet-500/10 to-transparent p-10 text-center backdrop-blur-xl sm:p-14">
         <span className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-blue-500/20 blur-[100px]" />
         <h2 className="relative text-2xl font-bold text-white sm:text-3xl">
@@ -19,7 +20,7 @@ const FinalCtaSection = () => {
           />
         </div>
       </div>
-    </section>
+    </SectionContainer>
   );
 };
 

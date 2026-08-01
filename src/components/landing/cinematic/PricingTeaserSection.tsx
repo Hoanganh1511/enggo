@@ -1,10 +1,11 @@
 import { Check } from "lucide-react";
 import { pricingTeaser, hero } from "@/content/landing";
 import LoginModal from "../LoginModal";
+import SectionContainer from "@/components/ui/section-container";
 
 const PricingTeaserSection = () => {
   return (
-    <section id="pricing" className="mx-auto max-w-4xl px-6 py-16">
+    <SectionContainer id="pricing" className="py-16">
       <div className="mx-auto max-w-xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
           {pricingTeaser.headline}
@@ -46,7 +47,7 @@ const PricingTeaserSection = () => {
           triggerClassName="cursor-pointer rounded-full bg-linear-to-r from-blue-500 to-violet-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_0_30px_rgba(99,102,241,0.45)] transition-transform duration-150 ease-out hover:scale-[1.03]"
         />
       </div>
-    </section>
+    </SectionContainer>
   );
 };
 

@@ -1,9 +1,10 @@
 import { Quote } from "lucide-react";
 import { testimonials } from "@/content/landing";
+import SectionContainer from "@/components/ui/section-container";
 
 const TestimonialsSection = () => {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
+    <SectionContainer className="py-16">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Người dùng nói gì
@@ -32,7 +33,7 @@ const TestimonialsSection = () => {
           </div>
         ))}
       </div>
-    </section>
+    </SectionContainer>
   );
 };
 

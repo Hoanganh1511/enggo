@@ -38,9 +38,9 @@ import {
 } from "@/components/ui/popover";
 import type { ApiWorkspace, ApiCategory, ApiNodeListItem } from "@/lib/api/types";
 import {
-  NGHE_NGHIEP,
+  KNOWLEDGE_WORLDS,
   slugToCategoryEnum,
-} from "@/lib/discover/category-taxonomy";
+} from "@/lib/discover/knowledge-worlds";
 import { listWorkspacesAction } from "@/actions/career-tree/list-workspaces";
 import { getWorkspaceCategoriesAction } from "@/actions/career-tree/get-workspace-categories";
 import { getWorkspaceTreeAction } from "@/actions/career-tree/get-workspace-tree";
@@ -586,7 +586,7 @@ const PostComposer = () => {
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [videoProcessing, setVideoProcessing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-  // Linh vuc (category that, xem category-taxonomy.ts) gan cho bai dang -
+  // Topic (category that, xem knowledge-worlds.ts) gan cho bai dang -
   // optional, KHAC "reportCategoryId" ben duoi (do la Knowledge Block cua
   // Skill Tree, chi dung rieng cho kind "skill-report", 2 khai niem khac
   // nhau du trung chu "category").
@@ -1467,9 +1467,9 @@ const PostComposer = () => {
                         : "border-border text-ink-muted hover:bg-hover-bg"
                   }`}
                 >
-                  {NGHE_NGHIEP.flatMap((n) => n.linhVuc).find(
-                    (lv) => lv.slug === postCategorySlug,
-                  )?.label ?? "Lĩnh vực"}
+                  {KNOWLEDGE_WORLDS.flatMap((w) => w.topics).find(
+                    (t) => t.slug === postCategorySlug,
+                  )?.label ?? "Chủ đề"}
                   <ChevronDown size={13} strokeWidth={1.75} />
                 </button>
               </PopoverTrigger>
@@ -1491,23 +1491,23 @@ const PostComposer = () => {
                     Bỏ chọn
                   </button>
                 )}
-                {NGHE_NGHIEP.map((nghe) => (
-                  <div key={nghe.slug} className="mb-1 last:mb-0">
+                {KNOWLEDGE_WORLDS.map((world) => (
+                  <div key={world.slug} className="mb-1 last:mb-0">
                     <p className="px-2 py-1 text-[10px] font-semibold tracking-wide text-ink-faint uppercase">
-                      {nghe.label}
+                      {world.label}
                     </p>
-                    {nghe.linhVuc.map((lv) => (
+                    {world.topics.map((t) => (
                       <button
-                        key={lv.slug}
+                        key={t.slug}
                         type="button"
                         onClick={() => {
-                          setPostCategorySlug(lv.slug);
+                          setPostCategorySlug(t.slug);
                           setCategoryMenuOpen(false);
                         }}
                         className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
                       >
-                        <span className="flex-1 truncate">{lv.label}</span>
-                        {postCategorySlug === lv.slug && (
+                        <span className="flex-1 truncate">{t.label}</span>
+                        {postCategorySlug === t.slug && (
                           <Check
                             size={14}
                             strokeWidth={2}

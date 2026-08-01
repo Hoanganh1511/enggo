@@ -1,4 +1,5 @@
 import Skeleton from "@/components/ui/skeleton";
+import SectionContainer from "@/components/ui/section-container";
 
 // Fallback cho DUNG luc dang fetch profile o layout.tsx (lan dau vao trang
 // profile) - khac voi [username]/loading.tsx (chi la skeleton cho {children},
@@ -10,7 +11,7 @@ export default function ProfileShellSkeleton() {
     <div className="-mt-4 bg-surface">
       <div className="relative h-60 w-full overflow-hidden bg-surface-muted">
         <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
-        <div className="absolute inset-x-0 bottom-0 px-35 pb-4">
+        <SectionContainer as="div" className="absolute inset-x-0 bottom-0 pb-4">
           <div className="flex items-end gap-4">
             <Skeleton className="size-24 shrink-0 rounded-full border-4 border-surface" />
             <div className="flex min-w-0 flex-1 items-end justify-between gap-3 pb-1">
@@ -25,11 +26,11 @@ export default function ProfileShellSkeleton() {
               </div>
             </div>
           </div>
-        </div>
+        </SectionContainer>
       </div>
 
       <div className="border-y border-border bg-surface">
-        <div className="flex items-center justify-between gap-4 px-35 py-2">
+        <SectionContainer as="div" className="flex items-center justify-between gap-4 py-2">
           <div className="flex items-center gap-4">
             {Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-4 w-16 rounded-md" />
@@ -40,10 +41,10 @@ export default function ProfileShellSkeleton() {
             <Skeleton className="h-3.5 w-20 rounded-md" />
             <Skeleton className="hidden h-3.5 w-32 rounded-md sm:block" />
           </div>
-        </div>
+        </SectionContainer>
       </div>
 
-      <div className="px-35 py-4">
+      <SectionContainer as="div" className="py-4">
         <div className="rounded-lg border border-border bg-surface">
           <div className="border-b border-border px-4 py-3">
             <Skeleton className="h-4 w-32" />
@@ -62,7 +63,7 @@ export default function ProfileShellSkeleton() {
             ))}
           </div>
         </div>
-      </div>
+      </SectionContainer>
     </div>
   );
 }

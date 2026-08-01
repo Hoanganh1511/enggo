@@ -9,14 +9,19 @@ export function listPosts(params?: {
   limit?: number;
   authorUsername?: string;
   // Gia tri enum PostCategory that o backend (vd "FRONTEND") - xem
-  // slugToCategoryEnum() trong category-taxonomy.ts de doi tu slug hien thi.
+  // slugToCategoryEnum() trong knowledge-worlds.ts de doi tu slug hien thi.
   category?: string;
+  // Kebab-case (vd ["text","image"]) - Content Type ben frontend gom nhieu
+  // kind, xem getKindsByContentType() trong post-kind-meta.ts. Backend join
+  // lai thanh mang khi loc (post.controller.ts).
+  kind?: string[];
 }): Promise<Post[]> {
   const query = new URLSearchParams();
   if (params?.cursor) query.set("cursor", params.cursor);
   if (params?.limit) query.set("limit", String(params.limit));
   if (params?.authorUsername) query.set("authorUsername", params.authorUsername);
   if (params?.category) query.set("category", params.category);
+  if (params?.kind?.length) query.set("kind", params.kind.join(","));
   const qs = query.toString();
   return apiFetch<Post[]>(`/posts${qs ? `?${qs}` : ""}`);
 }

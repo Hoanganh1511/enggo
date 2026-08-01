@@ -13,12 +13,13 @@ import { hero, heroCards } from "@/content/landing";
 import { cn } from "@/lib/utils";
 import LoginModal from "../LoginModal";
 import FloatingKnowledgeCard from "./FloatingKnowledgeCard";
+import SectionContainer from "@/components/ui/section-container";
 
 const TRUST_ICON = [CreditCard, Clock, RefreshCw];
 
 const CinematicHero = () => {
   return (
-    <section className="relative mx-auto max-w-7xl px-6 pt-20 pb-16 lg:pt-28">
+    <SectionContainer className="relative pt-20 pb-16 lg:pt-28">
       <div className="grid items-center gap-16 lg:grid-cols-2">
         {/* Cot trai */}
         <div>
@@ -198,7 +199,7 @@ const CinematicHero = () => {
           </button>
         </div>
       </div>
-    </section>
+    </SectionContainer>
   );
 };
 

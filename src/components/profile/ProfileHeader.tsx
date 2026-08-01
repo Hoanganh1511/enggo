@@ -10,7 +10,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { UserProfileApiShape } from "@/lib/api/users";
-import ProfileContentWrap from "./ProfileContentWrap";
+import SectionContainer from "@/components/ui/section-container";
 
 // Header profile - anh bia TRAN VIEN (pha ra khoi padding cua MainContentArea
 // bang -mx-6 -mt-4), avatar de len mep duoi anh bia, ten + cap do + huy hieu
@@ -44,7 +44,7 @@ const ProfileHeader = ({
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent" />
 
-        <ProfileContentWrap className="absolute inset-x-0 bottom-0 pb-4">
+        <SectionContainer as="div" className="absolute inset-x-0 bottom-0 pb-4">
           <div className="flex items-end gap-4">
             <Image
               src={profile.avatarUrl}
@@ -147,15 +147,15 @@ const ProfileHeader = ({
               </div>
             </div>
           </div>
-        </ProfileContentWrap>
+        </SectionContainer>
       </div>
 
       {profile.bio && (
-        <ProfileContentWrap className="pb-4 pt-4">
+        <SectionContainer as="div" className="pb-4 pt-4">
           <p className="max-w-2xl text-sm leading-6 wrap-break-word text-ink">
             {profile.bio}
           </p>
-        </ProfileContentWrap>
+        </SectionContainer>
       )}
     </div>
   );

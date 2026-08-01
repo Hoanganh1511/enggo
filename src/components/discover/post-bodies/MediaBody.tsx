@@ -15,7 +15,7 @@ type VideoPost = Extract<Post, { kind: "video" }>;
 // rieng).
 export function TextBody({ post }: { post: TextPost }) {
   return (
-    <p className="mt-1 text-sm wrap-break-word text-ink">{post.content}</p>
+    <p className="mt-1 text-xs wrap-break-word text-ink">{post.content}</p>
   );
 }
 

@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import ProfileHeader from "./ProfileHeader";
 import ProfileNav from "./ProfileNav";
 import ProfileFooter from "./ProfileFooter";
-import ProfileContentWrap from "./ProfileContentWrap";
+import SectionContainer from "@/components/ui/section-container";
 import ProfileSidePanel from "./ProfileSidePanel";
 import { UserProfileApiShape } from "@/lib/api/users";
 import {
@@ -79,7 +79,7 @@ const ProfileShell = ({
         onToggleFollow={handleToggleFollow}
       />
 
-      <ProfileContentWrap className="flex flex-1 flex-col">
+      <SectionContainer as="div" className="flex flex-1 flex-col">
         <ProfileNav
           username={profile.username!}
           activeHref={activeHref}
@@ -93,7 +93,7 @@ const ProfileShell = ({
         />
 
         <div
-          className={`flex flex-1 gap-4 py-4 transition-opacity duration-150 ease-out ${
+          className={`flex flex-1 gap-6 py-4 transition-opacity duration-150 ease-out ${
             isPending ? "pointer-events-none opacity-50" : "opacity-100"
           }`}
         >
@@ -102,7 +102,7 @@ const ProfileShell = ({
         </div>
 
         <ProfileFooter displayName={profile.displayName} />
-      </ProfileContentWrap>
+      </SectionContainer>
     </div>
   );
 };

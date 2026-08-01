@@ -1,22 +1,16 @@
-"use client";
-
-import { useMemo } from "react";
-import { useParams } from "next/navigation";
 import ProfileFeedBox from "@/components/profile/ProfileFeedBox";
-import { useAllPosts } from "@/lib/discover/use-all-posts";
+import { listPostsAction } from "@/actions/discover/list-posts";
 
 // Tab "Trang chu" - 10 bai moi nhat cua chinh chu profile nay.
-export default function ProfileHomeTabPage() {
-  const { username } = useParams<{ username: string }>();
-  const allPosts = useAllPosts();
-
-  const posts = useMemo(
-    () =>
-      allPosts
-        .filter((p) => p.author.username === decodeURIComponent(username))
-        .slice(0, 10),
-    [allPosts, username],
-  );
-
+export default async function ProfileHomeTabPage({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}) {
+  const { username } = await params;
+  const posts = await listPostsAction({
+    authorUsername: decodeURIComponent(username),
+    limit: 10,
+  });
   return <ProfileFeedBox heading="Bài đăng mới nhất" posts={posts} />;
 }

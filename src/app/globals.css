@@ -70,6 +70,24 @@
   --sidebar-background: var(--surface-header);
   --header-background: var(--surface-header);
   --card-background: var(--surface);
+
+  /* Dung cho SectionContainer (components/ui/section-container.tsx): padding
+     ngang tang dan theo breakpoint, RIENG BIET voi content-width. max-width
+     cua container = content-width + 2*padding nay, nen vung noi dung nhin
+     thay luon giu dung content-width du padding doi theo man hinh. */
+  --layout-padding: 24px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --layout-padding: 60px;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --layout-padding: 80px;
+  }
 }
 
 @theme inline {

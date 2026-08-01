@@ -6,6 +6,7 @@ export async function listPostsAction(params?: {
   limit?: number;
   authorUsername?: string;
   category?: string;
+  kind?: string[];
 }) {
   return listPosts(params);
 }

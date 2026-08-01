@@ -1,10 +1,14 @@
 import { LogoIcon } from "@/components/ui/logo";
 import { footer } from "@/content/landing";
+import SectionContainer from "@/components/ui/section-container";
 
 const CinematicFooter = () => {
   return (
-    <footer className="border-t border-white/10 px-6 py-10">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 sm:flex-row sm:justify-between">
+    <footer className="border-t border-white/10">
+      <SectionContainer
+        as="div"
+        className="flex flex-col items-center gap-4 py-10 sm:flex-row sm:justify-between"
+      >
         <div className="flex items-center gap-2">
           <LogoIcon size={20} />
           <span className="text-xs font-medium text-slate-400">
@@ -22,7 +26,7 @@ const CinematicFooter = () => {
             </a>
           ))}
         </nav>
-      </div>
+      </SectionContainer>
     </footer>
   );
 };

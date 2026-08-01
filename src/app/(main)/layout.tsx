@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import TopHeaderBar from "@/components/career-tree/top-header-bar";
 import CurrentUser from "@/components/career-tree/current-user";
 import MainContentArea from "@/components/career-tree/main-content-area";
+import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 
 // Khong con async/await auth() o day - CurrentUser (Server Component rieng,
 // tu goi auth()) duoc dung va boc Suspense NGAY TAI DAY (layout van la Server
@@ -26,6 +27,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   // app-shell-row.tsx da xoa han.
   return (
     <>
+      <FeedBootstrap />
       <TopHeaderBar accountSlot={accountSlot} />
       <MainContentArea>{children}</MainContentArea>
     </>

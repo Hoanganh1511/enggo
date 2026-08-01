@@ -30,13 +30,10 @@ const renderSkeleton = (item: SkeletonItem) => (
   <PostCardSkeleton variant="card" bodyHeight={item.bodyHeight} />
 );
 
-// Feed 1 luong duy nhat, xep theo masonry (xem masonry-grid.tsx).
-//
-// Khac FeedColumns.tsx (van dung cho cac tab con lai): o do 2 cot co NGHIA -
-// trai la hoat dong/chia se ca nhan, phai la tu lieu/cap nhat, moi cot 1 tieu
-// de rieng. O day cot KHONG con nghia gi ca, chi la cho de lap day - nen moi
-// bai phai la 1 the tu chua dung duoc (variant="card"), khong dung bien the
-// timeline (von dua vao duong ke doc cua ca cot).
+// Feed 1 luong duy nhat, xep theo masonry (xem masonry-grid.tsx) - dung
+// CHUNG cho toan bo trang Home (thay FeedColumns.tsx 2 cot da xoa, tu luc
+// gop 6 route con thanh 1 trang duy nhat loc qua query param). Moi bai la 1
+// the tu chua dung duoc (variant="card").
 const MasonryFeed = ({
   posts,
   emptyMessage,

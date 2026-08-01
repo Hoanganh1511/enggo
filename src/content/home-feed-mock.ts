@@ -48,9 +48,9 @@ type PostCommon = {
   // seed khong co workspace that). Optional vi skill-report khong dung field
   // nay (da co breadcrumb that rieng).
   topic?: { path: string[]; accent: string };
-  // Linh vuc THAT, co index o DB (enum PostCategory, vd "FRONTEND") - dung de
-  // loc o GET /posts?category=..., KHAC "topic" (chi hien thi, tu do, khong
-  // loc duoc). Xem src/lib/discover/category-taxonomy.ts.
+  // Topic THAT, co index o DB (enum PostCategory, vd "FRONTEND") - dung de
+  // loc o GET /posts?category=..., KHAC "topic" o tren (chi hien thi, tu do,
+  // khong loc duoc). Xem src/lib/discover/knowledge-worlds.ts.
   category?: string | null;
 };
 

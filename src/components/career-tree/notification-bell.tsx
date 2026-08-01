@@ -65,16 +65,21 @@ const NotificationBell = () => {
         <button
           type="button"
           title="Thông báo"
-          className={`relative flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out ${
+          className={`flex shrink-0 cursor-pointer flex-col items-center gap-0.5 rounded-md px-2 py-1 text-icon transition-colors duration-150 ease-out ${
             open
               ? "bg-hover-bg text-icon-hover"
               : "hover:bg-hover-bg hover:text-icon-hover"
           }`}
         >
-          <Bell strokeWidth={1.75} className="size-4.5 2xl:size-5" />
-          {badgeCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-danger" />
-          )}
+          <span className="relative flex items-center justify-center">
+            <Bell size={18} strokeWidth={1.75} />
+            {badgeCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2 rounded-full bg-danger" />
+            )}
+          </span>
+          <span className="text-[10px] leading-none font-medium">
+            Thông báo
+          </span>
         </button>
       </PopoverTrigger>
 

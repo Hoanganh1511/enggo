@@ -20,11 +20,11 @@ import { formatRelativeTime } from "@/lib/career-tree/format-time";
 type PostCardProps = {
   post: Post;
   // "timeline" (mac dinh) - hang thuong trong feed, avatar+ten dan dau, co
-  // marker tron nho ngoi tren duong ke doc cua cot (dung cho cot trai - cac
-  // dang chia se thuong gap, xem FeedColumns.tsx). "card" - the doc lap co
-  // vien/bo goc rieng, BADGE LOAI BAI dan dau thay vi avatar, tac gia lui
-  // xuong thanh footer nho - dung cho cot phai de tao "ca tinh rieng" ro
-  // rang voi cot trai (tu lieu/tham khao thay vi dong chia se ca nhan).
+  // marker tron nho ngoi tren duong ke doc cua cot (dung cho ProfileFeedBox.tsx
+  // - danh sach 1 cot). "card" - the doc lap co vien/bo goc rieng, BADGE LOAI
+  // BAI dan dau thay vi avatar, tac gia lui xuong thanh footer nho - dung cho
+  // MasonryFeed.tsx (trang Home) de tao "ca tinh rieng" khi cac the dung ke
+  // nhau trong luoi masonry.
   variant?: "timeline" | "card";
 };
 
@@ -151,8 +151,8 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
   return (
     <article className="font-card py-4 first:pt-5 last:pb-5">
       <div className="flex items-start gap-3">
-        {/* Marker loai bai viet - ngoi tren duong ke doc cua FeedColumn
-            (xem FeedColumns.tsx), luon dung icon/mau THEO KIND (khong phai
+        {/* Marker loai bai viet - ngoi tren duong ke doc cua danh sach
+            (variant="timeline"), luon dung icon/mau THEO KIND (khong phai
             icon rieng cua tung post) de nhan dien nhat quan khi luot feed. */}
         <div className="flex w-5 shrink-0 justify-center">
           <span

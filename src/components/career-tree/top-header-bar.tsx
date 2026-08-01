@@ -4,7 +4,6 @@ import { useState, useTransition, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Home,
-  Settings,
   TreePine,
   Building2,
   Compass,
@@ -77,34 +76,25 @@ const NAV_ITEMS: {
   children?: NavChild[];
 }[] = [
   { title: "Trang chủ", icon: Home, href: "/home", matchPrefixes: ["/home"] },
-  {
-    title: "Career Tree",
-    icon: TreePine,
-    href: "/career-tree",
-    matchPrefixes: ["/career-tree", "/w/"],
-  },
+  // {
+  //   title: "Career Tree",
+  //   icon: TreePine,
+  //   href: "/career-tree",
+  //   matchPrefixes: ["/career-tree", "/w/"],
+  // },
   {
     title: "My Town",
     icon: Building2,
     matchPrefixes: ["/skill-tree"],
     children: MY_TOWN_CHILDREN,
   },
-  {
-    title: "Bookmarks",
-    icon: Bookmark,
-    href: "/bookmarks",
-    matchPrefixes: ["/bookmarks"],
-  },
-  {
-    title: "Cài đặt",
-    icon: Settings,
-    href: "/settings",
-    matchPrefixes: ["/settings"],
-  },
+  // {
+  //   title: "Bookmarks",
+  //   icon: Bookmark,
+  //   href: "/bookmarks",
+  //   matchPrefixes: ["/bookmarks"],
+  // },
 ];
-
-const iconButtonClass =
-  "relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover";
 
 type TopHeaderBarProps = {
   // Nhan san <Suspense><CurrentUser/></Suspense> tu layout.tsx (Server
@@ -147,7 +137,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   };
 
   return (
-    <header className="z-10 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-4 xl:px-6">
+    <header className="z-10 flex h-14 shrink-0 items-center gap-2  bg-surface px-4 xl:px-6">
       <div className="flex shrink-0 items-center">
         <Logo orientation="icon-only" className="size-6 shrink-0" />
         <span className="ml-1 hidden text-sm font-bold text-ink sm:inline">
@@ -165,10 +155,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
             const isItemPending = isPending && pendingHref === href;
 
             const itemClass = cn(
-              "flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ease-out",
+              "flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-sm transition-colors duration-150 ease-out",
               isActive
-                ? "bg-active-bg font-semibold text-primary"
-                : "font-medium text-ink-muted hover:bg-hover-bg hover:text-ink",
+                ? "font-semibold text-primary"
+                : "font-medium text-ink-muted hover:text-ink",
             );
 
             const label = (
@@ -258,7 +248,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                 ) : (
                   <Icon
                     strokeWidth={isActive ? 2.25 : 1.75}
-                    className="size-4.5 shrink-0"
+                    className="size-4 shrink-0"
                   />
                 )}
                 {label}
@@ -270,7 +260,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
 
       {/* O tim kiem - chiem phan con lai, gioi han be ngang cho de doc */}
       <div className="ml-2 hidden min-w-0 flex-1 justify-center md:flex">
-        <div className="flex h-9 w-full max-w-md items-center gap-2 rounded-lg border border-search-border bg-surface-muted px-3 text-ink-faint">
+        <div className="flex h-9 w-full max-w-md items-center gap-2 rounded-sm border border-search-border bg-surface-muted px-3 text-ink-faint">
           <Search size={15} strokeWidth={1.75} className="shrink-0" />
           <input
             placeholder="Tìm kiếm các kỹ năng, con người..."
@@ -284,6 +274,24 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
 
       {/* Cum ben phai */}
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {accountSlot}
+        <button
+          type="button"
+          title="Đã lưu (sắp ra mắt)"
+          className="flex shrink-0 cursor-pointer flex-col items-center gap-0.5 rounded-md px-2 py-1 text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
+        >
+          <Bookmark size={18} strokeWidth={1.75} />
+          <span className="text-[10px] leading-none font-medium">Đã lưu</span>
+        </button>
+        <button
+          type="button"
+          title="Tin nhắn (sắp ra mắt)"
+          className="flex shrink-0 cursor-pointer flex-col items-center gap-0.5 rounded-md px-2 py-1 text-icon transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-icon-hover"
+        >
+          <MessageCircle size={18} strokeWidth={1.75} />
+          <span className="text-[10px] leading-none font-medium">Nhắn tin</span>
+        </button>
+        <NotificationBell />
         <button
           type="button"
           onClick={handleCompose}
@@ -292,15 +300,6 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
           <Plus size={16} strokeWidth={2.5} />
           <span className="hidden sm:inline">Đăng bài</span>
         </button>
-        <button
-          type="button"
-          title="Tin nhắn (sắp ra mắt)"
-          className={iconButtonClass}
-        >
-          <MessageCircle strokeWidth={1.75} className="size-4.5" />
-        </button>
-        <NotificationBell />
-        {accountSlot}
       </div>
     </header>
   );

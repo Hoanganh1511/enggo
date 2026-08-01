@@ -1,8 +1,9 @@
 import ProductPreviewCard from "./ProductPreviewCard";
+import SectionContainer from "@/components/ui/section-container";
 
 const ProductPreviewSection = () => {
   return (
-    <section id="product-preview" className="mx-auto max-w-5xl px-6 py-16">
+    <SectionContainer id="product-preview" className="py-16">
       <div className="mx-auto max-w-2xl text-center">
         <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
           Cả hành trình học tập,{" "}
@@ -52,7 +53,7 @@ const ProductPreviewSection = () => {
           </div>
         </div>
       </div>
-    </section>
+    </SectionContainer>
   );
 };
 
