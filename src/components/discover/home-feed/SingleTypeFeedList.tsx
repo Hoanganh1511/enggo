@@ -1,7 +1,7 @@
 import type { Post } from "@/content/home-feed-mock";
 import type { ContentType } from "@/lib/discover/post-kind-meta";
 import PostCard from "../PostCard";
-import { NoteCard, NoteCardSkeleton } from "./NoteCard";
+import { NoteCard } from "./NoteCard";
 
 // Nhan tieng Viet rieng cho thong bao rong - CONTENT_TYPES.label (post-kind-
 // meta.ts) dung tieng Anh (Post/Resource/...) cho dropdown chon loai, khong
@@ -28,28 +28,14 @@ const EMPTY_STATE_LABEL: Record<ContentType, string> = {
 // su dung).
 export function SingleTypeFeedList({
   posts,
-  loading,
   type,
 }: {
   posts: Post[];
-  loading: boolean;
   type: ContentType;
 }) {
-  // "loading" thoi, khong kem "&& posts.length === 0" - cung ly do nhu
-  // EditorialFeed.tsx (xem comment o do): tranh mat skeleton tu lan doi
-  // filter thu 2 tro di vi "posts" con giu du lieu cu chua bi xoa.
-  if (loading) {
-    // Cung 1 luoi auto-fill nhu khi render that (xem ben duoi) - the
-    // NoteCardSkeleton dung khung anh + tieu de + tac gia voi NoteCard that.
-    return (
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-4 gap-y-6">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <NoteCardSkeleton key={i} className="w-full" />
-        ))}
-      </div>
-    );
-  }
-
+  // posts la du lieu da fetch xong tren server (Server Component) - trang
+  // Home dung route-level loading.tsx (Suspense fallback) de hien skeleton
+  // trong luc doi fetch, nen component nay khong con giu state loading rieng.
   if (posts.length === 0) {
     return (
       <p className="py-12 text-center text-sm text-ink-faint">
@@ -71,7 +57,16 @@ export function SingleTypeFeedList({
       // (the co chieu rong CO DINH, thua khoang trong o cuoi hang).
       <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-x-4 gap-y-6">
         {posts.map((p) => (
-          <NoteCard key={p.id} post={p} className="w-full" />
+          // sizes khop luoi auto-fill minmax(220px,1fr) o tren - the co the
+          // rong hon 220px chut o man hep khi chi 1-2 cot, nhung 220px la can
+          // duoi an toan (khong bao gio nho hon), khac han carousel co dinh
+          // 224px cua NoteCard mac dinh.
+          <NoteCard
+            key={p.id}
+            post={p}
+            className="w-full"
+            sizes="(max-width: 640px) 45vw, 220px"
+          />
         ))}
       </div>
     );

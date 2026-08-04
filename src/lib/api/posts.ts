@@ -37,6 +37,13 @@ export function listPosts(params?: {
   return apiFetch<Post[]>(`/posts${qs ? `?${qs}` : ""}`);
 }
 
+// Dung cho trang chi tiet 1 bai viet (/p/[id]) - apiFetch tu nem loi khi
+// backend tra 404 (khong tim thay id), goi noi tra ve .catch(() => null) roi
+// notFound() thay vi de loi cong xuyen len render.
+export function getPostById(id: string): Promise<Post> {
+  return apiFetch<Post>(`/posts/${id}`);
+}
+
 // `data` la field rieng tung kind (content/title/image/...) - shape khac
 // nhau tuy kind, xem PostComposer.tsx buildPostData(). Kind truyen kebab-case
 // dung nhu Post["kind"], backend tu chuyen sang enum luu DB. `category` la

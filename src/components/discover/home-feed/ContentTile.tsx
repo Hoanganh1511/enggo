@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { LucideIcon } from "lucide-react";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { SHIMMER_BLUR_DATA_URL } from "@/lib/discover/image-placeholder";
 
 // Tile hinh dai dien dung chung cho Featured/Resource/Project/Trending Topic.
 // Resource/project/topic KHONG co field anh that trong data model (xem
@@ -14,6 +15,8 @@ export function ContentTile({
   alt = "",
   className = "",
   iconSize = 32,
+  sizes = "224px",
+  priority = false,
 }: {
   icon: LucideIcon;
   accent: string;
@@ -21,6 +24,14 @@ export function ContentTile({
   alt?: string;
   className?: string;
   iconSize?: number;
+  // Khop kich thuoc HIEN THI THUC TE cua caller, khong de mac dinh chung
+  // chung - card carousel (NoteCard, w-56 ~224px) khac luoi tu gian
+  // (SingleTypeFeedList) khac trending topic, moi noi truyen sizes rieng.
+  sizes?: string;
+  // Chi bat cho vai the o vung nhin dau tien (vd 4-6 card dau section
+  // "Noi bat hom nay") - day la ung vien LCP cua trang, can tai ngay khong
+  // qua co che lazy-load IntersectionObserver mac dinh cua next/image.
+  priority?: boolean;
 }) {
   if (imageUrl) {
     return (
@@ -31,7 +42,10 @@ export function ContentTile({
           src={imageUrl}
           alt={alt}
           fill
-          sizes="400px"
+          sizes={sizes}
+          priority={priority}
+          placeholder="blur"
+          blurDataURL={SHIMMER_BLUR_DATA_URL}
           className="object-cover"
         />
       </div>

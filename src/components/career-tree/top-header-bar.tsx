@@ -83,7 +83,7 @@ const NAV_ITEMS: {
   //   matchPrefixes: ["/career-tree", "/w/"],
   // },
   {
-    title: "My Town",
+    title: "Khám phá",
     icon: Building2,
     matchPrefixes: ["/skill-tree"],
     children: MY_TOWN_CHILDREN,

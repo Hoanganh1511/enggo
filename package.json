@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@playcanvas/react": "^0.11.5",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-dropdown-menu": "^2.1.21",
     "@radix-ui/react-hover-card": "^1.1.20",
@@ -31,6 +32,7 @@
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "next-auth": "5.0.0-beta.32",
+    "playcanvas": "^2.21.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "simple-icons": "^16.27.0",

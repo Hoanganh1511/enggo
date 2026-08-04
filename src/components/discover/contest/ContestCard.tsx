@@ -2,12 +2,7 @@ import Link from "next/link";
 import { Hash, Trophy, CalendarDays } from "lucide-react";
 
 import type { Contest } from "@/lib/api/contests";
-import { CONTEST_ACCENT } from "./contest-style";
-
-function formatDeadline(iso: string) {
-  const d = new Date(iso);
-  return `${d.getDate()} tháng ${d.getMonth() + 1}`;
-}
+import { CONTEST_ACCENT, formatDeadline } from "./contest-style";
 
 // The chu de/cuoc thi trong luoi 3 cot. Hashtag + vien deu dung CHUNG 1 mau
 // (CONTEST_ACCENT) thay vi accent rieng tung contest. Badge goc phai phan

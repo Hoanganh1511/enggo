@@ -29,7 +29,7 @@ export function SeriesJoinButton({
   if (series.isOwner) {
     return (
       <Link
-        href={`/series/${series.slug}`}
+        href={`/community/${series.slug}`}
         className={cn(base, "bg-surface-muted text-ink hover:bg-hover-bg")}
       >
         Quản lý series
@@ -40,7 +40,7 @@ export function SeriesJoinButton({
   if (status === "approved") {
     return (
       <Link
-        href={`/series/${series.slug}`}
+        href={`/community/${series.slug}`}
         className={cn(base, "bg-surface-muted text-ink hover:bg-hover-bg")}
       >
         Tiếp tục

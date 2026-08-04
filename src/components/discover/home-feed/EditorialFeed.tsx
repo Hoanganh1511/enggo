@@ -1,13 +1,7 @@
-"use client";
-
-import { useMemo } from "react";
 import { Hammer, Brain, Bot, Palette, Rocket, Briefcase } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
-import {
-  KNOWLEDGE_WORLDS,
-  slugToCategoryEnum,
-} from "@/lib/discover/knowledge-worlds";
+import type { Topic, KnowledgeWorld } from "@/lib/discover/knowledge-worlds";
 import { SectionHeader } from "./SectionHeader";
 import { HorizontalScroller } from "./HorizontalScroller";
 import { NoteCard, NoteCardSkeleton } from "./NoteCard";
@@ -35,42 +29,11 @@ const WORLD_ACCENT: Record<string, string> = {
   business: "#f43f5e",
 };
 
-// Nhom kind CUC BO cho tung section editorial - DOC LAP voi ContentType cua
-// post-kind-meta.ts (dung cho thanh loc Content Type, khong duoc sua) vi
-// muc dich khac nhau: o day "Note" tach rieng khoi "Resource" (dung cho
-// Latest Posts, giong tinh chat van ban ca nhan hon la tu lieu tham khao).
-const LATEST_POST_KINDS = new Set<Post["kind"]>([
-  "text",
-  "image",
-  "gallery",
-  "video",
-  "idea",
-  "note",
-]);
-const RESOURCE_KINDS = new Set<Post["kind"]>([
-  "resource",
-  "file",
-  "link",
-  "code-snippet",
-  "tutorial",
-]);
-const PROJECT_KINDS = new Set<Post["kind"]>([
-  "project-update",
-  "node-created",
-  "knowledge-block",
-  "experiment",
-]);
-const ACHIEVEMENT_KINDS = new Set<Post["kind"]>([
-  "achievement",
-  "milestone",
-  "career-update",
-]);
-
 // Skeleton mo phong DUNG hinh dang thuc te se hien ra (nhieu section, moi
-// section 1 hang carousel the NoteCardSkeleton) - thay vi 3 block chu nhat
-// chung chung truoc day (khong an khop layout section+carousel hien tai nen
-// user khong nhan ra day la skeleton cua feed).
-function SectionSkeleton({ cards = 5 }: { cards?: number }) {
+// section 1 hang carousel the NoteCardSkeleton) - export de home/loading.tsx
+// (route-level Suspense fallback) dung lai, thay vi 3 block chu nhat chung
+// chung truoc day khong khop layout section+carousel hien tai.
+export function SectionSkeleton({ cards = 5 }: { cards?: number }) {
   return (
     <section>
       <div className="mb-4 h-6 w-48 animate-pulse rounded bg-surface-muted" />
@@ -83,66 +46,53 @@ function SectionSkeleton({ cards = 5 }: { cards?: number }) {
   );
 }
 
+type TrendingTopicEntry = {
+  world: KnowledgeWorld;
+  topic: Topic;
+  count: number;
+};
+
 // Layout editorial cho trang Home khi KHONG co Content Type nao dang chon -
-// thay the MasonryFeed 1 luoi lien tuc bang nhieu section doc lap. MOI
-// section (ke ca "Latest Posts", truoc day dung LatestPostRow dang danh sach
-// chu - da bo theo yeu cau dong bo 100%) deu dung CHUNG 1 khuon the NoteCard
-// (anh lon, gan khong vien, caption gon), chi khac tap kind duoc dua vao.
-// Section nao khong co bai nao thi AN HAN, khong hien tieu de rong.
+// thay the MasonryFeed 1 luoi lien tuc bang nhieu section doc lap, moi
+// section dung CHUNG 1 khuon the NoteCard (anh lon, gan khong vien, caption
+// gon) theo tinh than note.com. Server Component thuan (KHONG "use client") -
+// moi hang da duoc home/page.tsx fetch RIENG voi dung "kind" cua no (limit 10,
+// xem quyet dinh 2026-08-03 trong docs/engineering-log.md), component nay chi
+// con nhiem vu trinh bay, khong con tu filter/useMemo tu 1 mang gop 70 bai
+// nhu ban cu. "viewAllHref" (query string filter hien tai, chi them ?type=)
+// dan sang SingleTypeFeedList xem day du thay vi ket lai o 10 bai co dinh.
 export function EditorialFeed({
-  posts,
-  loading,
+  featured,
+  latest,
+  resources,
+  projects,
+  questions,
+  achievements,
+  trendingTopics,
+  filterQuery,
 }: {
-  posts: Post[];
-  loading: boolean;
+  featured: Post[];
+  latest: Post[];
+  resources: Post[];
+  projects: Post[];
+  questions: Post[];
+  achievements: Post[];
+  trendingTopics: TrendingTopicEntry[];
+  filterQuery: string;
 }) {
-  const { featured, latest, resources, projects, questions, achievements, trendingTopics } =
-    useMemo(() => {
-      const featured = [...posts]
-        .sort((a, b) => b.stats.likes - a.stats.likes)
-        .slice(0, 8);
-      const latest = posts.filter((p) => LATEST_POST_KINDS.has(p.kind));
-      const resources = posts.filter((p) => RESOURCE_KINDS.has(p.kind));
-      const projects = posts.filter((p) => PROJECT_KINDS.has(p.kind));
-      const questions = posts.filter((p) => p.kind === "question");
-      const achievements = posts.filter((p) => ACHIEVEMENT_KINDS.has(p.kind));
+  const viewAllHref = (type: string) =>
+    `/home?${filterQuery ? `${filterQuery}&` : ""}type=${type}`;
 
-      // Trending Topics khong phai post - dem so bai co category khop moi
-      // Topic trong tap posts da fetch (uoc luong trong pham vi trang dang
-      // xem, giong cach cac noi khac trong app da chap nhan gioi han nay).
-      const trendingTopics = KNOWLEDGE_WORLDS.flatMap((world) =>
-        world.topics.map((topic) => ({
-          world,
-          topic,
-          count: posts.filter(
-            (p) => p.category === slugToCategoryEnum(topic.slug),
-          ).length,
-        })),
-      )
-        .filter((t) => t.count > 0)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 8);
+  const isEmpty =
+    featured.length === 0 &&
+    latest.length === 0 &&
+    resources.length === 0 &&
+    projects.length === 0 &&
+    questions.length === 0 &&
+    achievements.length === 0 &&
+    trendingTopics.length === 0;
 
-      return { featured, latest, resources, projects, questions, achievements, trendingTopics };
-    }, [posts]);
-
-  // "loading" thoi, KHONG kem "&& posts.length === 0" - neu chi kiem tra
-  // posts rong thi tu lan doi filter (Topic/World/Content Type) thu 2 tro di
-  // se khong bao gio hien skeleton nua, vi "posts" luc do van con du lieu CU
-  // tu lan fetch truoc (chua bi xoa) - noi dung cu dung im roi "nhay coc"
-  // sang noi dung moi thay vi qua skeleton, day la dieu user bao "fetch ma
-  // khong co skeleton".
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-10">
-        <SectionSkeleton />
-        <SectionSkeleton />
-        <SectionSkeleton />
-      </div>
-    );
-  }
-
-  if (posts.length === 0) {
+  if (isEmpty) {
     return (
       <p className="py-12 text-center text-sm text-ink-faint">
         Chưa có bài viết nào phù hợp.
@@ -156,8 +106,11 @@ export function EditorialFeed({
         <section>
           <SectionHeader title="Nổi bật hôm nay" />
           <HorizontalScroller>
-            {featured.map((post) => (
-              <NoteCard key={post.id} post={post} />
+            {featured.map((post, i) => (
+              // priority chi cho vai the dau - day la ung vien LCP cua trang
+              // (section dau tien, nam trong viewport ban dau tren desktop
+              // khong can cuon). Xem quyet dinh 2026-08-03 trong engineering-log.md.
+              <NoteCard key={post.id} post={post} priority={i < 6} />
             ))}
           </HorizontalScroller>
         </section>
@@ -191,6 +144,7 @@ export function EditorialFeed({
           <SectionHeader
             title="Bài viết mới nhất"
             subtitle="Cập nhật và chia sẻ mới nhất từ cộng đồng"
+            viewAllHref={viewAllHref("post")}
           />
           <HorizontalScroller>
             {latest.map((post) => (
@@ -202,7 +156,7 @@ export function EditorialFeed({
 
       {resources.length > 0 && (
         <section>
-          <SectionHeader title="Tài nguyên đề xuất" />
+          <SectionHeader title="Tài nguyên đề xuất" viewAllHref={viewAllHref("resource")} />
           <HorizontalScroller>
             {resources.map((post) => (
               <NoteCard key={post.id} post={post} />
@@ -213,7 +167,7 @@ export function EditorialFeed({
 
       {questions.length > 0 && (
         <section>
-          <SectionHeader title="Câu hỏi" />
+          <SectionHeader title="Câu hỏi" viewAllHref={viewAllHref("question")} />
           <HorizontalScroller>
             {questions.map((post) => (
               <NoteCard key={post.id} post={post} />
@@ -224,7 +178,7 @@ export function EditorialFeed({
 
       {projects.length > 0 && (
         <section>
-          <SectionHeader title="Dự án" />
+          <SectionHeader title="Dự án" viewAllHref={viewAllHref("project")} />
           <HorizontalScroller>
             {projects.map((post) => (
               <NoteCard key={post.id} post={post} />
@@ -235,7 +189,7 @@ export function EditorialFeed({
 
       {achievements.length > 0 && (
         <section>
-          <SectionHeader title="Thành tích" />
+          <SectionHeader title="Thành tích" viewAllHref={viewAllHref("achievement")} />
           <HorizontalScroller>
             {achievements.map((post) => (
               <NoteCard key={post.id} post={post} />

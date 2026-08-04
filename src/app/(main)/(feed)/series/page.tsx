@@ -3,8 +3,10 @@ import {
   RECOMMENDED_SERIES,
   COMMUNITY_GOALS,
 } from "@/content/series-mock";
-import { SeriesCard } from "@/components/discover/series/SeriesCard";
+import { CommunityCard } from "@/components/discover/series/CommunityCard";
+import { SeriesToolbar } from "@/components/discover/series/SeriesToolbar";
 import { CommunityGoalCard } from "@/components/discover/series/CommunityGoalCard";
+import { FeaturedSeriesBanner } from "@/components/discover/series/FeaturedSeriesBanner";
 
 // Trang "Đi cùng mọi người" - danh sach cac series (lo trinh hoc do CHINH
 // nguoi dung tao ra, xem series-mock.ts). Truoc day day la 1 section nam
@@ -30,6 +32,13 @@ function SectionTitle({
 }
 
 export default function SeriesListPage() {
+  // Series "noi bat" cho banner dau trang - dong thanh vien nhieu nhat (dai
+  // dien tot nhat cho "duoc nhieu nguoi tin tuong theo"), khong phai gia tri
+  // rieng tu du lieu (SERIES chua co field "featured").
+  const featuredSeries = [...SERIES].sort(
+    (a, b) => b.memberCount - a.memberCount,
+  )[0];
+
   return (
     // Khong tu them px/py ngang doc: shell cha (HomeLayoutShell qua
     // series/layout.tsx) da co san px-4 pt-4 cho vung noi dung ben phai
@@ -45,14 +54,26 @@ export default function SeriesListPage() {
         </p>
       </header>
 
-      <section>
-        <SectionTitle
-          title="Series đang mở"
-          subtitle="Gửi đơn xin tham gia, người tạo series sẽ duyệt"
-        />
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-8">
+      {featuredSeries && <FeaturedSeriesBanner series={featuredSeries} />}
+
+      <section id="series-sections">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-ink">
+              Series đang mở
+            </h2>
+            <p className="mt-0.5 text-sm text-ink-faint">
+              Gửi đơn xin tham gia, người tạo series sẽ duyệt
+            </p>
+          </div>
+          <SeriesToolbar />
+        </div>
+        {/* Co dinh toi da 5 cot (khac auto-fill cua khoi "Muc tieu cong
+            dong" ben duoi) - the community can dung 5/hang de nhin lien
+            mach thay vi so cot doi theo do rong container. */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {SERIES.map((series) => (
-            <SeriesCard key={series.slug} series={series} />
+            <CommunityCard key={series.slug} series={series} />
           ))}
         </div>
       </section>
@@ -62,13 +83,16 @@ export default function SeriesListPage() {
           title="Đề xuất cho bạn"
           subtitle="Gợi ý dựa trên kỹ năng và nội dung bạn đang theo dõi"
         />
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-x-4 gap-y-8">
+        {/* Co dinh toi da 5 cot (khac auto-fill cua khoi "Muc tieu cong
+            dong" ben duoi) - the community can dung 5/hang de nhin lien
+            mach thay vi so cot doi theo do rong container. */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {RECOMMENDED_SERIES.map(({ series, reasonLine }) => (
             <div key={`rec-${series.slug}`} className="flex flex-col gap-1.5">
               <p className="line-clamp-1 text-[11px] text-ink-faint">
                 {reasonLine}
               </p>
-              <SeriesCard series={series} />
+              <CommunityCard series={series} />
             </div>
           ))}
         </div>

@@ -8,6 +8,164 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-08-03 — Card Series dẫn sang trang Community thay vì /series/[slug]
+
+**Quyết định:** thêm route mới `/community/[slug]` (mock hoàn toàn, xem
+`content/community-mock.ts`) làm hub thảo luận/leaderboard/thử thách cho 1
+"nhóm học chung". `SeriesCard`/`SeriesJoinButton` đổi hẳn sang trỏ tới
+`/community/${series.slug}` thay vì `/series/${series.slug}` cũ.
+
+**Vấn đề:** `community-mock.ts` chỉ biên soạn tay 1 ví dụ chi tiết
+("on-certificate"), trong khi `SERIES` có 9 slug khác cần trỏ tới được.
+
+**Hướng đã chọn:** `buildCommunityFromSeries(series)` SINH 1 Community từ dữ
+liệu Series có sẵn thay vì chép tay 9 lần — ánh xạ 1-1 field nào có tương ứng
+tự nhiên (thành viên → leaderboard sắp theo `progressPercent`, ngày hiện
+tại/tổng ngày → vừa là "mục tiêu" vừa là "thử thách" vì 1 Community sinh ra
+CHỈ xoay quanh đúng 1 series). Field Series không có tương ứng (certificates,
+upcomingEvent, documents) để rỗng/`undefined` — **không bịa dữ liệu** — sidebar
+tự ẩn cả khối khi rỗng thay vì hiện danh sách trống vô nghĩa.
+
+**Còn để ngỏ:** trang `/series/[slug]` cũ (`SeriesDetailContainer`) vẫn còn
+tồn tại trong code, chỉ không còn được link tới từ lưới danh sách nữa —
+CHƯA xoá (quyết định giữ nguyên, không phải quên) vì đây là hành động phá huỷ
+lớn hơn phạm vi yêu cầu ban đầu; xoá khi nào xác nhận chắc chắn không cần nữa.
+
+**Cập nhật cùng ngày:** đổi tên `SeriesCard.tsx` → `CommunityCard.tsx` (the
+này giờ đại diện cho 1 cộng đồng, không chỉ 1 series thuần tuý), thêm 3 dòng
+stat "thành viên/cuộc thảo luận/tài liệu". 2 số liệu Series chưa có sẵn
+(thảo luận, tài liệu) dùng chung công thức `estimateDiscussionCount`/
+`estimateDocumentCount` (community-mock.ts) với `buildCommunityFromSeries` -
+tránh 2 nơi hiển thị lệch số nhau vì mỗi chỗ tự bịa 1 công thức riêng. Lưu ý:
+`documentCount` trên card là ước tính có cộng thêm tín hiệu thật (số task
+`targetKind: "resource"`), nhưng khối "Tài liệu mới cập nhật" ở trang chi
+tiết vẫn ẩn (mảng `documents` để rỗng, không bịa danh sách file cụ thể) - card
+có thể hiện số > 0 trong khi trang chi tiết chưa có gì, đây là đánh đổi có
+chủ đích chứ không phải lỗi.
+
+---
+
+## 2026-08-03 — Sửa lại `/p/[slug]`: phải là trang chi tiết Post THẬT, không phải Article mock riêng
+
+**Vấn đề:** bản đầu tiên của `/p/[slug]` dùng 1 type "Article" tự bịa
+(blocks/TOC/reading-time) tách biệt hoàn toàn khỏi `Post` thật đang chạy
+khắp app - hiểu sai yêu cầu. Không thể gắn link từ `NoteCard`/`PostCard`
+(hiển thị `Post` thật) sang trang đó vì khác hẳn data shape.
+
+**Sửa lại:**
+1. Backend (career-tree-api): thêm `GET /posts/:id` (`PostService.findOne`,
+   trả `null` thay vì throw để controller tự quyết 404).
+2. Frontend: `getPostById`/`getPostAction`, đổi route thành `/p/[id]`
+   (nhận `Post.id` thật). Xoá `content/article-mock.ts`.
+3. Title/cover suy từ `getPostTitle`/`getPostImageUrl` (helper có sẵn, xử lý
+   được MỌI kind, kể cả kind không có field `title`/ảnh riêng).
+4. Mục lục: parse heading kiểu `## `/`### ` THẲNG từ `post.content` thật
+   (`lib/discover/article-content.ts`, dùng chung 1 hàm sinh id giữa TOC và
+   thân bài để không bao giờ lệch nhau) - bài không viết heading kiểu này thì
+   đơn giản không có mục lục, không bịa khung rỗng.
+5. Thân bài: kind có `content` text thì tự parse heading/đoạn văn; kind
+   không có (project-update/achievement/poll/...) thì fallback thẳng về
+   `PostBody` có sẵn (đã biết render đúng dạng riêng từng kind).
+6. Tác giả đầy đủ: dùng THẬT `followUserAction`/`unfollowUserAction` +
+   `getProfileByUsername` (bio/followerCount/isFollowing that) - không phải
+   toggle giả như bản đầu.
+7. Bài trước/sau + gợi ý: `listPostsAction({authorUsername})` và
+   `({category})` THẬT - không mock.
+8. Bình luận: vẫn phải mock/local-only vì backend CHƯA có model Comment thật
+   (chỉ có `stats.comments` là số đếm) - khởi tạo RỖNG cho mỗi post thật
+   thay vì tái dùng 6 comment giả cũ (sẽ sai ngữ cảnh với từng bài khác nhau).
+9. Gắn link "click vào card post -> `/p/[id]`" ở TẤT CẢ nơi hiển thị Post
+   thật: `NoteCard.tsx` (tách `Link` ảnh/tiêu đề riêng khỏi `AuthorLine` - nay
+   tự có `Link` riêng tới profile, tránh lồng `<a>`), `PostCard.tsx` (link
+   qua mốc thời gian, cả 2 variant timeline/card).
+
+**Cố ý KHÔNG gắn link:** `CommunityPostCard.tsx` (feature Community) vẫn
+100% mock, id không khớp Post thật nào - gắn `/p/${id}` ở đây sẽ ra 404. Để
+nguyên, chưa xử lý.
+
+---
+
+## 2026-08-03 — Trang chi tiết bài viết long-form `/p/[slug]`
+
+**Lưu ý:** mục này đã LỖI THỜI - xem mục sửa lại ngay phía trên (cùng ngày).
+Giữ nguyên văn bên dưới để hiểu quá trình, không đại diện code hiện tại.
+
+**Quyết định:** route mới hoàn toàn (mock, xem `content/article-mock.ts`),
+1 cột duy nhất `max-w-155` (620px) canh giữa — khác layout 3 cột của
+`/community/[slug]` vì đây là trang "đọc", ưu tiên tập trung nội dung.
+
+**Các điểm cần quyết định khi build:**
+- Mục lục (TOC) sinh THẲNG từ heading block trong `article.blocks`
+  (`getTableOfContents`) — không biên soạn riêng, tránh lệch với nội dung
+  thật khi sửa bài sau này.
+- Bình luận: tối đa 2 cấp (gốc → reply, không cho reply-của-reply) — enforce
+  bằng prop `depth: 0 | 1` ở `CommentItem`, không phải giới hạn ở type
+  `ArticleComment` (type cho phép nested tuỳ ý, UI mới là nơi chặn).
+- "Fetch trước 4 bình luận + Xem thêm": chỉ là `visibleCount` state tăng dần
+  trên mảng đã có sẵn (không phải phân trang API thật) — đủ dùng cho giai
+  đoạn chốt UI, sẽ đổi thành cursor thật khi có backend comment.
+- Bình luận dài >6 dòng: ước lượng bằng số ký tự (260 ký tự ~ 6 dòng ở cột
+  620px) thay vì đo chiều cao DOM thật — đơn giản, chấp nhận sai số nhỏ.
+- Bài trước/sau (`ArticlePrevNextNav`) là theo TÁC GIẢ, không phải theo thời
+  gian toàn hệ thống — `prev`/`next` optional, tự ẩn khi ở bài đầu/cuối.
+
+---
+
+## 2026-08-03 — Home feed: SSR hoá fetch, infinite scroll, tối ưu ảnh (LCP/`sizes`)
+
+**Vấn đề:** `home/page.tsx` là `"use client"` + `useEffect` fetch toàn bộ 70
+posts sau khi mount — HTML ban đầu rỗng, ảnh chỉ bắt đầu tải sau khi
+JS hydrate xong + round-trip fetch, không có gì để Google index (SEO), và
+không có "load more" dù backend đã hỗ trợ `cursor` sẵn ([lib/api/posts.ts](../src/lib/api/posts.ts)).
+
+**Các hướng đã cân nhắc cho phần fetch:**
+1. Giữ client fetch, chỉ thêm `AbortController`/cache. → Không giải quyết gốc
+   (HTML vẫn rỗng lúc đầu), SEO vẫn bằng 0.
+2. **Chuyển hẳn `home/page.tsx` thành Server Component `async`, đọc
+   `searchParams` trực tiếp, fetch trang đầu (`limit: 70`) ngay trong
+   component** (đã chọn) — dùng route-level `home/loading.tsx` có sẵn làm
+   Suspense fallback tự động (Next tự bọc), không cần tự quản `loading`
+   state/`cancelled` flag như trước. `EditorialFeed`/`SingleTypeFeedList` bỏ
+   hẳn prop `loading`.
+3. Cho các trang tiếp theo (cuộn xuống): **client island riêng
+   `InfiniteFeed.tsx`** nhận `initialPosts` từ SSR + object `filters`, tự gọi
+   `listPostsAction({...filters, cursor: lastPost.id})` qua
+   `IntersectionObserver` ở sentinel cuối feed — đây là component `"use
+   client"` DUY NHẤT trong luồng Home, mọi thứ khác thuần Server/presentational.
+   Bắt buộc `key={JSON.stringify(filters)}` ở nơi gọi để reset state khi đổi
+   topic/type, tránh nối nhầm posts của 2 tập lọc khác nhau vào 1 danh sách.
+
+**Ảnh (LCP/`sizes`):** so với note.com (kiểm chứng qua network thật, không
+đoán — xem chat log) thấy họ SSR toàn bộ list + serve ảnh qua CDN resize theo
+query param (`?width=219&dpr=2`) khớp đúng kích thước hiển thị. Áp dụng tương
+tự: `ContentTile`/`NoteCard` nhận thêm `priority`/`sizes` prop thay vì hard-code
+`sizes="400px"` cho mọi nơi dùng — `EditorialFeed` chỉ set `priority` cho 4-6
+card đầu section "Nổi bật hôm nay" (ứng viên LCP thật sự, nằm trong viewport
+ban đầu ở desktop vì `HorizontalScroller` không tràn ở màn rộng).
+
+**Còn để ngỏ:** `generateMetadata` (title/canonical/robots theo từng URL
+filter) — cần chọn chiến lược index trước (chỉ index `topic`/`world`, hay
+noindex toàn bộ `/home` và dồn SEO cho trang bài viết chi tiết) vì đây là
+quyết định content/SEO, chưa làm.
+
+**Phát hiện thêm (cùng ngày):** sau khi SSR hoá, chuyển sang `/series` bị
+"nháy toàn bộ trang" (sidebar + nội dung cùng biến mất, thay bằng spinner
+rỗng). Nguyên nhân: `home/layout.tsx`, `series/layout.tsx`, `contest/layout.tsx`
+đều `await getFeedCategoryTree()` thẳng, không tự bọc `<Suspense>` riêng —
+Next fallback lên `(main)/loading.tsx` (spinner tràn hết khung nội dung).
+Fix 2 lớp:
+1. Tự bọc `<Suspense fallback={<HomeLayoutShellSkeleton />}>` trong từng
+   layout (đúng pattern đã có sẵn ở `u/[username]/layout.tsx`).
+2. **Gộp cả 3 route vào 1 route group `(feed)/`** (`src/app/(main)/(feed)/{home,series,contest}`)
+   dùng chung đúng 1 `(feed)/layout.tsx` — route group không lộ ra URL
+   (`/home`, `/series`, `/contest` giữ nguyên), nhưng khiến `HomeLayoutShell`
+   chỉ mount 1 lần duy nhất thay vì remount mỗi lần chuyển qua lại giữa 3
+   trang (trước đó mỗi route có layout.tsx riêng = 3 instance độc lập dù
+   dùng chung component `HomeLayoutShell`, đây mới là nguyên nhân gốc khiến
+   sidebar "biến mất" dù comment cũ đã ghi rõ ý định ngược lại).
+
+---
+
 ## 2026-07-28 — Post kind "skill-report": fetch-on-demand trong client component mà không đụng `react-hooks/set-state-in-effect`
 
 **Vấn đề:** Thêm kind mới cho feed ("Báo cáo kỹ năng" - báo cáo hôm nay hoàn

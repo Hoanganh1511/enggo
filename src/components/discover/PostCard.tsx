@@ -138,9 +138,16 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
             />
           )}
           <span className="text-ink-faint">·</span>
-          <span className="shrink-0 text-xs text-ink-faint">
+          {/* Thoi gian dang lam link toi trang chi tiet bai viet (/p/[id]) -
+              quy uoc pho bien (Twitter/Facebook) de "chi tiet" co 1 diem vao
+              ro rang ma khong phai boc ca <article> trong 1 <Link> (se xung
+              dot voi menu/ActionBar la nut/link long ben trong). */}
+          <Link
+            href={`/p/${post.id}`}
+            className="shrink-0 text-xs text-ink-faint hover:underline"
+          >
             {formatRelativeTime(post.createdAt)}
-          </span>
+          </Link>
         </div>
 
         <ActionBar post={post} />
@@ -199,9 +206,14 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
                 @{post.author.username}
               </Link>
               <span className="text-ink-faint">·</span>
-              <span className="shrink-0 text-xs text-ink-muted">
+              {/* Xem comment o nhanh variant="card" ben tren ve ly do dung
+                  thoi gian lam diem vao trang chi tiet bai viet. */}
+              <Link
+                href={`/p/${post.id}`}
+                className="shrink-0 text-xs text-ink-muted hover:underline"
+              >
                 {formatRelativeTime(post.createdAt)}
-              </span>
+              </Link>
             </div>
 
             {menu}
