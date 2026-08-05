@@ -8,6 +8,71 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-08-05 — Làm lại /community/[slug] thành giao diện kênh chat (Member/Admin)
+
+**Quyết định:** thay THẾ HOÀN TOÀN trang chi tiết Community cũ (header + feed
+bài viết dạng note.com) bằng giao diện kiểu Discord/Slack: kênh chat có tin
+nhắn/reaction/code block cho **Member**, và trang quản trị duyệt yêu cầu
+tham gia cho **Admin** - rẽ nhánh qua `community.isOwner` (map thẳng từ
+`series.isOwner` có sẵn), không phải toggle thủ công.
+
+**Phạm vi đã CHỦ ĐỘNG THU HẸP** (xác nhận trước khi làm, tránh làm quá nhiều
+trong 1 lần): trang Admin có 9 mục điều hướng trong thiết kế tham khảo,
+nhưng chỉ **"Tổng quan"** và **"Yêu cầu tham gia"** có nội dung thật (khớp
+đúng màn hình chi tiết trong ảnh mẫu) - 7 mục còn lại (Thành viên/Kênh &
+Danh mục/Nội dung ghim/Tài liệu & Link/Sự kiện/Thống kê/Cài đặt) chỉ đổi
+active state, hiện `CommunityAdminPlaceholder` ("chưa xây dựng lần này").
+
+**Nguồn dữ liệu cho yêu cầu tham gia (Admin):** dùng THẲNG
+`Series.joinRequests` có sẵn (reason/intro/avatarUrl thật) thay vì bịa -
+`intro` map sang cột "Kinh nghiệm", `reason` map sang "Lý do muốn tham gia".
+Field duy nhất Series không có là **email** - dùng placeholder rõ ràng từ
+username (`${username}@example.com`), không giả vờ là email thật.
+
+**Xoá hoàn toàn** các component cũ không còn dùng:
+`CommunityHeader/CommunitySidebarLeft/CommunitySidebarRight/CommunityMainTabs/
+CommunityComposer(cũ)/CommunityFeed/CommunityPostCard`, cùng các field
+`Community` không còn cần (goal/challenge/leaderboard/certificates/
+upcomingEvent/documents/posts/CommunityPost...) - viết lại `Community` type
+gọn lại đúng những gì giao diện mới cần (channels/joinRequests/adminStats/
+activeMembers/docsAndLinks/recentActivity).
+
+---
+
+## 2026-08-05 — /series, /contest có sidebar; /series/[slug], /contest/[slug] thì không
+
+**Yêu cầu:** danh sách `/series`, `/contest` giữ sidebar lĩnh vực nghề
+nghiệp (dùng chung `HomeLayoutShell` với `/home`), nhưng trang CHI TIẾT
+(`/series/[slug]`, `/contest/[slug]`) thì KHÔNG có sidebar đó - bộ lọc lĩnh
+vực chỉ có nghĩa với 1 danh sách, không liên quan gì tới 1 series/cuộc thi
+cụ thể đang xem.
+
+**Vấn đề kỹ thuật:** Next.js App Router, 1 `layout.tsx` áp dụng cho MỌI route
+con lồng bên dưới nó - không có cách nào để 1 route con "từ chối" layout của
+cha. Nếu `series/[slug]/` nằm trong cùng thư mục `series/` với `page.tsx`
+(danh sách), nó bắt buộc nhận layout của `series/` (hoặc cha xa hơn) giống
+hệt trang danh sách.
+
+**Đã làm:** tách VẬT LÝ 2 phần của "series" ra 2 vị trí khác nhau, dùng route
+group để chỉ 1 trong 2 chỗ đó đi qua `HomeLayoutShell`:
+- `(main)/(feed)/series/page.tsx` → `/series` (đi qua `(feed)/layout.tsx`,
+  CÓ sidebar).
+- `(main)/series/[slug]/page.tsx` → `/series/[slug]` (đứng ngoài route group
+  `(feed)`, KHÔNG đi qua layout đó, chỉ thừa hưởng `(main)/layout.tsx` -
+  TopHeaderBar).
+Tương tự cho `contest/`. Đã build thử để xác nhận Next.js CHO PHÉP 2 thư mục
+cùng tên "series" tồn tại song song ở 2 vị trí (1 trong group, 1 ngoài group)
+miễn là không cùng định nghĩa CHÍNH XÁC 1 path - `(feed)/series/page.tsx`
+định nghĩa `/series`, còn `series/[slug]/page.tsx` định nghĩa `/series/[slug]`,
+2 path khác nhau nên không xung đột.
+
+**Padding:** `series/page.tsx`/`contest/page.tsx` (trong `(feed)/`) quay lại
+KHÔNG tự thêm `px-4 pt-4` (HomeLayoutShell cấp sẵn). `series/[slug]`/
+`contest/[slug]` (ngoài `(feed)/`) vẫn giữ `px-4 pt-4` tự thêm từ lần sửa
+trước (không đổi, vì vẫn không có sidebar).
+
+---
+
 ## 2026-08-03 — Card Series dẫn sang trang Community thay vì /series/[slug]
 
 **Quyết định:** thêm route mới `/community/[slug]` (mock hoàn toàn, xem

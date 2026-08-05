@@ -1,51 +1,59 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
-import { ImageIcon, FileText, BarChart3, CalendarDays } from "lucide-react";
+import { Type, Smile, Image as ImageIcon, BarChart3, AtSign, Send } from "lucide-react";
 
-const ACTIONS = [
-  { icon: ImageIcon, label: "Ảnh / Video" },
-  { icon: FileText, label: "Tài liệu" },
-  { icon: BarChart3, label: "Thăm dò ý kiến" },
-  { icon: CalendarDays, label: "Sự kiện" },
-];
+const TOOLBAR_ICONS = [Type, Smile, ImageIcon, BarChart3, AtSign];
 
-// Composer tinh (chua mo modal/dieu huong that - UI shell dong bo voi
-// PostComposer.tsx cua feed chinh nhung KHONG dung chung component do, vi
-// Community la 1 domain rieng voi bo "loai bai" khac (Tai lieu/Su kien thay
-// vi Resource/Project cua feed chinh).
-export function CommunityComposer({
-  currentUserAvatarUrl,
-}: {
-  currentUserAvatarUrl: string;
-}) {
+// Avatar placeholder cho "nguoi dang dang nhap" - mock nay chua co API auth
+// gan voi trang Community nen chua the lay anh that, dung pravatar lam anh
+// trang tri (giong cach FeaturedSeriesBanner.tsx dung MEMBER_AVATARS).
+const CURRENT_USER_AVATAR_URL =
+  "https://i.pravatar.cc/64?u=community-composer-current-user";
+
+// Composer "dang bai" o cuoi kenh - UI shell (chua co API dang bai that,
+// chi giu local state cho input). Rut gon con 1 hang DUY NHAT (thay vi 2
+// hang truoc do) de giam ~1 nua chieu cao - nut "Dang bai" rut gon thanh 1
+// icon Send tron, "Hoi AI" tam bo (chua co tinh nang that, khong phai xoa
+// han - co the them lai sau khi co huong thiet ke ro hon).
+export function CommunityComposer() {
+  const [value, setValue] = useState("");
+
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
-      <div className="flex items-center gap-3">
-        <Image
-          src={currentUserAvatarUrl}
-          alt=""
-          width={36}
-          height={36}
-          className="size-9 shrink-0 rounded-full object-cover"
-        />
-        <button
-          type="button"
-          className="h-10 flex-1 cursor-pointer rounded-md bg-surface-muted px-3.5 text-left text-sm text-ink-faint transition-colors duration-150 ease-out hover:bg-hover-bg"
-        >
-          Bạn đang ôn chứng chỉ nào? Hỏi gì hôm nay?
-        </button>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-border pt-2.5">
-        {ACTIONS.map(({ icon: Icon, label }) => (
+    <div className="flex items-center gap-2 rounded-xl border-2 border-community-accent/30 bg-white/90 py-1.5 pr-1.5 pl-3 shadow-xl backdrop-blur-md">
+      <Image
+        src={CURRENT_USER_AVATAR_URL}
+        alt=""
+        width={28}
+        height={28}
+        className="size-7 shrink-0 rounded-full object-cover"
+      />
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Viết điều bạn vừa học, thắc mắc hay chia sẻ..."
+        className="h-8 min-w-0 flex-1 bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
+      />
+      <div className="flex shrink-0 items-center gap-0.5">
+        {TOOLBAR_ICONS.map((Icon, i) => (
           <button
-            key={label}
+            key={i}
             type="button"
-            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+            className="flex size-8 cursor-pointer items-center justify-center rounded-md text-ink-muted hover:bg-hover-bg hover:text-ink"
           >
-            <Icon size={14} strokeWidth={1.75} />
-            {label}
+            <Icon size={16} strokeWidth={2.25} />
           </button>
         ))}
       </div>
+      <button
+        type="button"
+        aria-label="Đăng bài"
+        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-community-accent text-white hover:bg-community-accent-hover"
+      >
+        <Send size={15} strokeWidth={2.25} />
+      </button>
     </div>
   );
 }

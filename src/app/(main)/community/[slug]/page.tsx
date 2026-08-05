@@ -1,23 +1,18 @@
 import { notFound } from "next/navigation";
 import { getCommunityBySlug } from "@/content/community-mock";
 import { SERIES, RECOMMENDED_SERIES } from "@/content/series-mock";
-import { CommunityHeader } from "@/components/community/CommunityHeader";
-import { CommunitySidebarLeft } from "@/components/community/CommunitySidebarLeft";
-import { CommunitySidebarRight } from "@/components/community/CommunitySidebarRight";
-import { CommunityMainTabs } from "@/components/community/CommunityMainTabs";
-import { CommunityComposer } from "@/components/community/CommunityComposer";
-import { CommunityFeed } from "@/components/community/CommunityFeed";
+import { CommunityWorkspace } from "@/components/community/CommunityWorkspace";
 
 // Trang chi tiet 1 Community - MOCK HOAN TOAN (chua co model/endpoint that,
-// xem content/community-mock.ts). Layout 3 cot RIENG cua no (KHONG dung
-// HomeLayoutShell/(feed) group - sidebar o day la dieu huong noi bo 1 cong
-// dong, khac han bo loc linh vuc nghe nghiep cua feed chinh) nen nam thang
-// duoi (main), chi thua huong TopHeaderBar + MainContentArea tu (main)/layout.tsx.
+// xem content/community-mock.ts). Da lam lai hoan toan theo thiet ke kenh
+// chat (Discord/Slack-style): giao dien MEMBER (kenh + tin nhan) hoac ADMIN
+// (duyet yeu cau tham gia + tong quan), re nhanh qua community.isOwner - xem
+// CommunityWorkspace.tsx va quyet dinh trong docs/engineering-log.md.
 //
-// Avatar composer dung 1 seed pravatar co dinh ("current-user") thay vi goi
-// auth() that - trang nay 100% mock nen khong ket noi session that, tranh ca
-// lam segment nay bi coi la dynamic vi 1 lan await auth() khong can thiet
-// (xem ly do trong current-user.tsx).
+// Layout 3 cot RIENG cua no (KHONG dung HomeLayoutShell/(feed) group - noi
+// dung o day la kenh/quan tri rieng cua 1 cong dong, khac han bo loc linh
+// vuc nghe nghiep cua feed chinh) nen nam thang duoi (main), chi thua huong
+// TopHeaderBar + MainContentArea tu (main)/layout.tsx.
 export default async function CommunityDetailPage({
   params,
 }: {
@@ -33,17 +28,13 @@ export default async function CommunityDetailPage({
   if (!community) notFound();
 
   return (
-    <div className="flex min-w-0 flex-1 gap-6 px-4 pt-4 pb-10">
-      <CommunitySidebarLeft community={community} />
-
-      <div className="flex min-w-0 flex-1 flex-col gap-6">
-        <CommunityHeader community={community} />
-        <CommunityMainTabs />
-        <CommunityComposer currentUserAvatarUrl="https://i.pravatar.cc/80?u=current-user" />
-        <CommunityFeed posts={community.posts} />
-      </div>
-
-      <CommunitySidebarRight community={community} />
+    // "h-full" (khong phai flex-1 don thuan) + "overflow-hidden" - trang nay
+    // luon KHIT DUNG chieu cao vung noi dung (MainContentArea), khong tu no
+    // cuon: cac cot ben trong (sidebar/kenh chat/panel phai) tu co
+    // overflow-y-auto RIENG (xem CommunityWorkspace.tsx va cac component
+    // con), giong dung hanh vi Discord/Slack thay vi cuon ca trang.
+    <div className="h-full min-w-0 overflow-hidden ">
+      <CommunityWorkspace community={community} />
     </div>
   );
 }

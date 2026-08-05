@@ -14,7 +14,7 @@ import { CONTEST_ACCENT, formatDeadline } from "./contest-style";
 // dung/do sang cua tam anh cu the.
 export function FeaturedContestBanner({ contest }: { contest: Contest }) {
   return (
-    <section className="relative grid grid-cols-1 gap-6 overflow-hidden  border border-border p-6 sm:grid-cols-[1.2fr_1fr] sm:items-center sm:p-8">
+    <section className="relative grid grid-cols-1 gap-6 rounded-md overflow-hidden  border border-border p-6 sm:grid-cols-[1.2fr_1fr] sm:items-center sm:p-8">
       <Image
         src="/cover-image-3.png"
         alt=""

@@ -1,116 +1,239 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Compass, Users, MessageCircle, Sparkles, ArrowRight } from "lucide-react";
-
-import type { Series } from "@/content/series-mock";
 import {
-  estimateDiscussionCount,
-  estimateDocumentCount,
-} from "@/content/community-mock";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
-import { formatCompact } from "@/lib/format-number";
-import { ProgressBar } from "@/components/ui/progress-bar";
+  Users,
+  Target,
+  HeartHandshake,
+  TrendingUp,
+  Trophy,
+  ArrowRight,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-// Banner "Series noi bat" o dau trang "Đi cùng mọi người", ngay duoi header -
-// dung CHUNG cau truc/ky thuat voi FeaturedContestBanner.tsx (contest-style)
-// de dong bo cam giac giua cac trang danh sach (gradient theo accent + hoa
-// tiet icon mo, ben trai la loi moi + CTA cuon xuong, ben phai la 1 the noi
-// bat cu the). Khac contest (1 mau CONTEST_ACCENT co dinh cho ca domain),
-// series MOI series da co accent RIENG san (xem series-mock.ts) nen dung
-// thang accent cua chinh series duoc chon lam noi bat, khong bia mau chung.
-export function FeaturedSeriesBanner({ series }: { series: Series }) {
-  const discussionCount = estimateDiscussionCount(series);
-  const documentCount = estimateDocumentCount(series);
+import { SERIES_ACCENT, SERIES_BANNER_GRADIENT } from "./series-style";
 
+const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
+  {
+    icon: Users,
+    title: "Cộng đồng chất lượng",
+    description: "Học cùng những người cùng mục tiêu",
+  },
+  {
+    icon: Target,
+    title: "Lộ trình rõ ràng",
+    description: "Học có kế hoạch, đo lường tiến độ",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Hỗ trợ tận tâm",
+    description: "Mentor & members luôn đồng hành",
+  },
+];
+
+const MEMBER_AVATARS = [
+  "https://i.pravatar.cc/64?u=banner-member-1",
+  "https://i.pravatar.cc/64?u=banner-member-2",
+  "https://i.pravatar.cc/64?u=banner-member-3",
+];
+
+// Badge lo lung "tua" tren duong leo nui - moi badge co 1 CHAM DANH DAU tren
+// duong di, noi voi badge (icon + tieu de + mo ta ngan) bang 1 duong ke net
+// dut, gan dung theo vi tri quan sat duoc trong public/mountain-banner.png
+// (toa do la GAN DUNG, anh tinh khong co du lieu toa do that).
+const FLOATING_BADGES: {
+  icon: LucideIcon;
+  title: string;
+  subtitle: string;
+  top: string;
+  lineWidth: number;
+}[] = [
+  {
+    icon: Trophy,
+    title: "Đạt mục tiêu",
+    subtitle: "Chinh phục đỉnh cao",
+    top: "16%",
+    lineWidth: 32,
+  },
+  {
+    icon: HeartHandshake,
+    title: "Hỗ trợ nhau",
+    subtitle: "Cùng nhau vượt qua",
+    top: "38%",
+    lineWidth: 44,
+  },
+  {
+    icon: TrendingUp,
+    title: "Tiến bộ mỗi ngày",
+    subtitle: "Tích lũy mỗi bước nhỏ",
+    top: "58%",
+    lineWidth: 24,
+  },
+  {
+    icon: Users,
+    title: "Học cùng nhau",
+    subtitle: "Bắt đầu hành trình",
+    top: "78%",
+    lineWidth: 40,
+  },
+];
+
+// Banner dau trang "Đi cùng mọi người" - public/cloud-banner.png lam nen
+// FULL-BLEED (object-cover, tran ca banner, khong con gioi han 85% chieu
+// cao + mask nhu ban truoc) vi day gio la 1 canh hoan chinh (nui + may + mat
+// troi + chim), khong phai hoa tiet phu. public/mountain-banner.png (nguoi
+// leo nui, nen trong suot) chong len tren nhu 1 lop rieng, khop voi canh nen
+// phia duoi.
+//
+// Chu luon nam BEN TRAI, gioi han max-w-xl - lop "scrim" trang mo dan tu
+// trai sang phai dam bao chu luon doc duoc du noi dung anh nen the nao,
+// khong phu thuoc vao do sang/toi cua tung vung anh.
+export function FeaturedSeriesBanner() {
   return (
     <section
-      className="relative grid grid-cols-1 gap-6 overflow-hidden rounded-xl border border-border p-6 sm:grid-cols-[1.2fr_1fr] sm:items-center sm:p-8"
-      style={{
-        background: `linear-gradient(135deg, ${hexToRgba(series.accent, 0.12)}, ${hexToRgba(series.accent, 0.03)})`,
-      }}
+      className="relative flex min-h-[34rem] items-center overflow-hidden rounded-xl border border-border p-6 sm:p-10"
+      style={{ background: SERIES_BANNER_GRADIENT }}
     >
-      {/* Hoa tiet nen - thuan trang tri, khong anh huong layout (absolute,
-          pointer-events-none), an tren man hep de khong de len chu. */}
-      <Compass
-        size={140}
-        strokeWidth={1}
-        className="pointer-events-none absolute -bottom-6 left-[38%] hidden opacity-[0.07] sm:block"
-        style={{ color: series.accent }}
+      <Image
+        src="/cloud-banner.png"
+        alt=""
+        fill
+        sizes="1100px"
+        priority
+        className="object-cover"
       />
-      <Sparkles
-        size={30}
-        strokeWidth={1.5}
-        className="pointer-events-none absolute top-6 right-[28%] hidden opacity-10 sm:block"
-        style={{ color: series.accent }}
+      <Image
+        src="/mountain-banner.png"
+        alt=""
+        fill
+        sizes="1100px"
+        className="object-contain object-right"
       />
+      {/* Scrim trang mo dan trai -> phai, dam bao chu (nam ben trai) luon
+          doc duoc bat ke noi dung/do sang cua anh nen. */}
+      <div className="absolute inset-0 bg-linear-to-r from-white/85 via-white/40 to-transparent" />
 
-      <div className="relative z-10 flex flex-col justify-center gap-3">
-        <span
-          className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-          style={{
-            background: hexToRgba(series.accent, 0.14),
-            color: series.accent,
-          }}
+      {FLOATING_BADGES.map(({ icon: Icon, title, subtitle, top, lineWidth }) => (
+        <div
+          key={title}
+          className="absolute right-4 z-10 flex items-center gap-2 sm:right-8"
+          style={{ top }}
         >
-          <Sparkles size={13} strokeWidth={2.25} />
-          Gợi ý tham gia
-        </span>
-        <h2 className="text-2xl leading-tight font-bold tracking-tight text-ink">
-          Series nổi bật
-        </h2>
-        <p className="max-w-md text-sm leading-relaxed text-ink-muted">
-          Cùng hàng nghìn người khác đi theo 1 lộ trình học có kế hoạch rõ
-          ràng, thay vì tự học một mình.
-        </p>
-        {/* Neo xuong luoi "Series dang mo" ben duoi - trang nay da la "tat ca
-            series" nen CTA chi can cuon xuong, khong dieu huong sang trang
-            khac. */}
-        <Link
-          href="#series-sections"
-          className="mt-1 flex w-fit items-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90"
-          style={{ background: series.accent }}
-        >
-          Xem tất cả series
-          <ArrowRight size={15} strokeWidth={2.25} />
-        </Link>
-      </div>
+          <span
+            className="hidden shrink-0 border-t border-dashed sm:block"
+            style={{ width: lineWidth, borderColor: SERIES_ACCENT }}
+          />
+          <span className="flex items-center gap-2 rounded-full border border-border bg-surface py-1.5 pr-3.5 pl-1.5 shadow-md">
+            <span
+              className="flex size-7 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: SERIES_ACCENT }}
+            >
+              <Icon size={13} strokeWidth={2.25} />
+            </span>
+            <span className="flex flex-col">
+              <span className="text-xs leading-tight font-semibold text-ink">
+                {title}
+              </span>
+              <span className="text-[10px] leading-tight text-ink-faint">
+                {subtitle}
+              </span>
+            </span>
+          </span>
+        </div>
+      ))}
 
-      <Link
-        href={`/community/${series.slug}`}
-        className="relative z-10 flex flex-col gap-3 rounded-lg border bg-surface p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_1px_3px_rgba(16,24,40,0.1)] transition-colors duration-150 ease-out hover:bg-hover-bg sm:justify-self-end"
-        style={{ borderColor: series.accent }}
-      >
+      <div className="relative z-10 flex max-w-xl flex-col gap-5">
         <span
-          className="inline-flex w-fit items-center gap-1 rounded-sm px-1.5 py-0.5 text-[10px] font-semibold text-white"
-          style={{ background: series.accent }}
+          className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold tracking-wide uppercase"
+          style={{ color: SERIES_ACCENT }}
         >
-          <Compass size={10} strokeWidth={2.5} />
-          SERIES NỔI BẬT
+          <Users size={14} strokeWidth={2.25} />
+          Cộng đồng học tập
         </span>
 
-        <h3 className="line-clamp-2 text-base leading-snug font-bold text-ink">
-          {series.title}
-        </h3>
-
-        <div className="flex flex-col gap-1.5">
-          <p className="flex items-center gap-1.5 text-xs text-ink-muted">
-            <Users size={12} strokeWidth={2} className="shrink-0" />
-            {formatCompact(series.memberCount)} thành viên
-          </p>
-          <p className="flex items-center gap-1.5 text-xs text-ink-muted">
-            <MessageCircle size={12} strokeWidth={2} className="shrink-0" />
-            {formatCompact(discussionCount)} cuộc thảo luận · {formatCompact(documentCount)} tài liệu
-          </p>
-          <ProgressBar percent={series.progressPercent} />
+        <div className="flex flex-col gap-1">
+          <h2 className="text-2xl leading-tight font-bold tracking-tight text-ink sm:text-4xl">
+            Không ai giỏi một mình.
+          </h2>
+          <h2
+            className="text-2xl leading-tight font-bold tracking-tight sm:text-4xl"
+            style={{ color: SERIES_ACCENT }}
+          >
+            Cùng nhau, chúng ta đi xa hơn.
+          </h2>
         </div>
 
-        <span
-          className="flex items-center gap-1 text-sm font-semibold"
-          style={{ color: series.accent }}
-        >
-          Xem chi tiết
-          <ArrowRight size={14} strokeWidth={2.25} />
-        </span>
-      </Link>
+        <p className="max-w-md text-sm leading-relaxed text-ink-muted">
+          Tham gia cộng đồng học tập được thiết kế theo lộ trình rõ ràng,
+          nhận tài liệu độc quyền, hỗ trợ 1-1 và cùng nhau chinh phục mục
+          tiêu.
+        </p>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {FEATURES.map(({ icon: Icon, title, description }) => (
+            <div
+              key={title}
+              className="flex items-center gap-3 rounded-lg border border-border bg-surface/85 p-3 backdrop-blur-sm"
+            >
+              <span
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white"
+                style={{ color: SERIES_ACCENT }}
+              >
+                <Icon size={17} strokeWidth={2} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-ink">
+                  {title}
+                </span>
+                <span className="line-clamp-1 block text-xs text-ink-faint">
+                  {description}
+                </span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Neo xuong luoi "Series dang mo" ben duoi (id dat o page.tsx) -
+              trang nay da la "tat ca series" nen CTA chi can cuon xuong,
+              khong dieu huong sang trang khac. */}
+          <Link
+            href="#series-sections"
+            className="flex items-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90"
+            style={{ background: SERIES_ACCENT }}
+          >
+            <ArrowRight size={16} strokeWidth={2.25} />
+            Khám phá cộng đồng
+          </Link>
+          <Link
+            href="#series-sections"
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface/85 px-5 py-2.5 text-sm font-semibold text-ink backdrop-blur-sm transition-colors duration-150 ease-out hover:bg-hover-bg"
+          >
+            <Users size={16} strokeWidth={2.25} />
+            Tìm nhóm phù hợp
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="flex shrink-0 -space-x-2">
+            {MEMBER_AVATARS.map((url, i) => (
+              <Image
+                key={i}
+                src={url}
+                alt=""
+                width={32}
+                height={32}
+                className="size-8 shrink-0 rounded-full border-2 border-surface object-cover"
+              />
+            ))}
+          </div>
+          <p className="text-sm text-ink">
+            <span className="font-semibold" style={{ color: SERIES_ACCENT }}>
+              10.000+
+            </span>{" "}
+            thành viên đang cùng nhau tiến bộ mỗi ngày.
+          </p>
+        </div>
+      </div>
     </section>
   );
 }

@@ -12,6 +12,14 @@
   --primary-hover: #007fd1;
   --primary-dark: #006bb0;
 
+  /* Tim - RIENG cho khu vuc Community/"Đi cùng mọi người" (dong bo voi
+     SERIES_ACCENT trong series-style.ts, vi trang Community duoc dan toi tu
+     day va dung chung minh hoa nui/may tim). KHONG dung --primary (xanh,
+     dung cho toan site) trong cac component community/*.tsx. */
+  --community-accent: #7c3aed;
+  --community-accent-hover: #6d28d9;
+  --community-accent-dark: #5b21b6;
+
   --overlay: rgba(17, 24, 39, 0.45);
   --surface: #ffffff;
   --surface-muted: #fafbfc;
@@ -94,7 +102,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-active: var(--active);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-playpen-sans);
   --font-mono: var(--font-geist-mono);
   /* Font rieng cho PostCard (class "font-card") - xem layout.tsx, KHONG dung
      lam --font-sans mac dinh vi chi ap dung cho card post, khong doi font
@@ -105,6 +113,10 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-dark: var(--primary-dark);
   --color-primary-active: var(--primary-dark);
+
+  --color-community-accent: var(--community-accent);
+  --color-community-accent-hover: var(--community-accent-hover);
+  --color-community-accent-dark: var(--community-accent-dark);
 
   --color-overlay: var(--overlay);
   --color-surface: var(--surface);

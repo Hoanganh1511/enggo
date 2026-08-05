@@ -24,7 +24,7 @@ const MainContentArea = ({ children }: { children: React.ReactNode }) => {
   }, [pathname]);
 
   return (
-    <div ref={ref} className="min-h-0 flex-1 overflow-auto pb-4">
+    <div ref={ref} className="min-h-0 flex-1 scroll-smooth overflow-auto pb-4">
       {children}
     </div>
   );

@@ -21,8 +21,11 @@ import type { ContentType } from "@/lib/discover/post-kind-meta";
 // "Chủ đề đang được quan tâm" trong EditorialFeed.tsx con link toi
 // /home?topic=... - nen pushParams o day khong duoc xoa 2 param do.
 //
-// Shell nay dung CHUNG cho /home, /series va /contest de sidebar khong bien
-// mat khi chuyen giua cac trang do.
+// Shell nay dung CHUNG cho 3 trang DANH SACH /home, /series, /contest (xem
+// (main)/(feed)/layout.tsx) - CAC TRANG CHI TIET /series/[slug], /contest/[slug]
+// KHONG dung shell nay (co y dat ngoai route group (feed), xem
+// docs/engineering-log.md) vi bo loc linh vuc nghe nghiep o day chi co
+// nghia voi danh sach, khong lien quan gi toi 1 series/cuoc thi cu the.
 const HomeLayoutShell = ({
   children,
   categoryTree,
@@ -54,9 +57,10 @@ const HomeLayoutShell = ({
   // string 3 lan.
   //
   // Luon dieu huong ve "/home" chu KHONG dung usePathname(): shell nay con
-  // duoc dung o /series va /contest, ma cac bo loc chi co y nghia voi feed
-  // bai viet - bam 1 linh vuc khi dang o /contest phai dua nguoi dung ve feed
-  // dang loc theo linh vuc do, khong phai gan query vo nghia vao /contest.
+  // duoc dung o /series va /contest (2 trang DANH SACH, khong phai trang chi
+  // tiet), ma cac bo loc chi co y nghia voi feed bai viet - bam 1 linh vuc
+  // khi dang o /contest phai dua nguoi dung ve feed dang loc theo linh vuc
+  // do, khong phai gan query vo nghia vao /contest.
   const pushParams = (patch: Record<string, string | null>) => {
     setPendingParams(patch);
     const qs = new URLSearchParams(searchParams.toString());

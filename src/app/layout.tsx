@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Be_Vietnam_Pro } from "next/font/google";
+import { Open_Sans, Geist_Mono, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Font chinh toan app (thay Geist) - xem globals.css --font-sans.
+const playpenSans = Open_Sans({
+  variable: "--font-playpen-sans",
   subsets: ["latin", "latin-ext"],
 });
 
@@ -41,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${beVietnamPro.variable} h-full antialiased`}
+      className={`${playpenSans.variable} ${geistMono.variable} ${beVietnamPro.variable} h-full antialiased`}
     >
       <body className="flex h-dvh flex-col overflow-hidden ">
         {children}

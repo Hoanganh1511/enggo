@@ -7,6 +7,7 @@ import { CommunityCard } from "@/components/discover/series/CommunityCard";
 import { SeriesToolbar } from "@/components/discover/series/SeriesToolbar";
 import { CommunityGoalCard } from "@/components/discover/series/CommunityGoalCard";
 import { FeaturedSeriesBanner } from "@/components/discover/series/FeaturedSeriesBanner";
+import { SeriesStatsBar } from "@/components/discover/series/SeriesStatsBar";
 
 // Trang "Đi cùng mọi người" - danh sach cac series (lo trinh hoc do CHINH
 // nguoi dung tao ra, xem series-mock.ts). Truoc day day la 1 section nam
@@ -32,46 +33,36 @@ function SectionTitle({
 }
 
 export default function SeriesListPage() {
-  // Series "noi bat" cho banner dau trang - dong thanh vien nhieu nhat (dai
-  // dien tot nhat cho "duoc nhieu nguoi tin tuong theo"), khong phai gia tri
-  // rieng tu du lieu (SERIES chua co field "featured").
-  const featuredSeries = [...SERIES].sort(
-    (a, b) => b.memberCount - a.memberCount,
-  )[0];
-
   return (
-    // Tu them px-4 pt-4 - khac /home, trang nay khong con nam trong
-    // HomeLayoutShell (da chuyen ra khoi (main)/(feed), khong con sidebar
-    // linh vuc nghe nghiep) nen phai tu lo padding, khong con ai cap ho.
-    <div className="flex flex-col gap-10 px-4 pt-4 pb-10">
-      <header className="flex flex-col gap-1">
+    // Khong tu them px/py ngang doc: shell cha (HomeLayoutShell qua
+    // (feed)/layout.tsx) da co san px-4 pt-4 cho vung noi dung ben phai
+    // sidebar - them nua se lech so voi /home. Luu y: /series/[slug] (trang
+    // chi tiet) nam NGOAI (feed)/ nen KHONG duoc huong padding nay, phai tu
+    // co padding rieng (xem SeriesDetailContainer.tsx).
+    <div className="flex flex-col gap-6 pb-10">
+      {/* <header className="flex flex-col gap-1">
         <h1 className="text-2xl leading-tight font-bold tracking-tight text-ink">
           Đi cùng mọi người
         </h1>
         <p className="text-sm text-ink-muted">
-          Tham gia lộ trình học do chính người dùng khác tạo ra — gửi lời trình
-          bày, được nhận vào và cùng đi đến cuối chặng.
+          Tham gia lộ trình học cùng cộng đồng có chung mục tiêu, cùng nhau tiến
+          bộ mỗi ngày.
         </p>
-      </header>
+      </header> */}
 
-      {featuredSeries && <FeaturedSeriesBanner series={featuredSeries} />}
+      <FeaturedSeriesBanner />
+
+      <SeriesStatsBar />
 
       <section id="series-sections">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-ink">
-              Series đang mở
-            </h2>
-            <p className="mt-0.5 text-sm text-ink-faint">
-              Gửi đơn xin tham gia, người tạo series sẽ duyệt
-            </p>
-          </div>
-          <SeriesToolbar />
-        </div>
+        <h2 className="mb-4 text-xl font-bold tracking-tight text-ink">
+          Khám phá cộng đồng phù hợp với bạn ✨
+        </h2>
+        <SeriesToolbar />
         {/* Co dinh toi da 5 cot (khac auto-fill cua khoi "Muc tieu cong
             dong" ben duoi) - the community can dung 5/hang de nhin lien
             mach thay vi so cot doi theo do rong container. */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {SERIES.map((series) => (
             <CommunityCard key={series.slug} series={series} />
           ))}

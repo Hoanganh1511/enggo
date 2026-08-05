@@ -19,15 +19,17 @@ export default async function ContestListPage() {
   const featuredContest = contests
     .filter((c) => c.kind === "CONTEST" && c.status === "OPEN" && c.deadline)
     .sort(
-      (a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime(),
+      (a, b) =>
+        new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime(),
     )[0];
 
   return (
-    // Tu them px-4 pt-4 - khac /home, trang nay khong con nam trong
-    // HomeLayoutShell (da chuyen ra khoi (main)/(feed), khong con sidebar
-    // linh vuc nghe nghiep) nen phai tu lo padding, khong con ai cap ho.
-    <div className="flex flex-col gap-10 px-4 pt-4 pb-10">
-      <header className="flex flex-col gap-1">
+    // Khong tu them px/py: shell cha (HomeLayoutShell qua (feed)/layout.tsx)
+    // da co san px-4 pt-4 cho vung noi dung ben phai sidebar. Luu y:
+    // /contest/[slug] (trang chi tiet) nam NGOAI (feed)/ nen KHONG duoc
+    // huong padding nay, da tu them padding rieng.
+    <div className="flex flex-col gap-10 pb-10">
+      {/* <header className="flex flex-col gap-1">
         <h1 className="text-2xl leading-tight font-bold tracking-tight text-ink">
           Chủ đề & Cuộc thi
         </h1>
@@ -35,7 +37,7 @@ export default async function ContestListPage() {
           Viết theo một hashtag để bài của bạn xuất hiện cùng mọi người trong
           cùng chủ đề — có cả cuộc thi kèm giải thưởng.
         </p>
-      </header>
+      </header> */}
 
       {featuredContest && <FeaturedContestBanner contest={featuredContest} />}
 
