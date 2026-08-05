@@ -40,10 +40,10 @@ export default function SeriesListPage() {
   )[0];
 
   return (
-    // Khong tu them px/py ngang doc: shell cha (HomeLayoutShell qua
-    // series/layout.tsx) da co san px-4 pt-4 cho vung noi dung ben phai
-    // sidebar - them nua se lech so voi /home.
-    <div className="flex flex-col gap-10 pb-10">
+    // Tu them px-4 pt-4 - khac /home, trang nay khong con nam trong
+    // HomeLayoutShell (da chuyen ra khoi (main)/(feed), khong con sidebar
+    // linh vuc nghe nghiep) nen phai tu lo padding, khong con ai cap ho.
+    <div className="flex flex-col gap-10 px-4 pt-4 pb-10">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl leading-tight font-bold tracking-tight text-ink">
           Đi cùng mọi người

@@ -1,62 +1,42 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Trophy, Gift, Sparkles, CalendarDays, ArrowRight } from "lucide-react";
+import { Trophy, Sparkles, CalendarDays, ArrowRight } from "lucide-react";
 
 import type { Contest } from "@/lib/api/contests";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
 import { CONTEST_ACCENT, formatDeadline } from "./contest-style";
 
 // Banner "Cuoc thi noi bat" o dau trang /contest, ngay duoi header - dan
-// nguoi dung vao 1 cuoc thi cu the thay vi phai tu cuon qua het luoi. Khong
-// co asset anh minh hoa that (cup + hop qua + confetti nhu thiet ke tham
-// khao) nen phan minh hoa CHI la Lucide icon dat lam hoa tiet nen (absolute,
-// mo dan bang opacity) tren nen gradient theo CONTEST_ACCENT - dung dung ky
-// thuat ContentTile.tsx dang lam cho truong hop khong co anh that (accent ->
-// linear-gradient + icon), giu dong bo voi phan con lai cua app thay vi co
-// gang ve lai chinh xac minh hoa tham khao.
+// nguoi dung vao 1 cuoc thi cu the thay vi phai tu cuon qua het luoi. Nen la
+// anh that (public/cover-image-1.png, khong phai gradient+icon nhu ban truoc
+// - da co anh that nen bo luon hoa tiet icon trang tri, tranh chong chat 2
+// lop trang tri). Phu 1 lop gradient toi ben tren anh de chu ben trai (mau
+// trang) van doc duoc du anh sang toi khac nhau, KHONG phu thuoc vao noi
+// dung/do sang cua tam anh cu the.
 export function FeaturedContestBanner({ contest }: { contest: Contest }) {
   return (
-    <section
-      className="relative grid grid-cols-1 gap-6 overflow-hidden rounded-xl border border-border p-6 sm:grid-cols-[1.2fr_1fr] sm:items-center sm:p-8"
-      style={{
-        background: `linear-gradient(135deg, ${hexToRgba(CONTEST_ACCENT, 0.12)}, ${hexToRgba(CONTEST_ACCENT, 0.03)})`,
-      }}
-    >
-      {/* Hoa tiet nen - thuan trang tri, khong anh huong layout (absolute,
-          pointer-events-none), an tren man hep de khong de len chu. */}
-      <Trophy
-        size={140}
-        strokeWidth={1}
-        className="pointer-events-none absolute -bottom-6 left-[38%] hidden opacity-[0.07] sm:block"
-        style={{ color: CONTEST_ACCENT }}
+    <section className="relative grid grid-cols-1 gap-6 overflow-hidden  border border-border p-6 sm:grid-cols-[1.2fr_1fr] sm:items-center sm:p-8">
+      <Image
+        src="/cover-image-3.png"
+        alt=""
+        fill
+        sizes="(max-width: 640px) 100vw, 900px"
+        priority
+        className="object-cover"
       />
-      <Gift
-        size={44}
-        strokeWidth={1.25}
-        className="pointer-events-none absolute top-6 right-[30%] hidden opacity-10 sm:block"
-        style={{ color: CONTEST_ACCENT }}
-      />
-      <Sparkles
-        size={30}
-        strokeWidth={1.5}
-        className="pointer-events-none absolute right-[26%] bottom-10 hidden opacity-10 sm:block"
-        style={{ color: CONTEST_ACCENT }}
-      />
+      {/* Lop toi phu tren anh - dam ben trai (noi dat chu) va nhat dan sang
+          phai (noi la the trang) de ca chu trang lan the noi bat deu doc
+          duoc, khong phu thuoc anh sang/toi cua chinh tam anh. */}
+      <div className="absolute inset-0 bg-linear-to-r from-black/40 via-black/20 to-black/5" />
 
       <div className="relative z-10 flex flex-col justify-center gap-3">
-        <span
-          className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-          style={{
-            background: hexToRgba(CONTEST_ACCENT, 0.14),
-            color: CONTEST_ACCENT,
-          }}
-        >
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
           <Sparkles size={13} strokeWidth={2.25} />
           Gợi ý tham gia
         </span>
-        <h2 className="text-2xl leading-tight font-bold tracking-tight text-ink">
+        <h2 className="text-2xl leading-tight font-bold tracking-tight text-white">
           Tham gia cuộc thi nổi bật
         </h2>
-        <p className="max-w-md text-sm leading-relaxed text-ink-muted">
+        <p className="max-w-md text-sm leading-relaxed text-white/85">
           Chia sẻ ý tưởng, kiến thức, trải nghiệm của bạn và giành thưởng hấp
           dẫn.
         </p>

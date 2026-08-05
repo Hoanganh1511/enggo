@@ -50,7 +50,10 @@ export default async function ContestDetailPage({
   const isContest = contest.kind === "CONTEST";
 
   return (
-    <div className="flex flex-col gap-6 pb-10">
+    // Tu them px-4 pt-4 - trang nay khong con nam trong HomeLayoutShell (da
+    // chuyen /contest ra khoi (main)/(feed), khong con sidebar), phai tu lo
+    // padding.
+    <div className="flex flex-col gap-6 px-4 pt-4 pb-10">
       {/* Anh bia chu de - overlay gradient theo accent de chu luon doc duoc
           du anh sang hay toi. */}
       <div className="relative h-44 w-full overflow-hidden rounded-lg bg-surface-muted sm:h-56">

@@ -57,9 +57,10 @@ export default function SeriesDetailContainer({ series }: { series: Series }) {
   const canSeeTasks = series.isOwner || series.joinStatus === "approved";
 
   return (
-    // max-w-4xl cho de doc, nhung KHONG tu them px/py: shell cha
-    // (HomeLayoutShell qua series/layout.tsx) da co san px-4 pt-4.
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 pb-10">
+    // max-w-4xl cho de doc. Tu them px-4 pt-4 - trang nay khong con nam
+    // trong HomeLayoutShell (da chuyen /series ra khoi (main)/(feed), khong
+    // con sidebar), phai tu lo padding.
+    <div className="mx-auto flex max-w-4xl flex-col gap-8 px-4 pt-4 pb-10">
       <header className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium">
           <span className="rounded-sm bg-surface-muted px-2 py-0.5 text-ink-muted">
