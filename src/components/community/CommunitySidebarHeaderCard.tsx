@@ -15,7 +15,7 @@ export function CommunitySidebarHeaderCard({
   const previewMembers = community.activeMembers.slice(0, 3);
 
   return (
-    <div className="relative flex items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-linear-to-br from-community-accent/8 via-community-accent/4 to-transparent px-3 py-3">
+    <div className="relative flex items-center gap-2.5 overflow-hidden rounded-xl border border-border bg-header-background px-3 py-3">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-community-accent to-community-accent-dark text-white shadow-sm">
         <Code2 size={18} strokeWidth={2.25} />
       </span>

@@ -23,7 +23,7 @@
   --overlay: rgba(17, 24, 39, 0.45);
   --surface: #ffffff;
   --surface-muted: #fafbfc;
-  --surface-header: #fafbfc;
+  --surface-header: #fcfbff;
   --hover-bg: #f3f6f8;
   --press-bg: #eef2f5;
   --active-bg: #eaf7ff;
@@ -361,24 +361,49 @@ body {
   transition: transform 300ms ease;
 }
 
+/* Scrollbar toan site - thanh gradient tim (dong bo --community-accent dung
+   cho khu vuc Community), thay cho mau xam trung tinh truoc day.
+   "scrollbar-color" (Firefox) chi nhan 1 mau dac, KHONG the gradient - dung
+   --community-accent lam mau dac thay the rieng cho Firefox; Chrome/Edge/
+   Safari (*::-webkit-scrollbar-thumb) moi thuc su hien gradient. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--community-accent) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: var(--border);
+  /* color-mix voi white de nhat mau di (thumb dam qua se nang, khong hop
+     voi tinh than "airy" cua cac trang) - van bam theo --community-accent
+     lam nguon mau, chi giam do bao hoa. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--community-accent) 55%, white),
+    color-mix(in srgb, var(--community-accent-dark) 55%, white)
+  );
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--hover-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--community-accent-hover) 65%, white),
+    color-mix(in srgb, var(--community-accent-dark) 65%, white)
+  );
 }
+
+/* "overflow: overlay" TUNG dung de scrollbar noi tren noi dung thay vi
+   chiem dien tich, nhung Chromium da bo thuoc tinh nay khoi spec (~Chrome
+   121 tro di gio coi nhu "auto", khong con hieu ung gi) - KHONG dung duoc
+   nua. Muon scrollbar khong an vao be rong noi dung phai bu bang margin am
+   + padding tren TUNG container cu the (xem "mr-[-8px] pr-2" trong
+   CommunityChatView.tsx), khong the lam 1 rule chung cho ca site vi can
+   biet chinh xac con bao nhieu khoang trong ben canh moi container. */
 
 /* An hoan toan scrollbar (dung cho carousel ngang, xem HorizontalScroller.tsx)
    - class rieng thay vi Tailwind arbitrary [&::-webkit-scrollbar]:hidden vi

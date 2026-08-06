@@ -20,12 +20,29 @@ export type CommunityKnowledgeBranch = {
   progressPercent: number;
 };
 
+// Ho so day du 1 tac gia - hien trong khoi user-info "Full profile" cua
+// CommunityPostCard.tsx (Option 1 da chon). CHI co o data bien soan tay
+// (AUTHORS) - community tu sinh (buildCommunityFromSeries) khong co du lieu
+// nghe nghiep/thong ke that nen KHONG gan profile gia, tu rut gon ve avatar +
+// ten + badge nhu truoc.
+export type CommunityAuthorProfile = {
+  level: number;
+  professionLine: string; // vd "Senior Frontend Engineer @ NAB"
+  contributorLabel: string; // vd "Top 5% Contributor"
+  totalXp: number;
+  answerCount: number;
+  resourceCount: number;
+  helpfulCount: number;
+  joinedDaysAgo: number;
+};
+
 export type CommunityAuthor = {
   name: string;
   username: string;
   avatarUrl: string;
   verified: boolean;
   knowledgeBranches?: CommunityKnowledgeBranch[];
+  profile?: CommunityAuthorProfile;
 };
 
 export type ChannelMessageReaction = { emoji: string; count: number };
@@ -40,6 +57,10 @@ export type ChannelMessageTopReply = {
   moreCount: number;
 };
 
+// Phan loai CO CAU TRUC (khac categoryTag - chi la text hien thi) - dung de
+// loc/dem so luong trong KnowledgeCommandBar.tsx.
+export type ChannelMessageCategory = "learning" | "question" | "resource";
+
 export type ChannelMessage = {
   id: string;
   author: CommunityAuthor;
@@ -49,6 +70,7 @@ export type ChannelMessage = {
   actionLabel?: string; // vd "Hoàn thành Learning Node" - hien sau timeLabel, cach dau "·"
   topicTag?: string; // vd "AWS / IAM / Security" - pill goc phai tren cung hang header
   categoryTag?: string; // vd "🏆 Learning Update" - pill nho phia tren tieu de
+  category?: ChannelMessageCategory;
   // Co "title" -> hien nhu 1 "bai viet" dien dan (tieu de dam); khong co ->
   // chi hien doan noi dung ngan (vd 1 phan hoi don gian) - xem CommunityPostCard.tsx.
   title?: string;
@@ -184,6 +206,16 @@ const AUTHORS: Record<string, CommunityAuthor> = {
       { label: "AWS Cloud", accent: "#f59e0b", progressPercent: 72 },
       { label: "Security", accent: "#ef4444", progressPercent: 55 },
     ],
+    profile: {
+      level: 32,
+      professionLine: "Cloud Solutions Architect @ Viettel",
+      contributorLabel: "Top 5% Contributor",
+      totalXp: 12450,
+      answerCount: 412,
+      resourceCount: 38,
+      helpfulCount: 96,
+      joinedDaysAgo: 156,
+    },
   },
   halinh: {
     name: "Hà Linh",
@@ -194,6 +226,16 @@ const AUTHORS: Record<string, CommunityAuthor> = {
       { label: "Azure", accent: "#0ea5e9", progressPercent: 60 },
       { label: "IELTS", accent: "#10b981", progressPercent: 40 },
     ],
+    profile: {
+      level: 28,
+      professionLine: "Community Admin & DevOps Engineer",
+      contributorLabel: "Top Contributor",
+      totalXp: 9800,
+      answerCount: 268,
+      resourceCount: 51,
+      helpfulCount: 74,
+      joinedDaysAgo: 210,
+    },
   },
   quocbao: {
     name: "Quốc Bảo",
@@ -204,6 +246,16 @@ const AUTHORS: Record<string, CommunityAuthor> = {
       { label: "AWS Cloud", accent: "#f59e0b", progressPercent: 85 },
       { label: "System Design", accent: "#6366f1", progressPercent: 48 },
     ],
+    profile: {
+      level: 24,
+      professionLine: "Backend Engineer @ Tiki",
+      contributorLabel: "Active Member",
+      totalXp: 7500,
+      answerCount: 154,
+      resourceCount: 22,
+      helpfulCount: 51,
+      joinedDaysAgo: 98,
+    },
   },
   thutrang: {
     name: "Thu Trang",
@@ -220,7 +272,7 @@ export const COMMUNITIES: Community[] = [
     name: "Ôn Certificate Community",
     memberCount: 3200,
     isPublic: true,
-    isOwner: true,
+    isOwner: false,
     description: "Trao đổi chung về hành trình ôn thi và chinh phục chứng chỉ.",
     channels: [
       {
@@ -245,6 +297,7 @@ export const COMMUNITIES: Community[] = [
             actionLabel: "Hoàn thành Learning Node",
             topicTag: "AWS / IAM / Security",
             categoryTag: "🏆 Learning Update",
+            category: "learning",
             title: "🏆 Hoàn thành Learning Node #12",
             content:
               "Hôm nay mình vừa hoàn thành Learning Node về IAM Policy & Security Best Practices.",
@@ -278,6 +331,7 @@ export const COMMUNITIES: Community[] = [
             author: AUTHORS.minhtri,
             authorBadge: "Thành viên tích cực",
             timeLabel: "2 giờ trước",
+            category: "question",
             title: "IAM Policy nên viết Resource ARN kiểu nào?",
             content: "Mọi người nghĩ sao về policy IAM này, mình đang phân vân giữa 2 cách viết:",
             bulletPoints: [
@@ -309,6 +363,7 @@ export const COMMUNITIES: Community[] = [
             author: AUTHORS.quocbao,
             authorBadge: "Mentor",
             timeLabel: "4 giờ trước",
+            category: "learning",
             title: "Mình vừa thi thử AWS SAA, đạt 850 điểm",
             content: "Chia sẻ lại kết quả bài thi thử để mọi người tham khảo, kèm vài lưu ý khi ôn:",
             bulletPoints: [
@@ -551,10 +606,11 @@ export function estimateDocumentCount(series: Series): number {
 function buildGeneratedPostContent(
   task: SeriesTask,
   series: Series,
-): { title: string; content: string; bulletPoints: string[] } {
+): { title: string; content: string; bulletPoints: string[]; category: ChannelMessageCategory } {
   switch (task.targetKind) {
     case "node":
       return {
+        category: "learning",
         title: `Đã hoàn thành: ${task.label}`,
         content: `Vừa hoàn thành một phần trong lộ trình "${series.title}", ghi lại vài điều rút ra được:`,
         bulletPoints: [
@@ -564,6 +620,7 @@ function buildGeneratedPostContent(
       };
     case "post":
       return {
+        category: "learning",
         title: `Ghi chú nhanh về ${series.title}`,
         content: "Chia sẻ một ghi chú trong quá trình học, mong nhận thêm góp ý từ mọi người:",
         bulletPoints: [
@@ -573,6 +630,7 @@ function buildGeneratedPostContent(
       };
     case "question":
       return {
+        category: "question",
         title: "Đã trả lời một câu hỏi trong nhóm",
         content: `Vừa giải đáp một thắc mắc liên quan tới "${series.title}", chia sẻ lại để mọi người cùng tham khảo:`,
         bulletPoints: [
@@ -582,6 +640,7 @@ function buildGeneratedPostContent(
       };
     case "vote":
       return {
+        category: "resource",
         title: "Đã bình chọn các bài viết hữu ích",
         content: `Điểm qua vài bài viết mình thấy hữu ích trong tuần khi học "${series.title}":`,
         bulletPoints: [
@@ -591,6 +650,7 @@ function buildGeneratedPostContent(
       };
     case "project":
       return {
+        category: "learning",
         title: `Cập nhật tiến độ dự án trong "${series.title}"`,
         content: "Chia sẻ một vài cập nhật sau buổi làm dự án thực hành:",
         bulletPoints: [
@@ -600,6 +660,7 @@ function buildGeneratedPostContent(
       };
     case "achievement":
       return {
+        category: "learning",
         title: "Vừa đạt một cột mốc mới",
         content: `Ăn mừng một cột mốc nhỏ trên hành trình "${series.title}"!`,
         bulletPoints: [
@@ -610,6 +671,7 @@ function buildGeneratedPostContent(
     case "progress":
     default:
       return {
+        category: "learning",
         title: `Cập nhật tiến độ học "${series.title}"`,
         content: "Điểm lại một chút tiến độ học tập trong tuần:",
         bulletPoints: [
@@ -638,10 +700,12 @@ export function buildCommunityFromSeries(series: Series): Community {
     (_, i) => {
       const task = otherTasks[i % otherTasks.length];
       const member = series.members[i % Math.max(series.members.length, 1)];
-      // Vien ngoc = chinh Series ma thanh vien dang tham gia, mau lay tu
-      // series.accent, tien do lay tu member.progressPercent THAT - khong
-      // bia nhanh kien thuc gia (series nay khong co khai niem nhieu nhanh
-      // nho nhu du lieu tay o "on-certificate").
+      // Profile cho author sinh tu Series - series nay KHONG co du lieu
+      // nghe nghiep/cong ty that (SeriesMember chi co progressPercent/rank)
+      // nen "professionLine" doi thanh boi canh dang hoc (that) thay vi bia
+      // 1 chuc danh gia. Cac con so con lai (level/XP/thong ke dong gop) deu
+      // suy tu member.progressPercent/rank hoac series.currentDay THAT, theo
+      // dung cong thuc da dung cho likeCount/replyCount ben duoi.
       const author: CommunityAuthor = member
         ? {
             name: member.name,
@@ -651,9 +715,20 @@ export function buildCommunityFromSeries(series: Series): Community {
             knowledgeBranches: [
               { label: series.title, accent: series.accent, progressPercent: member.progressPercent },
             ],
+            profile: {
+              level: Math.max(1, Math.round(member.progressPercent / 3)),
+              professionLine: `Đang học "${series.title}"`,
+              contributorLabel:
+                member.rank === 1 ? "Top Contributor" : member.rank <= 3 ? "Active Member" : "Member",
+              totalXp: member.progressPercent * 120,
+              answerCount: Math.round(member.progressPercent * 3),
+              resourceCount: Math.round(member.progressPercent / 2),
+              helpfulCount: Math.round(member.progressPercent),
+              joinedDaysAgo: series.currentDay,
+            },
           }
         : series.author;
-      const { title, content, bulletPoints } = buildGeneratedPostContent(task, series);
+      const { title, content, bulletPoints, category } = buildGeneratedPostContent(task, series);
       // Vai tro hien thi: thanh vien hang #1 bang xep hang (SeriesMember.rank -
       // du lieu THAT, khong bia) gan nhan "Mentor" nhu tin hieu la nguoi kinh
       // nghiem nhat nhom, con lai la "Thành viên tích cực".
@@ -668,6 +743,7 @@ export function buildCommunityFromSeries(series: Series): Community {
         author,
         authorBadge,
         timeLabel: `${i + 1} ngày trước`,
+        category,
         title,
         content,
         bulletPoints,

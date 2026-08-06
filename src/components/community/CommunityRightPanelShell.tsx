@@ -13,7 +13,7 @@ export function CommunityRightPanelShell({
   children: ReactNode;
 }) {
   return (
-    <aside className="flex h-full w-72 shrink-0 flex-col gap-4 overflow-y-auto py-4 pr-4">
+    <aside className="flex h-full w-72 shrink-0 flex-col gap-4 overflow-y-auto py-3 pr-4">
       {children}
     </aside>
   );

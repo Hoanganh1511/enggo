@@ -137,7 +137,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   };
 
   return (
-    <header className="z-10 flex h-14 shrink-0 items-center gap-2  bg-surface px-4 xl:px-6">
+    <header className="z-10 flex h-14 shrink-0 items-center gap-2 bg-header-background px-4 xl:px-6">
       <div className="flex shrink-0 items-center">
         <Logo orientation="icon-only" className="size-6 shrink-0" />
         <span className="ml-1 hidden text-sm font-bold text-ink sm:inline">

@@ -36,7 +36,7 @@ export function CommunityChannelInfoCard({
   const previewMembers = activeMembers.slice(0, 3);
 
   return (
-    <div className="shrink-0 overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+    <div className="shrink-0 overflow-hidden rounded-lg border border-border bg-white shadow-sm">
       <div className="relative h-20 w-full">
         {channel.bannerImageUrl ? (
           <div
@@ -44,7 +44,13 @@ export function CommunityChannelInfoCard({
             style={{ backgroundImage: `url(${channel.bannerImageUrl})` }}
           />
         ) : (
-          <Image src="/cloud-banner.png" alt="" fill sizes="288px" className="object-cover" />
+          <Image
+            src="/cloud-banner.png"
+            alt=""
+            fill
+            sizes="288px"
+            className="object-cover"
+          />
         )}
         <div className="absolute inset-0 bg-linear-to-t from-white via-white/10 to-transparent" />
         <span className="absolute right-3 bottom-3 flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-community-accent to-community-accent-dark text-white shadow-sm">
@@ -54,7 +60,9 @@ export function CommunityChannelInfoCard({
 
       <div className="flex flex-col gap-3 p-4">
         <div className="min-w-0">
-          <h2 className="truncate text-sm font-bold text-ink">{channel.name}</h2>
+          <h2 className="truncate text-sm font-bold text-ink">
+            {channel.name}
+          </h2>
           <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink-muted">
             {channel.description}
           </p>
@@ -76,7 +84,8 @@ export function CommunityChannelInfoCard({
             </div>
           )}
           <span className="truncate text-xs font-medium text-ink-muted">
-            {channel.messageCount} bài viết · {formatCompact(memberCount)} thành viên
+            {channel.messageCount} bài viết · {formatCompact(memberCount)} thành
+            viên
           </span>
         </div>
 
