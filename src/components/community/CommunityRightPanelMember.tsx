@@ -4,7 +4,7 @@ import type {
   Community,
   CommunityChannel,
   CommunityResourceKind,
-} from "@/content/community-mock";
+} from "@/lib/community/types";
 import { formatCompact } from "@/lib/format-number";
 import { CommunityRightPanelShell } from "./CommunityRightPanelShell";
 import { CommunityChannelInfoCard } from "./CommunityChannelInfoCard";
@@ -14,7 +14,10 @@ const RESOURCE_ICON: Record<
   CommunityResourceKind,
   { icon: typeof Folder; className: string }
 > = {
-  doc: { icon: Folder, className: "bg-community-accent/10 text-community-accent" },
+  doc: {
+    icon: Folder,
+    className: "bg-community-accent/10 text-community-accent",
+  },
   pdf: { icon: FileText, className: "bg-danger/10 text-danger" },
   video: { icon: Video, className: "bg-danger/10 text-danger" },
   link: { icon: Link2, className: "bg-primary/10 text-primary" },
@@ -51,6 +54,9 @@ export function CommunityRightPanelMember({
           channel={channel}
           memberCount={community.memberCount}
           activeMembers={community.activeMembers}
+          communityId={community.id}
+          slug={community.slug}
+          isMember={community.viewerIsMember}
         />
       )}
 
@@ -76,7 +82,9 @@ export function CommunityRightPanelMember({
                   className="size-9 shrink-0 rounded-full object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink">{member.name}</p>
+                  <p className="truncate text-sm font-semibold text-ink">
+                    {member.name}
+                  </p>
                   <span className="inline-block rounded-full bg-community-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-community-accent">
                     {member.roleBadge ?? member.statusLabel}
                   </span>
@@ -93,7 +101,10 @@ export function CommunityRightPanelMember({
       )}
 
       {resources.length > 0 && (
-        <div id="docs-links" className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div
+          id="docs-links"
+          className="rounded-2xl border border-border bg-white p-4 shadow-sm"
+        >
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-bold text-ink">Tài liệu hữu ích</p>
             <button
@@ -114,8 +125,12 @@ export function CommunityRightPanelMember({
                     <Icon size={15} strokeWidth={2} />
                   </span>
                   <div className="min-w-0">
-                    <p className="line-clamp-1 text-sm font-medium text-ink">{resource.title}</p>
-                    <p className="line-clamp-1 text-xs text-ink-faint">{resource.subtitle}</p>
+                    <p className="line-clamp-1 text-sm font-medium text-ink">
+                      {resource.title}
+                    </p>
+                    <p className="line-clamp-1 text-xs text-ink-faint">
+                      {resource.subtitle}
+                    </p>
                   </div>
                 </div>
               );
@@ -131,7 +146,9 @@ export function CommunityRightPanelMember({
           <Bot size={20} strokeWidth={2} />
         </span>
         <p className="text-sm font-bold text-ink">Hỏi AI Mentor</p>
-        <p className="text-xs text-ink-faint">Trợ lý AI luôn sẵn sàng hỗ trợ bạn!</p>
+        <p className="text-xs text-ink-faint">
+          Trợ lý AI luôn sẵn sàng hỗ trợ bạn!
+        </p>
         <button
           type="button"
           className="mt-1 w-full cursor-pointer rounded-full bg-community-accent py-2 text-sm font-semibold text-white hover:bg-community-accent-hover"

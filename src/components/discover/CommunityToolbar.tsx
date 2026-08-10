@@ -8,14 +8,12 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { SERIES_ACCENT } from "./series-style";
 
-// UI SHELL CHUA GAN LOGIC THAT - dung tinh than series-mock.ts hien tai
-// (comment dau file do: "dot nay chi dung UI de chot huong thiet ke truoc").
-// SERIES/RECOMMENDED_SERIES van la mang tinh, CHUA co field "linh vuc" rieng
-// de loc that - component nay chi doi active state local de dung vi tri/
-// style theo thiet ke (pill danh muc thay dropdown, khop anh tham khao), se
-// noi vao query/API that khi Series co backend that.
+// UI SHELL CHUA GAN LOGIC LOC/SAP XEP THAT (port tu SeriesToolbar.tsx cu) -
+// danh muc/sap xep/grid-list deu la state cuc bo, chua noi vao query hay API
+// that (backend GET /communities hien chua ho tro loc theo danh muc/sap xep).
+// Giu lai vi tri/style nay de dung khop thiet ke, se noi logic that khi
+// backend co truong "danh muc" hoac tham so sort.
 const CATEGORY_PILLS = [
   "Tất cả",
   "Lập trình",
@@ -30,10 +28,9 @@ const SORT_OPTIONS = [
   { key: "recommended", label: "Sắp xếp đề xuất" },
   { key: "newest", label: "Mới nhất" },
   { key: "popular", label: "Nổi bật nhất" },
-  { key: "ending", label: "Sắp kết thúc" },
 ] as const;
 
-export function SeriesToolbar() {
+export function CommunityToolbar() {
   const [category, setCategory] = useState(CATEGORY_PILLS[0]);
   const [sortOpen, setSortOpen] = useState(false);
   const [sort, setSort] =
@@ -53,10 +50,9 @@ export function SeriesToolbar() {
               className={cn(
                 "flex h-8 shrink-0 cursor-pointer items-center rounded-full border px-3.5 text-sm font-medium transition-colors duration-150 ease-out",
                 active
-                  ? "border-transparent text-white"
+                  ? "border-transparent bg-community-accent text-white"
                   : "border-border text-ink-muted hover:bg-hover-bg hover:text-ink",
               )}
-              style={active ? { background: SERIES_ACCENT } : undefined}
             >
               {label}
             </button>

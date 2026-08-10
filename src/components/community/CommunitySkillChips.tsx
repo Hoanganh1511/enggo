@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CommunityKnowledgeBranch } from "@/content/community-mock";
+import type { CommunityKnowledgeBranch } from "@/lib/community/types";
 import {
   HoverCardRoot,
   HoverCardTrigger,
@@ -14,7 +14,12 @@ function SkillChip({ branch }: { branch: CommunityKnowledgeBranch }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <HoverCardRoot open={open} onOpenChange={setOpen} openDelay={150} closeDelay={80}>
+    <HoverCardRoot
+      open={open}
+      onOpenChange={setOpen}
+      openDelay={150}
+      closeDelay={80}
+    >
       <HoverCardTrigger asChild>
         <span
           className="flex h-6 cursor-default items-center rounded-full border px-2.5 text-[11px] font-medium transition-[filter] duration-150 ease-out hover:brightness-110"
@@ -34,7 +39,10 @@ function SkillChip({ branch }: { branch: CommunityKnowledgeBranch }) {
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/6">
             <div
               className="h-full rounded-full"
-              style={{ width: `${branch.progressPercent}%`, backgroundColor: branch.accent }}
+              style={{
+                width: `${branch.progressPercent}%`,
+                backgroundColor: branch.accent,
+              }}
             />
           </div>
           <p className="mt-1 text-right text-[11px] font-medium text-ink-muted">

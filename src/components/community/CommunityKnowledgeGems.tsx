@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GemIcon } from "lucide-react";
-import type { CommunityKnowledgeBranch } from "@/content/community-mock";
+import type { CommunityKnowledgeBranch } from "@/lib/community/types";
 import {
   HoverCardRoot,
   HoverCardTrigger,
@@ -15,11 +15,19 @@ function KnowledgeGem({ branch }: { branch: CommunityKnowledgeBranch }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <HoverCardRoot open={open} onOpenChange={setOpen} openDelay={150} closeDelay={80}>
+    <HoverCardRoot
+      open={open}
+      onOpenChange={setOpen}
+      openDelay={150}
+      closeDelay={80}
+    >
       <HoverCardTrigger asChild>
         <span
           className="flex size-4 shrink-0 cursor-default items-center justify-center rounded-full"
-          style={{ backgroundColor: `${branch.accent}1a`, color: branch.accent }}
+          style={{
+            backgroundColor: `${branch.accent}1a`,
+            color: branch.accent,
+          }}
         >
           <GemIcon size={10} strokeWidth={2.5} />
         </span>
@@ -30,10 +38,15 @@ function KnowledgeGem({ branch }: { branch: CommunityKnowledgeBranch }) {
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-border">
             <div
               className="h-full rounded-full"
-              style={{ width: `${branch.progressPercent}%`, backgroundColor: branch.accent }}
+              style={{
+                width: `${branch.progressPercent}%`,
+                backgroundColor: branch.accent,
+              }}
             />
           </div>
-          <p className="mt-1 text-[11px] text-ink-faint">{branch.progressPercent}% hoàn thành</p>
+          <p className="mt-1 text-[11px] text-ink-faint">
+            {branch.progressPercent}% hoàn thành
+          </p>
         </div>
       </HoverCardContent>
     </HoverCardRoot>

@@ -1,13 +1,17 @@
 import { notFound } from "next/navigation";
-import { getCommunityBySlug } from "@/content/community-mock";
-import { SERIES, RECOMMENDED_SERIES } from "@/content/series-mock";
 import { CommunityWorkspace } from "@/components/community/CommunityWorkspace";
+import { getCommunityAction } from "@/actions/community/get-community";
+import { adaptCommunity } from "@/lib/community/adapt";
+import { ApiError } from "@/lib/api/client";
 
-// Trang chi tiet 1 Community - MOCK HOAN TOAN (chua co model/endpoint that,
-// xem content/community-mock.ts). Da lam lai hoan toan theo thiet ke kenh
-// chat (Discord/Slack-style): giao dien MEMBER (kenh + tin nhan) hoac ADMIN
-// (duyet yeu cau tham gia + tong quan), re nhanh qua community.isOwner - xem
-// CommunityWorkspace.tsx va quyet dinh trong docs/engineering-log.md.
+// Trang chi tiet 1 Community - DU LIEU THAT tu career-tree-api (khong con la
+// mock nua, xem CommunityAccessService/CommunityService). Giao dien MEMBER
+// (kenh + tin nhan) hoac ADMIN (duyet yeu cau tham gia + tong quan), re nhanh
+// qua community.isOwner (suy tu viewer.role that tra ve tu server, khong con
+// bia) - xem CommunityWorkspace.tsx.
+//
+// Route so nhieu "/communities/[slug]" (doi tu "/community/[slug]" cu) de
+// khop dung convention backend (moi endpoint deu la /communities/...).
 //
 // Layout 3 cot RIENG cua no (KHONG dung HomeLayoutShell/(feed) group - noi
 // dung o day la kenh/quan tri rieng cua 1 cong dong, khac han bo loc linh
@@ -19,14 +23,14 @@ export default async function CommunityDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  // Card series o "Đi cùng mọi người" dan thang toi day, dung slug cua chinh
-  // series - can truyen ca SERIES lan RECOMMENDED_SERIES de getCommunityBySlug
-  // sinh Community cho nhung slug chua co ban bien soan tay (xem
-  // community-mock.ts).
-  const allSeries = [...SERIES, ...RECOMMENDED_SERIES.map((r) => r.series)];
-  const community = getCommunityBySlug(slug, allSeries);
-  if (!community) notFound();
-
+  let community;
+  try {
+    const api = await getCommunityAction(slug);
+    community = adaptCommunity(api);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) notFound();
+    throw e;
+  }
   return (
     // "h-full" (khong phai flex-1 don thuan) + "overflow-hidden" - trang nay
     // luon KHIT DUNG chieu cao vung noi dung (MainContentArea), khong tu no

@@ -1,12 +1,12 @@
 import Image from "next/image";
 import { Zap } from "lucide-react";
-import type { CommunityAuthorProfile } from "@/content/community-mock";
+import type { CommunityAuthorProfile } from "@/lib/community/types";
 import { formatCompact } from "@/lib/format-number";
 
 // Cot trai co dinh cua post card - avatar 60px + badge Level + XP luy ke +
 // 3 chi so dong gop, can giua, ngan cach voi noi dung ben phai bang 1 duong
 // vien doc rat mong. CHI hien Level/XP/chi so khi co "profile" (du lieu bien
-// soan tay hoac suy tu Series that trong community-mock.ts) - khong co thi
+// soan tay hoac suy tu Series that trong series-mock.ts) - khong co thi
 // chi con avatar. An hoan toan duoi 768px (xem CommunityPostCard.tsx, luc do
 // avatar nho hien lai trong header thay the).
 export function CommunityPostAuthorRail({

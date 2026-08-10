@@ -117,11 +117,12 @@ export function HomeSidebar({
     () => new Set(categoryTree.map((g) => g.slug)),
   );
 
-  // Sidebar dung chung cho /home, /series va /contest (xem HomeLayoutShell.tsx)
-  // nen trang thai active phai xet CA route: cac bo loc chi thuoc ve feed.
-  const onSeries = pathname.startsWith("/series");
+  // Sidebar dung chung cho /home, /communities va /contest (xem
+  // HomeLayoutShell.tsx) nen trang thai active phai xet CA route: cac bo loc
+  // chi thuoc ve feed.
+  const onCommunities = pathname.startsWith("/communities");
   const onContest = pathname.startsWith("/contest");
-  const onFeed = !onSeries && !onContest;
+  const onFeed = !onCommunities && !onContest;
 
   // Nhom cha dang active: suy tu field dang chon neu co, khong thi lay group.
   const activeGroupSlug =
@@ -172,13 +173,13 @@ export function HomeSidebar({
       {/* 2 route rieng (khong phai filter cua feed) nen active xet theo
           PATHNAME chu khong theo query param nhu cac hang con lai. */}
       <Link
-        href="/series"
-        className={cn(rowClass, onSeries ? "text-amber-500" : rowInactive)}
+        href="/communities"
+        className={cn(rowClass, onCommunities ? "text-amber-500" : rowInactive)}
       >
         <span
           className={cn(
             "flex size-6 shrink-0 items-center justify-center rounded-full text-white transition-opacity duration-150 ease-out",
-            !onSeries && "opacity-40",
+            !onCommunities && "opacity-40",
           )}
           style={{ background: "#f59e0b" }}
         >

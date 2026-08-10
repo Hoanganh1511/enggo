@@ -55,16 +55,17 @@ hệt trang danh sách.
 
 **Đã làm:** tách VẬT LÝ 2 phần của "series" ra 2 vị trí khác nhau, dùng route
 group để chỉ 1 trong 2 chỗ đó đi qua `HomeLayoutShell`:
+
 - `(main)/(feed)/series/page.tsx` → `/series` (đi qua `(feed)/layout.tsx`,
   CÓ sidebar).
 - `(main)/series/[slug]/page.tsx` → `/series/[slug]` (đứng ngoài route group
   `(feed)`, KHÔNG đi qua layout đó, chỉ thừa hưởng `(main)/layout.tsx` -
   TopHeaderBar).
-Tương tự cho `contest/`. Đã build thử để xác nhận Next.js CHO PHÉP 2 thư mục
-cùng tên "series" tồn tại song song ở 2 vị trí (1 trong group, 1 ngoài group)
-miễn là không cùng định nghĩa CHÍNH XÁC 1 path - `(feed)/series/page.tsx`
-định nghĩa `/series`, còn `series/[slug]/page.tsx` định nghĩa `/series/[slug]`,
-2 path khác nhau nên không xung đột.
+  Tương tự cho `contest/`. Đã build thử để xác nhận Next.js CHO PHÉP 2 thư mục
+  cùng tên "series" tồn tại song song ở 2 vị trí (1 trong group, 1 ngoài group)
+  miễn là không cùng định nghĩa CHÍNH XÁC 1 path - `(feed)/series/page.tsx`
+  định nghĩa `/series`, còn `series/[slug]/page.tsx` định nghĩa `/series/[slug]`,
+  2 path khác nhau nên không xung đột.
 
 **Padding:** `series/page.tsx`/`contest/page.tsx` (trong `(feed)/`) quay lại
 KHÔNG tự thêm `px-4 pt-4` (HomeLayoutShell cấp sẵn). `series/[slug]`/
@@ -76,11 +77,11 @@ trước (không đổi, vì vẫn không có sidebar).
 ## 2026-08-03 — Card Series dẫn sang trang Community thay vì /series/[slug]
 
 **Quyết định:** thêm route mới `/community/[slug]` (mock hoàn toàn, xem
-`content/community-mock.ts`) làm hub thảo luận/leaderboard/thử thách cho 1
+`content/series-mock.ts`) làm hub thảo luận/leaderboard/thử thách cho 1
 "nhóm học chung". `SeriesCard`/`SeriesJoinButton` đổi hẳn sang trỏ tới
 `/community/${series.slug}` thay vì `/series/${series.slug}` cũ.
 
-**Vấn đề:** `community-mock.ts` chỉ biên soạn tay 1 ví dụ chi tiết
+**Vấn đề:** `series-mock.ts` chỉ biên soạn tay 1 ví dụ chi tiết
 ("on-certificate"), trong khi `SERIES` có 9 slug khác cần trỏ tới được.
 
 **Hướng đã chọn:** `buildCommunityFromSeries(series)` SINH 1 Community từ dữ
@@ -100,7 +101,7 @@ lớn hơn phạm vi yêu cầu ban đầu; xoá khi nào xác nhận chắc ch�
 này giờ đại diện cho 1 cộng đồng, không chỉ 1 series thuần tuý), thêm 3 dòng
 stat "thành viên/cuộc thảo luận/tài liệu". 2 số liệu Series chưa có sẵn
 (thảo luận, tài liệu) dùng chung công thức `estimateDiscussionCount`/
-`estimateDocumentCount` (community-mock.ts) với `buildCommunityFromSeries` -
+`estimateDocumentCount` (series-mock.ts) với `buildCommunityFromSeries` -
 tránh 2 nơi hiển thị lệch số nhau vì mỗi chỗ tự bịa 1 công thức riêng. Lưu ý:
 `documentCount` trên card là ước tính có cộng thêm tín hiệu thật (số task
 `targetKind: "resource"`), nhưng khối "Tài liệu mới cập nhật" ở trang chi
@@ -118,6 +119,7 @@ khắp app - hiểu sai yêu cầu. Không thể gắn link từ `NoteCard`/`Pos
 (hiển thị `Post` thật) sang trang đó vì khác hẳn data shape.
 
 **Sửa lại:**
+
 1. Backend (career-tree-api): thêm `GET /posts/:id` (`PostService.findOne`,
    trả `null` thay vì throw để controller tự quyết 404).
 2. Frontend: `getPostById`/`getPostAction`, đổi route thành `/p/[id]`
@@ -160,6 +162,7 @@ Giữ nguyên văn bên dưới để hiểu quá trình, không đại diện c
 `/community/[slug]` vì đây là trang "đọc", ưu tiên tập trung nội dung.
 
 **Các điểm cần quyết định khi build:**
+
 - Mục lục (TOC) sinh THẲNG từ heading block trong `article.blocks`
   (`getTableOfContents`) — không biên soạn riêng, tránh lệch với nội dung
   thật khi sửa bài sau này.
@@ -184,6 +187,7 @@ JS hydrate xong + round-trip fetch, không có gì để Google index (SEO), và
 không có "load more" dù backend đã hỗ trợ `cursor` sẵn ([lib/api/posts.ts](../src/lib/api/posts.ts)).
 
 **Các hướng đã cân nhắc cho phần fetch:**
+
 1. Giữ client fetch, chỉ thêm `AbortController`/cache. → Không giải quyết gốc
    (HTML vẫn rỗng lúc đầu), SEO vẫn bằng 0.
 2. **Chuyển hẳn `home/page.tsx` thành Server Component `async`, đọc
@@ -196,7 +200,7 @@ không có "load more" dù backend đã hỗ trợ `cursor` sẵn ([lib/api/post
    `InfiniteFeed.tsx`** nhận `initialPosts` từ SSR + object `filters`, tự gọi
    `listPostsAction({...filters, cursor: lastPost.id})` qua
    `IntersectionObserver` ở sentinel cuối feed — đây là component `"use
-   client"` DUY NHẤT trong luồng Home, mọi thứ khác thuần Server/presentational.
+client"` DUY NHẤT trong luồng Home, mọi thứ khác thuần Server/presentational.
    Bắt buộc `key={JSON.stringify(filters)}` ở nơi gọi để reset state khi đổi
    topic/type, tránh nối nhầm posts của 2 tập lọc khác nhau vào 1 danh sách.
 
@@ -219,6 +223,7 @@ rỗng). Nguyên nhân: `home/layout.tsx`, `series/layout.tsx`, `contest/layout.
 đều `await getFeedCategoryTree()` thẳng, không tự bọc `<Suspense>` riêng —
 Next fallback lên `(main)/loading.tsx` (spinner tràn hết khung nội dung).
 Fix 2 lớp:
+
 1. Tự bọc `<Suspense fallback={<HomeLayoutShellSkeleton />}>` trong từng
    layout (đúng pattern đã có sẵn ở `u/[username]/layout.tsx`).
 2. **Gộp cả 3 route vào 1 route group `(feed)/`** (`src/app/(main)/(feed)/{home,series,contest}`)
@@ -240,18 +245,20 @@ thật). 2 chỗ cần fetch dữ liệu thật theo 1 "trigger" nào đó thay 
 này hoặc đổi `<select>` cha; `SkillReportDetailModal.tsx` cần tải node/cards
 khi modal mở. Cách viết tự nhiên đầu tiên - `useEffect` theo dõi
 `activeKind`/`open` rồi gọi `setState` ngay dòng đầu effect để bật cờ loading
+
 - bị ESLint chặn cứng (lỗi, không phải warning):
-`react-hooks/set-state-in-effect` ("Calling setState synchronously within an
-effect can trigger cascading renders").
+  `react-hooks/set-state-in-effect` ("Calling setState synchronously within an
+  effect can trigger cascading renders").
 
 **Các hướng đã cân nhắc:**
+
 1. Giữ `useEffect` + gọi `setState` trong `.then()/.finally()` thay vì đầu
    effect. → Vẫn bị chặn, vì rule flag đúng dòng `setState` ĐỒNG BỘ đầu tiên
    trong thân effect (dòng bật cờ loading), bất kể phần async phía sau.
 2. Bọc `setState` đầu effect trong `Promise.resolve().then(...)` để "trì
    hoãn" 1 microtask, đánh lừa rule. → Hoạt động nhưng là hack, không giải
    quyết gốc (rule tồn tại vì effect vốn không nên là nơi khởi phát 1 hành
-   động - nó nên là nơi *đồng bộ* với hệ thống ngoài).
+   động - nó nên là nơi _đồng bộ_ với hệ thống ngoài).
 3. **Chuyển trigger từ effect sang thẳng event handler** (đã chọn cho
    PostComposer) - việc "chọn kind Báo cáo kỹ năng" hay "đổi workspace" vốn
    dĩ LÀ 1 hành động người dùng rõ ràng (click/onChange), nên gọi fetch ngay
@@ -270,7 +277,7 @@ effect can trigger cascading renders").
    modal" nữa - unmount/remount tự nhiên đã reset state.
 
 **Bài học chung:** rule này về cơ bản đang ép 2 nguyên tắc: effect data-fetch
-chỉ nên *đồng bộ hoá theo dependency đã đổi*, không nên là nơi *khởi phát*
+chỉ nên _đồng bộ hoá theo dependency đã đổi_, không nên là nơi _khởi phát_
 hành động - nếu có 1 sự kiện người dùng rõ ràng đứng sau, gọi thẳng từ handler
 sự kiện đó; và nếu cờ loading chỉ tồn tại để hiện spinner trong lúc chờ 1
 async call, ưu tiên `useTransition`/`isPending` thay vì tự tạo `useState` +
@@ -295,6 +302,7 @@ breadcrumb — vì `useEffect` luôn chạy SAU khi component đã render/mount 
 nên lần render đầu tiên chắc chắn dùng giá trị cũ.
 
 **Các hướng đã cân nhắc:**
+
 1. Đổi điều kiện hiển thị từ `activeNodeTitle` sang `usePathname()` — biết
    route ngay lập tức, không cần đợi effect. → Hết nháy sai **loại** UI, nhưng
    phần **chữ** (tên node) vẫn phải đợi effect nên vẫn có độ trễ nhỏ.
@@ -339,7 +347,8 @@ chuyện" hơn thay vì chỉ progress bar khô khan.
 
 **1. `kind` (BRANCH/TOPIC) — field độc lập, không suy từ children**
 
-*Các hướng đã cân nhắc:*
+_Các hướng đã cân nhắc:_
+
 - Giữ suy luận từ `hasChildren`, chỉ đổi ngưỡng/thêm điều kiện phụ. → Loại vì
   1 node TOPIC vẫn có thể có con (ghi chú/thẻ con) mà vẫn cần vào được trang
   chi tiết — "có con hay không" và "có phải chủ đề cần học sâu" là 2 trục dữ
@@ -348,7 +357,7 @@ chuyện" hơn thay vì chỉ progress bar khô khan.
   nguồn sự thật cho cùng 1 khái niệm (role), dễ lệch nhau khi dữ liệu cũ chưa
   set field mới.
 
-*Đã chọn:* `kind` là field tường minh đặt lúc tạo node (mặc định `BRANCH`),
+_Đã chọn:_ `kind` là field tường minh đặt lúc tạo node (mặc định `BRANCH`),
 ghi đè hoàn toàn cách suy `role` cũ. Hệ quả kéo theo: `resolveNodeRole` bỏ
 tham số `hasChildren`; **toàn bộ node cũ tự động thành BRANCH** (do
 `@default(BRANCH)` ở migration) → không còn node nào điều hướng được cho tới
@@ -358,14 +367,15 @@ phải bù lại bằng mục 2 dưới đây.
 
 **2. Branch/root không điều hướng được nữa → cần lối vào khác**
 
-*Các hướng đã cân nhắc:*
+_Các hướng đã cân nhắc:_
+
 - Click branch/root không làm gì (giữ nguyên chevron nhỏ để mở/đóng nhánh). →
   Đơn giản nhất nhưng bít mất đường vào trang chi tiết của node BRANCH (chỉnh
   goal/tags/độ khó...) trừ khi đã có ít nhất 1 con TOPIC để lách qua breadcrumb.
 - Luôn điều hướng vào trang chi tiết như cũ, bất kể kind. → Loại vì đi ngược
   lại đúng yêu cầu ban đầu.
 
-*Đã chọn:* Click branch/root mở **modal xem nhanh** (`NodeQuickViewModal`) —
+_Đã chọn:_ Click branch/root mở **modal xem nhanh** (`NodeQuickViewModal`) —
 thông tin sơ lược + form thêm node con ngay tại chỗ (tái dùng `AddChildBox`),
 kèm nút "Xem trang chi tiết đầy đủ" để vẫn mở được trang chi tiết khi cần.
 Vừa giữ đúng yêu cầu (branch không tự nhảy trang), vừa không bít đường vào
@@ -384,7 +394,8 @@ dung", trong khi đây chính là 2 câu chuyện khác nhau mà card muốn k�
 
 **4. "AI Insight" — rule-based, không gọi LLM thật**
 
-*Các hướng đã cân nhắc:*
+_Các hướng đã cân nhắc:_
+
 - Gọi Claude API thật để sinh insight cá nhân hóa từ nội dung ghi chú. → Thông
   minh hơn nhưng phát sinh chi phí API, độ trễ, và cần thiết kế cache/khi nào
   regenerate — vượt phạm vi 1 lần redesign UI.
@@ -421,6 +432,7 @@ buộc cứng chặn được follow — cần đạt cả 2 yêu cầu đó tr�
 không phải hạ tầng sharded như Twitter.
 
 **Các hướng đã cân nhắc:**
+
 1. Copy nguyên FlockDB: ghi 2 dòng vật lý mỗi lần follow (forward + backward
    edge). → Loại bỏ: Twitter làm vậy vì họ sharded MySQL ngang hàng (Gizzard),
    không có composite index xuyên node nhanh; ở quy mô 1 Postgres, ghi đúp là

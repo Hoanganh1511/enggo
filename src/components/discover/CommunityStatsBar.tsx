@@ -2,17 +2,20 @@ import Image from "next/image";
 import { LayoutGrid, Users, UserCheck, Star, Quote } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { hexToRgba } from "@/lib/skill-tree/status-style";
-import { SERIES_ACCENT } from "./series-style";
 
-// So lieu TONG QUAN toan cong dong (khac stat rieng tung series/community da
-// co o CommunityCard) - CHUA co API tong hop so nay o backend nen la mock
-// tinh, dung de tao cam giac quy mo ngay duoi banner, giong tinh than cac
-// con so "an tuong" note.com/LinkedIn Learning hay dung o trang landing.
+const COMMUNITY_ACCENT = "#7c3aed"; // == --community-accent trong globals.css
+
+// So lieu TONG QUAN toan nen tang (khac stat rieng tung community da co o
+// CommunityDiscoveryCard) - CHUA co API tong hop so nay o backend nen la mock
+// tinh, dung de tao cam giac quy mo ngay duoi banner, giong tinh than cac con
+// so "an tuong" note.com/LinkedIn Learning hay dung o trang landing. (Port
+// nguyen tu SeriesStatsBar.tsx cu - noi dung 100% trang tri, khong phu thuoc
+// du lieu Series nao ca.)
 const STATS: { icon: LucideIcon; value: string; label: string }[] = [
   { icon: LayoutGrid, value: "2.4K+", label: "Cộng đồng đang hoạt động" },
   { icon: Users, value: "58K+", label: "Thành viên tích cực" },
   { icon: UserCheck, value: "1.2K+", label: "Mentor & Leader" },
-  { icon: Star, value: "120+", label: "Lộ trình học đa dạng" },
+  { icon: Star, value: "120+", label: "Chủ đề đa dạng" },
 ];
 
 const QUOTE_AVATARS = [
@@ -21,12 +24,12 @@ const QUOTE_AVATARS = [
   "https://i.pravatar.cc/64?u=quote-3",
 ];
 
-// Thanh so lieu ngay duoi FeaturedSeriesBanner o trang "Đi cùng mọi người" -
+// Thanh so lieu ngay duoi CommunityHeroBanner o trang "Đi cùng mọi người" -
 // 4 stat tong quan gon lai 1 ben (KHONG flex-1 - noi dung ngan, ep gian deu
 // se thua dien tich vo ich), khoi cau o ben con lai la "flex-1" duy nhat
 // (chiem het khoang trong con lai) vi cau trich dan dai/ngan tuy cau, can
 // khong gian thoai mai hon nhieu so voi 4 con so ngan gon kia.
-export function SeriesStatsBar() {
+export function CommunityStatsBar() {
   return (
     <section className="flex flex-wrap items-stretch divide-y divide-border  bg-surface sm:flex-nowrap sm:divide-y-0">
       <div className="flex-1 flex flex-wrap divide-x divide-y divide-border sm:flex-nowrap sm:divide-y-0">
@@ -38,8 +41,8 @@ export function SeriesStatsBar() {
             <span
               className="flex size-9 shrink-0 items-center justify-center rounded-lg"
               style={{
-                background: hexToRgba(SERIES_ACCENT, 0.12),
-                color: SERIES_ACCENT,
+                background: hexToRgba(COMMUNITY_ACCENT, 0.12),
+                color: COMMUNITY_ACCENT,
               }}
             >
               <Icon size={17} strokeWidth={2} />

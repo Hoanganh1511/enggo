@@ -6,10 +6,12 @@ import {
   Hash,
   FileText,
   BookOpen,
+  ShieldCheck,
 } from "lucide-react";
-import type { Community } from "@/content/community-mock";
+import type { Community } from "@/lib/community/types";
 import { cn } from "@/lib/utils";
 import { CommunitySidebarShell } from "./CommunitySidebarShell";
+import { CreateChannelButton } from "./CreateChannelButton";
 
 const QUICK_NAV = [
   { icon: LayoutGrid, label: "Tổng quan" },
@@ -28,13 +30,30 @@ export function CommunityChannelSidebar({
   community,
   activeChannelSlug,
   onSelectChannel,
+  onOpenAdmin,
 }: {
   community: Community;
   activeChannelSlug: string;
   onSelectChannel: (slug: string) => void;
+  // Chi truyen khi community.isOwner (owner/admin THAT, tinh tu viewer.role
+  // o server) - nguoi thuong khong thay nut nay. Bam vao se chuyen ca
+  // sidebar/main/right panel sang che do Quan tri (xem CommunityWorkspace.tsx),
+  // KHONG dieu huong sang route khac - van la cung 1 trang.
+  onOpenAdmin?: () => void;
 }) {
   return (
     <CommunitySidebarShell community={community}>
+      {onOpenAdmin && (
+        <button
+          type="button"
+          onClick={onOpenAdmin}
+          className="flex cursor-pointer items-center gap-2.5 rounded-md bg-community-accent/10 px-2 py-1.5 text-left text-sm font-medium text-community-accent transition-colors duration-150 ease-out hover:bg-community-accent/15"
+        >
+          <ShieldCheck size={16} strokeWidth={2.25} />
+          Quản trị cộng đồng
+        </button>
+      )}
+
       <nav className="flex flex-col gap-0.5 px-1">
         {QUICK_NAV.map(({ icon: Icon, label }) => (
           <button
@@ -77,6 +96,11 @@ export function CommunityChannelSidebar({
               )}
             </button>
           ))}
+        <CreateChannelButton
+          communityId={community.id}
+          communitySlug={community.slug}
+          isModerator={community.isOwner}
+        />
       </div>
 
       <div className="flex flex-col gap-0.5 px-1">

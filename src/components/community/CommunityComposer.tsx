@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
+import { createChannelPostAction } from "@/actions/community/create-channel-post";
 import Image from "next/image";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -54,7 +55,8 @@ const MAIN_CATEGORIES = [
     key: "learning",
     label: "Learning Update",
     icon: Trophy,
-    className: "border-community-accent/20 bg-community-accent/10 text-community-accent",
+    className:
+      "border-community-accent/20 bg-community-accent/10 text-community-accent",
   },
   {
     key: "question",
@@ -74,7 +76,12 @@ const MAIN_CATEGORIES = [
     icon: BarChart3,
     className: "border-warning/20 bg-warning/10 text-warning",
   },
-  { key: "code", label: "Code", icon: Code2, className: "border-border bg-surface-muted text-ink-muted" },
+  {
+    key: "code",
+    label: "Code",
+    icon: Code2,
+    className: "border-border bg-surface-muted text-ink-muted",
+  },
   {
     key: "mindmap",
     label: "Mind Map",
@@ -135,7 +142,9 @@ function ToolbarButton({
       onClick={onClick}
       className={cn(
         "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
-        isActive ? "bg-community-accent/10 text-community-accent" : "text-ink-muted hover:bg-hover-bg hover:text-ink",
+        isActive
+          ? "bg-community-accent/10 text-community-accent"
+          : "text-ink-muted hover:bg-hover-bg hover:text-ink",
       )}
     >
       <Icon size={15} strokeWidth={2} />
@@ -156,9 +165,13 @@ function ToolbarDivider() {
 export function CommunityComposer({
   open,
   onOpenChange,
+  channelId,
+  slug,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  channelId: string;
+  slug: string;
 }) {
   const [category, setCategory] = useState<CategoryKey | null>(null);
   const [nodeLinked, setNodeLinked] = useState(true);
@@ -167,11 +180,13 @@ export function CommunityComposer({
   const [files, setFiles] = useState<string[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  const [, startTransition] = useTransition();
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: "Chia sẻ kiến thức, bài học hoặc tài liệu hữu ích..." }),
+      Placeholder.configure({
+        placeholder: "Chia sẻ kiến thức, bài học hoặc tài liệu hữu ích...",
+      }),
       Link.configure({ openOnClick: false }),
     ],
     content: "",
@@ -195,10 +210,17 @@ export function CommunityComposer({
   }
 
   function submitAndClose() {
-    editor?.commands.clearContent();
-    setCategory(null);
-    setFiles([]);
-    onOpenChange(false);
+    if (!editor) return;
+    startTransition(async () => {
+      await createChannelPostAction(channelId, slug, {
+        content: editor.getText(),
+        category: category ?? undefined,
+      });
+      editor.commands.clearContent();
+      setCategory(null);
+      setFiles([]);
+      onOpenChange(false);
+    });
   }
 
   const setLink = () => {
@@ -291,7 +313,9 @@ export function CommunityComposer({
                 <ToolbarButton
                   label="Trích dẫn"
                   isActive={!!editor?.isActive("blockquote")}
-                  onClick={() => editor?.chain().focus().toggleBlockquote().run()}
+                  onClick={() =>
+                    editor?.chain().focus().toggleBlockquote().run()
+                  }
                   icon={Quote}
                 />
 
@@ -300,27 +324,35 @@ export function CommunityComposer({
                 <ToolbarButton
                   label="Danh sách chấm"
                   isActive={!!editor?.isActive("bulletList")}
-                  onClick={() => editor?.chain().focus().toggleBulletList().run()}
+                  onClick={() =>
+                    editor?.chain().focus().toggleBulletList().run()
+                  }
                   icon={List}
                 />
                 <ToolbarButton
                   label="Danh sách số"
                   isActive={!!editor?.isActive("orderedList")}
-                  onClick={() => editor?.chain().focus().toggleOrderedList().run()}
+                  onClick={() =>
+                    editor?.chain().focus().toggleOrderedList().run()
+                  }
                   icon={ListOrdered}
                 />
                 <ToolbarButton
                   label="Thụt vào"
                   isActive={false}
                   disabled={!editor?.can().sinkListItem("listItem")}
-                  onClick={() => editor?.chain().focus().sinkListItem("listItem").run()}
+                  onClick={() =>
+                    editor?.chain().focus().sinkListItem("listItem").run()
+                  }
                   icon={IndentIncrease}
                 />
                 <ToolbarButton
                   label="Thụt ra"
                   isActive={false}
                   disabled={!editor?.can().liftListItem("listItem")}
-                  onClick={() => editor?.chain().focus().liftListItem("listItem").run()}
+                  onClick={() =>
+                    editor?.chain().focus().liftListItem("listItem").run()
+                  }
                   icon={IndentDecrease}
                 />
 
@@ -356,10 +388,16 @@ export function CommunityComposer({
                   }}
                   className={cn(
                     "flex flex-1 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors duration-150 ease-out",
-                    isDraggingOver ? "border-community-accent bg-community-accent/5" : "border-border",
+                    isDraggingOver
+                      ? "border-community-accent bg-community-accent/5"
+                      : "border-border",
                   )}
                 >
-                  <Upload size={18} strokeWidth={2} className="text-community-accent" />
+                  <Upload
+                    size={18}
+                    strokeWidth={2}
+                    className="text-community-accent"
+                  />
                   <p className="text-sm text-ink-muted">
                     Kéo &amp; thả file vào đây hoặc{" "}
                     <button
@@ -370,7 +408,9 @@ export function CommunityComposer({
                       click để tải lên
                     </button>
                   </p>
-                  <p className="text-xs text-ink-faint">Hỗ trợ: PDF, PNG, JPG, GIF, MP4 (tối đa 20MB)</p>
+                  <p className="text-xs text-ink-faint">
+                    Hỗ trợ: PDF, PNG, JPG, GIF, MP4 (tối đa 20MB)
+                  </p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -412,12 +452,16 @@ export function CommunityComposer({
                       <span className="block truncate text-sm font-medium text-ink">
                         IAM Policy &amp; Security Best Practices
                       </span>
-                      <span className="block text-xs text-ink-faint">AWS / Security</span>
+                      <span className="block text-xs text-ink-faint">
+                        AWS / Security
+                      </span>
                     </span>
                     <span
                       className={cn(
                         "flex size-5 shrink-0 items-center justify-center rounded-full",
-                        nodeLinked ? "bg-community-accent text-white" : "border border-border text-transparent",
+                        nodeLinked
+                          ? "bg-community-accent text-white"
+                          : "border border-border text-transparent",
                       )}
                     >
                       <Check size={12} strokeWidth={3} />
@@ -440,7 +484,10 @@ export function CommunityComposer({
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                <DropdownMenuRoot open={visibilityOpen} onOpenChange={setVisibilityOpen}>
+                <DropdownMenuRoot
+                  open={visibilityOpen}
+                  onOpenChange={setVisibilityOpen}
+                >
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"

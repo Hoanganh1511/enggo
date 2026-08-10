@@ -9,8 +9,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-import { SERIES_ACCENT, SERIES_BANNER_GRADIENT } from "./series-style";
+import { formatCompact } from "@/lib/format-number";
 
 const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
   {
@@ -20,8 +19,8 @@ const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
   },
   {
     icon: Target,
-    title: "Lộ trình rõ ràng",
-    description: "Học có kế hoạch, đo lường tiến độ",
+    title: "Mục tiêu rõ ràng",
+    description: "Trao đổi có định hướng, cùng nhau tiến bộ",
   },
   {
     icon: HeartHandshake,
@@ -77,21 +76,29 @@ const FLOATING_BADGES: {
   },
 ];
 
-// Banner dau trang "Đi cùng mọi người" - public/cloud-banner.png lam nen
-// FULL-BLEED (object-cover, tran ca banner, khong con gioi han 85% chieu
-// cao + mask nhu ban truoc) vi day gio la 1 canh hoan chinh (nui + may + mat
-// troi + chim), khong phai hoa tiet phu. public/mountain-banner.png (nguoi
-// leo nui, nen trong suot) chong len tren nhu 1 lop rieng, khop voi canh nen
-// phia duoi.
+// Banner dau trang "Đi cùng mọi người" (port lai tu FeaturedSeriesBanner.tsx
+// cu cua Series - noi dung 100% trang tri/tinh, khong phu thuoc du lieu Series
+// nao ca, nen giu nguyen duoc toan bo phan giao dien khi chuyen sang Community).
+// Dung chung mau --community-accent (#7c3aed) voi toan bo tinh nang Community
+// khac (workspace/channel/post...) thay vi hang so SERIES_ACCENT rieng truoc
+// day - 2 gia tri von da giong het nhau, gop lai cho dong nhat 1 nguon.
 //
-// Chu luon nam BEN TRAI, gioi han max-w-xl - lop "scrim" trang mo dan tu
-// trai sang phai dam bao chu luon doc duoc du noi dung anh nen the nao,
-// khong phu thuoc vao do sang/toi cua tung vung anh.
-export function FeaturedSeriesBanner() {
+// public/cloud-banner.png lam nen FULL-BLEED (object-cover). public/mountain-banner.png
+// (nguoi leo nui, nen trong suot) chong len tren nhu 1 lop rieng.
+export function CommunityHeroBanner({
+  totalMembers,
+}: {
+  // Tong so thanh vien THAT (cong don tu danh sach communities that trong
+  // DB) - do trang page.tsx truyen vao, khong con la "10.000+" bia san.
+  totalMembers: number;
+}) {
   return (
     <section
-      className="relative flex min-h-[34rem] items-center overflow-hidden rounded-xl border border-border p-6 sm:p-10"
-      style={{ background: SERIES_BANNER_GRADIENT }}
+      className="relative flex min-h-136 items-center overflow-hidden rounded-xl border border-border p-6 sm:p-10"
+      style={{
+        background:
+          "linear-gradient(135deg, #ede9fe 0%, #fdf2f8 55%, #eff6ff 100%)",
+      }}
     >
       <Image
         src="/cloud-banner.png"
@@ -119,14 +126,11 @@ export function FeaturedSeriesBanner() {
           style={{ top }}
         >
           <span
-            className="hidden shrink-0 border-t border-dashed sm:block"
-            style={{ width: lineWidth, borderColor: SERIES_ACCENT }}
+            className="hidden shrink-0 border-t border-dashed border-community-accent sm:block"
+            style={{ width: lineWidth }}
           />
           <span className="flex items-center gap-2 rounded-full border border-border bg-surface py-1.5 pr-3.5 pl-1.5 shadow-md">
-            <span
-              className="flex size-7 shrink-0 items-center justify-center rounded-full text-white"
-              style={{ background: SERIES_ACCENT }}
-            >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-community-accent text-white">
               <Icon size={13} strokeWidth={2.25} />
             </span>
             <span className="flex flex-col">
@@ -142,10 +146,7 @@ export function FeaturedSeriesBanner() {
       ))}
 
       <div className="relative z-10 flex max-w-xl flex-col gap-5">
-        <span
-          className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold tracking-wide uppercase"
-          style={{ color: SERIES_ACCENT }}
-        >
+        <span className="inline-flex w-fit items-center gap-1.5 text-xs font-semibold tracking-wide text-community-accent uppercase">
           <Users size={14} strokeWidth={2.25} />
           Cộng đồng học tập
         </span>
@@ -154,18 +155,14 @@ export function FeaturedSeriesBanner() {
           <h2 className="text-2xl leading-tight font-bold tracking-tight text-ink sm:text-4xl">
             Không ai giỏi một mình.
           </h2>
-          <h2
-            className="text-2xl leading-tight font-bold tracking-tight sm:text-4xl"
-            style={{ color: SERIES_ACCENT }}
-          >
+          <h2 className="text-2xl leading-tight font-bold tracking-tight text-community-accent sm:text-4xl">
             Cùng nhau, chúng ta đi xa hơn.
           </h2>
         </div>
 
         <p className="max-w-md text-sm leading-relaxed text-ink-muted">
-          Tham gia cộng đồng học tập được thiết kế theo lộ trình rõ ràng,
-          nhận tài liệu độc quyền, hỗ trợ 1-1 và cùng nhau chinh phục mục
-          tiêu.
+          Tham gia cộng đồng học tập cùng những người có chung mục tiêu, nhận
+          tài liệu độc quyền, hỗ trợ từ mentor và cùng nhau tiến bộ mỗi ngày.
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -174,10 +171,7 @@ export function FeaturedSeriesBanner() {
               key={title}
               className="flex items-center gap-3 rounded-lg border border-border bg-surface/85 p-3 backdrop-blur-sm"
             >
-              <span
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white"
-                style={{ color: SERIES_ACCENT }}
-              >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white text-community-accent">
                 <Icon size={17} strokeWidth={2} />
               </span>
               <span className="min-w-0">
@@ -193,19 +187,17 @@ export function FeaturedSeriesBanner() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Neo xuong luoi "Series dang mo" ben duoi (id dat o page.tsx) -
-              trang nay da la "tat ca series" nen CTA chi can cuon xuong,
-              khong dieu huong sang trang khac. */}
+          {/* Neo xuong luoi community ben duoi (id dat o page.tsx) - trang
+              nay da la "tat ca community" nen CTA chi can cuon xuong. */}
           <Link
-            href="#series-sections"
-            className="flex items-center gap-1.5 rounded-md px-5 py-2.5 text-sm font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90"
-            style={{ background: SERIES_ACCENT }}
+            href="#communities-grid"
+            className="flex items-center gap-1.5 rounded-md bg-community-accent px-5 py-2.5 text-sm font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90"
           >
             <ArrowRight size={16} strokeWidth={2.25} />
             Khám phá cộng đồng
           </Link>
           <Link
-            href="#series-sections"
+            href="#communities-grid"
             className="flex items-center gap-1.5 rounded-md border border-border bg-surface/85 px-5 py-2.5 text-sm font-semibold text-ink backdrop-blur-sm transition-colors duration-150 ease-out hover:bg-hover-bg"
           >
             <Users size={16} strokeWidth={2.25} />
@@ -227,8 +219,8 @@ export function FeaturedSeriesBanner() {
             ))}
           </div>
           <p className="text-sm text-ink">
-            <span className="font-semibold" style={{ color: SERIES_ACCENT }}>
-              10.000+
+            <span className="font-semibold text-community-accent">
+              {formatCompact(totalMembers)}
             </span>{" "}
             thành viên đang cùng nhau tiến bộ mỗi ngày.
           </p>

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Globe2, Lock, Code2, ChevronRight } from "lucide-react";
-import type { Community } from "@/content/community-mock";
+import type { Community } from "@/lib/community/types";
 import { formatCompact } from "@/lib/format-number";
 
 // Card "Cong dong" dung chung cho ca 2 sidebar (Member: CommunityChannelSidebar,
@@ -24,7 +24,9 @@ export function CommunitySidebarHeaderCard({
           Cộng đồng
         </p>
         <div className="flex min-w-0 items-center gap-1.5">
-          <p className="truncate text-sm font-bold text-ink">{community.name}</p>
+          <p className="truncate text-sm font-bold text-ink">
+            {community.name}
+          </p>
           {adminBadge && (
             <span className="shrink-0 rounded-sm bg-community-accent px-1.5 py-0.5 text-[10px] font-semibold text-white">
               Admin
@@ -61,7 +63,11 @@ export function CommunitySidebarHeaderCard({
           </div>
         )}
       </div>
-      <ChevronRight size={16} strokeWidth={2} className="shrink-0 text-ink-faint" />
+      <ChevronRight
+        size={16}
+        strokeWidth={2}
+        className="shrink-0 text-ink-faint"
+      />
     </div>
   );
 }

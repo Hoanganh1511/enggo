@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { Community } from "@/content/community-mock";
+import type { Community } from "@/lib/community/types";
 import { CommunitySidebarHeaderCard } from "./CommunitySidebarHeaderCard";
 
 // Khung <aside> dung chung cho ca 2 sidebar (Member: CommunityChannelSidebar,

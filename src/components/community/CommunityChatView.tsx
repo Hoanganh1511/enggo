@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Paperclip, Star, ThumbsUp, MessageCircle } from "lucide-react";
-import type {
-  CommunityChannel,
-  ChannelMessage,
-} from "@/content/community-mock";
+
 import { CommunityPostCard } from "./CommunityPostCard";
 import { CommunityComposer } from "./CommunityComposer";
 import {
@@ -13,6 +10,12 @@ import {
   DEFAULT_KNOWLEDGE_FILTERS,
   type KnowledgeFilters,
 } from "./KnowledgeCommandBar";
+import type {
+  CommunityChannel,
+  ChannelMessage,
+  Community,
+} from "@/lib/community/types";
+import { createChannelPostAction } from "@/actions/community/create-channel-post";
 
 function messageReactionTotal(message: ChannelMessage) {
   return message.reactions.reduce((sum, r) => sum + r.count, 0);
@@ -62,8 +65,20 @@ function filterMessages(messages: ChannelMessage[], filters: KnowledgeFilters) {
 // truot tu phai thay vi doi noi dung inline o day). Composer KHONG con dinh
 // o cuoi kenh nua - gio la 1 MODAL (CommunityComposer.tsx), mo tu
 // KnowledgeCommandBar.tsx (thay group nut "Đăng bài" don gian truoc day).
-export function CommunityChatView({ channel }: { channel: CommunityChannel }) {
-  const [composerOpen, setComposerOpen] = useState(false);
+export function CommunityChatView({
+  channel,
+  community,
+  loading,
+  composerOpenChannelId,
+  onComposerOpenChange,
+}: {
+  channel: CommunityChannel;
+  community: Community;
+  loading?: boolean;
+  composerOpenChannelId: string | null;
+  onComposerOpenChange: (open: boolean) => void;
+}) {
+  const composerOpen = composerOpenChannelId === channel.id;
   const [filters, setFilters] = useState<KnowledgeFilters>(
     DEFAULT_KNOWLEDGE_FILTERS,
   );
@@ -105,7 +120,7 @@ export function CommunityChatView({ channel }: { channel: CommunityChannel }) {
           mentorCount={mentorCount}
           filters={filters}
           onFiltersChange={setFilters}
-          onCreatePost={() => setComposerOpen(true)}
+          onCreatePost={() => onComposerOpenChange(true)}
         />
 
         {/* Wrapper "relative" rieng, sat ngay duoi KnowledgeCommandBar - de
@@ -192,6 +207,11 @@ export function CommunityChatView({ channel }: { channel: CommunityChannel }) {
             )}
 
             <div className=" flex flex-col gap-2 pb-3">
+              {loading && (
+                <p className="py-12 text-center text-sm text-ink-faint">
+                  Đang tải bài viết...
+                </p>
+              )}
               {channel.messages.length === 0 ? (
                 <p className="py-12 text-center text-sm text-ink-faint">
                   Chưa có bài viết nào trong kênh này.
@@ -217,7 +237,12 @@ export function CommunityChatView({ channel }: { channel: CommunityChannel }) {
         </div>
       </div>
 
-      <CommunityComposer open={composerOpen} onOpenChange={setComposerOpen} />
+      <CommunityComposer
+        open={composerOpen}
+        onOpenChange={onComposerOpenChange}
+        channelId={channel.id}
+        slug={community.slug}
+      />
     </div>
   );
 }

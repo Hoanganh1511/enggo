@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useTransition } from "react";
 import { Hash } from "lucide-react";
 import type {
   CommunityActiveMember,
   CommunityChannel,
-} from "@/content/community-mock";
+} from "@/lib/community/types";
 import { formatCompact } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
-
+import { joinCommunityAction } from "@/actions/community/join-community";
+import { leaveCommunityAction } from "@/actions/community/leave-community";
 // Box thong tin kenh dang xem - truoc day la 1 hero ngang o dau main chat
 // (CommunityChatView.tsx), GIO chuyen sang box rieng o right panel (hep hon
 // nhieu) nen bo cuc doi thanh COT DOC: banner anh (dai ngan) o tren, ten +
@@ -17,24 +19,36 @@ import { cn } from "@/lib/utils";
 // hang ngang nhu ban cu.
 //
 // "channel.bannerImageUrl" la CHO SAN de dien link anh nen RIENG cho 1 kenh
-// vao sau (community-mock.ts). Chua dien thi fallback ve cloud-banner.png
+// vao sau (series-mock.ts). Chua dien thi fallback ve cloud-banner.png
 // (khong con phu them mountain-banner.png nhu ban hero cu - banner o day qua
 // hep de nui/co "tran ra ngoai" nhin dep nhu truoc).
 export function CommunityChannelInfoCard({
   channel,
   memberCount,
   activeMembers,
+  communityId,
+  slug,
+  isMember,
 }: {
   channel: CommunityChannel;
   memberCount: number;
   activeMembers: CommunityActiveMember[];
+  communityId: string;
+  slug: string;
+  isMember: boolean;
 }) {
   // Da la thanh vien Community (chi Member workspace moi render box nay)
   // nen mac dinh coi nhu da tham gia kenh - UI-only, chua co API tham gia
   // rieng tung kenh.
-  const [joined, setJoined] = useState(true);
+  const [, startTransition] = useTransition();
+  const joined = isMember;
   const previewMembers = activeMembers.slice(0, 3);
-
+  function toggleJoin() {
+    startTransition(async () => {
+      if (joined) await leaveCommunityAction(communityId, slug);
+      else await joinCommunityAction(communityId, slug);
+    });
+  }
   return (
     <div className="shrink-0 overflow-hidden rounded-lg border border-border bg-white shadow-sm">
       <div className="relative h-20 w-full">
@@ -91,7 +105,7 @@ export function CommunityChannelInfoCard({
 
         <button
           type="button"
-          onClick={() => setJoined((v) => !v)}
+          onClick={toggleJoin}
           className={cn(
             "w-full cursor-pointer rounded-full py-1.5 text-xs font-semibold transition-colors duration-150 ease-out",
             joined

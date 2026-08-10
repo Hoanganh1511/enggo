@@ -7,21 +7,41 @@ import {
   Plus,
   Star,
 } from "lucide-react";
-import type { ChannelMessage } from "@/content/community-mock";
 import { cn } from "@/lib/utils";
 import { CommunityKnowledgeGems } from "./CommunityKnowledgeGems";
 import { CommunityPostAuthorRail } from "./CommunityPostAuthorRail";
 import { CommunitySkillChips } from "./CommunitySkillChips";
+import type { ChannelMessage } from "@/lib/community/types";
+import { useState, useTransition } from "react";
+import { toggleReactionAction } from "@/actions/community/toggle-reaction";
+import { CommunityCommentThread } from "./CommunityCommentThread";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
+// Bo emoji nhanh cho nut "+" (them reaction moi) - toggle cung 1 emoji lan 2
+// se BO reaction do (backend tu xu ly), nen day dong thoi la "them" lan "go".
+const QUICK_EMOJIS = ["👍", "❤️", "😄", "🎉", "🚀", "👏", "🔥", "💡"];
 // 1 "bai viet" trong danh sach feed cua kenh - thiet ke lai theo huong
 // "professional learning community" (Linear/GitHub/Notion/Discord-density),
 // KHONG phai kieu Facebook: cot trai co dinh (CommunityPostAuthorRail.tsx)
 // the hien do tin cay cua tac gia (level/XP/dong gop), cot phai la noi dung.
 // Tat ca field lien quan profile/tag/dinh kem deu OPTIONAL - khong co thi tu
-// rut gon (xem message m2 trong community-mock.ts).
+// rut gon (xem message m2 trong series-mock.ts).
 export function CommunityPostCard({ message }: { message: ChannelMessage }) {
   const profile = message.author.profile;
-
+  const [reactions, setReactions] = useState(message.reactions);
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [, startTransition] = useTransition();
+  function handleReact(emoji: string) {
+    startTransition(async () => {
+      const updated = await toggleReactionAction(message.id, emoji);
+      setReactions(updated);
+    });
+  }
   return (
     <div className=" border rounded-md border-black/6 bg-white p-6 shadow-[0_6px_24px_rgba(50,50,93,0.06)] transition-transform duration-[180ms] ease-out ">
       <div className="flex gap-4">
@@ -162,28 +182,53 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
           )}
 
           <div className="mt-[18px] flex flex-wrap items-center gap-1.5 border-t border-black/6 pt-4">
-            {message.reactions.map((reaction) => (
+            {reactions.map((reaction) => (
               <button
                 key={reaction.emoji}
                 type="button"
+                onClick={() => handleReact(reaction.emoji)}
                 className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-black/3 px-3 text-sm font-semibold text-ink-muted transition-transform duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent hover:scale-[1.08]"
               >
                 <span className="text-base">{reaction.emoji}</span>
                 <span>{reaction.count}</span>
               </button>
             ))}
-            <button
-              type="button"
-              aria-label="Thêm reaction"
-              className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/6 text-ink-faint transition-colors duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent"
-            >
-              <Plus size={12} strokeWidth={2} />
-            </button>
+            <PopoverRoot open={pickerOpen} onOpenChange={setPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Thêm reaction"
+                  className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/6 text-ink-faint transition-colors duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent"
+                >
+                  <Plus size={12} strokeWidth={2} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                open={pickerOpen}
+                align="start"
+                className="z-50 flex items-center gap-1 rounded-full border border-border bg-surface p-1.5 shadow-dropdown"
+              >
+                {QUICK_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => {
+                      handleReact(emoji);
+                      setPickerOpen(false);
+                    }}
+                    className="flex size-8 cursor-pointer items-center justify-center rounded-full text-lg transition-transform duration-150 ease-out hover:scale-125 hover:bg-hover-bg"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </PopoverContent>
+            </PopoverRoot>
 
             <div className="ml-auto flex shrink-0 items-center gap-3 text-ink-faint">
               {message.replyCount > 0 && (
                 <button
                   type="button"
+                  onClick={() => setThreadOpen((v) => !v)}
                   className="flex cursor-pointer items-center gap-1 text-xs font-medium hover:text-ink"
                 >
                   <MessageCircle size={14} strokeWidth={2} />
@@ -250,6 +295,7 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
             </div>
           )}
         </div>
+        {threadOpen && <CommunityCommentThread postId={message.id} />}
       </div>
     </div>
   );

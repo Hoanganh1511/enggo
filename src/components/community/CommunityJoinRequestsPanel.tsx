@@ -1,13 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Image from "next/image";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type {
   CommunityJoinRequestDetailed,
   CommunityJoinRequestStatus,
-} from "@/content/community-mock";
+} from "@/lib/community/types";
 import { cn } from "@/lib/utils";
+import { approveJoinRequestAction } from "@/actions/community/approve-join-request";
+import { rejectJoinRequestAction } from "@/actions/community/reject-join-request";
 
 const TABS: { status: CommunityJoinRequestStatus; label: string }[] = [
   { status: "pending", label: "Chờ duyệt" },
@@ -16,18 +23,24 @@ const TABS: { status: CommunityJoinRequestStatus; label: string }[] = [
 ];
 
 // Panel "Yeu cau tham gia" - trang chinh cua giao dien Admin. Duyet/tu choi
-// CHI doi state client (setRequests local) - CHUA co API that (dung tinh
-// than mock cua toan bo feature Community, xem community-mock.ts). Tim kiem
-// loc THAT tren du lieu dang hien (substring khong phan biet hoa/thuong),
-// "Bo loc" la nut trang tri (UI shell, giong SeriesToolbar.tsx truoc day).
+// goi API THAT (approveJoinRequestAction/rejectJoinRequestAction) - backend
+// da co san luong duyet thanh vien. Tim kiem loc THAT tren du lieu dang hien
+// (substring khong phan biet hoa/thuong), "Bo loc" la nut trang tri (UI shell).
 export function CommunityJoinRequestsPanel({
+  communityId,
+  communitySlug,
   initialRequests,
 }: {
+  communityId: string;
+  communitySlug: string;
   initialRequests: CommunityJoinRequestDetailed[];
 }) {
   const [requests, setRequests] = useState(initialRequests);
-  const [activeStatus, setActiveStatus] = useState<CommunityJoinRequestStatus>("pending");
+  const [activeStatus, setActiveStatus] =
+    useState<CommunityJoinRequestStatus>("pending");
   const [search, setSearch] = useState("");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const counts = useMemo(
     () => ({
@@ -42,18 +55,41 @@ export function CommunityJoinRequestsPanel({
     if (r.status !== activeStatus) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q);
+    return (
+      r.name.toLowerCase().includes(q) || r.email.toLowerCase().includes(q)
+    );
   });
 
-  function setStatus(id: string, status: CommunityJoinRequestStatus) {
-    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+  function handle(id: string, action: "approve" | "reject") {
+    setPendingId(id);
+    startTransition(async () => {
+      if (action === "approve") {
+        await approveJoinRequestAction(communityId, id, communitySlug);
+      } else {
+        await rejectJoinRequestAction(communityId, id, communitySlug);
+      }
+      // Cap nhat state cuc bo cho phan hoi UI tuc thi - revalidatePath trong
+      // action da lam du lieu server dong bo o lan dieu huong/refetch sau.
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? { ...r, status: action === "approve" ? "approved" : "rejected" }
+            : r,
+        ),
+      );
+      setPendingId(null);
+    });
   }
 
   return (
     <div className="flex h-full flex-1 flex-col gap-4 overflow-y-auto py-4 pl-6">
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-ink">Yêu cầu tham gia</h1>
-        <p className="text-sm text-ink-faint">Quản lý các yêu cầu tham gia cộng đồng (private)</p>
+        <h1 className="text-xl font-bold tracking-tight text-ink">
+          Yêu cầu tham gia
+        </h1>
+        <p className="text-sm text-ink-faint">
+          Quản lý các yêu cầu tham gia cộng đồng (private)
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -75,7 +111,9 @@ export function CommunityJoinRequestsPanel({
                 <span
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-                    activeStatus === status ? "bg-white/20" : "bg-surface-muted",
+                    activeStatus === status
+                      ? "bg-white/20"
+                      : "bg-surface-muted",
                   )}
                 >
                   {counts[status]}
@@ -87,7 +125,11 @@ export function CommunityJoinRequestsPanel({
 
         <div className="flex items-center gap-2">
           <div className="flex h-9 items-center gap-2 rounded-md border border-border px-2.5">
-            <Search size={14} strokeWidth={2} className="shrink-0 text-ink-faint" />
+            <Search
+              size={14}
+              strokeWidth={2}
+              className="shrink-0 text-ink-faint"
+            />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -114,14 +156,19 @@ export function CommunityJoinRequestsPanel({
               <th className="px-4 py-2.5 font-semibold">Lý do muốn tham gia</th>
               <th className="px-4 py-2.5 font-semibold">Thời gian gửi</th>
               {activeStatus === "pending" && (
-                <th className="px-4 py-2.5 text-right font-semibold">Hành động</th>
+                <th className="px-4 py-2.5 text-right font-semibold">
+                  Hành động
+                </th>
               )}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-ink-faint">
+                <td
+                  colSpan={5}
+                  className="px-4 py-8 text-center text-ink-faint"
+                >
                   Không có yêu cầu nào.
                 </td>
               </tr>
@@ -138,12 +185,18 @@ export function CommunityJoinRequestsPanel({
                       className="size-8 shrink-0 rounded-full object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-ink">{request.name}</p>
-                      <p className="truncate text-xs text-ink-faint">{request.email}</p>
+                      <p className="truncate font-medium text-ink">
+                        {request.name}
+                      </p>
+                      <p className="truncate text-xs text-ink-faint">
+                        {request.email}
+                      </p>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-ink-muted">{request.experienceLabel}</td>
+                <td className="px-4 py-3 text-ink-muted">
+                  {request.experienceLabel}
+                </td>
                 <td className="max-w-xs px-4 py-3 text-ink-muted">
                   <p className="line-clamp-2">{request.reason}</p>
                 </td>
@@ -155,17 +208,19 @@ export function CommunityJoinRequestsPanel({
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => setStatus(request.id, "rejected")}
-                        className="flex h-8 cursor-pointer items-center rounded-md border border-border px-3 text-xs font-semibold text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+                        disabled={pendingId === request.id}
+                        onClick={() => handle(request.id, "reject")}
+                        className="flex h-8 cursor-pointer items-center rounded-md border border-border px-3 text-xs font-semibold text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         Từ chối
                       </button>
                       <button
                         type="button"
-                        onClick={() => setStatus(request.id, "approved")}
-                        className="flex h-8 cursor-pointer items-center rounded-md bg-community-accent px-3 text-xs font-semibold text-white transition-colors duration-150 ease-out hover:bg-community-accent-hover"
+                        disabled={pendingId === request.id}
+                        onClick={() => handle(request.id, "approve")}
+                        className="flex h-8 cursor-pointer items-center rounded-md bg-community-accent px-3 text-xs font-semibold text-white transition-colors duration-150 ease-out hover:bg-community-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Duyệt
+                        {pendingId === request.id ? "Đang xử lý..." : "Duyệt"}
                       </button>
                     </div>
                   </td>
