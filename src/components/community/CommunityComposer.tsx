@@ -241,7 +241,7 @@ export function CommunityComposer({
         <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay" />
         <Dialog.Content
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100%-3rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-2xl border-2 border-community-accent/30 bg-white p-4 shadow-xl focus:outline-none"
+          className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100%-3rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-2xl border-2 border-community-accent/30 bg-surface p-4 shadow-xl focus:outline-none"
         >
           <div className="flex items-start gap-3">
             <div className="relative shrink-0">
@@ -443,7 +443,7 @@ export function CommunityComposer({
                   <button
                     type="button"
                     onClick={() => setNodeLinked((v) => !v)}
-                    className="mt-2 flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-white p-2 text-left transition-colors duration-150 ease-out hover:bg-hover-bg"
+                    className="mt-2 flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-surface p-2 text-left transition-colors duration-150 ease-out hover:bg-hover-bg"
                   >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-community-accent/10 text-community-accent">
                       <GitBranch size={14} strokeWidth={2} />

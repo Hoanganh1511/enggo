@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import {
   Bookmark,
+  BookText,
   CalendarDays,
   FileText,
   Heart,
@@ -19,6 +20,7 @@ import { useAllPosts } from "@/lib/discover/use-all-posts";
 export type ProfileTab =
   | "home"
   | "posts"
+  | "docs"
   | "playlists"
   | "collections"
   | "likes"
@@ -124,6 +126,13 @@ const TABS: {
     iconColor: "#818cf8",
   },
   {
+    key: "docs",
+    path: "docs",
+    label: "Tài liệu",
+    icon: BookText,
+    iconColor: "#22c55e",
+  },
+  {
     key: "playlists",
     path: "playlists",
     label: "Danh sách phát",
@@ -201,7 +210,13 @@ const ProfileNav = ({
         <div className="flex items-center gap-1 overflow-x-auto overflow-y-hidden">
           {visible.map((tab) => {
             const href = tab.path ? `${base}/${tab.path}` : base;
-            const isActive = activeHref === href;
+            // Tab "Tài liệu" con co sub-route (/docs/[slug], /docs/new,
+            // /docs/[slug]/edit) - phai sang ca khi dang o trang con, khong
+            // chi khi dung /docs. Cac tab khac la route la nen so sanh dung.
+            const isActive =
+              tab.path === "docs"
+                ? activeHref === href || activeHref.startsWith(`${href}/`)
+                : activeHref === href;
             return (
               <Link
                 key={tab.key}

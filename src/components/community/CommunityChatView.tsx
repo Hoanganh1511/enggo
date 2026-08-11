@@ -232,7 +232,7 @@ export function CommunityChatView({
             // "mask-image" de CHINH DO BLUR cung mo dan theo gradient, khong
             // chi mau nen mo dan - backdrop-blur-sm truoc do la 1 dai blur
             // DEU rồi CAT CUT dot ngot o mep duoi, nhin thay ranh gioi ro.
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 rounded-t-md bg-linear-to-b from-white/90 to-transparent backdrop-blur-sm mask-[linear-gradient(to_bottom,black,transparent)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-12 rounded-t-md bg-linear-to-b from-background/90 to-transparent backdrop-blur-sm mask-[linear-gradient(to_bottom,black,transparent)]" />
           )}
         </div>
       </div>

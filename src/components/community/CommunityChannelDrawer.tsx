@@ -23,7 +23,7 @@ export function CommunityChannelDrawer() {
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
         <p className="mb-3 text-sm font-bold text-ink">Nội dung khác</p>
         <div className="flex flex-col gap-0.5">
           {DRAWER_TABS.map(({ key, label, icon: Icon }) => (
@@ -55,7 +55,7 @@ export function CommunityChannelDrawer() {
             />
             <motion.div
               key="drawer-panel"
-              className="fixed top-0 right-0 z-50 flex h-full w-80 flex-col bg-white shadow-xl sm:w-96"
+              className="fixed top-0 right-0 z-50 flex h-full w-80 flex-col bg-surface shadow-xl sm:w-96"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}

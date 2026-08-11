@@ -19,7 +19,7 @@ export function CommunityPostAuthorRail({
   profile: CommunityAuthorProfile | undefined;
 }) {
   return (
-    <div className="hidden w-24 shrink-0 flex-col items-center gap-2 border-r border-black/6 pr-4 text-center md:flex">
+    <div className="hidden w-24 shrink-0 flex-col items-center gap-2 border-r border-border pr-4 text-center md:flex">
       <Image
         src={avatarUrl}
         alt={name}

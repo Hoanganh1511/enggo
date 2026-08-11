@@ -50,7 +50,7 @@ export function CommunityChannelInfoCard({
     });
   }
   return (
-    <div className="shrink-0 overflow-hidden rounded-lg border border-border bg-white shadow-sm">
+    <div className="shrink-0 overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
       <div className="relative h-20 w-full">
         {channel.bannerImageUrl ? (
           <div
@@ -66,7 +66,7 @@ export function CommunityChannelInfoCard({
             className="object-cover"
           />
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-white via-white/10 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-surface via-surface/10 to-transparent" />
         <span className="absolute right-3 bottom-3 flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-community-accent to-community-accent-dark text-white shadow-sm">
           <Hash size={16} strokeWidth={2.25} />
         </span>

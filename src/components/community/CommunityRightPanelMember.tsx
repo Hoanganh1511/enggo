@@ -61,7 +61,7 @@ export function CommunityRightPanelMember({
       )}
 
       {community.activeMembers.length > 0 && (
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-bold text-ink">Thành viên nổi bật</p>
             <button
@@ -103,7 +103,7 @@ export function CommunityRightPanelMember({
       {resources.length > 0 && (
         <div
           id="docs-links"
-          className="rounded-2xl border border-border bg-white p-4 shadow-sm"
+          className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
         >
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-bold text-ink">Tài liệu hữu ích</p>
@@ -141,7 +141,7 @@ export function CommunityRightPanelMember({
 
       <CommunityChannelDrawer />
 
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-white p-5 text-center shadow-sm">
+      <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-5 text-center shadow-sm">
         <span className="flex size-11 items-center justify-center rounded-full bg-community-accent/10 text-community-accent">
           <Bot size={20} strokeWidth={2} />
         </span>

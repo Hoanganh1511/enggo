@@ -442,3 +442,19 @@ body {
 .react-flow__controls-button svg {
   fill: currentColor;
 }
+
+/* Nen wallpaper cua trang cong dong (/communities/[slug]) - anh pastel sang o
+   light mode; dark mode BO anh (anh sang lam chuong mat), thay bang nen phang
+   theo token --background. Dung class rieng thay vi bg-[url(...)] inline de co
+   the override duoc trong khoi @media dark. */
+.community-wallpaper {
+  background-image: url("/bg-community.png");
+  background-size: cover;
+  background-position: center;
+}
+@media (prefers-color-scheme: dark) {
+  .community-wallpaper {
+    background-image: none;
+    background-color: var(--background);
+  }
+}

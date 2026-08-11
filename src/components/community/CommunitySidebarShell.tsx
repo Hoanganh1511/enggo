@@ -15,7 +15,7 @@ export function CommunitySidebarShell({
   children: ReactNode;
 }) {
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col gap-4 overflow-y-auto shadow-lg py-4 p-4 bg-white">
+    <aside className="flex h-full w-64 shrink-0 flex-col gap-4 overflow-y-auto shadow-lg py-4 p-4 bg-surface">
       <CommunitySidebarHeaderCard
         community={community}
         adminBadge={adminBadge}

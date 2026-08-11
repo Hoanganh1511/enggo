@@ -268,3 +268,32 @@ export type ApiComment = {
   content: string;
   createdAt: string;
 };
+
+// "Tài liệu" - bài dài do nguoi dung soan bang editor lon, thuoc ve tac gia,
+// hien trong tab "Tài liệu" cua profile. `content` la Tiptap JSON.
+export type ApiDocumentAuthor = {
+  username: string;
+  name: string;
+  avatarUrl: string;
+  verified: boolean;
+};
+
+export type ApiDocument = {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  coverImageUrl: string | null;
+  content: Record<string, unknown>;
+  tags: string[];
+  isPinned: boolean;
+  isPublished: boolean;
+  viewCount: number;
+  createdAt: string;
+  updatedAt: string;
+  isOwner: boolean;
+  author: ApiDocumentAuthor;
+};
+
+// Ban rut gon cho danh sach (khong keo `content`).
+export type ApiDocumentSummary = Omit<ApiDocument, "content">;

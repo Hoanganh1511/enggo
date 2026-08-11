@@ -148,7 +148,7 @@ export function KnowledgeCommandBar({
   ];
 
   return (
-    <div className="mb-2 shrink-0 rounded-lg border border-community-accent/15 bg-linear-to-br from-community-accent/8 via-white to-white p-3">
+    <div className="mb-2 shrink-0 rounded-lg border border-community-accent/15 bg-linear-to-br from-community-accent/8 via-surface to-surface p-3">
       <div className="flex items-center justify-between gap-3">
         <p className="flex items-center gap-1.5 text-sm font-bold text-community-accent">
           <Sparkles size={15} strokeWidth={2.25} />
@@ -173,8 +173,8 @@ export function KnowledgeCommandBar({
             className={cn(
               "flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors duration-150 ease-out",
               filters.category === key
-                ? "border-community-accent bg-white text-community-accent shadow-sm"
-                : "border-border bg-white/60 text-ink-muted hover:bg-white",
+                ? "border-community-accent bg-surface text-community-accent shadow-sm"
+                : "border-border bg-surface/60 text-ink-muted hover:bg-surface",
             )}
           >
             <Icon size={13} strokeWidth={2.25} />

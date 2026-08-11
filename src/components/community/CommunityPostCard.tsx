@@ -43,7 +43,7 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
     });
   }
   return (
-    <div className=" border rounded-md border-black/6 bg-white p-6 shadow-[0_6px_24px_rgba(50,50,93,0.06)] transition-transform duration-[180ms] ease-out ">
+    <div className=" border rounded-md border-border bg-surface p-6 shadow-[0_6px_24px_rgba(50,50,93,0.06)] transition-transform duration-[180ms] ease-out ">
       <div className="flex gap-4">
         <CommunityPostAuthorRail
           avatarUrl={message.author.avatarUrl}
@@ -142,7 +142,7 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
           )}
 
           {message.codeBlock && (
-            <div className="mt-[18px] overflow-hidden rounded-xl border border-black/6">
+            <div className="mt-[18px] overflow-hidden rounded-xl border border-border">
               <div className="flex items-center justify-between bg-surface-muted px-3 py-1.5 text-xs text-ink-faint">
                 <span>{message.codeBlock.language}</span>
               </div>
@@ -153,7 +153,7 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
           )}
 
           {message.imageUrl && (
-            <div className="relative mt-[18px] h-40 w-full max-w-xs overflow-hidden rounded-xl border border-black/6 sm:h-48">
+            <div className="relative mt-[18px] h-40 w-full max-w-xs overflow-hidden rounded-xl border border-border sm:h-48">
               <Image
                 src={message.imageUrl}
                 alt=""
@@ -164,7 +164,7 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
           )}
 
           {message.attachmentName && (
-            <div className="mt-[18px] flex w-fit items-center gap-3 rounded-2xl border border-black/6 p-3 shadow-[0_2px_8px_rgba(50,50,93,0.04)] transition-shadow duration-150 ease-out hover:shadow-[0_6px_20px_rgba(50,50,93,0.08)]">
+            <div className="mt-[18px] flex w-fit items-center gap-3 rounded-2xl border border-border p-3 shadow-[0_2px_8px_rgba(50,50,93,0.04)] transition-shadow duration-150 ease-out hover:shadow-[0_6px_20px_rgba(50,50,93,0.08)]">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-danger/10 text-[10px] font-bold text-danger">
                 PDF
               </span>
@@ -181,13 +181,13 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
             </div>
           )}
 
-          <div className="mt-[18px] flex flex-wrap items-center gap-1.5 border-t border-black/6 pt-4">
+          <div className="mt-[18px] flex flex-wrap items-center gap-1.5 border-t border-border pt-4">
             {reactions.map((reaction) => (
               <button
                 key={reaction.emoji}
                 type="button"
                 onClick={() => handleReact(reaction.emoji)}
-                className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-black/3 px-3 text-sm font-semibold text-ink-muted transition-transform duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent hover:scale-[1.08]"
+                className="flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-ink/5 px-3 text-sm font-semibold text-ink-muted transition-transform duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent hover:scale-[1.08]"
               >
                 <span className="text-base">{reaction.emoji}</span>
                 <span>{reaction.count}</span>
@@ -198,7 +198,7 @@ export function CommunityPostCard({ message }: { message: ChannelMessage }) {
                 <button
                   type="button"
                   aria-label="Thêm reaction"
-                  className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-black/6 text-ink-faint transition-colors duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent"
+                  className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border text-ink-faint transition-colors duration-150 ease-out hover:bg-community-accent/8 hover:text-community-accent"
                 >
                   <Plus size={12} strokeWidth={2} />
                 </button>

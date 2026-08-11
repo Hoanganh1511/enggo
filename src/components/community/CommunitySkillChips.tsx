@@ -33,10 +33,10 @@ function SkillChip({ branch }: { branch: CommunityKnowledgeBranch }) {
         </span>
       </HoverCardTrigger>
       <HoverCardContent open={open} side="top" align="start">
-        <div className="w-40 rounded-lg border border-black/6 bg-white p-2.5 shadow-[0_6px_24px_rgba(50,50,93,0.12)]">
+        <div className="w-40 rounded-lg border border-border bg-surface p-2.5 shadow-[0_6px_24px_rgba(50,50,93,0.12)]">
           <p className="text-xs font-semibold text-ink">{branch.label}</p>
           <p className="text-[11px] text-ink-faint">Mức độ thành thạo</p>
-          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/6">
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink/8">
             <div
               className="h-full rounded-full"
               style={{

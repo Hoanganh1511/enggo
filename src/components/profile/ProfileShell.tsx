@@ -98,7 +98,7 @@ const ProfileShell = ({
           }`}
         >
           <div className="min-w-0 flex-1">{children}</div>
-          <ProfileSidePanel />
+          {/* <ProfileSidePanel /> */}
         </div>
 
         <ProfileFooter displayName={profile.displayName} />

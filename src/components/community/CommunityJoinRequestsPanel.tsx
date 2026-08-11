@@ -112,7 +112,7 @@ export function CommunityJoinRequestsPanel({
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
                     activeStatus === status
-                      ? "bg-white/20"
+                      ? "bg-surface/20"
                       : "bg-surface-muted",
                   )}
                 >

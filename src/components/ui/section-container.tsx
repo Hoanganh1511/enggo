@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import type { ComponentType, ElementType, HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 // Content-width THUC (chua tinh padding) cho tung muc rong co dinh - giu
@@ -43,8 +43,19 @@ const SectionContainer = ({
     ? MAX_WIDTH_CLASS[maxWidth]
     : DEFAULT_MAX_WIDTH_CLASS;
 
+  // Ep kieu "Tag" ve 1 shape prop CU THE (thay vi de nguyen ElementType chung)
+  // - tu khi them @react-three/fiber, thu vien nay mo rong JSX.IntrinsicElements
+  // toan cuc (them <mesh>/<group>/... de ho tro viet Three.js bang JSX), lam
+  // ElementType tro thanh 1 union rat rong khien TS suy ra "children" ve
+  // "never" khi dung truc tiep <Tag>{children}</Tag>. Cast nay khong doi hanh
+  // vi runtime (Tag van la "section"/"div"/... nhu cu), chi tranh duong suy
+  // kieu bi vo do.
+  const Component = Tag as ComponentType<
+    HTMLAttributes<HTMLElement> & { id?: string }
+  >;
+
   return (
-    <Tag
+    <Component
       id={id}
       className={cn(
         "mx-auto px-[var(--layout-padding)]",
@@ -53,7 +64,7 @@ const SectionContainer = ({
       )}
     >
       {children}
-    </Tag>
+    </Component>
   );
 };
 

@@ -13,7 +13,7 @@ export function CommunityRightPanelAdmin({
 }) {
   return (
     <CommunityRightPanelShell>
-      <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
         <p className="mb-3 text-sm font-bold text-ink">Tổng quan cộng đồng</p>
         <div className="grid grid-cols-2 gap-2.5">
           <div className="rounded-lg border border-border p-2.5">
@@ -42,7 +42,7 @@ export function CommunityRightPanelAdmin({
       </div>
 
       {community.recentActivity.length > 0 && (
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
           <p className="mb-3 text-sm font-bold text-ink">Hoạt động gần đây</p>
           <div className="flex flex-col gap-2.5">
             {community.recentActivity.map((item, i) => (

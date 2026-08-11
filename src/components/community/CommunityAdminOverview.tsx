@@ -21,7 +21,7 @@ export function CommunityAdminOverview({
           sizes="900px"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-linear-to-r from-white/90 via-white/70 to-white/30" />
+        <div className="absolute inset-0 bg-linear-to-r from-surface/90 via-surface/70 to-surface/30" />
         <div className="relative z-10 p-5">
           <h1 className="text-xl font-bold tracking-tight text-ink">
             Tổng quan cộng đồng

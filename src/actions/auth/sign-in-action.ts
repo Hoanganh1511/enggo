@@ -3,5 +3,5 @@
 import { signIn } from "@/auth";
 
 export async function signInAction() {
-  await signIn("google", { redirectTo: "/career-tree" });
+  await signIn("google", { redirectTo: "/home" });
 }

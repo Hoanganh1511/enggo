@@ -66,7 +66,7 @@ const ProfileSidePanel = () => {
         <div
           key={m.title}
           title="Sắp ra mắt"
-          className="flex cursor-not-allowed items-start gap-3 rounded-lg  bg-gray-50 p-3 opacity-80"
+          className="flex cursor-not-allowed items-start gap-3 rounded-lg border border-border bg-surface-muted p-3 opacity-80"
         >
           <span
             className="flex size-9 shrink-0 items-center justify-center rounded-md"

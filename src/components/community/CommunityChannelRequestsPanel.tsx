@@ -58,7 +58,7 @@ export function CommunityChannelRequestsPanel({
           {requests.map((request) => (
             <div
               key={request.id}
-              className="flex items-start justify-between gap-4 rounded-lg border border-border bg-white p-4"
+              className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface p-4"
             >
               <div className="flex min-w-0 items-start gap-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-community-accent/10 text-community-accent">

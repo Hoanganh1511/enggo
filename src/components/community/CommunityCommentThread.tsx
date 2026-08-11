@@ -25,7 +25,7 @@ export function CommunityCommentThread({ postId }: { postId: string }) {
   }
 
   return (
-    <div className="mt-3 flex flex-col gap-2 border-t border-black/6 pt-3">
+    <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
       {comments.map((c) => (
         <div key={c.id} className="flex items-start gap-2">
           <Image

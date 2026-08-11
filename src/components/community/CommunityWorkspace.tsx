@@ -75,7 +75,7 @@ export function CommunityWorkspace({ community }: { community: Community }) {
       (r) => r.status === "pending",
     ).length;
     return (
-      <div className="flex h-full min-h-0 bg-[url('/bg-community.png')] bg-cover bg-center">
+      <div className="flex h-full min-h-0 community-wallpaper">
         <CommunityAdminSidebar
           community={community}
           activeSection={activeAdminSection}
@@ -128,7 +128,7 @@ export function CommunityWorkspace({ community }: { community: Community }) {
     : undefined;
 
   return (
-    <div className="flex h-full min-h-0 bg-[url('/bg-community.png')] bg-cover bg-center">
+    <div className="flex h-full min-h-0 community-wallpaper">
       <CommunityChannelSidebar
         community={community}
         activeChannelSlug={activeChannelSlug}
