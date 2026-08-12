@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { LucideIcon } from "lucide-react";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/utils";
 import { SHIMMER_BLUR_DATA_URL } from "@/lib/discover/image-placeholder";
 
 // Tile hinh dai dien dung chung cho Featured/Resource/Project/Trending Topic.

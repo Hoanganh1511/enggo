@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Heart } from "lucide-react";
 import type { Author } from "@/content/home-feed-mock";
 import type { ArticleComment } from "./article-types";
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 4;

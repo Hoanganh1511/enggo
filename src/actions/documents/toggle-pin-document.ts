@@ -9,6 +9,6 @@ export async function togglePinDocumentAction(
   pin: boolean,
 ) {
   const doc = pin ? await pinDocument(id) : await unpinDocument(id);
-  revalidatePath(`/u/${username}/docs`);
+  revalidatePath(`/u/${username}/workspaces`);
   return doc;
 }

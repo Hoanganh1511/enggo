@@ -26,7 +26,6 @@ import {
   Check,
   Plus,
   X,
-  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 import { profile } from "@/content/user-profile";
@@ -36,21 +35,15 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import type { ApiWorkspace, ApiCategory, ApiNodeListItem } from "@/lib/api/types";
 import {
   KNOWLEDGE_WORLDS,
   slugToCategoryEnum,
 } from "@/lib/discover/knowledge-worlds";
-import { listWorkspacesAction } from "@/actions/career-tree/list-workspaces";
-import { getWorkspaceCategoriesAction } from "@/actions/career-tree/get-workspace-categories";
-import { getWorkspaceTreeAction } from "@/actions/career-tree/get-workspace-tree";
-import { filterNodesByCategory } from "@/lib/skill-tree/category-stats";
-import { getBlockAccentColor } from "@/lib/skill-tree/block-accent";
 
 // Loai bai co the tu soan qua composer - KHONG bao gom cac kind mang tinh
 // "su kien he thong" tu dong sinh ra (career-update/skill-update/node-created/
-// knowledge-block/timeline-event thuong den tu hanh dong that trong app,
-// khong phai nguoi dung go tay).
+// knowledge-block/timeline-event/workspace-post thuong den tu hanh dong that
+// trong app, khong phai nguoi dung go tay).
 type ComposableKind =
   | "text"
   | "question"
@@ -69,8 +62,7 @@ type ComposableKind =
   | "achievement"
   | "milestone"
   | "experiment"
-  | "event"
-  | "skill-report";
+  | "event";
 
 type TypeOption = { key: ComposableKind; label: string; icon: LucideIcon };
 
@@ -116,16 +108,6 @@ const TYPE_GROUPS: { label: string; types: TypeOption[] }[] = [
       { key: "milestone", label: "Milestone", icon: Target },
       { key: "experiment", label: "Experiment", icon: FlaskConical },
       { key: "event", label: "Event / Announcement", icon: CalendarDays },
-    ],
-  },
-  {
-    label: "Học tập",
-    types: [
-      {
-        key: "skill-report",
-        label: "Báo cáo kỹ năng",
-        icon: ClipboardCheck,
-      },
     ],
   },
 ];
@@ -329,9 +311,6 @@ type FieldsState = {
   location: string;
   language: string;
   snippetTitle: string;
-  reportWorkspaceId: string;
-  reportCategoryId: string;
-  reportNodeId: string;
 };
 
 const INITIAL_FIELDS: FieldsState = {
@@ -370,9 +349,6 @@ const INITIAL_FIELDS: FieldsState = {
   location: "",
   language: "TypeScript",
   snippetTitle: "",
-  reportWorkspaceId: "",
-  reportCategoryId: "",
-  reportNodeId: "",
 };
 
 const PLACEHOLDER_BY_KIND: Partial<Record<ComposableKind, string>> = {
@@ -387,7 +363,6 @@ const PLACEHOLDER_BY_KIND: Partial<Record<ComposableKind, string>> = {
   link: "Cảm nhận của bạn về link này (tuỳ chọn)...",
   milestone: "Đôi lời về cột mốc này (tuỳ chọn)...",
   "code-snippet": "// Dán code vào đây",
-  "skill-report": "Hôm nay bạn đã hoàn thành gì trong skill này?",
 };
 
 // Du lieu rieng theo tung kind de gui len backend (POST /posts, xem
@@ -397,19 +372,10 @@ const PLACEHOLDER_BY_KIND: Partial<Record<ComposableKind, string>> = {
 // duoc tu bia. icon/accent cua 6 kind (link/resource/achievement/
 // project-update/knowledge-block/tutorial) cung KHONG con gui di - PostCard
 // tu lay theo POST_KIND_META[kind] luc render (xem home-feed-mock.ts).
-//
-// reportData chi can cho case "skill-report" - la du lieu THAT da fetch san
-// qua Server Action (xem cac useEffect trong PostComposer ben duoi), khong
-// phai draft text nen khong nam trong FieldsState.
 function buildPostData(
   kind: ComposableKind,
   content: string,
   f: FieldsState,
-  reportData: {
-    workspaces: ApiWorkspace[];
-    categories: ApiCategory[];
-    nodes: ApiNodeListItem[];
-  },
 ): Record<string, unknown> | null {
   switch (kind) {
     case "text":
@@ -543,33 +509,6 @@ function buildPostData(
         when: f.when,
         location: f.location || undefined,
       };
-    case "skill-report": {
-      if (
-        !content.trim() ||
-        !f.reportWorkspaceId ||
-        !f.reportCategoryId ||
-        !f.reportNodeId
-      )
-        return null;
-      const workspace = reportData.workspaces.find(
-        (w) => w.id === f.reportWorkspaceId,
-      );
-      const category = reportData.categories.find(
-        (c) => c.id === f.reportCategoryId,
-      );
-      const node = reportData.nodes.find((n) => n.id === f.reportNodeId);
-      if (!workspace || !category || !node) return null;
-      return {
-        content,
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        categoryId: category.id,
-        categoryName: category.name,
-        categoryAccent: getBlockAccentColor(category.orderIndex, category.color),
-        nodeId: node.id,
-        nodeTitle: node.title,
-      };
-    }
   }
 }
 
@@ -586,10 +525,7 @@ const PostComposer = () => {
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [videoProcessing, setVideoProcessing] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-  // Topic (category that, xem knowledge-worlds.ts) gan cho bai dang -
-  // optional, KHAC "reportCategoryId" ben duoi (do la Knowledge Block cua
-  // Skill Tree, chi dung rieng cho kind "skill-report", 2 khai niem khac
-  // nhau du trung chu "category").
+  // Topic (category that, xem knowledge-worlds.ts) gan cho bai dang - optional.
   const [postCategorySlug, setPostCategorySlug] = useState<string | null>(null);
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   // Thu gon mac dinh, mo rong khi focus vao o nhap hoac bam 1 trong 2 quick
@@ -597,76 +533,13 @@ const PostComposer = () => {
   // ra" khi nguoi dung thuc su muon soan bai.
   const [isOpen, setIsOpen] = useState(false);
 
-  // Du lieu THAT cho picker cua kind "skill-report" (workspace/category/node
-  // that trong workspace nguoi dung, KHONG phai draft text nen tach rieng
-  // khoi FieldsState) - tai theo tung cap, kich hoat TRUC TIEP tu handler
-  // (click chon kind / doi <select>) thay vi useEffect, vi ca "chon kind" lan
-  // "doi workspace" deu la 1 hanh dong nguoi dung ro rang - khong can dong bo
-  // hoa qua effect, tranh setState dong bo trong effect (react-hooks lint).
-  const [reportWorkspaces, setReportWorkspaces] = useState<ApiWorkspace[]>([]);
-  const [reportCategories, setReportCategories] = useState<ApiCategory[]>([]);
-  const [reportNodes, setReportNodes] = useState<ApiNodeListItem[]>([]);
-  const [reportLoading, setReportLoading] = useState<
-    "workspaces" | "categories" | null
-  >(null);
-
   const setField = <K extends keyof FieldsState>(
     key: K,
     value: FieldsState[K],
   ) => setFields((f) => ({ ...f, [key]: value }));
 
   const activeType = ALL_TYPES.find((t) => t.key === activeKind)!;
-  const draft = buildPostData(activeKind, content, fields, {
-    workspaces: reportWorkspaces,
-    categories: reportCategories,
-    nodes: reportNodes,
-  });
-
-  // Goi khi nguoi dung chon kind "Báo cáo kỹ năng" trong popover loai bai -
-  // chi fetch lan dau (danh sach workspace it thay doi trong 1 phien soan bai).
-  const loadReportWorkspaces = () => {
-    if (reportWorkspaces.length > 0) return;
-    setReportLoading("workspaces");
-    listWorkspacesAction()
-      .then(setReportWorkspaces)
-      .finally(() => setReportLoading(null));
-  };
-
-  // Goi khi nguoi dung doi <select> workspace - tai ca categories lan toan bo
-  // node cua workspace do (can ca 2 vi node picker phai loc theo tierId cua
-  // category da chon, xem filterNodesByCategory trong category-stats.ts).
-  const handleSelectReportWorkspace = (workspaceId: string) => {
-    setFields((f) => ({
-      ...f,
-      reportWorkspaceId: workspaceId,
-      reportCategoryId: "",
-      reportNodeId: "",
-    }));
-    setReportCategories([]);
-    setReportNodes([]);
-    if (!workspaceId) return;
-    setReportLoading("categories");
-    Promise.all([
-      getWorkspaceCategoriesAction(workspaceId),
-      getWorkspaceTreeAction(workspaceId),
-    ])
-      .then(([categories, nodes]) => {
-        setReportCategories(categories);
-        setReportNodes(nodes);
-      })
-      .finally(() => setReportLoading(null));
-  };
-
-  const handleSelectReportCategory = (categoryId: string) => {
-    setFields((f) => ({ ...f, reportCategoryId: categoryId, reportNodeId: "" }));
-  };
-
-  const selectedReportCategory = reportCategories.find(
-    (c) => c.id === fields.reportCategoryId,
-  );
-  const reportNodeOptions = selectedReportCategory
-    ? filterNodesByCategory(selectedReportCategory, reportNodes)
-    : [];
+  const draft = buildPostData(activeKind, content, fields);
 
   // Bam ra ngoai composer trong luc chua co draft hop le (bat ke dang o kind
   // nao - vd mo "Ảnh" roi doi y khong upload gi) thi tu thu gon lai, tranh de
@@ -1342,58 +1215,6 @@ const PostComposer = () => {
               </div>
             )}
 
-            {activeKind === "skill-report" && (
-              <div className="grid grid-cols-3 gap-3">
-                <FieldRow label="Workspace">
-                  <select
-                    value={fields.reportWorkspaceId}
-                    onChange={(e) => handleSelectReportWorkspace(e.target.value)}
-                    className={fieldInputClass}
-                  >
-                    <option value="">Chọn workspace...</option>
-                    {reportWorkspaces.map((w) => (
-                      <option key={w.id} value={w.id}>
-                        {w.name}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-                <FieldRow label="Knowledge Block">
-                  <select
-                    value={fields.reportCategoryId}
-                    onChange={(e) => handleSelectReportCategory(e.target.value)}
-                    disabled={!fields.reportWorkspaceId}
-                    className={`${fieldInputClass} disabled:cursor-not-allowed disabled:opacity-60`}
-                  >
-                    <option value="">
-                      {reportLoading === "categories"
-                        ? "Đang tải..."
-                        : "Chọn Knowledge Block..."}
-                    </option>
-                    {reportCategories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-                <FieldRow label="Skill / Node">
-                  <select
-                    value={fields.reportNodeId}
-                    onChange={(e) => setField("reportNodeId", e.target.value)}
-                    disabled={!fields.reportCategoryId}
-                    className={`${fieldInputClass} disabled:cursor-not-allowed disabled:opacity-60`}
-                  >
-                    <option value="">Chọn skill...</option>
-                    {reportNodeOptions.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.title}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-              </div>
-            )}
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border pt-3.5">
@@ -1429,9 +1250,6 @@ const PostComposer = () => {
                         onClick={() => {
                           setActiveKind(type.key);
                           setTypeMenuOpen(false);
-                          if (type.key === "skill-report") {
-                            loadReportWorkspaces();
-                          }
                         }}
                         className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
                       >

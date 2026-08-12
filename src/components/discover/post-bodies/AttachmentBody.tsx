@@ -1,6 +1,6 @@
 import { FileDown, Globe, Star } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/utils";
 import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
 
 type FilePost = Extract<Post, { kind: "file" }>;

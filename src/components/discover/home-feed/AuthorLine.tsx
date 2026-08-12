@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import type { Author } from "@/content/home-feed-mock";
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
 
 // Dong tac gia + thoi gian dung chung cho moi card editorial - gon hon
 // header day du cua PostCard.tsx (khong co menu 3 cham, khong badge kind)

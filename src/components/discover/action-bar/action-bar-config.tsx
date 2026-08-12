@@ -329,6 +329,7 @@ export function getActionBarLayout(post: Post): ActionBarLayout {
     case "node-created":
     case "knowledge-block":
     case "skill-report":
+    case "workspace-post":
       return {
         left: [
           heart(post.stats.likes),

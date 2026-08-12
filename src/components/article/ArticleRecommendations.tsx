@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { PostSummary } from "./article-types";
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
 
 function RecommendationRow({ item }: { item: PostSummary }) {
   return (

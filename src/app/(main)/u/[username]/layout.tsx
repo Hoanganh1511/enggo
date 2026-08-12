@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getProfileByUsername } from "@/lib/api/users";
+import { getProfileOrRedirect } from "@/lib/api/get-profile-or-redirect";
 import ProfileShell from "@/components/profile/ProfileShell";
 import ProfileShellSkeleton from "@/components/profile/ProfileShellSkeleton";
 
@@ -36,9 +36,7 @@ async function ProfileLayoutContent({
   params,
 }: LayoutProps) {
   const { username } = await params;
-  const profile = await getProfileByUsername(
-    decodeURIComponent(username),
-  ).catch(() => null);
+  const profile = await getProfileOrRedirect(decodeURIComponent(username));
 
   if (!profile) notFound();
 

@@ -20,7 +20,7 @@ import { useAllPosts } from "@/lib/discover/use-all-posts";
 export type ProfileTab =
   | "home"
   | "posts"
-  | "docs"
+  | "workspaces"
   | "playlists"
   | "collections"
   | "likes"
@@ -110,6 +110,14 @@ const TABS: {
   icon: LucideIcon;
   iconColor: string;
   selfOnly?: boolean;
+  // Tab co sub-route (vd /workspaces/[slug], /workspaces/new) - phai sang ca
+  // khi dang o trang con, khong chi khi dung /<path>. Hien tai chi tab nay
+  // can, nhung de field data-driven thay vi hardcode string cho tong quat.
+  hasSubroutes?: boolean;
+  // Tab nay khong dan toi /u/[username]/<path> nhu binh thuong ma toi 1
+  // route doc lap khac (vd trang "vu tru" workspace, khong nam duoi
+  // ProfileShell nen khong co cover/user-info) - xem workspace/[username]/.
+  standaloneHref?: (username: string) => string;
 }[] = [
   {
     key: "home",
@@ -126,11 +134,13 @@ const TABS: {
     iconColor: "#818cf8",
   },
   {
-    key: "docs",
-    path: "docs",
-    label: "Tài liệu",
+    key: "workspaces",
+    path: "workspaces",
+    label: "Workspace",
     icon: BookText,
     iconColor: "#22c55e",
+    hasSubroutes: true,
+    standaloneHref: (username) => `/workspace/${username}`,
   },
   {
     key: "playlists",
@@ -209,14 +219,15 @@ const ProfileNav = ({
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-1 overflow-x-auto overflow-y-hidden">
           {visible.map((tab) => {
-            const href = tab.path ? `${base}/${tab.path}` : base;
-            // Tab "Tài liệu" con co sub-route (/docs/[slug], /docs/new,
-            // /docs/[slug]/edit) - phai sang ca khi dang o trang con, khong
-            // chi khi dung /docs. Cac tab khac la route la nen so sanh dung.
-            const isActive =
-              tab.path === "docs"
-                ? activeHref === href || activeHref.startsWith(`${href}/`)
-                : activeHref === href;
+            const subrouteHref = tab.path ? `${base}/${tab.path}` : base;
+            const href = tab.standaloneHref
+              ? tab.standaloneHref(username)
+              : subrouteHref;
+            const isActive = tab.hasSubroutes
+              ? activeHref === href ||
+                activeHref === subrouteHref ||
+                activeHref.startsWith(`${subrouteHref}/`)
+              : activeHref === href;
             return (
               <Link
                 key={tab.key}

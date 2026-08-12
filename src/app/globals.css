@@ -2,15 +2,33 @@
 @import "@xyflow/react/dist/style.css" layer(xyflow);
 
 :root {
-  /* Cool neutral + brand blue (0090E3) - he mau "product SaaS" trung tinh,
-     xam co anh hoi xanh thay vi xam am nau nhu ban truoc. */
-  --background: #ffffff;
-  --foreground: #1b1f23;
-  --active: #0090e3;
+  /* He semantic token day du - light "Cloud" / dark "Nebula" (xem khoi
+     @media ben duoi). GIU NGUYEN TEN token cu (--ink, --surface, --border...)
+     de moi component dang dung Tailwind class (bg-surface, text-ink-muted...)
+     tu dong nhan gia tri moi, khong can sua tung file. Cac token MOI (chua
+     ton tai truoc) duoc them cuoi khoi, danh cho component se lam sau. */
+  --background: #f7f9fc;
+  --background-secondary: #f1f5f9;
+  --foreground: #172033;
+  --active: var(--primary);
 
-  --primary: #0090e3;
-  --primary-hover: #007fd1;
-  --primary-dark: #006bb0;
+  --primary: #0891b2;
+  --primary-hover: #0e7490;
+  --primary-dark: #155e75;
+  --primary-soft: #ecfeff;
+  /* Mau chu/icon DAT TREN 1 nen to mau --primary (nut, pill active) - can
+     doi theo theme vi primary sang toi khac nhau giua 2 theme. */
+  --on-primary: #ffffff;
+
+  --secondary: #2563eb;
+  --secondary-hover: #1d4ed8;
+
+  /* Rieng cho AI/knowledge-graph/goi y thong minh - KHAC --community-accent
+     (thuong hieu khu vuc Community, gia tri gan giong nhung co chu dich
+     rieng, xem comment o duoi). */
+  --knowledge: #7c3aed;
+  --knowledge-hover: #6d28d9;
+  --knowledge-soft: #f5f3ff;
 
   /* Tim - RIENG cho khu vuc Community/"Đi cùng mọi người" (dong bo voi
      SERIES_ACCENT trong series-style.ts, vi trang Community duoc dan toi tu
@@ -22,56 +40,77 @@
 
   --overlay: rgba(17, 24, 39, 0.45);
   --surface: #ffffff;
-  --surface-muted: #fafbfc;
-  --surface-header: #fcfbff;
-  --hover-bg: #f3f6f8;
-  --press-bg: #eef2f5;
-  --active-bg: #eaf7ff;
-  --active-bg-strong: #d8f0ff;
-  --active-border: #b6e3ff;
+  --surface-raised: #ffffff;
+  --surface-muted: #f1f5f9;
+  --surface-header: color-mix(in srgb, var(--background) 86%, transparent);
+  --hover-bg: #f4f8fc;
+  --press-bg: #eaf5ff;
+  --active-bg: #eaf5ff;
+  --active-bg-strong: color-mix(in srgb, var(--active-bg), var(--primary) 18%);
+  --active-border: color-mix(in srgb, var(--primary) 35%, transparent);
 
-  --ink: black;
-  --ink-muted: #59636e;
-  --ink-faint: #7f8b96;
-  --ink-disabled: #c6cdd5;
+  --ink: #172033;
+  --ink-muted: #53647a;
+  --ink-faint: #7d8ca0;
+  --ink-disabled: #b4c0ce;
 
-  --border: #e3e8ee;
-  --search-border: #e3e8ee;
-  --hover-border: #cbd5df;
-  --focus-border: #0090e3;
-  --tree-line: #edf1f5;
+  --border: #dce4ee;
+  --border-subtle: #eaf0f6;
+  --border-strong: #b9c8d8;
+  --search-border: var(--border-strong);
+  --hover-border: var(--border-strong);
+  --focus-border: var(--primary);
+  --tree-line: var(--border-subtle);
 
-  --icon: #59636e;
-  --icon-hover: #1b1f23;
-  --icon-active: #0090e3;
+  --icon: var(--ink-muted);
+  --icon-hover: var(--ink);
+  --icon-active: var(--primary);
 
   --shadow-panel-base: 0 20px 48px rgba(16, 24, 40, 0.12);
   --shadow-dropdown-base: 0 8px 24px rgba(16, 24, 40, 0.08);
-  --shadow-focus-base: 0 0 0 3px rgba(0, 144, 227, 0.2);
+  --shadow-focus-base: 0 0 0 3px
+    color-mix(in srgb, var(--primary) 20%, transparent);
 
-  --success: #28a745;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --notification: #ef4444;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #e11d48;
+  --notification: var(--danger);
 
   /* Nut/chip dang "selected" tone brand (Note trong PostComposer khi active) */
-  --outline-bg: #eaf7ff;
-  --outline-border: #b6e3ff;
-  --outline-hover: #d8f0ff;
+  --outline-bg: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  --outline-border: color-mix(in srgb, var(--primary) 35%, transparent);
+  --outline-hover: color-mix(in srgb, var(--primary) 18%, var(--surface));
 
   /* Nut Follow - vien brand tren nen trang, fill nhe khi hover */
-  --follow-bg: #ffffff;
-  --follow-border: #b6e3ff;
-  --follow-hover: #eaf7ff;
+  --follow-bg: var(--surface);
+  --follow-border: color-mix(in srgb, var(--primary) 35%, transparent);
+  --follow-hover: color-mix(in srgb, var(--primary) 10%, var(--surface));
 
   /* Nut Primary (Post) - dung thang mau brand solid, khong tach rieng nua */
   --button-primary-bg: var(--primary);
   --button-primary-hover: var(--primary-hover);
 
   /* Tag/chip - Badge Gray trung tinh */
-  --tag-bg: #f6f8fa;
-  --tag-border: #edf1f5;
-  --tag-text: #59636e;
+  --tag-bg: var(--background-secondary);
+  --tag-border: var(--border-subtle);
+  --tag-text: var(--ink-faint);
+
+  /* Token phu - divider/link/skeleton/tooltip/code/quote/bookmark/like -
+     dung chung cho moi UI can nhung khai niem nay ve sau, khong phai component
+     nao cung dung ngay. */
+  --divider: var(--border-subtle);
+  --selection: #38bdf8;
+  --link: #2563eb;
+  --link-hover: #1d4ed8;
+  --skeleton: var(--background-secondary);
+  --skeleton-highlight: var(--hover-bg);
+  --tooltip-bg: #172033;
+  --tooltip-text: #f7f9fc;
+  --code-bg: var(--background-secondary);
+  --code-border: var(--border);
+  --quote: var(--knowledge);
+  --bookmark: var(--warning);
+  --like: var(--danger);
 
   /* Cac slot duoc goi ten tuong minh, alias cua token o tren */
   --feed-background: var(--background);
@@ -84,6 +123,12 @@
      cua container = content-width + 2*padding nay, nen vung noi dung nhin
      thay luon giu dung content-width du padding doi theo man hinh. */
   --layout-padding: 24px;
+
+  /* Chieu cao that cua TopHeaderBar (xem components/shell/top-header-bar.tsx,
+     class h-[var(--header-height)]) - tach thanh bien de noi nao can tinh
+     "phan con lai duoi header" (vd ProfileShell luc 1 tab con chiem full man
+     hinh) tham chieu dung 1 nguon, khong bi lech neu doi chieu cao header. */
+  --header-height: 58px;
 }
 
 @media (min-width: 1024px) {
@@ -113,6 +158,15 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-dark: var(--primary-dark);
   --color-primary-active: var(--primary-dark);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+
+  --color-knowledge: var(--knowledge);
+  --color-knowledge-hover: var(--knowledge-hover);
+  --color-knowledge-soft: var(--knowledge-soft);
 
   --color-community-accent: var(--community-accent);
   --color-community-accent-hover: var(--community-accent-hover);
@@ -120,8 +174,10 @@
 
   --color-overlay: var(--overlay);
   --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --color-surface-muted: var(--surface-muted);
   --color-surface-header: var(--surface-header);
+  --color-background-secondary: var(--background-secondary);
   --color-hover-bg: var(--hover-bg);
   --color-press-bg: var(--press-bg);
   --color-active-bg: var(--active-bg);
@@ -134,6 +190,8 @@
   --color-ink-disabled: var(--ink-disabled);
 
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
   --color-search-border: var(--search-border);
   --color-hover-border: var(--hover-border);
   --color-focus-border: var(--focus-border);
@@ -167,6 +225,20 @@
   --color-tag-border: var(--tag-border);
   --color-tag-text: var(--tag-text);
 
+  --color-divider: var(--divider);
+  --color-selection: var(--selection);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+  --color-skeleton: var(--skeleton);
+  --color-skeleton-highlight: var(--skeleton-highlight);
+  --color-tooltip-bg: var(--tooltip-bg);
+  --color-tooltip-text: var(--tooltip-text);
+  --color-code-bg: var(--code-bg);
+  --color-code-border: var(--code-border);
+  --color-quote: var(--quote);
+  --color-bookmark: var(--bookmark);
+  --color-like: var(--like);
+
   --color-feed-background: var(--feed-background);
   --color-sidebar-background: var(--sidebar-background);
   --color-header-background: var(--header-background);
@@ -175,66 +247,64 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Dark theme rieng - theo dung concept trang tailwindcss.com: nen den-slate
-       sau (slate-950), card slate-900, accent sky-blue (brand cua Tailwind)
-       thay vi xanh duong brand rieng cua light mode. Chi override trong khoi
-       dark nay - light mode khong doi. */
-    --primary: #0ea5e9;
-    --primary-hover: #38bdf8;
-    --primary-dark: #0284c7;
+    /* Dark theme "Nebula" - nen navy sau + accent cyan (#22D3EE), dong bo
+       voi bang mau day du 12 muc da chot (brand/semantic/category). Chi
+       override trong khoi dark nay - light mode ("Cloud") khong doi. */
+    --background: #050914;
+    --background-secondary: #07101c;
+    --foreground: #e7edf8;
 
-    --background: #020c16;
-    --foreground: #f1f5f9;
+    --primary: #22d3ee;
+    --primary-hover: #67e8f9;
+    --primary-dark: #0891b2;
+    --primary-soft: #083344;
+    --on-primary: #04121f;
 
-    --overlay: rgba(0, 0, 0, 0.8);
-    /* Nen da gan den tuyet doi (--background) nen surface/surface-muted chi
-       nhich len rat nhe - giu cam giac "flat", dong bo mau nhu tailwindcss.com
-       (khong dung card sang han len nhu 1 khoi rieng biet), border mong la
-       thu tach lop chinh thay vi chenh mau lon. */
-    --surface: #070b14;
-    --surface-muted: #10151f;
-    --surface-header: #010208;
-    --hover-bg: rgba(255, 255, 255, 0.05);
-    --press-bg: rgba(255, 255, 255, 0.08);
-    --active-bg: rgba(14, 165, 233, 0.14);
-    --active-bg-strong: rgba(14, 165, 233, 0.22);
-    --active-border: rgba(14, 165, 233, 0.4);
+    --secondary: #3b82f6;
+    --secondary-hover: #60a5fa;
 
-    --ink: #f1f5f9;
-    --ink-muted: #94a3b8;
-    --ink-faint: #64748b;
-    --ink-disabled: #475569;
+    --knowledge: #8b5cf6;
+    --knowledge-hover: #a78bfa;
+    --knowledge-soft: #1e1b3a;
 
-    --border: #1c2333;
-    --search-border: #232b3d;
-    --hover-border: #334155;
-    --focus-border: rgba(14, 165, 233, 0.4);
-    --tree-line: #232b3d;
+    --overlay: rgba(0, 0, 0, 0.6);
+    --surface: #0a1322;
+    --surface-raised: #0d1929;
+    --surface-muted: #07101c;
+    --hover-bg: #101f32;
+    --press-bg: #122a43;
+    --active-bg: #122a43;
 
-    --icon: #94a3b8;
-    --icon-hover: #e2e8f0;
-    --icon-active: #38bdf8;
+    --ink: #e7edf8;
+    --ink-muted: #9aaac0;
+    --ink-faint: #66788f;
+    --ink-disabled: #3f5065;
+
+    --border: #18283c;
+    --border-subtle: #112033;
+    --border-strong: #29435e;
 
     --shadow-panel-base: 0 24px 80px rgba(0, 0, 0, 0.7);
     --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.6);
-    --shadow-focus-base: 0 0 0 3px rgba(14, 165, 233, 0.28);
 
-    --success: #34d399;
-    --warning: #fbbf24;
-    --danger: #f87171;
-    --notification: #f87171;
-
-    --outline-bg: rgba(14, 165, 233, 0.12);
-    --outline-border: rgba(14, 165, 233, 0.4);
-    --outline-hover: rgba(14, 165, 233, 0.18);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #f43f5e;
 
     --follow-bg: rgba(255, 255, 255, 0.02);
-    --follow-border: rgba(14, 165, 233, 0.35);
-    --follow-hover: rgba(14, 165, 233, 0.12);
 
     --tag-bg: rgba(255, 255, 255, 0.05);
     --tag-border: rgba(255, 255, 255, 0.08);
-    --tag-text: #94a3b8;
+
+    --selection: #38bdf8;
+    --link: #38bdf8;
+    --link-hover: #67e8f9;
+    --skeleton: #122033;
+    --skeleton-highlight: #1b2d43;
+    --tooltip-bg: #101a29;
+    --tooltip-text: #e7edf8;
+    --code-bg: #07111e;
+    --code-border: #1a3047;
   }
 }
 
@@ -456,5 +526,89 @@ body {
   .community-wallpaper {
     background-image: none;
     background-color: var(--background);
+  }
+}
+
+/* ControlCenterReactor (toolbar goc phai man Workspace, xem
+   components/ui/control-center-reactor.tsx) - vong quay HUD + luoi radar,
+   dung keyframe CSS thuan (khong phai framer-motion) vi day la hieu ung lap
+   vo han don gian, khong can toolkit dieu phoi. Rut gon tu source rieng
+   "control-center-reactor-final" - chi giu cac class component THAT SU
+   DUNG. */
+@keyframes reactor-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes reactor-spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+.reactor-spin {
+  animation: reactor-spin 14s linear infinite;
+}
+.reactor-spin-reverse {
+  animation: reactor-spin-reverse 20s linear infinite;
+}
+@keyframes reactor-scan {
+  0% {
+    transform: rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  42% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: rotate(360deg);
+    opacity: 0;
+  }
+}
+.reactor-scan {
+  animation: reactor-scan 4.5s linear infinite;
+}
+.reactor-grid {
+  background-image:
+    linear-gradient(rgba(90, 120, 180, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 120, 180, 0.055) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* Thanh sang quet ngang tren dinh MechanicalPanel (dropdown header cua
+   TopHeaderBar) - xem header-command-panels/MechanicalPanel.tsx. */
+@keyframes header-panel-scan {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.12;
+  }
+  100% {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+.scan {
+  animation: header-panel-scan 2.8s ease-in-out infinite;
+}
+@media (max-width: 700px) {
+  .reactor-root {
+    right: 12px !important;
+    bottom: 12px !important;
+    transform: scale(0.78);
+    transform-origin: bottom right;
   }
 }

@@ -31,7 +31,7 @@ type PostCommon = {
   author: Author;
   // ISO timestamp that (Post.createdAt tu backend) - thay cho chuoi
   // "timeAgo" dung san truoc day. PostCard.tsx tu tinh thanh "2 giờ trước"
-  // qua formatRelativeTime() (src/lib/career-tree/format-time.ts).
+  // qua formatRelativeTime() (src/lib/format-time.ts).
   createdAt: string;
   stats: { likes: number; comments: number; reposts: number };
   // liked/saved: CHUA co bang Like/Save that o backend (xem quyet dinh "seed
@@ -168,4 +168,16 @@ export type Post =
       title: string;
       when: string;
       location?: string;
+    })
+  // He thong tu sinh khi tac gia bam "Đăng lên bảng tin" tren 1 bai viet
+  // Workspace (xem PostView.tsx + document.service.ts's shareToFeed) -
+  // KHONG the tu soan qua PostComposer.tsx. `authorUsername`+`slug` de link
+  // ve dung trang bai viet day du (/u/[authorUsername]/workspaces/[slug]).
+  | (PostCommon & {
+      kind: "workspace-post";
+      title: string;
+      summary?: string;
+      coverImageUrl?: string;
+      authorUsername: string;
+      slug: string;
     });

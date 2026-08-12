@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import TopHeaderBar from "@/components/career-tree/top-header-bar";
-import CurrentUser from "@/components/career-tree/current-user";
-import MainContentArea from "@/components/career-tree/main-content-area";
+import TopHeaderBar from "@/components/shell/top-header-bar";
+import CurrentUser from "@/components/shell/current-user";
+import MainContentArea from "@/components/shell/main-content-area";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 
 // Khong con async/await auth() o day - CurrentUser (Server Component rieng,

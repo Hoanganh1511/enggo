@@ -6,7 +6,7 @@ import {
   getPostImageUrl,
 } from "@/components/discover/home-feed/post-display";
 import { formatCompact } from "@/lib/format-number";
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
 
 // Dau trang chi tiet bai viet: anh bia (neu kind co anh - image/gallery/
 // video/coverImage, xem getPostImageUrl; kind khong co anh nhu "text" thi an

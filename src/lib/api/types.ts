@@ -1,132 +1,3 @@
-export type NodeKind = "BRANCH" | "TOPIC";
-export type Difficulty = "EASY" | "MEDIUM" | "HARD";
-
-export type ApiTier = {
-  id: string;
-  categoryId: string;
-  label: string;
-  sublabel: string;
-  orderIndex: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-// Skill Tree: tang phan cap giua Workspace va Tier - 1 Workspace co nhieu
-// Category (vd "Frontend", "Backend"), MOI Category co bo Tier rieng cua no.
-export type ApiCategory = {
-  id: string;
-  workspaceId: string;
-  name: string;
-  description: string | null;
-  icon: string | null;
-  color: string | null;
-  orderIndex: number;
-  tiers: ApiTier[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ApiNode = {
-  id: string;
-  workspaceId: string;
-  parentId: string | null;
-  goal: string | null;
-  title: string;
-  kind: NodeKind;
-  category: string | null;
-  difficulty: Difficulty | null;
-  estimatedTime: string | null;
-  prerequisites: string[];
-  learningOutcomes: string[];
-  depth: number;
-  orderIndex: number;
-  x: number | null;
-  y: number | null;
-  hiddenFromShare: boolean;
-  isCollapsed: boolean;
-  content: Record<string, unknown> | null;
-  // Skill Tree: null khi node chua duoc dat vao tier nao (vd node cu cua
-  // Career Tree canvas) - "tier" chi tra ve khi backend include quan he nay
-  // (xem findTreeForWorkspace), khong phai luon co mat.
-  tierId: string | null;
-  tier?: ApiTier | null;
-  createdAt: string;
-  updatedAt: string;
-  cardCount: number;
-  practiceCount: number;
-  resourceCount: number;
-  openIssueCount: number;
-  lastActivity: string | null;
-  streak: {
-    current: number;
-    longest: number;
-    last7: boolean[];
-  };
-  isPinned: boolean;
-  tags: string[];
-};
-
-// Workspace tree list responses omit `content` (Tiptap JSON can be large and is
-// never rendered outside the node's own detail modal) — this is the shape held
-// in memory for the whole tree at all times. Use `ApiNode` (with `content`)
-// only for a single node fetched on demand, e.g. via `getNode`.
-export type ApiNodeListItem = Omit<ApiNode, "content">;
-
-export type CardKind = "NOTE" | "PRACTICE";
-
-export type ApiCard = {
-  id: string;
-  nodeId: string;
-  content: Record<string, unknown>;
-  kind: CardKind;
-  orderIndex: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ApiWorkspace = {
-  id: string;
-  name: string;
-  shareToken: string | null;
-  shareMode: "PRIVATE" | "STRUCTURE_ONLY" | "FULL";
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ResourceType = "ARTICLE" | "VIDEO" | "DOC" | "COURSE" | "BOOK";
-
-export type ApiResource = {
-  id: string;
-  nodeId: string;
-  type: ResourceType;
-  title: string;
-  url: string;
-  orderIndex: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ApiIssue = {
-  id: string;
-  nodeId: string;
-  question: string;
-  resolved: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type NotificationType = "SYSTEM" | "CONNECTION";
-
-export type ApiNotification = {
-  id: string;
-  workspaceId: string;
-  type: NotificationType;
-  title: string;
-  body: string | null;
-  read: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
 export type CommunityMemberRoleApi = "OWNER" | "ADMIN" | "MENTOR" | "MEMBER";
 export type CommunityMemberStatusApi = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -269,8 +140,57 @@ export type ApiComment = {
   createdAt: string;
 };
 
-// "Tài liệu" - bài dài do nguoi dung soan bang editor lon, thuoc ve tac gia,
-// hien trong tab "Tài liệu" cua profile. `content` la Tiptap JSON.
+// Workspace - vung kien thuc top-level nguoi dung tu dat ten (vd "Học tập",
+// "Film"), hien trong tab "Workspace" cua profile. Chua nhieu KnowledgeGroup,
+// moi group chua nhieu Document ("bài viết" - ten model backend van la
+// Document, chi doi ten hien thi o UI).
+export type ApiWorkspace = {
+  id: string;
+  ownerId: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  color: string | null;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiKnowledgeGroupVisibility = "PUBLIC" | "PRIVATE";
+export type ApiKnowledgeGroupCollabStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type ApiKnowledgeGroupCollabRequest = {
+  id: string;
+  status: ApiKnowledgeGroupCollabStatus;
+  joinReason: string | null;
+  createdAt: string;
+  user: { username: string; name: string; avatarUrl: string };
+};
+
+// visibility CHI gate quyen XEM - quyen GHI (tao bai) luon la chu workspace +
+// collaborator APPROVED, bat ke visibility. `pendingRequests` chi khac rong
+// khi viewer la chu workspace (xem KnowledgeGroupService.findForWorkspace).
+export type ApiKnowledgeGroup = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  description: string | null;
+  visibility: ApiKnowledgeGroupVisibility;
+  postCount: number;
+  orderIndex: number;
+  viewerCanWrite: boolean;
+  pendingRequests: ApiKnowledgeGroupCollabRequest[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiWorkspaceWithGroups = ApiWorkspace & {
+  groups: ApiKnowledgeGroup[];
+};
+
+// "Bài viết" trong 1 Knowledge Group - do nguoi dung soan bang editor lon,
+// `content` la Tiptap JSON. Ten model backend van la Document (xem comment
+// trong schema.prisma), UI goi la "bài viết".
 export type ApiDocumentAuthor = {
   username: string;
   name: string;
@@ -280,6 +200,7 @@ export type ApiDocumentAuthor = {
 
 export type ApiDocument = {
   id: string;
+  knowledgeGroupId: string;
   slug: string;
   title: string;
   summary: string | null;

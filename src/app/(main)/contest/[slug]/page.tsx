@@ -12,7 +12,7 @@ import { NoteCard } from "@/components/discover/home-feed/NoteCard";
 import { ContestTabs } from "@/components/discover/contest/ContestTabs";
 import { RelatedPostsPanel } from "@/components/discover/contest/RelatedPostsPanel";
 import { CONTEST_ACCENT } from "@/components/discover/contest/contest-style";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/utils";
 
 const TABS: ContestTab[] = ["popular", "trending", "latest"];
 

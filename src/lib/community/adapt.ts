@@ -1,4 +1,4 @@
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
 import type {
   ApiChannel,
   ApiCommunity,

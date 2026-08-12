@@ -1,6 +1,6 @@
 import { CalendarDays, MapPin, TrendingUp } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/utils";
 import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
 
 type TutorialPost = Extract<Post, { kind: "tutorial" }>;

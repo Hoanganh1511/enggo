@@ -19,6 +19,11 @@ import {
 // (page.tsx con). State follow (following/followerCount/pending) so huu O
 // DAY vi ProfileHeader (nut bam) va ProfileNav (hien so) deu can dung chung,
 // khong duoc moi noi tu quan ly rieng se bi lech nhau.
+//
+// Tab "Workspace" KHONG con la 1 route con o day nua (da chuyen sang
+// /workspace/[username], route doc lap - xem WorkspaceSwitcher.tsx), nen
+// ProfileShell luon hien cover/user-info/ProfileNav binh thuong, khong can
+// co che "focus" (an di) nhu truoc.
 const ProfileShell = ({
   profile,
   children,
@@ -30,7 +35,6 @@ const ProfileShell = ({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  //
   const [following, setFollowing] = useState(profile.isFollowing);
   const [followerCount, setFollowerCount] = useState(profile.followerCount);
   const [pending, setPending] = useState(false);

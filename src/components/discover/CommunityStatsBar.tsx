@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { LayoutGrid, Users, UserCheck, Star, Quote } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
+import { hexToRgba } from "@/lib/utils";
 
 const COMMUNITY_ACCENT = "#7c3aed"; // == --community-accent trong globals.css
 

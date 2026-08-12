@@ -24,6 +24,7 @@ import {
   FlaskConical,
   CalendarDays,
   ClipboardCheck,
+  FolderOpen,
 } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
 
@@ -89,6 +90,7 @@ export const POST_KIND_META: Record<Post["kind"], PostKindMeta> = {
   "knowledge-block": { icon: Layers, accent: "#38bdf8", label: "Knowledge", contentType: "project" },
   experiment: { icon: FlaskConical, accent: "#f97316", label: "Experiment", contentType: "project" },
 
+  "workspace-post": { icon: FolderOpen, accent: "#7c3aed", label: "Workspace", contentType: "resource" },
   note: { icon: StickyNote, accent: "#eab308", label: "Note", contentType: "resource" },
   file: { icon: FileText, accent: "#64748b", label: "File", contentType: "resource" },
   link: { icon: Link2, accent: "#38bdf8", label: "Link", contentType: "resource" },

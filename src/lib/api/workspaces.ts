@@ -1,17 +1,36 @@
 import { apiFetch } from "./client";
-import type { ApiWorkspace } from "./types";
+import type { ApiWorkspace, ApiWorkspaceWithGroups } from "./types";
 
-export function getWorkspace(workspaceId: string): Promise<ApiWorkspace> {
-  return apiFetch<ApiWorkspace>(`/workspaces/${workspaceId}`);
+export type WorkspaceInput = {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+};
+
+export function listUserWorkspaces(
+  username: string,
+): Promise<ApiWorkspaceWithGroups[]> {
+  return apiFetch<ApiWorkspaceWithGroups[]>(`/users/${username}/workspaces`);
 }
 
-export function listWorkspaces(): Promise<ApiWorkspace[]> {
-  return apiFetch<ApiWorkspace[]>(`/workspaces`);
-}
-
-export function createWorkspace(name: string): Promise<ApiWorkspace> {
+export function createWorkspace(dto: WorkspaceInput): Promise<ApiWorkspace> {
   return apiFetch<ApiWorkspace>(`/workspaces`, {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(dto),
   });
+}
+
+export function updateWorkspace(
+  id: string,
+  dto: Partial<WorkspaceInput>,
+): Promise<ApiWorkspace> {
+  return apiFetch<ApiWorkspace>(`/workspaces/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(dto),
+  });
+}
+
+export function deleteWorkspace(id: string): Promise<void> {
+  return apiFetch<void>(`/workspaces/${id}`, { method: "DELETE" });
 }

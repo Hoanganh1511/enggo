@@ -3,7 +3,7 @@ import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import type { Post } from "@/content/home-feed-mock";
 import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
 import type {
   AchievementPost,
   MilestonePost,

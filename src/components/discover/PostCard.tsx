@@ -14,8 +14,8 @@ import { PostBody } from "./post-bodies";
 import { ActionBar } from "./action-bar";
 import { TopicBreadcrumb } from "./TopicBreadcrumb";
 import { POST_KIND_META } from "@/lib/discover/post-kind-meta";
-import { hexToRgba } from "@/lib/skill-tree/status-style";
-import { formatRelativeTime } from "@/lib/career-tree/format-time";
+import { hexToRgba } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/format-time";
 
 type PostCardProps = {
   post: Post;
