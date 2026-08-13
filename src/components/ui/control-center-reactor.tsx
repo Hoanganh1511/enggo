@@ -187,13 +187,16 @@ export function ControlCenterReactor({
         className="pointer-events-none absolute right-8 -bottom-8 h-[230px] w-[230px] rounded-full bg-cyan-400/10 blur-[75px]"
       />
 
-      {/* RADIAL HUD */}
+      {/* RADIAL HUD - AN HOAN TOAN luc dong (opacity 0, khong phai 0.55 nhu
+          truoc) vi vong tron 260px nay de lo ra ngoai vung nut bam, che len
+          noi dung trang phia sau (vd text trong article) ngay ca khi Control
+          Center dang dong. */}
       <motion.div
         animate={{
-          opacity: isDeployed ? 1 : 0.55,
-          scale: isDeployed ? 1 : 0.78,
+          opacity: isDeployed ? 1 : 0,
+          scale: isDeployed ? 1 : 0.6,
         }}
-        transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="pointer-events-none absolute right-0 bottom-0 h-[260px] w-[260px]"
       >
         <div className="absolute inset-0 rounded-full border border-violet-400/25" />
@@ -403,7 +406,7 @@ export function ControlCenterReactor({
         <div className="flex items-center justify-end gap-2">
           <span
             className={[
-              "h-1.5 w-1.5 rounded-full",
+              "h-2 w-2 rounded-full",
               state === "online"
                 ? "bg-cyan-300 shadow-[0_0_9px_#22d3ee]"
                 : state === "deploying"
@@ -411,12 +414,12 @@ export function ControlCenterReactor({
                   : "bg-violet-300/50",
             ].join(" ")}
           />
-          <span className="text-[10px] font-semibold tracking-[0.16em] text-violet-300">
+          <span className="text-[13px] font-semibold tracking-[0.14em] text-violet-300">
             {label}
           </span>
         </div>
 
-        <div className="mt-0.5 text-[8px] text-slate-500">
+        <div className="mt-1 text-[11px] text-slate-500">
           {state === "deploying"
             ? "Khởi động hệ thống..."
             : state === "online"

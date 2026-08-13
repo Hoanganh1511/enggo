@@ -612,3 +612,601 @@ body {
     transform-origin: bottom right;
   }
 }
+
+.tech-grid {
+  background-image:
+    linear-gradient(rgba(56, 103, 141, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 103, 141, 0.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ArticleFocusOverlay (WorkspaceDetail.tsx, "focus mode" toan man hinh luc mo
+   1 bai viet) - rut ra tu source rieng "treecareer-knowledge-ironman-v6.3".
+   Giu nguyen ten class cua source de doi chieu de dang. */
+.pre-focus-blur {
+  transition:
+    filter 650ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 650ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 650ms;
+}
+.pre-focus-blur.is-focused {
+  filter: blur(10px) brightness(0.5) saturate(0.7);
+  transform: scale(1.012);
+  pointer-events: none;
+}
+
+.focus-glass {
+  background:
+    linear-gradient(135deg, rgba(7, 30, 47, 0.95), rgba(1, 10, 20, 0.91)),
+    rgba(2, 13, 23, 0.9);
+  border: 1px solid rgba(73, 211, 255, 0.3);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.018),
+    inset 0 0 36px rgba(30, 190, 255, 0.018),
+    0 0 42px rgba(0, 201, 255, 0.055),
+    0 28px 80px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(22px) saturate(135%);
+  -webkit-backdrop-filter: blur(22px) saturate(135%);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+.focus-glass > * {
+  transform-style: preserve-3d;
+}
+/* V6.3: Framer Motion so huu toan bo hinh hoc panel luc trien khai - CSS
+   transition chen vao se tao ra 1 nhip "snap" thu 2. */
+.focus-glass.motion-panel {
+  transition: none !important;
+}
+
+.focus-tech-cut {
+  clip-path: polygon(
+    0 18px,
+    18px 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    18px 100%,
+    0 calc(100% - 18px)
+  );
+}
+.focus-tech-cut::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgba(86, 224, 255, 0.13);
+  clip-path: polygon(
+    0 18px,
+    18px 0,
+    calc(100% - 18px) 0,
+    100% 18px,
+    100% calc(100% - 18px),
+    calc(100% - 18px) 100%,
+    18px 100%,
+    0 calc(100% - 18px)
+  );
+}
+
+.focus-panel-glow-left,
+.focus-panel-glow-right {
+  position: absolute;
+  z-index: 4;
+  top: 34px;
+  bottom: 34px;
+  width: 2px;
+  pointer-events: none;
+}
+.focus-panel-glow-left {
+  left: 0;
+  background: linear-gradient(transparent, rgba(64, 224, 255, 0.95), transparent);
+  box-shadow: 0 0 15px rgba(64, 224, 255, 0.7);
+}
+.focus-panel-glow-right {
+  right: 0;
+  background: linear-gradient(transparent, rgba(64, 224, 255, 0.95), transparent);
+  box-shadow: 0 0 15px rgba(64, 224, 255, 0.7);
+}
+
+.focus-panel-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 90px;
+  top: -110px;
+  background: linear-gradient(180deg, transparent, rgba(78, 224, 255, 0.055), transparent);
+  animation: focusPanelScan 4.2s linear infinite;
+  pointer-events: none;
+}
+@keyframes focusPanelScan {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(900%);
+  }
+}
+
+.focus-neon-line {
+  background: linear-gradient(90deg, transparent, rgba(65, 224, 255, 0.85), transparent);
+  box-shadow: 0 0 12px rgba(65, 224, 255, 0.6);
+}
+
+.focus-panel-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.focus-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(64, 218, 255, 0.18);
+  border-radius: 99px;
+}
+.focus-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(64, 218, 255, 0.18) transparent;
+  overscroll-behavior: contain;
+}
+
+.focus-orbit-spin {
+  animation: focusOrbitSpin 18s linear infinite;
+}
+.focus-orbit-spin-reverse {
+  animation: focusOrbitSpin 12s linear infinite reverse;
+}
+@keyframes focusOrbitSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.focus-energy-pulse {
+  animation: focusEnergyPulse 1.45s ease-in-out infinite;
+}
+@keyframes focusEnergyPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.focus-hud-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.focus-mechanical-stage {
+  perspective: 1450px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+
+.focus-panel-depth-edge {
+  position: absolute;
+  inset: 5px;
+  z-index: 16;
+  pointer-events: none;
+  border: 1px solid rgba(92, 226, 255, 0.07);
+  box-shadow:
+    inset 0 0 24px rgba(50, 210, 255, 0.025),
+    0 0 18px rgba(50, 210, 255, 0.04);
+}
+
+.focus-mechanical-dock {
+  z-index: 4;
+  pointer-events: none;
+  isolation: isolate;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
+  will-change: transform;
+}
+.focus-mechanical-dock::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border-top: 1px solid rgba(72, 224, 255, 0.55);
+  border-bottom: 1px solid rgba(72, 224, 255, 0.18);
+  background: linear-gradient(90deg, rgba(4, 18, 28, 0.95), rgba(34, 170, 210, 0.28), rgba(4, 18, 28, 0.95));
+  box-shadow: 0 0 12px rgba(45, 220, 255, 0.16);
+}
+
+.focus-glass button {
+  cursor: pointer;
+}
+.focus-glass button:focus-visible {
+  outline: 1px solid rgba(100, 230, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* GroupListItem dang active (WorkspaceDetail.tsx, sidebar nhom kien thuc) -
+   nen "loang" tinh cu chi la 1 linear-gradient co dinh, them 2 khoi plasma
+   (radial-gradient mau var(--primary), lam mo + troi cham) chay ben duoi
+   noi dung de tao cam giac "dung dich phat sang" thay vi mang mau tinh. */
+.group-item-plasma {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.group-item-plasma::before,
+.group-item-plasma::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(13px);
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--primary) 60%, transparent),
+    transparent 72%
+  );
+}
+.group-item-plasma::before {
+  width: 55%;
+  height: 160%;
+  top: -30%;
+  left: -8%;
+  opacity: 0.55;
+  animation: plasma-drift-a 6.5s ease-in-out infinite;
+}
+.group-item-plasma::after {
+  width: 42%;
+  height: 150%;
+  top: -25%;
+  right: -6%;
+  opacity: 0.4;
+  animation: plasma-drift-b 8s ease-in-out infinite;
+}
+.group-item-plasma > * {
+  position: relative;
+  z-index: 1;
+}
+@keyframes plasma-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(26%, 12%) scale(1.2);
+  }
+  66% {
+    transform: translate(-8%, 18%) scale(0.88);
+  }
+}
+@keyframes plasma-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-20%, -14%) scale(1.25);
+  }
+}
+
+/* WorkspaceGatewayOverlay (chuyen canh sci-fi/JARVIS luc bam vao 1
+   workspace, xem components/workspaces/WorkspaceGatewayOverlay.tsx) - rut ra
+   tu source rieng "workspace-gateway". Chi giu cac class THAT SU dung mau
+   styling rieng (bo .workspace-card/.folder-icon cua source - workspace
+   card cua enggo van dung Tailwind + token nhu cac the khac trong app). */
+.workspace-gateway {
+  position: relative;
+  perspective: 1200px;
+}
+
+.door-frame {
+  position: relative;
+  width: min(820px, calc(100vw - 36px));
+  height: min(430px, calc(100vh - 250px));
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid rgba(74, 209, 244, 0.17);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(25, 132, 170, 0.085), transparent 46%),
+    rgba(3, 11, 20, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(80, 167, 205, 0.035),
+    0 35px 110px rgba(0, 0, 0, 0.6),
+    0 0 90px rgba(14, 183, 231, 0.06);
+}
+
+.door-frame::before,
+.door-frame::after {
+  content: "";
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(89, 229, 255, 0.22) 18%,
+    rgba(89, 229, 255, 0.7) 50%,
+    rgba(89, 229, 255, 0.22) 82%,
+    transparent
+  );
+  box-shadow: 0 0 14px rgba(58, 222, 255, 0.3);
+  pointer-events: none;
+}
+
+.door-frame::after {
+  width: 42%;
+  height: 1px;
+  top: 50%;
+  background: linear-gradient(90deg, transparent, rgba(75, 222, 255, 0.22), transparent);
+  box-shadow: 0 0 15px rgba(75, 222, 255, 0.18);
+}
+
+.door-center-line {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  transform-origin: center;
+  background: linear-gradient(transparent, #64e9ff 47%, #64e9ff 53%, transparent);
+  box-shadow: 0 0 18px rgba(73, 224, 255, 0.65);
+}
+
+.door-panel {
+  position: absolute;
+  z-index: 8;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(47, 96, 123, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(47, 96, 123, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(5, 20, 31, 0.96), rgba(3, 11, 20, 0.98));
+  background-size:
+    30px 30px,
+    30px 30px,
+    auto;
+}
+
+.door-panel-top {
+  top: 0;
+  transform-origin: center bottom;
+  border-bottom: 1px solid rgba(75, 217, 246, 0.16);
+}
+
+.door-panel-bottom {
+  bottom: 0;
+  transform-origin: center top;
+  border-top: 1px solid rgba(75, 217, 246, 0.16);
+}
+
+.door-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+  padding: 38px;
+  opacity: 0.38;
+}
+
+.door-grid span {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(68, 208, 238, 0.3), transparent);
+}
+
+.door-content {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  padding: 38px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(32, 147, 177, 0.055), transparent 40%),
+    rgba(1, 7, 14, 0.58);
+}
+
+.gateway-logo {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 11px;
+  color: #69e7ff;
+  background: rgba(54, 210, 242, 0.075);
+  border: 1px solid rgba(81, 220, 247, 0.16);
+  box-shadow: 0 0 30px rgba(62, 218, 244, 0.08);
+}
+
+.branch-card {
+  min-width: 0;
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.018);
+  border: 1px solid rgba(117, 154, 180, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.fluid-track {
+  position: relative;
+  height: 20px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(6, 22, 32, 0.98), rgba(3, 12, 21, 0.98));
+  border: 1px solid rgba(70, 209, 239, 0.28);
+  box-shadow:
+    inset 0 0 12px rgba(0, 0, 0, 0.55),
+    0 0 26px rgba(24, 190, 228, 0.06);
+}
+
+.fluid-fill {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0c8ab5 0%, #22e0f5 40%, #a6fff7 70%, #34c3ff 100%);
+  box-shadow:
+    0 0 22px rgba(78, 236, 250, 0.55),
+    0 0 46px rgba(52, 224, 239, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 0 10px rgba(210, 255, 255, 0.35);
+}
+
+.fluid-wave {
+  position: absolute;
+  top: -8px;
+  width: 70px;
+  height: 34px;
+  border-radius: 45%;
+  border: 1px solid rgba(220, 255, 255, 0.24);
+  background: rgba(202, 255, 255, 0.08);
+  filter: blur(0.2px);
+}
+
+.wave-a {
+  left: 18%;
+  animation: liquid-wave 1.5s ease-in-out infinite;
+}
+
+.wave-b {
+  left: 56%;
+  animation: liquid-wave 1.15s ease-in-out infinite reverse;
+  opacity: 0.7;
+}
+
+.fluid-bubbles i {
+  position: absolute;
+  bottom: 2px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(220, 255, 255, 0.8);
+  box-shadow: 0 0 5px rgba(220, 255, 255, 0.8);
+  animation: bubble-up 1.4s ease-in infinite;
+}
+
+.fluid-bubbles i:nth-child(1) {
+  left: 18%;
+  animation-delay: 0.1s;
+}
+.fluid-bubbles i:nth-child(2) {
+  left: 38%;
+  animation-delay: 0.5s;
+}
+.fluid-bubbles i:nth-child(3) {
+  left: 57%;
+  animation-delay: 0.25s;
+}
+.fluid-bubbles i:nth-child(4) {
+  left: 72%;
+  animation-delay: 0.8s;
+}
+.fluid-bubbles i:nth-child(5) {
+  left: 88%;
+  animation-delay: 0.35s;
+}
+
+.fluid-glow {
+  position: absolute;
+  inset: -10px 0;
+  background: linear-gradient(90deg, transparent, rgba(221, 255, 255, 0.18), transparent);
+  transform: translateX(-100%);
+  animation: liquid-sheen 1.8s linear infinite;
+}
+
+.jarvis-laser {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  transform-origin: 50% 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(51, 235, 255, 0.12) 35%,
+    #77f8ff 50%,
+    rgba(51, 235, 255, 0.12) 65%,
+    transparent
+  );
+  box-shadow:
+    0 0 8px rgba(57, 229, 255, 0.85),
+    0 0 28px rgba(57, 229, 255, 0.35),
+    0 0 70px rgba(57, 229, 255, 0.16);
+}
+
+.laser-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(134, 248, 255, 0.9);
+  box-shadow:
+    0 0 10px rgba(74, 231, 255, 0.9),
+    0 0 40px rgba(74, 231, 255, 0.5),
+    0 0 100px rgba(74, 231, 255, 0.22);
+}
+
+.laser-sweep {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(75vw, 760px);
+  height: 1px;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  transform-origin: center;
+  background: linear-gradient(90deg, transparent, rgba(74, 230, 255, 0.75), transparent);
+  box-shadow: 0 0 15px rgba(74, 230, 255, 0.55);
+}
+
+@keyframes liquid-wave {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1);
+  }
+  50% {
+    transform: translateY(5px) scaleX(1.2);
+  }
+}
+
+@keyframes bubble-up {
+  0% {
+    transform: translateY(3px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-12px);
+    opacity: 0;
+  }
+}
+
+@keyframes liquid-sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 720px) {
+  .door-content {
+    padding: 24px;
+  }
+
+  .door-frame {
+    height: 520px;
+  }
+
+  .door-content .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

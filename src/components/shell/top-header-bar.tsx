@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   Bookmark,
+  BookText,
   ChevronDown,
   CircleHelp,
   Compass,
@@ -91,6 +92,14 @@ const NAV_ITEMS: {
     matchPrefixes: [`/u/${profile.username}/posts`],
   },
   {
+    title: "Workspace",
+    icon: BookText,
+    href: `/workspace/${profile.username}`,
+    // /workspace/[username]/[workspaceId] cua nguoi KHAC cung tinh la active
+    // (dang o "khu vuc" workspace) - khac "Bai dang" chi khop dung 1 nhanh.
+    matchPrefixes: ["/workspace"],
+  },
+  {
     title: "Khám phá",
     icon: LayoutDashboard,
     children: MY_TOWN_CHILDREN,
@@ -107,7 +116,12 @@ const HEADER_COMMANDS: {
   panel: ReactNode;
 }[] = [
   { id: "saved", label: "Đã lưu", icon: Bookmark, panel: <SavedPanel /> },
-  { id: "messages", label: "Tin nhắn", icon: MessageCircle, panel: <MessagesPanel /> },
+  {
+    id: "messages",
+    label: "Tin nhắn",
+    icon: MessageCircle,
+    panel: <MessagesPanel />,
+  },
   {
     id: "notifications",
     label: "Thông báo",
@@ -128,7 +142,9 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [townOpen, setTownOpen] = useState(false);
-  const [commandPanel, setCommandPanel] = useState<HeaderCommandId | null>(null);
+  const [commandPanel, setCommandPanel] = useState<HeaderCommandId | null>(
+    null,
+  );
   const toggleCommandPanel = (id: HeaderCommandId) =>
     setCommandPanel((p) => (p === id ? null : id));
 
@@ -158,8 +174,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
         className="flex size-[42px] shrink-0 items-center justify-center rounded-[13px]"
         style={{
           color: "var(--primary)",
-          background: "linear-gradient(145deg, var(--surface-raised), var(--surface))",
-          boxShadow: "0 0 30px color-mix(in srgb, var(--primary) 15%, transparent)",
+          background:
+            "linear-gradient(145deg, var(--surface-raised), var(--surface))",
+          boxShadow:
+            "0 0 30px color-mix(in srgb, var(--primary) 15%, transparent)",
         }}
       >
         <Logo orientation="icon-only" className="size-5 shrink-0" />
@@ -180,18 +198,27 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
             const itemClass =
               "relative flex h-full shrink-0 cursor-pointer items-center gap-2 px-3.5 text-[13px] transition-colors duration-150 ease-out hover:text-ink!";
 
-            const label = <span className="hidden truncate lg:inline">{title}</span>;
+            const label = (
+              <span className="hidden truncate lg:inline">{title}</span>
+            );
 
             const underline = isActive && (
               <span
                 className="absolute right-3.5 bottom-0 left-3.5 h-[2px]"
-                style={{ background: "var(--primary)", boxShadow: "0 0 14px var(--primary)" }}
+                style={{
+                  background: "var(--primary)",
+                  boxShadow: "0 0 14px var(--primary)",
+                }}
               />
             );
 
             if (children) {
               return (
-                <PopoverRoot key={title} open={townOpen} onOpenChange={setTownOpen}>
+                <PopoverRoot
+                  key={title}
+                  open={townOpen}
+                  onOpenChange={setTownOpen}
+                >
                   <PopoverTrigger asChild>
                     <button
                       type="button"
@@ -199,9 +226,16 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                       className={itemClass}
                       style={itemStyle}
                     >
-                      <Icon strokeWidth={isActive ? 2.25 : 1.75} className="size-4.5 shrink-0" />
+                      <Icon
+                        strokeWidth={isActive ? 2.25 : 1.75}
+                        className="size-4.5 shrink-0"
+                      />
                       {label}
-                      <ChevronDown size={13} strokeWidth={1.75} className="shrink-0" />
+                      <ChevronDown
+                        size={13}
+                        strokeWidth={1.75}
+                        className="shrink-0"
+                      />
                       {underline}
                     </button>
                   </PopoverTrigger>
@@ -210,14 +244,17 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                     align="start"
                     className="z-50 w-56 rounded-lg p-1.5"
                     style={{
-                      background: "linear-gradient(145deg, var(--surface-raised), var(--surface))",
+                      background:
+                        "linear-gradient(145deg, var(--surface-raised), var(--surface))",
                       border: "1px solid var(--border-strong)",
                       boxShadow: "var(--shadow-dropdown)",
                     }}
                   >
                     {children.map((child) => {
                       const childActive = child.matchPrefixes
-                        ? child.matchPrefixes.some((p) => pathname.startsWith(p))
+                        ? child.matchPrefixes.some((p) =>
+                            pathname.startsWith(p),
+                          )
                         : !!child.href && pathname === child.href;
                       return (
                         <button
@@ -239,13 +276,22 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                               : child.href
                                 ? "var(--ink)"
                                 : "var(--ink-faint)",
-                            background: childActive ? "var(--active-bg)" : "transparent",
+                            background: childActive
+                              ? "var(--active-bg)"
+                              : "transparent",
                           }}
                         >
-                          <child.icon size={15} strokeWidth={1.75} className="shrink-0" />
+                          <child.icon
+                            size={15}
+                            strokeWidth={1.75}
+                            className="shrink-0"
+                          />
                           <span className="flex-1 truncate">{child.title}</span>
                           {!child.available && (
-                            <span className="text-[10px]" style={{ color: "var(--ink-faint)" }}>
+                            <span
+                              className="text-[10px]"
+                              style={{ color: "var(--ink-faint)" }}
+                            >
                               Sắp có
                             </span>
                           )}
@@ -269,7 +315,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                 {isItemPending ? (
                   <Spinner size={18} className="shrink-0" />
                 ) : (
-                  <Icon strokeWidth={isActive ? 2.25 : 1.75} className="size-4 shrink-0" />
+                  <Icon
+                    strokeWidth={isActive ? 2.25 : 1.75}
+                    className="size-4 shrink-0"
+                  />
                 )}
                 {label}
                 {underline}
@@ -283,9 +332,17 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
       <div className="ml-2 hidden min-w-0 flex-1 justify-center md:flex">
         <div
           className="flex h-[38px] w-full max-w-[210px] items-center gap-2 rounded-[20px] px-3.5"
-          style={{ border: "1px solid var(--search-border)", background: "var(--surface)" }}
+          style={{
+            border: "1px solid var(--search-border)",
+            background: "var(--surface)",
+          }}
         >
-          <Search size={15} strokeWidth={1.75} style={{ color: "var(--icon)" }} className="shrink-0" />
+          <Search
+            size={15}
+            strokeWidth={1.75}
+            style={{ color: "var(--icon)" }}
+            className="shrink-0"
+          />
           <input
             placeholder="Tìm kiếm..."
             className="min-w-0 flex-1 bg-transparent text-xs outline-none"
@@ -295,7 +352,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
       </div>
 
       {/* Cum ben phai */}
-      <div className="ml-auto flex shrink-0 items-center gap-4" style={{ color: "var(--ink-muted)" }}>
+      <div
+        className="ml-auto flex shrink-0 items-center gap-4"
+        style={{ color: "var(--ink-muted)" }}
+      >
         {/* Backdrop click-ra-ngoai de dong command panel dang mo - nam DUOI
             panel (z-90 < z-95) nhung TREN noi dung trang, giong choreography
             cua source "treecareer-topbar-command-center". */}
@@ -326,15 +386,16 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                   active
                     ? {
                         color: "var(--primary)",
-                        background: "color-mix(in srgb, var(--primary) 8%, transparent)",
+                        background:
+                          "color-mix(in srgb, var(--primary) 8%, transparent)",
                       }
                     : undefined
                 }
               >
-                <Icon size={17} strokeWidth={1.75} />
+                <Icon size={20} strokeWidth={1.75} />
                 {badge && (
                   <span
-                    className="absolute -top-0.5 -right-0.5 grid h-3.5 min-w-3.5 place-items-center rounded-full px-1 text-[7px] font-semibold text-white"
+                    className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full  text-[10px] font-semibold text-white"
                     style={{ background: "var(--secondary)" }}
                   >
                     {badge}
@@ -342,7 +403,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                 )}
               </motion.button>
 
-              <div className="absolute right-0 z-[95] pt-2.5" style={{ top: "100%" }}>
+              <div
+                className="absolute right-0 z-[95] pt-2.5"
+                style={{ top: "100%" }}
+              >
                 <AnimatePresence>
                   {active && (
                     <div onClick={(e) => e.stopPropagation()}>{panel}</div>
@@ -358,8 +422,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
           onClick={handleCompose}
           className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3.5 text-sm font-semibold transition-opacity duration-150 ease-out hover:opacity-90"
           style={{
-            background: "linear-gradient(135deg, var(--primary), var(--secondary))",
-            boxShadow: "0 10px 30px color-mix(in srgb, var(--secondary) 25%, transparent)",
+            background:
+              "linear-gradient(135deg, var(--primary), var(--secondary))",
+            boxShadow:
+              "0 10px 30px color-mix(in srgb, var(--secondary) 25%, transparent)",
             color: "var(--on-primary)",
           }}
         >

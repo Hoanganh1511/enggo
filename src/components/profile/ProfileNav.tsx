@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import Link from "next/link";
 import {
   Bookmark,
-  BookText,
   CalendarDays,
   FileText,
   Heart,
@@ -20,7 +19,6 @@ import { useAllPosts } from "@/lib/discover/use-all-posts";
 export type ProfileTab =
   | "home"
   | "posts"
-  | "workspaces"
   | "playlists"
   | "collections"
   | "likes"
@@ -115,8 +113,9 @@ const TABS: {
   // can, nhung de field data-driven thay vi hardcode string cho tong quat.
   hasSubroutes?: boolean;
   // Tab nay khong dan toi /u/[username]/<path> nhu binh thuong ma toi 1
-  // route doc lap khac (vd trang "vu tru" workspace, khong nam duoi
-  // ProfileShell nen khong co cover/user-info) - xem workspace/[username]/.
+  // route doc lap khac - hien tai khong con tab nao dung field nay (Workspace
+  // da chuyen len top-header-bar, xem TopHeaderBar), giu lai field cho tong
+  // quat neu sau nay can.
   standaloneHref?: (username: string) => string;
 }[] = [
   {
@@ -132,15 +131,6 @@ const TABS: {
     label: "Bài đăng",
     icon: FileText,
     iconColor: "#818cf8",
-  },
-  {
-    key: "workspaces",
-    path: "workspaces",
-    label: "Workspace",
-    icon: BookText,
-    iconColor: "#22c55e",
-    hasSubroutes: true,
-    standaloneHref: (username) => `/workspace/${username}`,
   },
   {
     key: "playlists",

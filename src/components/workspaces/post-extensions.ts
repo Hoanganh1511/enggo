@@ -55,7 +55,7 @@ export function getPostExtensions(): Extensions {
 // Class prose dung chung - style cho moi loai block (heading/list/table/
 // callout/code/image...). Ap cho ca EditorContent (soan) va vung render doc.
 export const POST_PROSE_CLASS =
-  "max-w-none text-[16px] leading-[1.75] text-ink focus:outline-none " +
+  "max-w-none text-[15px] leading-[1.75] text-ink focus:outline-none " +
   "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:text-[30px] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:tracking-tight " +
   "[&_h2]:mt-7 [&_h2]:mb-2.5 [&_h2]:text-[23px] [&_h2]:font-bold [&_h2]:leading-snug " +
   "[&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-[18px] [&_h3]:font-semibold " +
