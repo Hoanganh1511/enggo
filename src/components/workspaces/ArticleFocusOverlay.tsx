@@ -6,9 +6,11 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEditor, EditorContent } from "@tiptap/react";
 import {
+  ArrowLeft,
   ArrowUpRight,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   CircleDot,
   Clock3,
   Eye,
@@ -55,6 +57,19 @@ import type { TocItem } from "./WorkspaceDetail";
 // (7) Thanh goi y phim tat duoi cung CHI liet ke phim THAT SU hoat dong
 //     (ESC/J/K/G) - source con ghi "← → NAVIGATE" va "A ASK AI" nhung
 //     KHONG wire handler nao ca, bo di tranh gay hieu lam tinh nang gia.
+// (8) [Upgrade] He kinh + co khi (GlassAssembly/MechanicalAssembly/
+//     RightPanelSwitchTargets/CompactGlassModule) duoc port lai tu ban
+//     "treecareer-knowledge-ironman-v10-5-verified-motion" (thay ban v6.3 cu
+//     o (1)-(7)) - fix chinh: canh tay co khi gio nam TRONG CUNG 1 cay
+//     transform voi kinh (khong tu tinh rotateY rieng nhu MechanicalDock cu,
+//     tranh lech goc luc kinh nghieng manh), tach outer "layout shell" (chi
+//     Framer layout) khoi inner "glass assembly" (chi 3D compositor) de
+//     Framer layout va rotateY/scale khong tranh giu 1 transform luc promote/
+//     park panel phai, va doi deployment tu spring sang cubic-bezier xac
+//     dinh (back-facing rotateY ±86° -> flip -> overscale 104.5% -> settle).
+//     CompactGlassModule (the thu gon ben phai) doi tu "chi hien tieu de mo"
+//     sang hien so lieu THAT (so muc luc, % health, so bai lien quan) thay vi
+//     so demo cua source, tiep tuc dung nguyen tac (1)-(7) o tren.
 
 type RightModule = "outline" | "status" | "related";
 type TocNode = TocItem & { children: TocNode[] };
@@ -93,6 +108,32 @@ function scrollToHeading(id: string) {
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+// Dung chung boi KnowledgeHealth (panel Tong quan) va CompactGlassModule (the
+// "Tong quan" thu gon) - 1 cong thuc DUY NHAT, tranh 2 noi hien 2 con so khac
+// nhau cho cung 1 khai niem "health".
+function computeKnowledgeHealth(doc: ApiDocument, relatedCount: number): number {
+  return relatedCount === 0
+    ? doc.isPublished
+      ? 100
+      : 0
+    : Math.min(100, 60 + relatedCount * 7);
+}
+
+// Dung de quy doi "35vw" (chieu rong panel phai luc active) ra so px thuan,
+// de RightGlassPanel co the animate width bang cung 1 don vi voi luc compact
+// (180px) - xem ghi chu trong GlassAssembly ve viec bo Framer "layout".
+function useViewportWidth(): number {
+  const [width, setWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return width;
+}
+
 export function ArticleFocusOverlay({
   doc,
   docLoading,
@@ -116,6 +157,7 @@ export function ArticleFocusOverlay({
 }) {
   const [closing, setClosing] = useState(false);
   const [rightActive, setRightActive] = useState<RightModule>("outline");
+  const viewportWidth = useViewportWidth();
 
   // Choreography dong: khac voi de AnimatePresence tu xu ly "exit" (chay
   // NGAY khi component unmount), o day can 1 nhip "closing" rieng de CA 5
@@ -129,6 +171,22 @@ export function ArticleFocusOverlay({
   }
 
   const tocTree = useMemo(() => buildTocTree(toc), [toc]);
+
+  // So lieu THAT cho CompactGlassModule (the thu gon ben phai) - tiep tuc
+  // nguyen tac "khong bia so demo" da ap dung cho StatusPanel/RelatedPanel.
+  const flatTocIds = useMemo(() => flattenIds(tocTree), [tocTree]);
+  const readProgress =
+    flatTocIds.length > 0
+      ? Math.round(
+          ((flatTocIds.indexOf(activeTocId) + 1) / flatTocIds.length) * 100,
+        )
+      : 0;
+  const relatedCount = siblingDocs.length;
+  const health = doc ? computeKnowledgeHealth(doc, relatedCount) : null;
+  // 7 = 6 satellite toi da RelatedPanel hien (xem `satellites = siblingDocs.
+  // slice(0,6)`) + 1 node trung tam - "day" o day la ty le lap day khung
+  // graph dang hien tren man, khong phai 1 chi so tuyet doi bia dat.
+  const graphFill = Math.min(100, Math.round(((relatedCount + 1) / 7) * 100));
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -154,6 +212,51 @@ export function ArticleFocusOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [closing, tocTree, activeTocId]);
 
+  // Fix: cuon chuot (wheel) khong toi duoc cac vung .focus-panel-scroll khi
+  // chung nam sau 2 lop 3D transform long nhau (focus-mechanical-stage +
+  // focus-glass-assembly, ca 2 deu co "perspective" + "preserve-3d").
+  //
+  // Da xac nhan bang console truc tiep tren may nguoi dung: goi
+  // document.elementFromPoint(clientX, clientY) khi con tro dang o giua
+  // panel KHONG tra ve phan tu noi dung ben trong (khong phai .focus-glass-
+  // surface, cang khong phai .focus-panel-scroll) ma tra ve THANG
+  // .focus-glass-layout-shell - tuc la co che hit-test theo diem cua trinh
+  // duyet dung lai o box NGOAI CUNG, khong "xuyen" duoc vao nhanh con dang
+  // bi rotateY (day chinh la ly do wheel native cua trinh duyet cung khong
+  // toi duoc .focus-panel-scroll). Vi elementFromPoint tu no da sai o day,
+  // moi cach dua vao ket qua cua no (kha ca event.target lan
+  // elementFromPoint) deu vo dung bat ke bat wheel o bubble hay capture
+  // phase.
+  //
+  // Thay vi hit-test theo diem, kiem tra hinh hoc TRUC TIEP:
+  // getBoundingClientRect() cua 1 phan tu LUON phan anh dung vi tri da
+  // render (da tinh moi transform cua no VA cua to tien) bat ke rotateY bao
+  // nhieu - khong phu thuoc engine hit-test dang loi o day. Duyet qua tat ca
+  // .focus-panel-scroll dang co trong DOM (bai viet + Muc luc/Tong quan/
+  // Mang luoi), tim vung co rect chua toa do con tro, roi tu cong don deltaY
+  // vao scrollTop cua no.
+  useEffect(() => {
+    const onWheel = (event: WheelEvent) => {
+      const scrollers = document.querySelectorAll<HTMLElement>(".focus-panel-scroll");
+      for (const el of scrollers) {
+        const rect = el.getBoundingClientRect();
+        if (
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom
+        ) {
+          event.preventDefault();
+          el.scrollTop += event.deltaY;
+          return;
+        }
+      }
+    };
+    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () =>
+      window.removeEventListener("wheel", onWheel, { capture: true });
+  }, []);
+
   // React Portal: render THANG vao document.body, khong qua bat ky ancestor
   // nao cua WorkspaceDetail. Neu khong co portal, overlay se bi "nhot" trong
   // stacking context cua div cha (workspace/[username]/layout.tsx co
@@ -171,19 +274,21 @@ export function ArticleFocusOverlay({
     // duoc dem khi so sanh voi BAT KY phan tu fixed nao khac trong app -
     // khong con phu thuoc suy doan chinh xac ve cay stacking context cua
     // toan bo app (de vo tinh bi 1 phan tu z-index cao khac o dau do de len).
-    <div className="focus-mechanical-stage pointer-events-none fixed inset-0 isolate z-999999">
-      <FocusBackdrop />
+    // top thay vi inset-0: .focus-mechanical-stage co "perspective" nen no tu
+    // tao containing block MOI cho moi con position:fixed ben trong (GlassPanel/
+    // RightGlassPanel/backdrop) - moi gia tri top-[%]/h-[vh] cua chung tu do
+    // tinh theo KHUNG NAY (khong con la full viewport). Rut ngan dinh khung
+    // xuong duoi TopHeaderBar (--header-height) la du de day CA 2 mieng kinh
+    // lan backdrop xuong duoi thanh header, khong can sua tung panel rieng.
+    <div className="focus-mechanical-stage pointer-events-none fixed inset-x-0 bottom-0 top-[calc(var(--header-height)+14px)] isolate z-999999">
+      <FocusBackdrop closing={closing} />
       {/* ScreenEdgeRails (tia + khop co khi tu mep man hinh) da bo - vi tri
           "top: X%" cua rail duoc tinh de khop 1 layout co WorkspaceRail/
           TopBar rieng cua source, khong con dung trong overlay full-viewport
           cua app nay nua nen rail hay cham dung vao giua noi dung panel
           phai, doc khong duoc du hieu ung z-index/isolation nao. */}
 
-      <GlassPanel
-        side="left"
-        closing={closing}
-        className="top-[6%] left-[4%] h-[84vh] w-[52%]"
-      >
+      <GlassPanel closing={closing}>
         <ArticlePanel
           doc={doc}
           docLoading={docLoading}
@@ -199,8 +304,14 @@ export function ArticleFocusOverlay({
         index={0}
         active={rightActive}
         closing={closing}
+        viewportWidth={viewportWidth}
         onActivate={() => setRightActive("outline")}
         title="Mục lục"
+        stat={{
+          value: String(tocTree.length).padStart(2, "0"),
+          unit: "SECTIONS",
+          fillPercent: readProgress,
+        }}
       >
         <OutlinePanel tree={tocTree} activeId={activeTocId} />
       </RightGlassPanel>
@@ -210,10 +321,16 @@ export function ArticleFocusOverlay({
         index={1}
         active={rightActive}
         closing={closing}
+        viewportWidth={viewportWidth}
         onActivate={() => setRightActive("status")}
         title="Tổng quan"
+        stat={{
+          value: health === null ? "—" : `${health}%`,
+          unit: "HEALTH",
+          fillPercent: health ?? 0,
+        }}
       >
-        <StatusPanel doc={doc} relatedCount={siblingDocs.length} />
+        <StatusPanel doc={doc} relatedCount={relatedCount} />
       </RightGlassPanel>
 
       <RightGlassPanel
@@ -221,8 +338,14 @@ export function ArticleFocusOverlay({
         index={2}
         active={rightActive}
         closing={closing}
+        viewportWidth={viewportWidth}
         onActivate={() => setRightActive("related")}
         title="Mạng lưới kiến thức"
+        stat={{
+          value: String(relatedCount + 1).padStart(2, "0"),
+          unit: "NODES",
+          fillPercent: graphFill,
+        }}
       >
         <RelatedPanel
           doc={doc}
@@ -231,15 +354,17 @@ export function ArticleFocusOverlay({
         />
       </RightGlassPanel>
 
-      {/* <motion.button
+      <RightPanelSwitchTargets active={rightActive} onActivate={setRightActive} />
+
+      <motion.button
         type="button"
         onClick={handleClose}
         whileHover={{ scale: 1.02, borderColor: "rgba(65,224,255,.45)" }}
         whileTap={{ scale: 0.97 }}
-        className="focus-hud-text pointer-events-auto fixed top-20 right-6 z-220 flex items-center gap-2 rounded-lg border border-cyan-300/15 bg-[#04121d]/90 px-3 py-2 text-[9px] tracking-[.14em] text-slate-400 shadow-[0_0_22px_rgba(40,220,255,.08)] backdrop-blur-xl hover:text-cyan-100"
+        className="focus-hud-text pointer-events-auto fixed top-3 right-5 z-[155] flex items-center gap-2 rounded-lg border border-cyan-300/15 bg-[#04121d]/90 px-3 py-2 text-[8px] tracking-[.14em] text-slate-500 shadow-[0_0_22px_rgba(40,220,255,.08)] backdrop-blur-xl hover:text-cyan-100"
       >
-        <ChevronDown size={11} className="rotate-90" /> ĐÓNG (ESC)
-      </motion.button> */}
+        <ArrowLeft size={11} /> THOÁT FOCUS
+      </motion.button>
 
       <PerformanceHUD />
 
@@ -256,173 +381,306 @@ export function ArticleFocusOverlay({
   );
 }
 
-/* ---------------- BACKDROP + RAILS ---------------- */
+/* ---------------- BACKDROP ---------------- */
 
-function FocusBackdrop() {
+function FocusBackdrop({ closing }: { closing: boolean }) {
+  const ease = [0.22, 1, 0.36, 1] as const;
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.65 }}
+      animate={{ opacity: closing ? 0 : 1 }}
+      transition={{
+        duration: closing ? 0.14 : 0.42,
+        ease: closing ? "easeOut" : ease,
+      }}
       className="pointer-events-none fixed inset-0 z-[60] bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,8,17,.12)_38%,rgba(0,5,10,.32)_100%)]"
     >
       <motion.div
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 0.55, ease: [0.2, 0.8, 0.2, 1] }}
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: closing ? 0 : 1, opacity: closing ? 0 : 1 }}
+        transition={{ duration: closing ? 0.1 : 0.45, ease }}
         className="absolute top-1/2 left-1/2 h-px w-[92vw] -translate-x-1/2 bg-gradient-to-r from-transparent via-cyan-300/45 to-transparent"
       />
       <motion.div
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: 1 }}
-        transition={{ duration: 0.7, delay: 0.05 }}
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{ scaleY: closing ? 0 : 1, opacity: closing ? 0 : 1 }}
+        transition={{ duration: closing ? 0.1 : 0.52, delay: closing ? 0 : 0.02, ease }}
         className="absolute top-1/2 left-1/2 h-[90vh] w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-300/55 to-transparent shadow-[0_0_15px_rgba(64,224,255,.6)]"
       />
       <motion.div
         initial={{ scale: 0.3, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.7, delay: 0.1 }}
+        animate={{ scale: closing ? 0.92 : 1, opacity: closing ? 0 : 1 }}
+        transition={{ duration: closing ? 0.12 : 0.58, delay: closing ? 0 : 0.06, ease }}
         className="absolute top-1/2 left-1/2 size-[430px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/[.14] shadow-[0_0_50px_rgba(35,214,255,.08)]"
       />
     </motion.div>
   );
 }
 
-function Joint({ size, lit = false }: { size: number; lit?: boolean }) {
+/* ---------------- MECHANICAL ARMS ---------------- */
+// V10.5: canh tay co khi nam TRONG CUNG 1 cay transform voi kinh
+// (xem GlassAssembly ben duoi) - no CHI khop noi vat ly quanh cac hinge,
+// KHONG tu tinh rotateY rieng nhu MechanicalDock/Hinge cu (do la nguyen
+// nhan canh tay/pivot bi lech goc voi mep kinh luc kinh nghieng manh).
+
+function MechanicalAssembly({
+  side,
+  compact = false,
+  active = true,
+}: {
+  side: "left" | "right";
+  compact?: boolean;
+  active?: boolean;
+}) {
+  const left = side === "left";
+  const length = compact ? 82 : active ? 138 : 108;
+  const secondLength = compact ? 46 : active ? 72 : 58;
+  const elbowAngle = left ? -12 : 12;
+  const ease = [0.22, 1, 0.36, 1] as const;
+
   return (
-    <motion.span
-      animate={lit ? { rotate: [0, 9, -6, 0] } : undefined}
-      transition={{ duration: 1.2, ease: "easeInOut" }}
-      style={{ width: size, height: size }}
-      className="relative block shrink-0 rounded-full border border-slate-600/80 bg-[#07111a] shadow-[inset_0_0_8px_rgba(0,0,0,.8),0_0_10px_rgba(50,215,255,.16)]"
+    <div
+      className={`focus-mechanical-assembly ${left ? "focus-mechanical-assembly-left" : "focus-mechanical-assembly-right"}`}
+      style={{
+        width: compact ? 154 : 238,
+        height: 104,
+        ...(left ? { right: "100%" } : { left: "100%" }),
+        top: "50%",
+        transform: `translateY(-50%) ${left ? "scaleX(-1)" : ""}`,
+        transformOrigin: left ? "right center" : "left center",
+      }}
+      aria-hidden="true"
     >
-      <span className="absolute inset-[18%] rounded-full border border-cyan-300/20" />
-      <span
-        className={`absolute top-1/2 left-1/2 size-[28%] -translate-x-1/2 -translate-y-1/2 rounded-full ${lit ? "bg-cyan-300 shadow-[0_0_11px_rgba(65,224,255,.95)]" : "bg-slate-700"}`}
+      <div className="focus-mechanical-anchor absolute left-0 top-1/2">
+        <span className="focus-mechanical-collar" />
+        <span className="focus-mechanical-pivot focus-mechanical-pivot-large" />
+      </div>
+
+      <motion.div
+        className="focus-mechanical-link absolute left-[18px] top-1/2"
+        style={{ width: length, transformOrigin: "left center" }}
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: 1, width: length, opacity: active ? 1 : 0.72 }}
+        transition={{ duration: 0.42, delay: 0.035, ease }}
+      >
+        <span className="focus-mechanical-beam" />
+        <span className="focus-mechanical-screw focus-mechanical-screw-a" />
+        <span className="focus-mechanical-screw focus-mechanical-screw-b" />
+      </motion.div>
+
+      {/* Elbow neo dung tai diem cuoi cua doan A - con no ke thua rotate cua
+          no nen pivot cuoi khong the troi khoi beam. */}
+      <motion.div
+        className="absolute left-[18px] top-1/2"
+        style={{ width: length, height: 1, transformOrigin: "left center" }}
+      >
+        <motion.div
+          className="focus-mechanical-elbow absolute left-full top-0"
+          style={{ width: secondLength, transformOrigin: "left center", rotate: elbowAngle }}
+          initial={{ scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, width: secondLength, opacity: active ? 1 : 0.68 }}
+          transition={{ duration: 0.38, delay: 0.065, ease }}
+        >
+          <span className="focus-mechanical-beam focus-mechanical-beam-secondary" />
+          <span className="focus-mechanical-screw focus-mechanical-screw-a" />
+          <span className="focus-mechanical-screw focus-mechanical-screw-b" />
+          <span className="focus-mechanical-pivot focus-mechanical-pivot-small focus-mechanical-pivot-end" />
+        </motion.div>
+      </motion.div>
+
+      {/* Hinge dung tai diem cuoi doan A. */}
+      <motion.span
+        className="focus-mechanical-pivot focus-mechanical-pivot-small focus-mechanical-pivot-mid"
+        style={{ left: 18 + length - 4 }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: active ? 1 : 0.7 }}
+        transition={{ duration: 0.26, delay: 0.085, ease }}
       />
-      <span className="absolute top-[-5px] left-1/2 h-[10px] w-px -translate-x-1/2 bg-slate-600" />
-      <span className="absolute bottom-[-5px] left-1/2 h-[10px] w-px -translate-x-1/2 bg-slate-600" />
-    </motion.span>
+
+      <motion.span
+        className="focus-mechanical-actuator"
+        style={{ left: 28, width: Math.max(62, length - 28), transformOrigin: "left center" }}
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{
+          scaleX: 1,
+          width: Math.max(62, length - 28),
+          opacity: active ? 0.85 : 0.48,
+        }}
+        transition={{ duration: 0.42, delay: 0.045, ease }}
+      />
+    </div>
   );
 }
 
 /* ---------------- GLASS DEPLOYMENT ---------------- */
+// GlassAssembly: OUTER motion.div chi so huu layout geometry (frame + Framer
+// `layout`), INNER motion.div chi so huu 3D compositor transform (back-face
+// -> flip -> overscale -> settle). Tach lam 2 lop de Framer layout (chay khi
+// promote/park panel phai) va rotateY/scale (chay khi trien khai/dong) khong
+// tranh giu chung 1 transform - day la nguyen nhan chinh gay giat/jump o ban
+// cu (RightGlassPanel dieu huong top/right/width/height CUNG mot luc voi
+// rotateY/rotateX/rotateZ/scale tren CUNG 1 motion.section).
 
-function GlassPanel({
+function GlassAssembly({
   side,
   closing,
-  className,
+  delay = 0,
+  frame,
   children,
+  active = true,
+  compact = false,
+  onClick,
 }: {
   side: "left" | "right";
   closing: boolean;
-  className: string;
+  delay?: number;
+  frame: {
+    top: string;
+    left?: string;
+    right?: string;
+    width: string | number;
+    height: string;
+  };
   children: React.ReactNode;
+  active?: boolean;
+  compact?: boolean;
+  onClick?: () => void;
 }) {
   const left = side === "left";
-  const delay = 0.28;
+  const hiddenX = left ? "-112vw" : "112vw";
+  const restingRotateY = left ? 11 : -11;
+  const parkedRotateY = left ? 17 : -17;
+  const parkedRotateZ = left ? -1.2 : 1.2;
+  const activeRotateZ = left ? -1.1 : 0.8;
+  const ease = [0.22, 1, 0.36, 1] as const;
 
   return (
-    <motion.section
-      initial={{
-        x: left ? "-125vw" : "125vw",
-        y: 12,
-        z: -220,
-        rotateY: left ? 42 : -42,
-        rotateX: 5,
-        rotateZ: left ? -4 : 4,
-        opacity: 0,
-        scale: 0.82,
-      }}
-      animate={{
-        x: closing ? (left ? "-125vw" : "125vw") : 0,
-        y: closing ? 18 : 0,
-        z: closing ? -240 : 0,
-        rotateY: closing ? (left ? 42 : -42) : left ? 13 : -13,
-        rotateX: closing ? 7 : 0,
-        rotateZ: closing ? (left ? -5 : 5) : left ? -1.5 : 1.5,
-        opacity: closing ? 0 : 1,
-        scale: closing ? 0.76 : 1,
-      }}
-      transition={{
-        delay: closing ? 0 : delay,
-        duration: closing ? 0.72 : undefined,
-        type: closing ? "tween" : "spring",
-        stiffness: 68,
-        damping: 16,
-        mass: 0.95,
-      }}
+    // Khong dung Framer "layout" o day (V10.5 goc dung "layout" de dieu
+    // huong frame doi tren panel phai) - da xac nhan qua console tren may
+    // nguoi dung rang khi mot phan tu dung "layout", elementFromPoint()
+    // (co che hit-test cua CHINH trinh duyet) khong xuyen duoc vao nhanh
+    // con dang bi rotateY nua, lam hover/click bi mat hoan toan ben trong
+    // panel do. Dung animate={frame} thuan (khong "layout") thay the -
+    // van giu dung 0.58s/ease nhu source, chi khac o cho khong con tao
+    // lop compositing/theo doi rieng cua co che layout-projection nua.
+    // Doi hoi frame.width la SO PX thuan (khong con chuoi "vw"/"px" lan
+    // lon) o noi goi RightGlassPanel, vi Framer animate thuan khong tu quy
+    // doi don vi khac nhau (đo la viec "layout" lam, gio khong con dung no
+    // nua) - xem RightGlassPanel.
+    <motion.div
+      initial={false}
+      animate={{ ...frame }}
       style={{
-        // z-index tuong minh - thieu no thi mac dinh "auto" (~0), trong khi
-        // FocusBackdrop (z-60) va ScreenEdgeRails (z-88) co z-index DUONG
-        // tuong minh nen se LUON de len GlassPanel bat ke thu tu DOM (2
-        // stacking context deu la position:fixed, so z-index thuan tuy
-        // khong quan tam DOM truoc/sau). Dat 100 - cao hon backdrop/rail,
-        // ngang tam RightGlassPanel (96-105) de bai viet luon doc duoc ro.
-        zIndex: 100,
-        transformOrigin: left ? "left center" : "right center",
-        transformStyle: "preserve-3d",
-        backfaceVisibility: "hidden",
-        willChange: "transform, opacity",
+        position: "fixed",
+        zIndex: active ? 118 : 100,
+        opacity: closing ? 0 : 1,
+        pointerEvents: closing ? "none" : "auto",
       }}
-      className={`focus-glass focus-tech-cut motion-panel pointer-events-auto fixed overflow-visible ${className}`}
+      transition={{ duration: 0.58, ease }}
+      className="focus-glass-layout-shell"
     >
-      <span
-        className={left ? "focus-panel-glow-left" : "focus-panel-glow-right"}
-      />
-      <span className="focus-panel-scan" />
-
       <motion.div
         initial={{
+          x: hiddenX,
           opacity: 0,
-          x: left ? -25 : 25,
-          rotateY: left ? -35 : 35,
-          scale: 0.7,
+          scale: 0.84,
+          rotateY: left ? 86 : -86,
+          rotateX: 0,
+          rotateZ: compact ? parkedRotateZ : activeRotateZ,
         }}
         animate={{
+          x: closing ? hiddenX : 0,
           opacity: closing ? 0 : 1,
-          x: closing ? (left ? -48 : 48) : 0,
-          rotateY: closing ? (left ? -28 : 28) : 0,
-          scale: closing ? 0.65 : 1,
-        }}
-        transition={
-          closing
-            ? { duration: 0.28 }
-            : {
-                delay: delay + 0.16,
-                type: "spring",
-                stiffness: 170,
-                damping: 14,
-              }
-        }
-        className={`pointer-events-none absolute top-1/2 z-[4] -translate-y-1/2 ${left ? "-left-[128px]" : "-right-[128px]"}`}
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        <MechanicalDock left={left} angle={left ? 13 : -13} />
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.35, rotateZ: left ? -25 : 25 }}
-        animate={{
-          opacity: closing ? 0 : 1,
-          scale: closing ? 0.35 : 1,
-          rotateZ: 0,
+          scale: closing ? 0.92 : 1,
+          rotateY: closing ? (left ? 86 : -86) : compact ? parkedRotateY : restingRotateY,
+          rotateX: 0,
+          rotateZ: closing ? (left ? -1.1 : 0.8) : compact ? parkedRotateZ : activeRotateZ,
         }}
         transition={{
-          delay: closing ? 0 : delay + 0.32,
-          type: "spring",
-          stiffness: 220,
-          damping: 13,
+          x: { duration: closing ? 0.58 : 0.7, delay: closing ? 0 : delay, ease },
+          rotateY: { duration: closing ? 0.34 : 0.44, delay: closing ? 0 : delay + 0.2, ease },
+          rotateZ: { duration: closing ? 0.3 : 0.34, delay: closing ? 0 : delay + 0.18, ease },
+          scale: { duration: closing ? 0.3 : 0.4, delay: closing ? 0 : delay + 0.2, ease },
+          opacity: { duration: closing ? 0.18 : 0.34, delay: closing ? 0 : delay + 0.02, ease: "easeOut" },
         }}
-        className={`pointer-events-none absolute -top-[17px] z-[4] ${left ? "left-[42px]" : "right-[42px]"}`}
+        style={{
+          width: "100%",
+          height: "100%",
+          transformOrigin: left ? "left center" : "right center",
+          transformStyle: "preserve-3d",
+          backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
+          willChange: "transform, opacity",
+          contain: "layout style",
+        }}
+        className="focus-glass-assembly focus-motion-optimized"
+        onClick={compact ? onClick : undefined}
       >
-        <Hinge />
+        <MechanicalAssembly side={side} active={active} compact={compact} />
+        <div className="focus-glass focus-tech-cut focus-glass-surface absolute inset-0 overflow-hidden">
+          <span className={left ? "focus-panel-glow-left" : "focus-panel-glow-right"} />
+          <span className="focus-panel-scan" />
+          <div className="focus-panel-depth-edge" />
+          <div className="relative z-[20] h-full min-h-0 overflow-hidden">{children}</div>
+        </div>
       </motion.div>
+    </motion.div>
+  );
+}
 
-      <div className="focus-panel-depth-edge" />
-      <div className="relative z-[20] h-full min-h-0">{children}</div>
-    </motion.section>
+function GlassPanel({
+  closing,
+  children,
+}: {
+  closing: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <GlassAssembly
+      side="left"
+      closing={closing}
+      delay={0.03}
+      frame={{ top: "6.5%", left: "2.6%", width: "47.2vw", height: "85vh" }}
+      active
+    >
+      {children}
+    </GlassAssembly>
+  );
+}
+
+// Lop hit-zone rieng, dat TREN CUNG (z-[170]) va phu toan bo vi tri cua 2
+// panel phai dang thu gon - dam bao chung luon bam duoc du panel active lon
+// (stacking context bi bien doi 3D rieng) co the "nuot" pointer event cua
+// panel thu gon o vien duoi cung.
+function RightPanelSwitchTargets({
+  active,
+  onActivate,
+}: {
+  active: RightModule;
+  onActivate: (id: RightModule) => void;
+}) {
+  const ids = ["outline", "status", "related"] as const;
+  const parked = ids.filter((id) => id !== active);
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[170]" aria-label="Chuyển màn kính">
+      {parked.map((id, index) => (
+        <button
+          key={id}
+          type="button"
+          aria-label={`Mở ${id}`}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onActivate(id);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onActivate(id);
+          }}
+          className="pointer-events-auto absolute right-[1.8%] w-[180px] cursor-pointer rounded-[14px] border border-transparent bg-transparent"
+          style={{ top: index === 0 ? "10%" : "51%", height: "31vh" }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -433,6 +691,8 @@ function RightGlassPanel({
   closing,
   onActivate,
   title,
+  stat,
+  viewportWidth,
   children,
 }: {
   id: RightModule;
@@ -441,168 +701,164 @@ function RightGlassPanel({
   active: RightModule;
   onActivate: () => void;
   title: string;
+  stat: { value: string; unit: string; fillPercent: number };
+  viewportWidth: number;
   children: React.ReactNode;
 }) {
   const isActive = active === id;
-  const collapsedTop = `${11 + index * 12}%`;
+  const inactiveIds = (["outline", "status", "related"] as const).filter(
+    (item) => item !== active,
+  );
+  const compactIndex = Math.max(0, inactiveIds.indexOf(id));
+
+  // width tinh ra SO PX thuan (thay vi chuoi "35vw"/"180px" lan don vi) -
+  // GlassAssembly khong con dung Framer "layout" nua nen can top/right/
+  // width/height cung 1 kieu don vi de animate thuan (khong "layout") noi
+  // suy dung; 35vw == 0.35 * viewportWidth ve mat gia tri nen doi don vi
+  // khong lam sai kich thuoc thuc te.
+  const frame = isActive
+    ? {
+        top: "9%",
+        right: "13.6%",
+        width: Math.round(viewportWidth * 0.35),
+        height: "78vh",
+      }
+    : {
+        top: compactIndex === 0 ? "10%" : "51%",
+        right: "1.8%",
+        width: 180,
+        height: "31vh",
+      };
 
   return (
-    <motion.section
+    <GlassAssembly
+      side="right"
+      closing={closing}
+      delay={0.06 + index * 0.025}
+      frame={frame}
+      active={isActive}
+      compact={!isActive}
       onClick={onActivate}
-      initial={{
-        x: "125vw",
-        y: 18,
-        z: -240,
-        top: isActive ? "9%" : collapsedTop,
-        right: isActive ? "-42%" : "-10%",
-        width: isActive ? "39%" : "9.5%",
-        height: isActive ? "76vh" : "9vh",
-        rotateY: -42,
-        rotateX: 7,
-        rotateZ: 5,
-        opacity: 0,
-        scale: 0.72,
-      }}
-      animate={{
-        x: closing ? "125vw" : isActive ? 0 : 34,
-        y: closing ? 18 : 0,
-        z: closing ? -240 : isActive ? 0 : -80,
-        top: closing ? "9%" : isActive ? "9%" : collapsedTop,
-        right: closing ? "-2%" : isActive ? "4%" : "1.4%",
-        width: closing ? "9%" : isActive ? "39%" : "9.5%",
-        height: closing ? "9vh" : isActive ? "76vh" : "9vh",
-        rotateY: closing ? -42 : isActive ? -11 : -27,
-        rotateX: closing ? 7 : isActive ? 0 : 7,
-        rotateZ: closing ? 5 : isActive ? 1 : index % 2 ? -3 : 3,
-        opacity: closing ? 0 : isActive ? 1 : 0.55,
-        scale: closing ? 0.72 : isActive ? 1 : 0.82,
-      }}
-      transition={
-        closing
-          ? // Luc dong: dung tween thoi gian co dinh (khop 0.72s voi
-            // GlassPanel ben trai va ScreenEdgeRails) thay vi spring - spring
-            // co thoi gian "on dinh" khong the doan truoc, khien 3 module
-            // ben phai ket thuc lech nhip voi phan con lai cua canh dong bo.
-            { type: "tween", duration: 0.72, ease: [0.22, 0.75, 0.2, 1] }
-          : {
-              type: "spring",
-              stiffness: isActive ? 72 : 105,
-              damping: isActive ? 17 : 18,
-              mass: 1,
-            }
-      }
-      style={{
-        position: "fixed",
-        transformOrigin: "right center",
-        transformStyle: "preserve-3d",
-        perspective: "1200px",
-        backfaceVisibility: "hidden",
-        willChange: "transform, opacity",
-        zIndex: isActive ? 105 : 96 + index,
-        cursor: "pointer",
-      }}
-      className="focus-glass focus-tech-cut motion-panel pointer-events-auto overflow-hidden"
     >
-      <span className="focus-panel-glow-right" />
-      <span className="focus-panel-scan" />
-      <div className="focus-panel-depth-edge" />
-
-      {/* Shutter "transformer" luc thu gon - chi la 1 duong quet doc nhap
-          nhay, khong lam noi dung ben trong kho doc duoc (che boi lop mo
-          ben duoi). */}
-      <AnimatePresence>
-        {!isActive && (
-          <motion.div
-            initial={{ opacity: 0, scaleX: 1 }}
-            animate={{ opacity: 1, scaleX: 1 }}
-            exit={{ opacity: 0, scaleX: 0 }}
-            className="pointer-events-none absolute inset-0 z-30 overflow-hidden"
-          >
-            <motion.div
-              animate={{ x: ["-8%", "8%", "-8%"] }}
-              transition={{
-                duration: 1.8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="absolute inset-y-0 left-1/2 w-px bg-cyan-300/25 shadow-[0_0_10px_rgba(65,224,255,.55)]"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-px bg-cyan-300/25" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onActivate();
         }}
-        className={`focus-hud-text absolute top-3 right-3 z-50 rounded border px-2 py-1 text-[7px] tracking-[.12em] transition ${
+        className={`focus-hud-text absolute top-3 right-4 z-[50] rounded border px-2.5 py-1.5 text-[8px] tracking-[.12em] transition-colors ${
           isActive
-            ? "border-cyan-300/25 bg-cyan-300/[.06] text-cyan-100"
-            : "border-white/[.08] bg-black/20 text-slate-600 hover:border-cyan-300/25 hover:text-cyan-200"
+            ? "border-cyan-300/30 bg-cyan-300/[.07] text-cyan-100 shadow-[0_0_18px_rgba(45,220,255,.10)]"
+            : "border-white/[.09] bg-black/20 text-slate-500 hover:border-cyan-300/25 hover:text-cyan-200"
         }`}
       >
         {isActive ? "ACTIVE" : "MỞ"}
       </button>
 
-      <div className="relative z-[20] h-full min-h-0 overflow-hidden">
-        {children}
-      </div>
-
-      {!isActive && (
-        <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center bg-[#020b14]/35 backdrop-blur-[1px]">
-          <span className="focus-hud-text truncate px-3 text-[7px] tracking-[.14em] text-slate-500">
-            {title}
-          </span>
-        </div>
-      )}
-    </motion.section>
+      <AnimatePresence initial={false} mode="wait">
+        {isActive ? (
+          <motion.div
+            key={`full-${id}`}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="h-full min-h-0"
+          >
+            {children}
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`compact-${id}`}
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="h-full min-h-0"
+          >
+            <CompactGlassModule id={id} title={title} stat={stat} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </GlassAssembly>
   );
 }
 
-function MechanicalDock({ left, angle }: { left: boolean; angle: number }) {
+// The thu gon ben phai - hien so lieu THAT (do ArticleFocusOverlay tinh tu
+// doc/toc/siblingDocs) thay vi so demo cua source, tiep tuc nguyen tac
+// "khong bia du lieu gia" da ap dung cho StatusPanel/RelatedPanel.
+function CompactGlassModule({
+  id,
+  title,
+  stat,
+}: {
+  id: RightModule;
+  title: string;
+  stat: { value: string; unit: string; fillPercent: number };
+}) {
+  const config = {
+    outline: { code: "01", kicker: "NAVIGATION", Icon: ListTree, hint: "NHẤN ĐỂ MỞ MỤC LỤC" },
+    status: { code: "02", kicker: "ARTICLE STATE", Icon: ShieldCheck, hint: "ĐỒNG BỘ TRỰC TIẾP" },
+    related: { code: "03", kicker: "KNOWLEDGE GRAPH", Icon: Network, hint: "MẠNG LƯỚI KIẾN THỨC" },
+  }[id];
+  const Icon = config.Icon;
+
   return (
     <motion.div
-      initial={{ opacity: 0, x: left ? -18 : 18, scale: 0.75 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{
-        opacity: 0,
-        x: left ? -72 : 72,
-        scale: 0.55,
-        rotateY: left ? 26 : -26,
-        transition: { duration: 0.38, ease: "easeIn" },
-      }}
-      transition={{ type: "spring", stiffness: 180, damping: 15 }}
-      className={`focus-mechanical-dock relative flex items-center ${left ? "flex-row-reverse" : ""}`}
-      style={{
-        transform: `rotateY(${angle}deg)`,
-        transformStyle: "preserve-3d",
-        transformOrigin: left ? "right center" : "left center",
-      }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="relative flex h-full min-h-0 flex-col justify-between p-3.5"
     >
-      <div className="relative h-[3px] w-[128px] rounded-full bg-gradient-to-r from-cyan-300/10 via-cyan-300/65 to-cyan-300/10">
-        <motion.span
-          animate={{ x: left ? [-4, 4, -4] : [4, -4, 4] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/2 h-1 w-10 -translate-y-1/2 rounded-full bg-cyan-300/40 shadow-[0_0_14px_rgba(65,224,255,.75)]"
-        />
-      </div>
-      <Joint size={39} lit />
-      <div className="mx-1 h-7 w-12 rounded-[5px] border border-slate-600/80 bg-[#07131c] shadow-[inset_0_0_8px_rgba(0,0,0,.9),0_0_12px_rgba(65,224,255,.12)]" />
-      <Joint size={27} />
-      <div className="mx-1 h-5 w-8 rounded-[4px] border border-slate-700/80 bg-[#07131c]" />
-      <Joint size={18} />
-    </motion.div>
-  );
-}
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <span className="grid size-8 place-items-center rounded-lg border border-cyan-300/15 bg-cyan-300/[.045] text-cyan-200">
+            <Icon size={14} />
+          </span>
+          <span className="focus-hud-text text-[7px] tracking-[.14em] text-slate-700">
+            MODULE / {config.code}
+          </span>
+        </div>
 
-function Hinge() {
-  return (
-    <div className="relative grid size-7 place-items-center rounded-md border border-cyan-300/30 bg-[#06131d] shadow-[0_0_13px_rgba(65,224,255,.25)]">
-      <span className="size-2 rounded-full bg-orange-300 shadow-[0_0_10px_rgba(255,160,60,.8)]" />
-    </div>
+        <div className="mt-4 focus-hud-text text-[6px] tracking-[.16em] text-cyan-300/55">
+          {config.kicker}
+        </div>
+        <div className="mt-1 text-[10px] font-semibold tracking-[.08em] text-slate-300">
+          {title.toUpperCase()}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-end justify-between border-t border-white/[.06] pt-3">
+          <div>
+            <div className="text-[19px] font-semibold leading-none text-slate-200">
+              {stat.value}
+            </div>
+            <div className="mt-1 focus-hud-text text-[6px] tracking-[.13em] text-slate-700">
+              {stat.unit}
+            </div>
+          </div>
+          <span className="grid size-6 place-items-center rounded-full border border-cyan-300/15 text-cyan-300/60">
+            <ChevronRight size={11} />
+          </span>
+        </div>
+
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[.05]">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${stat.fillPercent}%` }}
+            transition={{ delay: 0.18, duration: 0.7, ease: "easeOut" }}
+            className="h-full bg-gradient-to-r from-cyan-300/80 via-cyan-300/45 to-violet-400/65"
+          />
+        </div>
+
+        <div className="mt-2 flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(65,224,255,.8)]" />
+          <span className="focus-hud-text truncate text-[6px] tracking-[.1em] text-slate-600">
+            {config.hint}
+          </span>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -748,7 +1004,7 @@ function ArticleBody({
     if (!root) return;
     const nodes = Array.from(
       root.querySelectorAll<HTMLElement>(
-        ".ProseMirror h1, .ProseMirror h2, .ProseMirror h3",
+        ".ProseMirror h1, .ProseMirror h2, .ProseMirror h3, .ProseMirror h4",
       ),
     );
     const items: TocItem[] = nodes.map((el, i) => {
@@ -834,13 +1090,13 @@ function OutlinePanel({
             Bài viết không có mục lục.
           </p>
         ) : (
-          <div className="relative pl-1">
-            <div className="absolute top-3 bottom-3 left-[4px] w-px bg-gradient-to-b from-cyan-300/60 via-cyan-300/20 to-transparent" />
+          <div className="pl-1">
             {tree.map((node, i) => (
               <OutlineRow
                 key={node.id}
                 node={node}
                 index={i}
+                depth={0}
                 activeId={activeId}
                 manualOpenIds={manualOpenIds}
                 onToggle={toggleSection}
@@ -853,15 +1109,20 @@ function OutlinePanel({
   );
 }
 
+// De quy theo do sau THAT cua heading (h1>h2>h3>h4, khong gioi han 2 cap
+// cung nhu ban cu) - moi cap sau chi lui indent + thu nho kieu chu, dung
+// chung 1 component thay vi phai viet rieng "hang cha/hang con" nhu truoc.
 function OutlineRow({
   node,
   index,
+  depth,
   activeId,
   manualOpenIds,
   onToggle,
 }: {
   node: TocNode;
   index: number;
+  depth: number;
   activeId: string;
   manualOpenIds: Record<string, boolean>;
   onToggle: (id: string, currentlyOpen: boolean) => void;
@@ -870,6 +1131,7 @@ function OutlineRow({
   const defaultOpen = containsActive(node, activeId);
   const open = manualOpenIds[node.id] ?? defaultOpen;
   const isActive = node.id === activeId || containsActive(node, activeId);
+  const isTop = depth === 0;
 
   return (
     <div>
@@ -879,26 +1141,35 @@ function OutlineRow({
           scrollToHeading(node.id);
           if (hasChildren) onToggle(node.id, open);
         }}
+        style={{ paddingLeft: depth * 20 }}
         className={`group relative flex w-full items-center gap-3 rounded-md py-2.5 pr-2 text-left ${isActive ? "bg-cyan-300/[.055]" : "hover:bg-white/[.02]"}`}
       >
-        <motion.span
-          animate={
-            isActive
-              ? {
-                  scale: [1, 1.55, 1],
-                  boxShadow: "0 0 14px rgba(65,224,255,.95)",
-                }
-              : { scale: 1, boxShadow: "0 0 0 transparent" }
-          }
-          transition={{ duration: 0.75 }}
-          className={`relative z-10 ml-0.5 size-2 shrink-0 rounded-full border ${isActive ? "border-cyan-100 bg-cyan-300" : "border-slate-700 bg-[#07111a]"}`}
-        />
+        {isTop ? (
+          <motion.span
+            animate={
+              isActive
+                ? {
+                    scale: [1, 1.55, 1],
+                    boxShadow: "0 0 14px rgba(65,224,255,.95)",
+                  }
+                : { scale: 1, boxShadow: "0 0 0 transparent" }
+            }
+            transition={{ duration: 0.75 }}
+            className={`relative z-10 ml-0.5 size-2 shrink-0 rounded-full border ${isActive ? "border-cyan-100 bg-cyan-300" : "border-slate-700 bg-[#07111a]"}`}
+          />
+        ) : (
+          <span
+            className={`h-px w-2 shrink-0 ${isActive ? "bg-cyan-300/70" : "bg-slate-700"}`}
+          />
+        )}
         <span
-          className={`min-w-0 flex-1 truncate text-[13px] ${isActive ? "font-medium text-cyan-100" : "text-slate-600 group-hover:text-slate-300"}`}
+          className={`min-w-0 flex-1 truncate text-left ${isTop ? "text-[13px]" : "text-[12px]"} ${
+            isActive ? "font-medium text-cyan-100" : "text-slate-600 group-hover:text-slate-300"
+          }`}
         >
-          {index + 1}. {node.text}
+          {isTop ? `${index + 1}. ${node.text}` : node.text}
         </span>
-        {hasChildren && (
+        {hasChildren && isTop && (
           <motion.span
             animate={{ rotate: open ? 180 : 0 }}
             className="text-slate-700"
@@ -914,24 +1185,19 @@ function OutlineRow({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="overflow-hidden pl-[26px]"
+            className="overflow-hidden"
           >
-            {node.children.map((child, j) => {
-              const childActive = child.id === activeId;
-              return (
-                <button
-                  key={child.id}
-                  type="button"
-                  onClick={() => scrollToHeading(child.id)}
-                  className={`group flex w-full items-center gap-2 py-1.5 text-left text-[12px] ${childActive ? "text-cyan-200" : "text-slate-600 hover:text-slate-300"}`}
-                >
-                  <span
-                    className={`h-px w-2 bg-slate-700 ${childActive ? "bg-cyan-300/70" : ""}`}
-                  />
-                  {index + 1}.{j + 1} {child.text}
-                </button>
-              );
-            })}
+            {node.children.map((child, j) => (
+              <OutlineRow
+                key={child.id}
+                node={child}
+                index={j}
+                depth={depth + 1}
+                activeId={activeId}
+                manualOpenIds={manualOpenIds}
+                onToggle={onToggle}
+              />
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1031,12 +1297,7 @@ function KnowledgeHealth({
   doc: ApiDocument;
   relatedCount: number;
 }) {
-  const health =
-    relatedCount === 0
-      ? doc.isPublished
-        ? 100
-        : 0
-      : Math.min(100, 60 + relatedCount * 7);
+  const health = computeKnowledgeHealth(doc, relatedCount);
 
   return (
     <button

@@ -281,12 +281,18 @@ export function WorkspaceDetail({
     setActiveTocId("");
   }, []);
 
-  // Scroll-spy cho tab "Muc luc": lang nghe scroll tren CHINH container cuon
-  // cua bai viet (postScrollRef, gan boi PostDetailStage) - khong dung window
-  // vi no nam trong the overflow-y-auto rieng, khong phai body. Cung pattern
-  // voi PostView.tsx (compute() goi ngay 1 lan luc effect chay, khong bi
-  // eslint react-hooks/set-state-in-effect vi setState nam TRONG 1 ham long,
-  // khong phai loi goi truc tiep trong than effect).
+  // Scroll-spy cho tab "Muc luc": dung IntersectionObserver voi root la CHINH
+  // container cuon cua bai viet (postScrollRef, gan boi PostDetailStage) -
+  // khong dung window vi no nam trong the overflow-y-auto rieng, khong phai
+  // body. root: container khien IntersectionObserver tu tinh giao voi khung
+  // nhin CUA CONTAINER DO (bat ke container dat o dau tren trang, offset bao
+  // nhieu do voi viewport that) - dang tin cay hon cach cu doc
+  // getBoundingClientRect().top (toa do tuyet doi theo VIEWPORT) roi tu so
+  // sanh voi 1 threshold co dinh, de lech khi container khong nam sat dinh
+  // man hinh. rootMargin bop khung quan sat con lai 1 dai mong gan dinh
+  // container ("da doc qua" = di qua dai nay) - dung "heading dau tien (theo
+  // thu tu tai lieu) dang nam trong dai" lam active, giong quy uoc scrollspy
+  // pho bien.
   useEffect(() => {
     if (toc.length === 0) return;
     const container = postScrollRef.current;
@@ -296,19 +302,26 @@ export function WorkspaceDetail({
       .filter((el): el is HTMLElement => !!el);
     if (els.length === 0) return;
 
-    const compute = () => {
-      const threshold = 90;
-      let current = els[0].id;
-      for (const el of els) {
-        if (el.getBoundingClientRect().top - threshold <= 0) current = el.id;
-        else break;
-      }
-      setActiveTocId(current);
-    };
+    // setState qua 1 ham long (khong goi truc tiep trong than effect) -
+    // tranh eslint react-hooks/set-state-in-effect, cung pattern voi
+    // compute() cua ban truoc.
+    const setInitial = () => setActiveTocId(els[0].id);
+    setInitial();
 
-    compute();
-    container.addEventListener("scroll", compute, { passive: true });
-    return () => container.removeEventListener("scroll", compute);
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.add(entry.target.id);
+          else visible.delete(entry.target.id);
+        }
+        const current = els.find((el) => visible.has(el.id));
+        if (current) setActiveTocId(current.id);
+      },
+      { root: container, rootMargin: "0px 0px -70% 0px", threshold: 0 },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
   }, [toc]);
 
   // Nap bai viet cho nhom dau tien duoc chon san khi vao trang.

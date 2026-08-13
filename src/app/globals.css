@@ -780,9 +780,14 @@ body {
 }
 
 .focus-mechanical-stage {
-  perspective: 1450px;
+  perspective: 1600px;
   perspective-origin: 50% 50%;
   transform-style: preserve-3d;
+}
+@media (max-width: 1100px) {
+  .focus-mechanical-stage {
+    perspective: 1200px;
+  }
 }
 
 .focus-panel-depth-edge {
@@ -824,6 +829,206 @@ body {
 .focus-glass button:focus-visible {
   outline: 1px solid rgba(100, 230, 255, 0.55);
   outline-offset: 2px;
+}
+
+/* V10.5 mechanical assembly - port tu treecareer-knowledge-ironman-v10-5
+   (KnowledgeUniverse.tsx/globals.css). Glass + mechanical hardware dung
+   CHUNG 1 transform tree (focus-glass-assembly): canh tay khong tu tinh
+   rotateY rieng, chi khop noi vat ly quanh cac hinge - day la fix chinh cua
+   ban v10.5 so voi khop V6.3 cu (perspective/canh tay bi lech voi kinh luc
+   xoay). focus-glass-layout-shell (ngoai, o TSX) chi con la 1 div fixed
+   thuan (top/right/width/height/opacity qua Framer animate={frame}, KHONG
+   con dung Framer "layout" nua) boc focus-glass-assembly (trong, chi 3D
+   compositor transform: rotateY/scale/x). Bo transform-style:preserve-3d/
+   backface-visibility tren chinh .focus-glass-layout-shell (khong con dung
+   den vi ban than no khong mang transform nao) - giu lai tren no da xac
+   nhan la 1 phan nguyen nhan khien hit-test cua trinh duyet
+   (elementFromPoint, hover, click) dung lai o box ngoai cung, khong "xuyen"
+   duoc vao noi dung dang bi rotateY ben trong. */
+.focus-glass-assembly {
+  transform-style: preserve-3d;
+  isolation: isolate;
+}
+.focus-glass-surface {
+  transform: translateZ(0);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  contain: paint;
+}
+/* Phan cung co khi nam DUOI lop thong tin, van o NGOAI polygon kinh bi clip
+   (tech-cut) nen khong bao gio de len chu bai viet. */
+.focus-glass-assembly > .focus-glass-surface {
+  z-index: 10;
+}
+.focus-glass-assembly > .focus-mechanical-assembly {
+  z-index: 2;
+}
+.focus-glass-assembly {
+  pointer-events: none;
+}
+.focus-glass-assembly > .focus-glass-surface,
+.focus-glass-assembly > .focus-glass-surface button,
+.focus-glass-assembly > .focus-glass-surface a,
+.focus-glass-assembly > .focus-glass-surface input {
+  pointer-events: auto;
+}
+
+.focus-mechanical-assembly {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  overflow: visible;
+}
+.focus-mechanical-assembly-left {
+  transform-origin: right center;
+}
+.focus-mechanical-assembly-right {
+  transform-origin: left center;
+}
+
+.focus-mechanical-anchor {
+  width: 22px;
+  height: 30px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+}
+.focus-mechanical-collar {
+  position: absolute;
+  width: 34px;
+  height: 18px;
+  border: 1px solid rgba(94, 226, 255, 0.25);
+  background: linear-gradient(180deg, rgba(12, 30, 42, 0.96), rgba(2, 9, 15, 0.98));
+  box-shadow:
+    inset 0 0 7px rgba(0, 0, 0, 0.8),
+    0 0 12px rgba(30, 210, 255, 0.1);
+}
+
+.focus-mechanical-pivot {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: radial-gradient(circle at 45% 40%, #102a39 0 24%, #07121c 25% 64%, #02070d 65% 100%);
+  border: 1px solid rgba(133, 171, 190, 0.62);
+  box-shadow:
+    inset 0 0 8px rgba(0, 0, 0, 0.95),
+    0 0 13px rgba(35, 210, 255, 0.13);
+}
+.focus-mechanical-pivot::before {
+  content: "";
+  position: absolute;
+  inset: 20%;
+  border-radius: inherit;
+  border: 1px solid rgba(90, 140, 160, 0.55);
+}
+.focus-mechanical-pivot::after {
+  content: "";
+  width: 28%;
+  height: 28%;
+  border-radius: 999px;
+  background: rgba(70, 220, 255, 0.85);
+  box-shadow: 0 0 9px rgba(65, 224, 255, 0.75);
+}
+.focus-mechanical-pivot-large {
+  width: 38px;
+  height: 38px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.focus-mechanical-pivot-small {
+  width: 25px;
+  height: 25px;
+  top: calc(50% - 12.5px);
+}
+
+.focus-mechanical-link,
+.focus-mechanical-elbow {
+  height: 14px;
+  top: calc(50% - 7px);
+}
+.focus-mechanical-beam {
+  position: absolute;
+  inset: 2px 0;
+  border: 1px solid rgba(117, 152, 169, 0.62);
+  clip-path: polygon(4px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 4px 100%, 0 50%);
+  background: linear-gradient(180deg, #172a35 0%, #071019 46%, #101d26 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.8),
+    0 0 10px rgba(25, 200, 255, 0.08);
+}
+.focus-mechanical-beam-secondary {
+  background: linear-gradient(180deg, #1b2b34, #08121a 50%, #101c24);
+}
+
+.focus-mechanical-screw {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(157, 184, 196, 0.65);
+  background: #08121a;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.9);
+  z-index: 2;
+}
+.focus-mechanical-screw::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  top: 3px;
+  height: 1px;
+  background: rgba(190, 220, 230, 0.55);
+  transform: rotate(28deg);
+}
+.focus-mechanical-screw-a {
+  left: 12px;
+}
+.focus-mechanical-screw-b {
+  right: 12px;
+}
+
+.focus-mechanical-actuator {
+  position: absolute;
+  top: calc(50% - 1px);
+  height: 2px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent, rgba(65, 224, 255, 0.85), transparent);
+  box-shadow: 0 0 9px rgba(65, 224, 255, 0.55);
+}
+
+/* Khong co spring-overshoot cho he kinh/canh tay lon - luon dung deterministic
+   cubic-bezier (dat dung diem cuoi, khong "nay" qua lai). */
+.focus-glass-assembly,
+.focus-mechanical-assembly,
+.focus-mechanical-link,
+.focus-mechanical-elbow {
+  will-change: transform, opacity;
+}
+/* Guardrail hieu nang: chi animate transform/opacity/filter, ep GPU
+   compositing rieng lop kinh, tranh layout thrashing luc trien khai/dong. */
+.focus-motion-optimized {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-glass-assembly,
+  .focus-glass-assembly *,
+  .focus-mechanical-link,
+  .focus-mechanical-elbow,
+  .focus-mechanical-actuator,
+  .focus-mechanical-pivot {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* GroupListItem dang active (WorkspaceDetail.tsx, sidebar nhom kien thuc) -
