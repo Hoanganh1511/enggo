@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { LoaderCircle, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { ApiWorkspaceWithGroups } from "@/lib/api/types";
 import { useRipple } from "@/components/ui/ripple";
 import { CreateWorkspaceButton } from "./CreateWorkspaceButton";
@@ -49,16 +50,18 @@ function WorkspaceCard({
   return (
     <motion.button
       type="button"
+      // layoutId chia se voi WorkspaceGatewayOverlay.tsx - khi duoc chon,
+      // Framer Motion tu FLIP-animate the nay "phong to" thanh overlay full
+      // man hinh (khong con crossfade+scale-tai-cho nhu ban cu).
+      layoutId={`workspace-card-${ws.id}`}
       onClick={onSelect}
       onPointerDown={onPointerDown}
       disabled={isTransitioning}
       initial={{ opacity: 0, y: 8 }}
       animate={
-        isSelected
-          ? { opacity: 1, y: 0, scale: 1.06, rotateX: 0 }
-          : isTransitioning
-            ? { opacity: 0, y: 90, scale: 0.82, rotateX: 10 }
-            : { opacity: 1, y: 0, scale: 1, rotateX: 0 }
+        isTransitioning && !isSelected
+          ? { opacity: 0, y: 90, scale: 0.82, rotateX: 10 }
+          : { opacity: 1, y: 0, scale: 1, rotateX: 0 }
       }
       transition={{
         delay: isTransitioning && !isSelected ? index * 0.035 : 0,
@@ -70,15 +73,24 @@ function WorkspaceCard({
           ? undefined
           : {
               y: -3,
-              borderColor: accent,
               boxShadow: `0 10px 30px color-mix(in srgb, ${accent} 18%, transparent)`,
               transition: { duration: 0.18, ease: "easeOut" },
             }
       }
       className="relative flex min-h-32 flex-col items-start gap-2 overflow-hidden rounded-2xl p-4 text-left backdrop-blur-sm"
       style={{
-        background: "color-mix(in srgb, var(--surface) 88%, transparent)",
-        border: `1px solid ${isSelected ? accent : "var(--border)"}`,
+        // Vien gradient (khong phai border mau dac) - 2 lop background: lop
+        // trong (padding-box) la nen kinh translucent nhu cu, lop ngoai
+        // (border-box) la gradient tu trong suot (dinh) xuong accent (day)
+        // chi hien o dung do rong border. border That phai "solid
+        // transparent" thi background-clip: border-box moi ve duoc vao vung
+        // do (border "co mau" 0 tu ban chat CSS, chi la ao giac tu 2 lop nen
+        // chong nhau).
+        border: "3px solid transparent",
+        borderRadius: "inherit",
+        backgroundImage: `linear-gradient(color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--surface) 88%, transparent)), linear-gradient(180deg, transparent 0%, color-mix(in srgb, ${accent} ${isSelected ? 90 : 70}%, transparent) 100%)`,
+        backgroundOrigin: "border-box",
+        backgroundClip: "padding-box, border-box",
       }}
     >
       {rippleLayer}
@@ -108,24 +120,6 @@ function WorkspaceCard({
       >
         {ws.groups.length} nhóm kiến thức
       </span>
-
-      {isSelected && (
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute inset-0 flex items-center justify-center backdrop-blur-sm"
-          style={{
-            background: "color-mix(in srgb, var(--surface) 65%, transparent)",
-          }}
-        >
-          <LoaderCircle
-            size={20}
-            strokeWidth={1.9}
-            className="animate-spin"
-            style={{ color: accent }}
-          />
-        </motion.span>
-      )}
     </motion.button>
   );
 }
@@ -184,11 +178,26 @@ export function WorkspaceSwitcher({
         className="relative z-10 flex h-full flex-col items-center overflow-y-auto px-6 py-12"
       >
         <div className="mb-9 mt-auto text-center">
-          <h1
-            className="text-2xl font-bold sm:text-3xl"
-            style={{ color: "var(--ink)" }}
-          >
-            Workspace của {isSelf ? "bạn" : `@${username}`}
+          <h1 className="flex items-center justify-center">
+            {/* Hieu ung "bubble" luc logo xuat hien - phong to qua trang thai
+                roi lang dan ve dung kich thuoc (spring damping thap = co
+                overshoot/bat lai that su, khong phai tuong tuong), CHI CHAY
+                1 LAN luc mount (khong lap vo han - dung nguyen tac style
+                guide: khong glow/pulse trang tri thuan tuy). */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 260, damping: 12 }}
+            >
+              <Image
+                src="/assets/images/workspaces/workspace-logo-removebg-preview.png"
+                alt="Workspace"
+                width={360}
+                height={240}
+                className="h-24 w-auto sm:h-32"
+                priority
+              />
+            </motion.div>
           </h1>
           <p className="mt-2 text-sm" style={{ color: "var(--ink-faint)" }}>
             Mỗi workspace là 1 vùng kiến thức riêng - chọn 1 cái để bước vào.

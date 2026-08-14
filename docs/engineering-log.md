@@ -8,6 +8,46 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-08-14 — Redesign màn Workspace Detail theo WORKSPACE_UI_SPEC.md: bỏ map view, tách ArticleTabs dùng chung
+
+**Bối cảnh:** áp dụng 1 spec UI/UX mới (Knowledge Workspace kiểu GitHub×Linear×
+Notion) cho `WorkspaceDetail.tsx`/`ArticleReaderPane.tsx` — 2 file trước đó là
+monolith ~1000-1150 dòng mỗi file.
+
+**Bỏ hẳn "Knowledge Universe Canvas" (map view):** spec chỉ có ArticleList
+dạng danh sách, không có khái niệm bản đồ tri thức. Chỉ ngừng import
+`KnowledgeUniverseCanvas.tsx` khỏi `WorkspaceDetail.tsx` (không xoá file —
+CSS animation/token riêng của nó trong `globals.css` vẫn còn, phòng dùng lại
+sau).
+
+**Tách `ArticleTabs` (Overview/Mục lục/Tài liệu) thành component dùng
+CHUNG** giữa `ArticleReaderPane` (đọc toàn văn, có scroll-spy DOM thật) và
+`ArticleDetailPanel` (MỚI — panel phải giờ là "context inspector" sống thật
+cạnh `ArticleList`, không còn chỉ hiện tổng quan NHÓM như `DetailsPanel` cũ).
+2 nơi dùng chung 1 implementation (`ArticleTabs.tsx` + `ArticleOverview.tsx` +
+`ArticleToc.tsx` + `ArticleResources.tsx`), khác nhau qua props
+(`activeTocId`/`onNodeClick`/`primaryAction`) — tránh 2 bản tab trôi dạt khỏi
+nhau theo thời gian.
+
+**Panel phải cần Mục lục thật NHƯNG không mount Tiptap/hiện nội dung bài** (vì
+chỉ là preview cạnh list, không phải đang đọc) → viết `extractTocFromContent()`
+(`toc.ts`) đọc thẳng JSON Tiptap (`doc.content`) để trích heading, THAY VÌ
+cách `ArticleBody` đang dùng (mount editor thật rồi `querySelectorAll` DOM sau
+khi render) — 2 cách tồn tại song song có chủ đích: DOM-based gắn liền với
+`scrollMarginTop`/scroll-spy của reader thật, JSON-based dùng khi chưa có DOM
+nào để đọc.
+
+**Tránh fetch 2 lần:** chọn 1 bài trong `ArticleList` → panel phải fetch full
+`ApiDocument` 1 lần (`ensureDocLoaded`, idempotent theo `activeDocId`); bấm
+"Đọc bài viết →" để mở `ArticleReaderPane` toàn văn tái dùng đúng object đã
+fetch, không gọi lại `getDocumentAction`.
+
+**Đóng reader không xoá `activeDoc`:** trước đây đóng xong luôn về "browse"
+sạch trắng; giờ panel phải GIỮ NGUYÊN bài vừa đọc ở chế độ preview — tránh
+cảm giác giật/mất ngữ cảnh ngay sau khi đọc xong.
+
+---
+
 ## 2026-08-05 — Làm lại /community/[slug] thành giao diện kênh chat (Member/Admin)
 
 **Quyết định:** thay THẾ HOÀN TOÀN trang chi tiết Community cũ (header + feed

@@ -417,7 +417,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
           );
         })}
         {accountSlot}
-        <button
+        {/* <button
           type="button"
           onClick={handleCompose}
           className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3.5 text-sm font-semibold transition-opacity duration-150 ease-out hover:opacity-90"
@@ -431,7 +431,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
         >
           <Plus size={16} strokeWidth={2.5} />
           <span className="hidden sm:inline">Đăng bài</span>
-        </button>
+        </button> */}
       </div>
     </header>
   );

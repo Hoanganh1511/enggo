@@ -50,3 +50,9 @@ Mọi dropdown/popover kiểu hover hoặc click-to-open (workspace switcher, ap
 ```
 
 Khi thêm dropdown/popover mới, tái dùng đúng các giá trị trên (không tự chế animation khác).
+
+### Khu vực Workspace (sidebar/main/DetailsPanel/ArticleFocusOverlay)
+
+Xem `docs/workspace-style-guide.md` TRƯỚC KHI viết class màu/font/size mới ở
+đây — đặc biệt khi port UI từ 1 source demo ngoài (dễ mang theo bảng màu/font
+riêng của source, gây lạc tông với phần còn lại của app).

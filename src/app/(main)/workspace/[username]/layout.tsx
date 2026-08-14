@@ -38,7 +38,7 @@ const WorkspaceHubLayout = ({ children }: { children: React.ReactNode }) => {
       >
         <div className="relative z-10 h-full">{children}</div>
       </WorkspaceToolbarContext.Provider>
-      <ControlCenterReactor tools={tools} />
+      {/* <ControlCenterReactor tools={tools} /> */}
     </div>
   );
 };

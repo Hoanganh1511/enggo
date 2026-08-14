@@ -30,11 +30,16 @@ const DEPLOY_MS = 1500;
 const RETRACT_MS = 1100;
 
 const jointVariants: Variants = {
+  // idle/retracting: opacity VE 0 hoan toan (truoc day van la 1 -> khop noi
+  // van luon hien du khong deploy, gay ra 1 thanh den nho "thoi ra" phia
+  // tren nut luc dong, vi khop index=0 (rotate tinh 0deg) mac dinh chia
+  // thang len tren khong bi che boi gi ca). Gio an han, chi hien khi that
+  // su deploying/online.
   idle: {
     x: 0,
     y: 0,
     rotate: 0,
-    opacity: 1,
+    opacity: 0,
     transition: { type: "spring", stiffness: 500, damping: 32 },
   },
   deploying: (custom: {
@@ -65,7 +70,7 @@ const jointVariants: Variants = {
     x: 0,
     y: 0,
     rotate: 0,
-    opacity: 1,
+    opacity: 0,
     transition: { type: "spring", stiffness: 500, damping: 30 },
   },
 };
@@ -128,12 +133,27 @@ export function ControlCenterReactor({
   const isDeployed = state === "deploying" || state === "online";
   const isBusy = state === "deploying" || state === "retracting";
 
+  // Toc do quay cua vong rang/vong scan trong CORE HOUSING gan truc tiep
+  // theo "state" that (khong phai 1 co active rieng): idle quay rat cham,
+  // deploying (vua click) tang toc manh nhu dang "boot", online on dinh o
+  // toc do vua (cam giac dang lam viec lien tuc), retracting cham dan giong
+  // idle - dung 1 timeline lien tuc (repeat: Infinity) o moi state thay vi
+  // bat/tat animation, tranh giat khi doi state.
+  const gearSpinSeconds =
+    state === "deploying" ? 3 : state === "online" ? 14 : 40;
+  const scanSpinSeconds =
+    state === "deploying" ? 2 : state === "online" ? 5 : 9;
+
+  // Gia tri x/rotate da MIRROR ngang (dau nguoc voi ban goc, y giu nguyen)
+  // vi Reactor gio nam o goc TRAI - x/rotate o day la translateX/rotate that
+  // (qua Framer), doi huong vat ly theo dau so ne`n phai dao dau khi doi
+  // ben (khac voi TOOL ARMS ben duoi dung margin, chi can doi thuoc tinh).
   const joints = useMemo(
     () => [
-      { x: -11, y: -8, rotate: -9, delay: 0.02 },
-      { x: 10, y: -10, rotate: 10, delay: 0.07 },
-      { x: -10, y: 10, rotate: 8, delay: 0.12 },
-      { x: 12, y: 10, rotate: -8, delay: 0.17 },
+      { x: 11, y: -8, rotate: 9, delay: 0.02 },
+      { x: -10, y: -10, rotate: -10, delay: 0.07 },
+      { x: 10, y: 10, rotate: -8, delay: 0.12 },
+      { x: -12, y: 10, rotate: 8, delay: 0.17 },
     ],
     [],
   );
@@ -165,7 +185,7 @@ export function ControlCenterReactor({
 
   return (
     <div
-      className="reactor-root fixed right-7 bottom-7 z-[80] h-[360px] w-[430px] select-none"
+      className="reactor-root fixed bottom-7 left-7 z-[80] h-[360px] w-[430px] select-none"
       aria-label="Control Center"
     >
       {/* ATMOSPHERE */}
@@ -175,7 +195,7 @@ export function ControlCenterReactor({
           scale: isDeployed ? 1.08 : 0.92,
         }}
         transition={{ duration: 0.65 }}
-        className="pointer-events-none absolute -right-20 -bottom-20 h-[310px] w-[310px] rounded-full bg-violet-600/15 blur-[90px]"
+        className="pointer-events-none absolute -bottom-20 -left-20 h-[310px] w-[310px] rounded-full bg-violet-600/15 blur-[90px]"
       />
 
       <motion.div
@@ -184,7 +204,7 @@ export function ControlCenterReactor({
           scale: isDeployed ? 1 : 0.82,
         }}
         transition={{ duration: 0.7, delay: 0.1 }}
-        className="pointer-events-none absolute right-8 -bottom-8 h-[230px] w-[230px] rounded-full bg-cyan-400/10 blur-[75px]"
+        className="pointer-events-none absolute -bottom-8 left-8 h-[230px] w-[230px] rounded-full bg-cyan-400/10 blur-[75px]"
       />
 
       {/* RADIAL HUD - AN HOAN TOAN luc dong (opacity 0, khong phai 0.55 nhu
@@ -197,7 +217,7 @@ export function ControlCenterReactor({
           scale: isDeployed ? 1 : 0.6,
         }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="pointer-events-none absolute right-0 bottom-0 h-[260px] w-[260px]"
+        className="pointer-events-none absolute bottom-0 left-0 h-[260px] w-[260px]"
       >
         <div className="absolute inset-0 rounded-full border border-violet-400/25" />
         <div className="reactor-spin absolute inset-[9px] rounded-full border border-dashed border-violet-300/35" />
@@ -245,7 +265,7 @@ export function ControlCenterReactor({
           variants={jointVariants}
           initial="idle"
           animate={state}
-          className="pointer-events-none absolute right-[83px] bottom-[83px] h-[88px] w-[38px] origin-bottom"
+          className="pointer-events-none absolute bottom-[83px] left-[83px] h-[88px] w-[38px] origin-bottom"
           style={{ rotate: index * 90 }}
         >
           <div
@@ -261,7 +281,14 @@ export function ControlCenterReactor({
       <AnimatePresence>
         {isDeployed &&
           tools.map((tool, index) => {
-            const angle = 202 + index * (56 / Math.max(1, tools.length - 1));
+            // "baseAngle" la cong thuc GOC (khi Reactor con o goc phai, cum
+            // tool xoe ra huong tren-trai). Mirror ngang chuan la
+            // "180 - goc" - dung "angle" (da mirror) cho CA vi tri (x,y) LAN
+            // huong duong noi (angle+180), 2 cho nay dung chung 1 gia tri
+            // nen tu dong nhat quan, khong can sua rieng tung cho.
+            const baseAngle =
+              202 + index * (56 / Math.max(1, tools.length - 1));
+            const angle = 180 - baseAngle;
             const radius = 142;
             const rad = (angle * Math.PI) / 180;
             const x = Math.cos(rad) * radius;
@@ -276,8 +303,8 @@ export function ControlCenterReactor({
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="pointer-events-auto absolute right-[86px] bottom-[86px]"
-                style={{ marginRight: x, marginBottom: -y }}
+                className="pointer-events-auto absolute bottom-[86px] left-[86px]"
+                style={{ marginLeft: x, marginBottom: -y }}
               >
                 <motion.span
                   initial={{ scaleX: 0, opacity: 0 }}
@@ -337,22 +364,75 @@ export function ControlCenterReactor({
           })}
       </AnimatePresence>
 
-      {/* CORE HOUSING */}
+      {/* CORE HOUSING - 5 lop tu ngoai vao trong: (1) vong rang co khi GEAR
+          TEETH quay lien tuc toc do doi theo state, (2) TICK MARKS co dinh
+          (khong quay - dong ho/thuoc do), (3) vong SCAN quay voi 1 cham
+          sang chay quanh, (4) glow pulse, (5) nut bam that. group-hover cho
+          phep vong rang sang len khi hover ca cum, khong can hover rieng
+          tung lop. */}
       <motion.div
-        animate={{ scale: isDeployed ? 1 : 0.96, rotate: isDeployed ? 0 : -4 }}
-        transition={{ type: "spring", stiffness: 320, damping: 24 }}
-        className="absolute right-0 bottom-0 h-[126px] w-[126px]"
+        animate={{ scale: isDeployed ? 1 : 0.5, rotate: isDeployed ? 0 : -4 }}
+        transition={
+          // Trang thai nghi (idle/retracting) thu nho CON 50% - luc DONG
+          // (retracting) dung 1 spring MEM hon (stiffness thap hon) de cam
+          // giac "thu nho lai dan" ro rang thay vi nay/snap ve nhu luc mo.
+          isDeployed
+            ? { type: "spring", stiffness: 320, damping: 24 }
+            : { type: "spring", stiffness: 140, damping: 20 }
+        }
+        className="group absolute bottom-0 left-0 h-[126px] w-[126px]"
       >
-        <div className="absolute inset-0 rounded-full border border-violet-300/25 bg-[#070b18]/90 shadow-[0_18px_50px_rgba(0,0,0,.35)] backdrop-blur-xl" />
+        {/* (1) GEAR TEETH - vien rang co khi ngoai cung, hoi tran ra ngoai
+            khung 126px 1 chut (giong housing "om" lay loi cot ben trong). */}
+        <motion.div
+          animate={{ rotate: 360, opacity: state === "retracting" ? 0.55 : 1 }}
+          transition={{
+            rotate: { duration: gearSpinSeconds, repeat: Infinity, ease: "linear" },
+            opacity: { duration: 0.3 },
+          }}
+          className="absolute -inset-2"
+        >
+          <div
+            className="absolute inset-0 rounded-full border border-violet-300/25 bg-[#0a0f22]/85 shadow-[inset_0_0_18px_rgba(0,0,0,.75)] transition-colors duration-300 group-hover:border-cyan-300/45"
+            style={{
+              clipPath: `polygon(
+                50% 0%, 58% 4%, 63% 2%, 68% 8%, 76% 6%, 80% 13%, 88% 13%,
+                87% 21%, 94% 25%, 90% 32%, 97% 38%, 92% 44%, 98% 50%,
+                92% 56%, 97% 62%, 90% 68%, 94% 75%, 87% 79%, 88% 87%,
+                80% 87%, 76% 94%, 68% 92%, 63% 98%, 57% 96%, 50% 100%,
+                43% 96%, 37% 98%, 32% 92%, 24% 94%, 20% 87%, 12% 87%,
+                13% 79%, 6% 75%, 10% 68%, 3% 62%, 8% 56%, 2% 50%, 8% 44%,
+                3% 38%, 10% 32%, 6% 25%, 13% 21%, 12% 13%, 20% 13%,
+                24% 6%, 32% 8%, 37% 2%, 42% 4%
+              )`,
+            }}
+          />
+        </motion.div>
+
+        {/* (2) TICK MARKS - vong chia do co dinh, khong quay theo gear. */}
+        <div className="pointer-events-none absolute inset-[19px] rounded-full">
+          {Array.from({ length: 24 }).map((_, index) => (
+            <span
+              key={index}
+              className="absolute top-0 left-1/2 h-[4px] w-px origin-[0_44px] bg-cyan-300/25 transition-opacity duration-300 group-hover:opacity-80"
+              style={{ transform: `rotate(${index * 15}deg)` }}
+            />
+          ))}
+        </div>
+
         <div className="absolute inset-[7px] rounded-full border border-dashed border-violet-300/30" />
 
+        {/* (3) SCAN RING - quay lien tuc (ke ca luc idle, chi cham hon), 1
+            cham sang chay quanh mo phong "dang quet". */}
         <motion.div
-          animate={{ rotate: isDeployed ? 360 : 0 }}
+          animate={{ rotate: 360 }}
           transition={{
-            rotate: { duration: 10, repeat: Infinity, ease: "linear" },
+            rotate: { duration: scanSpinSeconds, repeat: Infinity, ease: "linear" },
           }}
           className="absolute inset-[15px] rounded-full border border-cyan-300/20"
-        />
+        >
+          <span className="absolute top-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-cyan-300 shadow-[0_0_10px_#22d3ee]" />
+        </motion.div>
 
         <motion.div
           animate={{
@@ -399,11 +479,11 @@ export function ControlCenterReactor({
 
       {/* LABEL */}
       <motion.div
-        animate={{ opacity: isDeployed ? 1 : 0.7, x: isDeployed ? -4 : 0 }}
+        animate={{ opacity: isDeployed ? 1 : 0.7, x: isDeployed ? 4 : 0 }}
         transition={{ duration: 0.35 }}
-        className="pointer-events-none absolute right-[142px] bottom-[13px] text-right"
+        className="pointer-events-none absolute bottom-[13px] left-[142px] text-left"
       >
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-start gap-2">
           <span
             className={[
               "h-2 w-2 rounded-full",
@@ -437,7 +517,7 @@ export function ControlCenterReactor({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
-            className="pointer-events-none absolute right-[128px] bottom-[142px] flex items-center gap-2 rounded-lg border border-cyan-300/10 bg-[#070d19]/85 px-3 py-2 backdrop-blur-xl"
+            className="pointer-events-none absolute bottom-[142px] left-[128px] flex items-center gap-2 rounded-lg border border-cyan-300/10 bg-[#070d19]/85 px-3 py-2 backdrop-blur-xl"
           >
             <Sparkles size={12} className="text-cyan-300" />
             <span className="text-[8px] tracking-[0.12em] text-cyan-200/80">
@@ -454,7 +534,7 @@ export function ControlCenterReactor({
             initial={{ opacity: 0, y: 8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 5 }}
-            className="pointer-events-none absolute right-[110px] bottom-[155px] rounded-xl border border-violet-300/15 bg-[#080e1c]/90 px-3 py-2 shadow-xl backdrop-blur-xl"
+            className="pointer-events-none absolute bottom-[155px] left-[110px] rounded-xl border border-violet-300/15 bg-[#080e1c]/90 px-3 py-2 shadow-xl backdrop-blur-xl"
           >
             <div className="flex items-center gap-2 text-[9px] text-slate-300">
               <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee]" />

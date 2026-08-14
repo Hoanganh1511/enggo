@@ -147,7 +147,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-active: var(--active);
-  --font-sans: var(--font-playpen-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   /* Font rieng cho PostCard (class "font-card") - xem layout.tsx, KHONG dung
      lam --font-sans mac dinh vi chi ap dung cho card post, khong doi font
@@ -641,17 +641,16 @@ body {
    sang layout phang (treecareer-article-reader, khong 3D transform nao) vi
    he 3D cu gay loi hit-test trinh duyet KHONG THE SUA TRIET DE (xem ghi
    chu trong ArticleFocusOverlay.tsx muc (0)) cong voi van de hieu nang do
-   qua nhieu lop GPU compositing chong nhau. */
+   qua nhieu lop GPU compositing chong nhau.
+   [2026-08] Restyle theo docs/workspace-style-guide.md: mau/shadow hardcode
+   (rgba cyan) doi sang token (var(--surface)/var(--border)/var(--shadow-panel))
+   de khop voi sidebar/DetailsPanel con lai cua WorkspaceDetail thay vi tu
+   mang 1 bang mau rieng - giu lai backdrop-blur (hieu ung "kinh mo", khong
+   phai lua chon mau nen khong lien quan chuyen lac tong). */
 .focus-glass {
-  background:
-    linear-gradient(135deg, rgba(7, 30, 47, 0.95), rgba(1, 10, 20, 0.91)),
-    rgba(2, 13, 23, 0.9);
-  border: 1px solid rgba(73, 211, 255, 0.3);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.018),
-    inset 0 0 36px rgba(30, 190, 255, 0.018),
-    0 0 42px rgba(0, 201, 255, 0.055),
-    0 28px 80px rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-panel);
   backdrop-filter: blur(22px) saturate(135%);
   -webkit-backdrop-filter: blur(22px) saturate(135%);
 }
@@ -659,25 +658,29 @@ body {
   cursor: pointer;
 }
 .focus-glass button:focus-visible {
-  outline: 1px solid rgba(100, 230, 255, 0.55);
+  outline: 1px solid var(--focus-border);
   outline-offset: 2px;
+}
+
+/* Panel long BEN TRONG .focus-glass (vd cot cong cu ben phai) - khong can tu
+   backdrop-blur rieng (da nam trong lop kinh mo cua .focus-glass roi), chi
+   can 1 nen phang hoi khac de tach lop voi noi dung xung quanh. */
+.focus-glass-inset {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
 }
 
 .focus-panel-scroll::-webkit-scrollbar {
   width: 4px;
 }
 .focus-panel-scroll::-webkit-scrollbar-thumb {
-  background: rgba(64, 218, 255, 0.18);
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
   border-radius: 99px;
 }
 .focus-panel-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(64, 218, 255, 0.18) transparent;
+  scrollbar-color: color-mix(in srgb, var(--primary) 22%, transparent) transparent;
   overscroll-behavior: contain;
-}
-
-.focus-hud-text {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* isolation: van can cho ly do stacking-context giai thich trong
@@ -727,7 +730,7 @@ body {
   }
 }
 
-/* GroupListItem dang active (WorkspaceDetail.tsx, sidebar nhom kien thuc) -
+/* KnowledgeBranchItem dang active (WorkspaceSidebar.tsx, sidebar nhom kien thuc) -
    nen "loang" tinh cu chi la 1 linear-gradient co dinh, them 2 khoi plasma
    (radial-gradient mau var(--primary), lam mo + troi cham) chay ben duoi
    noi dung de tao cam giac "dung dich phat sang" thay vi mang mau tinh. */
@@ -792,322 +795,8 @@ body {
   }
 }
 
-/* WorkspaceGatewayOverlay (chuyen canh sci-fi/JARVIS luc bam vao 1
-   workspace, xem components/workspaces/WorkspaceGatewayOverlay.tsx) - rut ra
-   tu source rieng "workspace-gateway". Chi giu cac class THAT SU dung mau
-   styling rieng (bo .workspace-card/.folder-icon cua source - workspace
-   card cua enggo van dung Tailwind + token nhu cac the khac trong app). */
-.workspace-gateway {
-  position: relative;
-  perspective: 1200px;
-}
-
-.door-frame {
-  position: relative;
-  width: min(820px, calc(100vw - 36px));
-  height: min(430px, calc(100vh - 250px));
-  min-height: 360px;
-  overflow: hidden;
-  border: 1px solid rgba(74, 209, 244, 0.17);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(25, 132, 170, 0.085), transparent 46%),
-    rgba(3, 11, 20, 0.92);
-  box-shadow:
-    0 0 0 1px rgba(80, 167, 205, 0.035),
-    0 35px 110px rgba(0, 0, 0, 0.6),
-    0 0 90px rgba(14, 183, 231, 0.06);
-}
-
-.door-frame::before,
-.door-frame::after {
-  content: "";
-  position: absolute;
-  z-index: 7;
-  left: 50%;
-  width: 2px;
-  height: 100%;
-  transform: translateX(-50%);
-  background: linear-gradient(
-    180deg,
-    transparent,
-    rgba(89, 229, 255, 0.22) 18%,
-    rgba(89, 229, 255, 0.7) 50%,
-    rgba(89, 229, 255, 0.22) 82%,
-    transparent
-  );
-  box-shadow: 0 0 14px rgba(58, 222, 255, 0.3);
-  pointer-events: none;
-}
-
-.door-frame::after {
-  width: 42%;
-  height: 1px;
-  top: 50%;
-  background: linear-gradient(90deg, transparent, rgba(75, 222, 255, 0.22), transparent);
-  box-shadow: 0 0 15px rgba(75, 222, 255, 0.18);
-}
-
-.door-center-line {
-  position: absolute;
-  z-index: 10;
-  left: 50%;
-  top: 0;
-  width: 1px;
-  height: 100%;
-  transform-origin: center;
-  background: linear-gradient(transparent, #64e9ff 47%, #64e9ff 53%, transparent);
-  box-shadow: 0 0 18px rgba(73, 224, 255, 0.65);
-}
-
-.door-panel {
-  position: absolute;
-  z-index: 8;
-  left: 0;
-  width: 100%;
-  height: 50%;
-  overflow: hidden;
-  background:
-    linear-gradient(rgba(47, 96, 123, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(47, 96, 123, 0.035) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(5, 20, 31, 0.96), rgba(3, 11, 20, 0.98));
-  background-size:
-    30px 30px,
-    30px 30px,
-    auto;
-}
-
-.door-panel-top {
-  top: 0;
-  transform-origin: center bottom;
-  border-bottom: 1px solid rgba(75, 217, 246, 0.16);
-}
-
-.door-panel-bottom {
-  bottom: 0;
-  transform-origin: center top;
-  border-top: 1px solid rgba(75, 217, 246, 0.16);
-}
-
-.door-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 26px;
-  padding: 38px;
-  opacity: 0.38;
-}
-
-.door-grid span {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(68, 208, 238, 0.3), transparent);
-}
-
-.door-content {
-  position: absolute;
-  z-index: 5;
-  inset: 0;
-  padding: 38px;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(32, 147, 177, 0.055), transparent 40%),
-    rgba(1, 7, 14, 0.58);
-}
-
-.gateway-logo {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 11px;
-  color: #69e7ff;
-  background: rgba(54, 210, 242, 0.075);
-  border: 1px solid rgba(81, 220, 247, 0.16);
-  box-shadow: 0 0 30px rgba(62, 218, 244, 0.08);
-}
-
-.branch-card {
-  min-width: 0;
-  border-radius: 12px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.018);
-  border: 1px solid rgba(117, 154, 180, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
-}
-
-.fluid-track {
-  position: relative;
-  height: 20px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(6, 22, 32, 0.98), rgba(3, 12, 21, 0.98));
-  border: 1px solid rgba(70, 209, 239, 0.28);
-  box-shadow:
-    inset 0 0 12px rgba(0, 0, 0, 0.55),
-    0 0 26px rgba(24, 190, 228, 0.06);
-}
-
-.fluid-fill {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #0c8ab5 0%, #22e0f5 40%, #a6fff7 70%, #34c3ff 100%);
-  box-shadow:
-    0 0 22px rgba(78, 236, 250, 0.55),
-    0 0 46px rgba(52, 224, 239, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 0 10px rgba(210, 255, 255, 0.35);
-}
-
-.fluid-wave {
-  position: absolute;
-  top: -8px;
-  width: 70px;
-  height: 34px;
-  border-radius: 45%;
-  border: 1px solid rgba(220, 255, 255, 0.24);
-  background: rgba(202, 255, 255, 0.08);
-  filter: blur(0.2px);
-}
-
-.wave-a {
-  left: 18%;
-  animation: liquid-wave 1.5s ease-in-out infinite;
-}
-
-.wave-b {
-  left: 56%;
-  animation: liquid-wave 1.15s ease-in-out infinite reverse;
-  opacity: 0.7;
-}
-
-.fluid-bubbles i {
-  position: absolute;
-  bottom: 2px;
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background: rgba(220, 255, 255, 0.8);
-  box-shadow: 0 0 5px rgba(220, 255, 255, 0.8);
-  animation: bubble-up 1.4s ease-in infinite;
-}
-
-.fluid-bubbles i:nth-child(1) {
-  left: 18%;
-  animation-delay: 0.1s;
-}
-.fluid-bubbles i:nth-child(2) {
-  left: 38%;
-  animation-delay: 0.5s;
-}
-.fluid-bubbles i:nth-child(3) {
-  left: 57%;
-  animation-delay: 0.25s;
-}
-.fluid-bubbles i:nth-child(4) {
-  left: 72%;
-  animation-delay: 0.8s;
-}
-.fluid-bubbles i:nth-child(5) {
-  left: 88%;
-  animation-delay: 0.35s;
-}
-
-.fluid-glow {
-  position: absolute;
-  inset: -10px 0;
-  background: linear-gradient(90deg, transparent, rgba(221, 255, 255, 0.18), transparent);
-  transform: translateX(-100%);
-  animation: liquid-sheen 1.8s linear infinite;
-}
-
-.jarvis-laser {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 1px;
-  height: 100%;
-  transform-origin: 50% 100%;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(51, 235, 255, 0.12) 35%,
-    #77f8ff 50%,
-    rgba(51, 235, 255, 0.12) 65%,
-    transparent
-  );
-  box-shadow:
-    0 0 8px rgba(57, 229, 255, 0.85),
-    0 0 28px rgba(57, 229, 255, 0.35),
-    0 0 70px rgba(57, 229, 255, 0.16);
-}
-
-.laser-core {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px solid rgba(134, 248, 255, 0.9);
-  box-shadow:
-    0 0 10px rgba(74, 231, 255, 0.9),
-    0 0 40px rgba(74, 231, 255, 0.5),
-    0 0 100px rgba(74, 231, 255, 0.22);
-}
-
-.laser-sweep {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(75vw, 760px);
-  height: 1px;
-  transform: translate(-50%, -50%) rotate(-12deg);
-  transform-origin: center;
-  background: linear-gradient(90deg, transparent, rgba(74, 230, 255, 0.75), transparent);
-  box-shadow: 0 0 15px rgba(74, 230, 255, 0.55);
-}
-
-@keyframes liquid-wave {
-  0%,
-  100% {
-    transform: translateY(0) scaleX(1);
-  }
-  50% {
-    transform: translateY(5px) scaleX(1.2);
-  }
-}
-
-@keyframes bubble-up {
-  0% {
-    transform: translateY(3px);
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateY(-12px);
-    opacity: 0;
-  }
-}
-
-@keyframes liquid-sheen {
-  to {
-    transform: translateX(100%);
-  }
-}
-
-@media (max-width: 720px) {
-  .door-content {
-    padding: 24px;
-  }
-
-  .door-frame {
-    height: 520px;
-  }
-
-  .door-content .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+/* WorkspaceGatewayOverlay - chuyen canh luc bam vao 1 workspace (xem
+   components/workspaces/WorkspaceGatewayOverlay.tsx). Da doi sang 1 hieu
+   ung don gian hon (card mo rong + nen luoi zoom, thuan Framer Motion
+   layoutId + Tailwind token) - khong con can CSS rieng nhu ban sci-fi/JARVIS
+   cu (door-frame/fluid-track/jarvis-laser...), da xoa het class chet o day. */
