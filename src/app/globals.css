@@ -635,6 +635,13 @@ body {
   pointer-events: none;
 }
 
+/* [2026-08] Bo toan bo he "glass mechanical" 3D (tech-cut/panel-glow/
+   panel-scan/mechanical-stage+perspective/mechanical-dock/glass-assembly/
+   mechanical-assembly va cac phan con cua no) - source tham chieu da doi
+   sang layout phang (treecareer-article-reader, khong 3D transform nao) vi
+   he 3D cu gay loi hit-test trinh duyet KHONG THE SUA TRIET DE (xem ghi
+   chu trong ArticleFocusOverlay.tsx muc (0)) cong voi van de hieu nang do
+   qua nhieu lop GPU compositing chong nhau. */
 .focus-glass {
   background:
     linear-gradient(135deg, rgba(7, 30, 47, 0.95), rgba(1, 10, 20, 0.91)),
@@ -647,92 +654,13 @@ body {
     0 28px 80px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(22px) saturate(135%);
   -webkit-backdrop-filter: blur(22px) saturate(135%);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  transform-origin: center center;
-  will-change: transform, opacity;
 }
-.focus-glass > * {
-  transform-style: preserve-3d;
+.focus-glass button {
+  cursor: pointer;
 }
-/* V6.3: Framer Motion so huu toan bo hinh hoc panel luc trien khai - CSS
-   transition chen vao se tao ra 1 nhip "snap" thu 2. */
-.focus-glass.motion-panel {
-  transition: none !important;
-}
-
-.focus-tech-cut {
-  clip-path: polygon(
-    0 18px,
-    18px 0,
-    calc(100% - 18px) 0,
-    100% 18px,
-    100% calc(100% - 18px),
-    calc(100% - 18px) 100%,
-    18px 100%,
-    0 calc(100% - 18px)
-  );
-}
-.focus-tech-cut::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border: 1px solid rgba(86, 224, 255, 0.13);
-  clip-path: polygon(
-    0 18px,
-    18px 0,
-    calc(100% - 18px) 0,
-    100% 18px,
-    100% calc(100% - 18px),
-    calc(100% - 18px) 100%,
-    18px 100%,
-    0 calc(100% - 18px)
-  );
-}
-
-.focus-panel-glow-left,
-.focus-panel-glow-right {
-  position: absolute;
-  z-index: 4;
-  top: 34px;
-  bottom: 34px;
-  width: 2px;
-  pointer-events: none;
-}
-.focus-panel-glow-left {
-  left: 0;
-  background: linear-gradient(transparent, rgba(64, 224, 255, 0.95), transparent);
-  box-shadow: 0 0 15px rgba(64, 224, 255, 0.7);
-}
-.focus-panel-glow-right {
-  right: 0;
-  background: linear-gradient(transparent, rgba(64, 224, 255, 0.95), transparent);
-  box-shadow: 0 0 15px rgba(64, 224, 255, 0.7);
-}
-
-.focus-panel-scan {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 90px;
-  top: -110px;
-  background: linear-gradient(180deg, transparent, rgba(78, 224, 255, 0.055), transparent);
-  animation: focusPanelScan 4.2s linear infinite;
-  pointer-events: none;
-}
-@keyframes focusPanelScan {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(900%);
-  }
-}
-
-.focus-neon-line {
-  background: linear-gradient(90deg, transparent, rgba(65, 224, 255, 0.85), transparent);
-  box-shadow: 0 0 12px rgba(65, 224, 255, 0.6);
+.focus-glass button:focus-visible {
+  outline: 1px solid rgba(100, 230, 255, 0.55);
+  outline-offset: 2px;
 }
 
 .focus-panel-scroll::-webkit-scrollbar {
@@ -748,286 +676,54 @@ body {
   overscroll-behavior: contain;
 }
 
-.focus-orbit-spin {
-  animation: focusOrbitSpin 18s linear infinite;
-}
-.focus-orbit-spin-reverse {
-  animation: focusOrbitSpin 12s linear infinite reverse;
-}
-@keyframes focusOrbitSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.focus-energy-pulse {
-  animation: focusEnergyPulse 1.45s ease-in-out infinite;
-}
-@keyframes focusEnergyPulse {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.9);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
-  }
-}
-
 .focus-hud-text {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.focus-mechanical-stage {
-  perspective: 1600px;
-  perspective-origin: 50% 50%;
-  transform-style: preserve-3d;
+/* isolation: van can cho ly do stacking-context giai thich trong
+   ArticleFocusOverlay.tsx. contain:layout: stage nay chi choan phan dien
+   tich ben phai sidebar Knowledge Group (left-[250px]), khong phai toan man
+   hinh nua - can no tu tao containing block cho MOI con position:fixed ben
+   trong (FocusBackdrop, SelectionToolbar...), neu khong cac con do se lay
+   VIEWPORT lam moc thay vi khung stage nay, tran ra de len ca sidebar trai.
+   Khong dung transform/perspective (nhu ban 3D truoc) de tranh lap lai dung
+   nhom thuoc tinh da gay loi hit-test o phien lam viec truoc. */
+.focus-reader-stage {
+  isolation: isolate;
+  contain: layout;
 }
-@media (max-width: 1100px) {
-  .focus-mechanical-stage {
-    perspective: 1200px;
+
+/* KnowledgeUniverseCanvas.tsx (ban DOM/SVG) - nhip "tho" nhe tren tung node
+   (thay cho vong lap Math.sin moi frame cua ban Pixi cu bang 1 CSS
+   @keyframes GPU-composited, khong can rAF). Nhan cung <g data-labels>
+   (world) an/hien nhan bang CSS thay vi React re-render moi frame khi zoom
+   qua nguong. */
+[data-labels="hidden"] .node-label {
+  display: none;
+}
+.node-core {
+  animation: nodePulse 1.4s ease-in-out infinite;
+  transform-origin: center;
+}
+.node-core.selected {
+  animation: nodePulseSelected 1.4s ease-in-out infinite;
+}
+@keyframes nodePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
   }
 }
-
-.focus-panel-depth-edge {
-  position: absolute;
-  inset: 5px;
-  z-index: 16;
-  pointer-events: none;
-  border: 1px solid rgba(92, 226, 255, 0.07);
-  box-shadow:
-    inset 0 0 24px rgba(50, 210, 255, 0.025),
-    0 0 18px rgba(50, 210, 255, 0.04);
-}
-
-.focus-mechanical-dock {
-  z-index: 4;
-  pointer-events: none;
-  isolation: isolate;
-  transform-style: preserve-3d;
-  backface-visibility: visible;
-  will-change: transform;
-}
-.focus-mechanical-dock::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 22px;
-  height: 8px;
-  transform: translate(-50%, -50%);
-  border-top: 1px solid rgba(72, 224, 255, 0.55);
-  border-bottom: 1px solid rgba(72, 224, 255, 0.18);
-  background: linear-gradient(90deg, rgba(4, 18, 28, 0.95), rgba(34, 170, 210, 0.28), rgba(4, 18, 28, 0.95));
-  box-shadow: 0 0 12px rgba(45, 220, 255, 0.16);
-}
-
-.focus-glass button {
-  cursor: pointer;
-}
-.focus-glass button:focus-visible {
-  outline: 1px solid rgba(100, 230, 255, 0.55);
-  outline-offset: 2px;
-}
-
-/* V10.5 mechanical assembly - port tu treecareer-knowledge-ironman-v10-5
-   (KnowledgeUniverse.tsx/globals.css). Glass + mechanical hardware dung
-   CHUNG 1 transform tree (focus-glass-assembly): canh tay khong tu tinh
-   rotateY rieng, chi khop noi vat ly quanh cac hinge - day la fix chinh cua
-   ban v10.5 so voi khop V6.3 cu (perspective/canh tay bi lech voi kinh luc
-   xoay). focus-glass-layout-shell (ngoai, o TSX) chi con la 1 div fixed
-   thuan (top/right/width/height/opacity qua Framer animate={frame}, KHONG
-   con dung Framer "layout" nua) boc focus-glass-assembly (trong, chi 3D
-   compositor transform: rotateY/scale/x). Bo transform-style:preserve-3d/
-   backface-visibility tren chinh .focus-glass-layout-shell (khong con dung
-   den vi ban than no khong mang transform nao) - giu lai tren no da xac
-   nhan la 1 phan nguyen nhan khien hit-test cua trinh duyet
-   (elementFromPoint, hover, click) dung lai o box ngoai cung, khong "xuyen"
-   duoc vao noi dung dang bi rotateY ben trong. */
-.focus-glass-assembly {
-  transform-style: preserve-3d;
-  isolation: isolate;
-}
-.focus-glass-surface {
-  transform: translateZ(0);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  contain: paint;
-}
-/* Phan cung co khi nam DUOI lop thong tin, van o NGOAI polygon kinh bi clip
-   (tech-cut) nen khong bao gio de len chu bai viet. */
-.focus-glass-assembly > .focus-glass-surface {
-  z-index: 10;
-}
-.focus-glass-assembly > .focus-mechanical-assembly {
-  z-index: 2;
-}
-.focus-glass-assembly {
-  pointer-events: none;
-}
-.focus-glass-assembly > .focus-glass-surface,
-.focus-glass-assembly > .focus-glass-surface button,
-.focus-glass-assembly > .focus-glass-surface a,
-.focus-glass-assembly > .focus-glass-surface input {
-  pointer-events: auto;
-}
-
-.focus-mechanical-assembly {
-  position: absolute;
-  z-index: 1;
-  pointer-events: none;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  overflow: visible;
-}
-.focus-mechanical-assembly-left {
-  transform-origin: right center;
-}
-.focus-mechanical-assembly-right {
-  transform-origin: left center;
-}
-
-.focus-mechanical-anchor {
-  width: 22px;
-  height: 30px;
-  transform: translateY(-50%);
-  display: grid;
-  place-items: center;
-}
-.focus-mechanical-collar {
-  position: absolute;
-  width: 34px;
-  height: 18px;
-  border: 1px solid rgba(94, 226, 255, 0.25);
-  background: linear-gradient(180deg, rgba(12, 30, 42, 0.96), rgba(2, 9, 15, 0.98));
-  box-shadow:
-    inset 0 0 7px rgba(0, 0, 0, 0.8),
-    0 0 12px rgba(30, 210, 255, 0.1);
-}
-
-.focus-mechanical-pivot {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: radial-gradient(circle at 45% 40%, #102a39 0 24%, #07121c 25% 64%, #02070d 65% 100%);
-  border: 1px solid rgba(133, 171, 190, 0.62);
-  box-shadow:
-    inset 0 0 8px rgba(0, 0, 0, 0.95),
-    0 0 13px rgba(35, 210, 255, 0.13);
-}
-.focus-mechanical-pivot::before {
-  content: "";
-  position: absolute;
-  inset: 20%;
-  border-radius: inherit;
-  border: 1px solid rgba(90, 140, 160, 0.55);
-}
-.focus-mechanical-pivot::after {
-  content: "";
-  width: 28%;
-  height: 28%;
-  border-radius: 999px;
-  background: rgba(70, 220, 255, 0.85);
-  box-shadow: 0 0 9px rgba(65, 224, 255, 0.75);
-}
-.focus-mechanical-pivot-large {
-  width: 38px;
-  height: 38px;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-.focus-mechanical-pivot-small {
-  width: 25px;
-  height: 25px;
-  top: calc(50% - 12.5px);
-}
-
-.focus-mechanical-link,
-.focus-mechanical-elbow {
-  height: 14px;
-  top: calc(50% - 7px);
-}
-.focus-mechanical-beam {
-  position: absolute;
-  inset: 2px 0;
-  border: 1px solid rgba(117, 152, 169, 0.62);
-  clip-path: polygon(4px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 4px 100%, 0 50%);
-  background: linear-gradient(180deg, #172a35 0%, #071019 46%, #101d26 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.8),
-    0 0 10px rgba(25, 200, 255, 0.08);
-}
-.focus-mechanical-beam-secondary {
-  background: linear-gradient(180deg, #1b2b34, #08121a 50%, #101c24);
-}
-
-.focus-mechanical-screw {
-  position: absolute;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  margin-top: -4px;
-  border-radius: 50%;
-  border: 1px solid rgba(157, 184, 196, 0.65);
-  background: #08121a;
-  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.9);
-  z-index: 2;
-}
-.focus-mechanical-screw::after {
-  content: "";
-  position: absolute;
-  left: 1px;
-  right: 1px;
-  top: 3px;
-  height: 1px;
-  background: rgba(190, 220, 230, 0.55);
-  transform: rotate(28deg);
-}
-.focus-mechanical-screw-a {
-  left: 12px;
-}
-.focus-mechanical-screw-b {
-  right: 12px;
-}
-
-.focus-mechanical-actuator {
-  position: absolute;
-  top: calc(50% - 1px);
-  height: 2px;
-  border-radius: 99px;
-  background: linear-gradient(90deg, transparent, rgba(65, 224, 255, 0.85), transparent);
-  box-shadow: 0 0 9px rgba(65, 224, 255, 0.55);
-}
-
-/* Khong co spring-overshoot cho he kinh/canh tay lon - luon dung deterministic
-   cubic-bezier (dat dung diem cuoi, khong "nay" qua lai). */
-.focus-glass-assembly,
-.focus-mechanical-assembly,
-.focus-mechanical-link,
-.focus-mechanical-elbow {
-  will-change: transform, opacity;
-}
-/* Guardrail hieu nang: chi animate transform/opacity/filter, ep GPU
-   compositing rieng lop kinh, tranh layout thrashing luc trien khai/dong. */
-.focus-motion-optimized {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .focus-glass-assembly,
-  .focus-glass-assembly *,
-  .focus-mechanical-link,
-  .focus-mechanical-elbow,
-  .focus-mechanical-actuator,
-  .focus-mechanical-pivot {
-    animation: none !important;
-    transition: none !important;
+@keyframes nodePulseSelected {
+  0%,
+  100% {
+    transform: scale(1.18);
+  }
+  50% {
+    transform: scale(1.22);
   }
 }
 

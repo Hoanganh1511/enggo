@@ -30,11 +30,13 @@ import type {
   ApiKnowledgeGroup,
   ApiWorkspaceWithGroups,
 } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
 import { getGroupDocumentsAction } from "@/actions/knowledge-groups/get-group-documents";
 import { getDocumentAction } from "@/actions/documents/get-document";
 import { colorOf } from "./node-color";
-import { KnowledgeUniverseCanvas } from "./KnowledgeUniverseCanvas";
+import {
+  KnowledgeUniverseCanvas,
+  MAP_TRANSITION_MS,
+} from "./KnowledgeUniverseCanvas";
 import { CreateGroupButton } from "./CreateGroupButton";
 import { PostEditorModal } from "./PostEditorModal";
 import { RequestCollabButton } from "./RequestCollabButton";
@@ -211,6 +213,17 @@ export function WorkspaceDetail({
   );
   const [groupDocs, setGroupDocs] = useState<ApiDocumentSummary[]>([]);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  // Dieu phoi hieu ung "xoay vao lo den" (main) + truot phai (DetailsPanel)
+  // luc mo/dong 1 bai viet - xem MAP_TRANSITION_MS trong
+  // KnowledgeUniverseCanvas.tsx. "closing": dang xoay vao tam (selectedDocId
+  // VAN CON null luc nay, ArticleFocusOverlay chua mount). "opening": vua
+  // dong ArticleFocusOverlay xong, main/DetailsPanel dang truot/xoay tro
+  // lai. main+DetailsPanel CHI thuc su unmount (khong con "an tam" duoi lop
+  // mo nhu truoc) khi selectedDocId da co gia tri - xem dieu kien render o
+  // duoi.
+  const [mainPhase, setMainPhase] = useState<"idle" | "closing" | "opening">(
+    "idle",
+  );
   const [view, setView] = useState<"map" | "list">("map");
   const [isPending, startTransition] = useTransition();
   // Doc DAY DU (co content) cho bai dang mo trong main - groupDocs chi la ban
@@ -257,28 +270,47 @@ export function WorkspaceDetail({
   // Mo 1 bai viet DE DOC NGAY TRONG TRANG (main hien noi dung bai, khong con
   // dieu huong sang /u/[username]/workspaces/[slug]). groupDocs (summary) da
   // co slug + author.username nen khong can goi lai getGroupDocumentsAction.
+  //
+  // Khong set selectedDocId ngay - cho hieu ung "xoay vao lo den" cua main +
+  // truot phai cua DetailsPanel (mainPhase="closing") CHAY XONG (khop
+  // MAP_TRANSITION_MS) roi moi thuc su mo ArticleFocusOverlay, dung y
+  // "dong main lai... roi phan nay thay vao" nguoi dung yeu cau (khong phai
+  // mo modal chong len). Chan bam node moi trong luc dang chuyen canh
+  // (mainPhase !== "idle") - tranh xep chong nhieu hieu ung.
   const selectDoc = useCallback(
     (id: string) => {
-      setSelectedDocId(id);
-      setSelectedDocFull(null);
-      setToc([]);
-      setActiveTocId("");
-      const summary = groupDocs.find((d) => d.id === id);
-      if (!summary) return;
-      startDocTransition(async () => {
-        setSelectedDocFull(
-          await getDocumentAction(summary.author.username, summary.slug),
-        );
-      });
+      if (mainPhase !== "idle") return;
+      setMainPhase("closing");
+      window.setTimeout(() => {
+        setSelectedDocId(id);
+        setSelectedDocFull(null);
+        setToc([]);
+        setActiveTocId("");
+        setMainPhase("idle");
+        const summary = groupDocs.find((d) => d.id === id);
+        if (!summary) return;
+        startDocTransition(async () => {
+          setSelectedDocFull(
+            await getDocumentAction(summary.author.username, summary.slug),
+          );
+        });
+      }, MAP_TRANSITION_MS);
     },
-    [groupDocs],
+    [groupDocs, mainPhase],
   );
 
+  // Goi boi ArticleFocusOverlay's onClose - CHI fire SAU KHI overlay da tu
+  // mo dan xong (~320ms, xem handleClose trong ArticleFocusOverlay.tsx), nen
+  // luc nay overlay da vo hinh - dat selectedDocId=null la an toan, khong
+  // gay giat hinh. mainPhase="opening" cho main+DetailsPanel remount va
+  // choi hieu ung nguoc lai (xoay ra tu tam / truot vao tu phai).
   const backToPostList = useCallback(() => {
     setSelectedDocId(null);
     setSelectedDocFull(null);
     setToc([]);
     setActiveTocId("");
+    setMainPhase("opening");
+    window.setTimeout(() => setMainPhase("idle"), MAP_TRANSITION_MS);
   }, []);
 
   // Scroll-spy cho tab "Muc luc": dung IntersectionObserver voi root la CHINH
@@ -363,10 +395,7 @@ export function WorkspaceDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.25 }}
-      className={cn(
-        "pre-focus-blur relative z-10 flex h-full flex-col",
-        selectedDocId && "is-focused",
-      )}
+      className="relative z-10 flex h-full flex-col"
     >
       <div className="flex min-h-0 flex-1">
         {/* Sidebar - ten workspace + danh sach Knowledge Group, TU no choan
@@ -487,99 +516,109 @@ export function WorkspaceDetail({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1">
-            {/* Stage - Knowledge Map hoac List cua nhom dang chon. Doi nhom
-                (key doi) -> AnimatePresence cho noi dung cu thu nho + mo dan
-                roi noi dung moi (ke ca "loading" trong luc cho docs) phinh to
-                kem nay - xem stageVariants. */}
-            <main className="relative min-w-0 flex-1 overflow-hidden">
-              {/* panelsReady: cho DetailsPanel truot vao xong (hoac khong co
-                  gi de cho) roi moi hien trang thai/loading. */}
-              <AnimatePresence mode="wait">
-                {!panelsReady ? null : !selectedGroup ? (
-                  <motion.div
-                    key="empty"
-                    variants={stageVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="absolute inset-0 flex h-full flex-col items-center justify-center gap-2"
-                  >
-                    <Sparkles
-                      size={26}
-                      strokeWidth={1.5}
-                      style={{ color: "var(--ink-faint)" }}
-                    />
-                    <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
-                      Chọn 1 nhóm kiến thức bên trái.
-                    </p>
-                  </motion.div>
-                ) : isPending ? (
-                  <motion.div
-                    key={`${selectedGroup.id}-loading`}
-                    variants={stageVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="absolute inset-0 flex h-full flex-col items-center justify-center gap-2"
-                  >
-                    <LoaderCircle
-                      size={22}
-                      strokeWidth={1.9}
-                      className="animate-spin"
-                      style={{ color: "var(--ink-faint)" }}
-                    />
-                    <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
-                      Đang tải...
-                    </p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key={`${selectedGroup.id}-ready`}
-                    variants={stageVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                    className="absolute inset-0"
-                  >
-                    {selectedGroup.viewerCanWrite ||
-                    selectedGroup.visibility === "PUBLIC" ? (
-                      view === "map" ? (
-                        <KnowledgeUniverseCanvas
-                          group={selectedGroup}
-                          docs={groupDocs}
-                          selectedDocId={selectedDocId}
-                          onSelect={selectDoc}
-                        />
+          {/* main+DetailsPanel CHI mount khi khong focus 1 bai viet (hoac
+              dang trong luc chuyen canh closing/opening - selectedDocId con
+              null suot "closing", vua ve null luc "opening" bat dau) - xem
+              mainPhase. Khac truoc (chi lam mo qua .pre-focus-blur, van
+              mount ngam duoi lop overlay): gio UNMOUNT THAT SU luc dang
+              focus, dung y "nhe" da chuyen tu Pixi sang DOM/SVG. */}
+          {!selectedDocId && (
+            <div className="flex min-h-0 flex-1">
+              {/* Stage - Knowledge Map hoac List cua nhom dang chon. Doi nhom
+                  (key doi) -> AnimatePresence cho noi dung cu thu nho + mo dan
+                  roi noi dung moi (ke ca "loading" trong luc cho docs) phinh to
+                  kem nay - xem stageVariants. */}
+              <main className="relative min-w-0 flex-1 overflow-hidden">
+                {/* panelsReady: cho DetailsPanel truot vao xong (hoac khong co
+                    gi de cho) roi moi hien trang thai/loading. */}
+                <AnimatePresence mode="wait">
+                  {!panelsReady ? null : !selectedGroup ? (
+                    <motion.div
+                      key="empty"
+                      variants={stageVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="absolute inset-0 flex h-full flex-col items-center justify-center gap-2"
+                    >
+                      <Sparkles
+                        size={26}
+                        strokeWidth={1.5}
+                        style={{ color: "var(--ink-faint)" }}
+                      />
+                      <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
+                        Chọn 1 nhóm kiến thức bên trái.
+                      </p>
+                    </motion.div>
+                  ) : isPending ? (
+                    <motion.div
+                      key={`${selectedGroup.id}-loading`}
+                      variants={stageVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="absolute inset-0 flex h-full flex-col items-center justify-center gap-2"
+                    >
+                      <LoaderCircle
+                        size={22}
+                        strokeWidth={1.9}
+                        className="animate-spin"
+                        style={{ color: "var(--ink-faint)" }}
+                      />
+                      <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
+                        Đang tải...
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={`${selectedGroup.id}-ready`}
+                      variants={stageVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      className="absolute inset-0"
+                    >
+                      {selectedGroup.viewerCanWrite ||
+                      selectedGroup.visibility === "PUBLIC" ? (
+                        view === "map" ? (
+                          <KnowledgeUniverseCanvas
+                            group={selectedGroup}
+                            docs={groupDocs}
+                            selectedDocId={selectedDocId}
+                            onSelect={selectDoc}
+                            phase={mainPhase}
+                          />
+                        ) : (
+                          <PostListStage
+                            group={selectedGroup}
+                            docs={groupDocs}
+                            onSelect={selectDoc}
+                          />
+                        )
                       ) : (
-                        <PostListStage
-                          group={selectedGroup}
-                          docs={groupDocs}
-                          onSelect={selectDoc}
-                        />
-                      )
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-6">
-                        <RequestCollabButton groupId={selectedGroup.id} />
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </main>
+                        <div className="flex h-full items-center justify-center p-6">
+                          <RequestCollabButton groupId={selectedGroup.id} />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </main>
 
-            {/* Details panel */}
-            {selectedGroup && (
-              <DetailsPanel
-                group={selectedGroup}
-                docs={groupDocs}
-                username={username}
-                isSelf={isSelf}
-                onSelectDoc={selectDoc}
-                onSettled={() => setPanelsReady(true)}
-              />
-            )}
-          </div>
+              {/* Details panel */}
+              {selectedGroup && (
+                <DetailsPanel
+                  group={selectedGroup}
+                  docs={groupDocs}
+                  username={username}
+                  isSelf={isSelf}
+                  onSelectDoc={selectDoc}
+                  onSettled={() => setPanelsReady(true)}
+                  closing={mainPhase === "closing"}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -719,6 +758,7 @@ function DetailsPanel({
   isSelf,
   onSelectDoc,
   onSettled,
+  closing,
 }: {
   group: ApiKnowledgeGroup;
   docs: ApiDocumentSummary[];
@@ -730,6 +770,14 @@ function DetailsPanel({
   // Bao cho WorkspaceDetail biet panel nay da "ha canh" xong (chi fire 1 lan
   // luc mount).
   onSettled?: () => void;
+  // true khi WorkspaceDetail dang trong pha "closing" (chuan bi mo 1 bai
+  // viet) - panel truot NGUOC ra phai + mo dan thay vi dung yen. Component
+  // van MOUNT suot pha nay (chi thuc su unmount SAU KHI closing xong, xem
+  // dieu kien {!selectedDocId && ...} o WorkspaceDetail) nen chi can doi
+  // "animate", khong can AnimatePresence/exit rieng - luc mo lai (remount
+  // sau khi dong ArticleFocusOverlay), initial={x:420,opacity:0} da san co
+  // ben duoi tu lam dung viec "truot vao tu phai" ma khong can sua gi them.
+  closing?: boolean;
 }) {
   const [composerOpen, setComposerOpen] = useState(false);
 
@@ -737,7 +785,7 @@ function DetailsPanel({
     <>
       <motion.aside
         initial={{ x: 420, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
+        animate={closing ? { x: 420, opacity: 0 } : { x: 0, opacity: 1 }}
         transition={PANEL_SPRING}
         onAnimationComplete={onSettled}
         className="flex w-[420px] shrink-0 flex-col overflow-hidden"
