@@ -520,3 +520,50 @@ phải thắng follow, đừng tối ưu bài toán chưa xảy ra) đúng ở m
 **cách hiện thực cụ thể** (2 bản ghi vật lý, sharded graph DB, fanout
 push/pull) chỉ hợp lý ở đúng quy mô hệ thống gốc đang giải quyết. Copy lý do
 mà bỏ qua bối cảnh quy mô sẽ dẫn tới over-engineering sớm.
+
+---
+
+## 2026-08-15 — Thêm `Document.overview` (tổng quan nội dung, hiện dưới tiêu đề trong ArticleList)
+
+**Bối cảnh:** cần 1 field mới cho "bài viết" (`Document`) — 1 đoạn tổng quan
+ngắn, cho phép định dạng nhưng CHỈ giới hạn 4 tool (in đậm/in nghiêng/bullet/
+số thứ tự), hiện thành 1 box riêng dưới dòng "#N: tiêu đề" trong danh sách bài
+(`ArticleCard.tsx`), tách biệt với `summary` (plain text, dùng cho OG
+description) và `content` (bài đầy đủ, Tiptap JSON không giới hạn).
+
+**Hướng đã cân nhắc cho việc "giới hạn" editor:**
+1. Tự ẩn bớt nút trên toolbar nhưng vẫn dùng chung schema/extensions với
+   editor `content` đầy đủ. → Loại: người dùng vẫn gõ được markdown shortcut
+   (`# `, `> `, `` ``` ``...) để tạo ra heading/blockquote/code block vì các
+   node đó vẫn tồn tại trong schema — giới hạn "giả", chỉ chặn ở UI.
+2. Định nghĩa lại 1 schema Tiptap THẬT SỰ hẹp — dùng
+   `StarterKit.configure({ heading: false, blockquote: false, codeBlock:
+   false, horizontalRule: false, strike: false, code: false, link: false,
+   underline: false })` để loại các node/mark đó khỏi schema, chỉ còn
+   paragraph/bold/italic/bulletList/orderedList/listItem. → Chọn hướng này:
+   giới hạn ở tầng schema nghĩa là input rule, paste, và toolbar đều tự động
+   nhất quán — không có đường nào "lách" ra ngoài 4 tool cho phép.
+
+**Hướng đã cân nhắc cho việc RENDER overview trong danh sách (nhiều thẻ cùng
+lúc):**
+1. Mount 1 `useEditor(..., { editable: false })` + `EditorContent` riêng cho
+   mỗi `ArticleCard`. → Loại: 1 danh sách có thể có hàng chục bài, mỗi bài lại
+   khởi tạo 1 ProseMirror editor instance chỉ để hiển thị vài dòng text —
+   lãng phí rõ rệt so với lợi ích (không cần tương tác gì ở đây, chỉ đọc).
+2. Dùng `generateHTML(json, extensions)` từ `@tiptap/core` (hàm thuần, convert
+   JSON -> HTML string, không cần mount editor) rồi render qua
+   `dangerouslySetInnerHTML`. → Chọn hướng này. Phải thêm `@tiptap/core` làm
+   dependency trực tiếp (trước đó chỉ là dependency bắc cầu qua
+   `@tiptap/react`/`@tiptap/starter-kit`, pnpm strict mode không cho import
+   thẳng gói chưa khai báo trong `package.json`). Bắt buộc dùng ĐÚNG 1 bộ
+   extensions (`getOverviewExtensions()`) dùng chung giữa editor lúc soạn và
+   `generateHTML` lúc đọc — lệch schema giữa 2 nơi sẽ khiến JSON đã lưu bị
+   parse/render sai ở phía đọc.
+
+**Cách tư duy rút ra:** "Giới hạn tool cho người dùng" nên giải quyết ở tầng
+schema/data model (những gì CÓ THỂ được tạo ra) chứ không phải tầng UI (những
+nút NHÌN THẤY được) — 2 tầng này độc lập, giới hạn 1 tầng không tự động giới
+hạn tầng còn lại. Và khi 1 giá trị (Tiptap JSON) được đọc ở nhiều nơi theo
+nhiều cách (editor tương tác được, HTML tĩnh cho danh sách), nơi nào cũng phải
+dùng lại đúng 1 định nghĩa schema — tách schema thành 1 hàm dùng chung ngay từ
+đầu, đừng để 2 bản định nghĩa độc lập rồi trôi dạt.

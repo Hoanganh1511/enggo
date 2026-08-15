@@ -204,6 +204,11 @@ export type ApiDocument = {
   slug: string;
   title: string;
   summary: string | null;
+  // Tong quan noi dung - Tiptap JSON, schema han che (xem
+  // getOverviewExtensions() trong post-extensions.ts). Hien thanh 1 box duoi
+  // tieu de trong danh sach bai viet - KHAC voi `summary` (plain text) va
+  // `content` (bai day du).
+  overview: Record<string, unknown> | null;
   coverImageUrl: string | null;
   content: Record<string, unknown>;
   tags: string[];

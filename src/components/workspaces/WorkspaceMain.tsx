@@ -126,6 +126,18 @@ function BranchStage({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortOption>("latest");
 
+  // So thu tu "#1, #2, #3..." la 1 dinh danh ON DINH theo thoi gian DANG bai
+  // (createdAt, bai dang truoc luon giu so nho hon) - tach rieng khoi thu tu
+  // HIEN THI cua list (co the doi theo sort/search). Neu dung thang vi tri
+  // trong mang da sort/loc, sua 1 bai CU (chi doi updatedAt) se lam no nhay
+  // len dau va doi luon so #, gay hieu lam day la ID bai viet.
+  const publishOrder = useMemo(() => {
+    const sorted = [...docs].sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    );
+    return new Map(sorted.map((d, i) => [d.id, i]));
+  }, [docs]);
+
   const filteredDocs = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = q
@@ -226,11 +238,11 @@ function BranchStage({
             </button>
           </div>
         ) : (
-          filteredDocs.map((d, i) => (
+          filteredDocs.map((d) => (
             <ArticleCard
               key={d.id}
               doc={d}
-              index={i}
+              index={publishOrder.get(d.id) ?? 0}
               username={username}
               workspaceId={workspaceId}
             />

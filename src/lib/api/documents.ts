@@ -5,6 +5,7 @@ export type DocumentInput = {
   knowledgeGroupId: string;
   title: string;
   summary?: string;
+  overview?: Record<string, unknown>;
   coverImageUrl?: string;
   content: Record<string, unknown>;
   tags?: string[];

@@ -19,12 +19,15 @@ import {
   Link2,
   ImageIcon,
   Table as TableIcon,
-  Info,
+  TriangleAlert,
+  OctagonAlert,
+  Lightbulb,
   Undo2,
   Redo2,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { CalloutVariant } from "./post-extensions";
 
 function Btn({
   label,
@@ -81,11 +84,16 @@ export function PostEditorToolbar({ editor }: { editor: Editor }) {
     if (url) editor.chain().focus().setImage({ src: url }).run();
   };
 
-  const toggleCallout = () => {
-    if (editor.isActive("callout")) {
+  // 3 chu de callout (Warning/Danger/Good tips - xem CALLOUT_LABELS trong
+  // post-extensions.ts). Dang la callout NHUNG khac chu de -> doi variant tai
+  // cho (khong lift roi wrap lai, tranh nhap nhay/mat vi tri con tro).
+  const toggleCallout = (variant: CalloutVariant) => {
+    if (editor.isActive("callout", { variant })) {
       editor.chain().focus().lift("callout").run();
+    } else if (editor.isActive("callout")) {
+      editor.chain().focus().updateAttributes("callout", { variant }).run();
     } else {
-      editor.chain().focus().toggleWrap("callout", { variant: "info" }).run();
+      editor.chain().focus().toggleWrap("callout", { variant }).run();
     }
   };
 
@@ -107,7 +115,9 @@ export function PostEditorToolbar({ editor }: { editor: Editor }) {
       <Divider />
       <Btn label="Trích dẫn" Icon={Quote} active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} />
       <Btn label="Khối code" Icon={Terminal} active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()} />
-      <Btn label="Hộp lưu ý" Icon={Info} active={editor.isActive("callout")} onClick={toggleCallout} />
+      <Btn label="Warning" Icon={TriangleAlert} active={editor.isActive("callout", { variant: "warn" })} onClick={() => toggleCallout("warn")} />
+      <Btn label="Danger" Icon={OctagonAlert} active={editor.isActive("callout", { variant: "danger" })} onClick={() => toggleCallout("danger")} />
+      <Btn label="Good tips" Icon={Lightbulb} active={editor.isActive("callout", { variant: "success" })} onClick={() => toggleCallout("success")} />
       <Btn label="Đường kẻ" Icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
       <Divider />
       <Btn label="Liên kết" Icon={Link2} active={editor.isActive("link")} onClick={setLink} />

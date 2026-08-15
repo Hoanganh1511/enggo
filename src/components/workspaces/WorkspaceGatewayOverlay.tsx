@@ -1,30 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Folder } from "lucide-react";
 import type { ApiWorkspaceWithGroups } from "@/lib/api/types";
+import Spinner from "@/components/ui/spinner";
 
-// Hieu ung chuyen canh luc bam vao 1 workspace - 3 buoc don gian (thay ban
-// sci-fi/JARVIS cu co progress bar gia lap 2.4s):
-//   1. Chon workspace - click 1 WorkspaceCard (xem WorkspaceSwitcher.tsx).
-//   2. Card PHONG TO That qua Framer Motion layoutId - component nay va
-//      WorkspaceCard chia se DUNG layoutId `workspace-card-<id>`, Framer
-//      Motion tu FLIP-animate vi tri/kich thuoc tu o luoi den full man hinh
-//      (khong phai 2 phan tu doc lap crossfade).
-//   3. Nen luoi (dong bo mau/pattern voi StarfieldBackground.tsx - lop rieng
-//      o day vi StarfieldBackground la 1 instance co dinh o layout.tsx,
-//      khong tu do scale duoc) zoom+hoi tu vao tam, chay SONG SONG voi card.
-// Dieu huong THAT (router.push, khong con progress % gia lap) ngay sau khi
-// card phong to xong.
-const EXPAND_SPRING = {
+// Hieu ung chuyen canh luc bam vao 1 workspace:
+//   1. Chon workspace - click 1 WorkspaceCard (xem WorkspaceSwitcher.tsx). Cac
+//      the con lai rot xuong + mo dan roi bien mat (xu ly ngay trong
+//      WorkspaceCard qua prop isTransitioning, khong lien quan file nay).
+//   2. The duoc chon DI CHUYEN ra giua man hinh - qua Framer Motion layoutId
+//      (component nay va WorkspaceCard chia se DUNG layoutId
+//      `workspace-card-<id>`, Framer Motion tu FLIP-animate vi tri/kich thuoc
+//      tu o luoi ra giua man hinh) - KHONG con phong to thanh 1 box
+//      full-screen nhu ban truoc.
+//   3. Khi the toi giua, noi dung ben trong crossfade tu icon/ten sang 1
+//      spinner loading, giu 1 nhip ngan roi moi dieu huong That (router.push).
+const MOVE_SPRING = {
   type: "spring" as const,
   stiffness: 220,
   damping: 28,
   mass: 0.9,
 };
 
-const EXPAND_DURATION_MS = 650;
+const MOVE_DURATION_MS = 550;
+const SPINNER_HOLD_MS = 500;
 
 export function WorkspaceGatewayOverlay({
   workspace,
@@ -51,54 +52,81 @@ function GatewayMachine({
   workspace: ApiWorkspaceWithGroups;
   onEnter: (workspace: ApiWorkspaceWithGroups) => void;
 }) {
+  const [showSpinner, setShowSpinner] = useState(false);
+
   useEffect(() => {
-    const timer = setTimeout(() => onEnter(workspace), EXPAND_DURATION_MS);
-    return () => clearTimeout(timer);
+    const toSpinner = setTimeout(() => setShowSpinner(true), MOVE_DURATION_MS);
+    const toEnter = setTimeout(
+      () => onEnter(workspace),
+      MOVE_DURATION_MS + SPINNER_HOLD_MS,
+    );
+    return () => {
+      clearTimeout(toSpinner);
+      clearTimeout(toEnter);
+    };
   }, [workspace, onEnter]);
 
   return (
     <>
-      {/* Buoc 3: nen luoi zoom + hoi tu vao tam */}
+      {/* Lop nen dim nhe phia sau the - khong con zoom grid pattern nhu ban
+          cu (do gan voi hieu ung box full-screen, gio the chi di chuyen ra
+          giua nen dim nhe la du). */}
       <motion.div
-        className="pointer-events-none fixed inset-0 z-20 mask-[radial-gradient(ellipse_70%_60%_at_50%_50%,#000_60%,transparent_100%)]"
-        initial={{ scale: 1, opacity: 0 }}
-        animate={{ scale: 2.2, opacity: 1 }}
+        className="pointer-events-none fixed inset-0 z-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: EXPAND_DURATION_MS / 1000, ease: [0.76, 0, 0.24, 1] }}
+        transition={{ duration: MOVE_DURATION_MS / 1000, ease: [0.76, 0, 0.24, 1] }}
         style={{
-          background: "var(--background)",
-          backgroundImage:
-            "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)",
-          backgroundSize: "20px 30px",
+          background: "color-mix(in srgb, var(--background) 65%, transparent)",
         }}
       />
 
-      {/* Buoc 2: card phong to That (layoutId chia se voi WorkspaceCard) */}
+      {/* The duoc chon - layoutId chia se voi WorkspaceCard nen Framer Motion
+          tu FLIP vi tri/kich thuoc tu o luoi ra giua man hinh. */}
       <motion.div
         layoutId={`workspace-card-${workspace.id}`}
-        transition={EXPAND_SPRING}
-        className="fixed inset-6 z-30 flex flex-col items-center justify-center gap-3 overflow-hidden rounded-[28px] sm:inset-16"
+        transition={MOVE_SPRING}
+        className="fixed left-1/2 top-1/2 z-30 flex w-56 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl p-6"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--border)",
           boxShadow: "0 30px 90px rgba(16, 24, 40, 0.25)",
         }}
       >
-        <span
-          className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-3xl"
-          style={{
-            background: `color-mix(in srgb, ${workspace.color ?? "var(--primary)"} 12%, transparent)`,
-            color: workspace.color ?? "var(--primary)",
-          }}
-        >
-          {workspace.icon ?? <Folder size={28} strokeWidth={1.5} />}
-        </span>
-        <h2 className="text-xl font-semibold" style={{ color: "var(--ink)" }}>
-          {workspace.name}
-        </h2>
-        <p className="text-sm" style={{ color: "var(--ink-faint)" }}>
-          {workspace.groups.length} nhóm kiến thức
-        </p>
+        <AnimatePresence mode="wait">
+          {!showSpinner ? (
+            <motion.div
+              key="info"
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <span
+                className="flex size-16 shrink-0 items-center justify-center rounded-2xl text-3xl"
+                style={{
+                  background: `color-mix(in srgb, ${workspace.color ?? "var(--primary)"} 12%, transparent)`,
+                  color: workspace.color ?? "var(--primary)",
+                }}
+              >
+                {workspace.icon ?? <Folder size={28} strokeWidth={1.5} />}
+              </span>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ink)" }}>
+                {workspace.name}
+              </h2>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="spinner"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col items-center gap-3 py-2"
+            >
+              <Spinner size={28} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </>
   );

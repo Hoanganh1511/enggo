@@ -10,8 +10,14 @@ import type { ApiDocument } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { createDocumentAction } from "@/actions/documents/create-document";
 import { updateDocumentAction } from "@/actions/documents/update-document";
-import { getPostExtensions, POST_PROSE_CLASS } from "./post-extensions";
+import {
+  getPostExtensions,
+  getOverviewExtensions,
+  POST_PROSE_CLASS,
+  OVERVIEW_PROSE_CLASS,
+} from "./post-extensions";
 import { PostEditorToolbar } from "./PostEditorToolbar";
+import { OverviewEditorToolbar } from "./OverviewEditorToolbar";
 
 // Editor bai viet lon - dung cho ca tao moi (mode "create") lan sua
 // (mode "edit"). Gom: anh bia (URL), tieu de, mo ta ngan, tags, editor Tiptap
@@ -69,6 +75,20 @@ export function PostEditor({
     },
   });
 
+  const overviewEditor = useEditor({
+    extensions: [
+      ...getOverviewExtensions(),
+      Placeholder.configure({
+        placeholder: "Tóm tắt các ý chính… hiển thị dưới tiêu đề trong danh sách.",
+      }),
+    ],
+    content: doc?.overview ?? undefined,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: { class: OVERVIEW_PROSE_CLASS + " min-h-[64px] px-3 py-2" },
+    },
+  });
+
   function addTag() {
     const t = tagDraft.trim().replace(/^#/, "");
     if (t && !tags.includes(t) && tags.length < 8) setTags((p) => [...p, t]);
@@ -85,6 +105,10 @@ export function PostEditor({
     const contentPayload = {
       title: title.trim(),
       summary: summary.trim() || undefined,
+      overview:
+        overviewEditor && !overviewEditor.isEmpty
+          ? (overviewEditor.getJSON() as Record<string, unknown>)
+          : undefined,
       coverImageUrl: coverImageUrl.trim() || undefined,
       content: editor.getJSON() as Record<string, unknown>,
       tags,
@@ -100,8 +124,17 @@ export function PostEditor({
               })
             : await updateDocumentAction(doc!.id, contentPayload);
         if (onSaved) onSaved(saved);
-        else
+        else {
+          // router.push roi thoi la CHUA du - Router Cache phia client cua
+          // Next co the van giu ban RSC cu cua trang doc (neu vua ghe qua no
+          // truoc khi bam Sua), khien vua luu xong quay lai van thay noi dung
+          // CU (vd callout van hien "Lưu ý" du da doi variant "danger"
+          // trong luc soan). router.refresh() ep lam moi cay Router Cache
+          // NGAY SAU khi dieu huong, dam bao trang dich luon fetch du lieu
+          // that moi tu server thay vi tai lai ban cache.
           router.push(`/u/${saved.author.username}/workspaces/${saved.slug}`);
+          router.refresh();
+        }
       } catch {
         setError("Có lỗi khi lưu, thử lại sau.");
       }
@@ -157,6 +190,18 @@ export function PostEditor({
         placeholder="Mô tả ngắn (tùy chọn) — hiển thị ở thẻ danh sách"
         className="border-none bg-transparent text-base text-ink-muted outline-none placeholder:text-ink-faint/50"
       />
+
+      {/* Overview - tong quan noi dung, editor mini (toolbar han che), hien
+          thanh 1 box duoi tieu de trong danh sach bai viet (xem ArticleCard). */}
+      <div>
+        <p className="mb-1.5 text-xs font-medium text-ink-faint">
+          Tổng quan nội dung (tùy chọn)
+        </p>
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          {overviewEditor && <OverviewEditorToolbar editor={overviewEditor} />}
+          <EditorContent editor={overviewEditor} />
+        </div>
+      </div>
 
       {/* Tags */}
       <div className="flex flex-wrap items-center gap-1.5">

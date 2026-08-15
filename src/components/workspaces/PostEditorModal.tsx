@@ -35,6 +35,7 @@ const darkTokenOverride = {
   "--primary": "#22d3ee",
   "--warning": "#f59e0b",
   "--success": "#10b981",
+  "--danger": "#f43f5e",
 } as CSSProperties;
 
 export function PostEditorModal({
@@ -59,11 +60,14 @@ export function PostEditorModal({
     extensions: [
       ...getPostExtensions(),
       Placeholder.configure({
-        placeholder: "Bắt đầu viết bài của bạn… gõ '/' hoặc dùng thanh công cụ ở trên.",
+        placeholder:
+          "Bắt đầu viết bài của bạn… gõ '/' hoặc dùng thanh công cụ ở trên.",
       }),
     ],
     immediatelyRender: false,
-    editorProps: { attributes: { class: POST_PROSE_CLASS + " min-h-[260px] px-1 py-4" } },
+    editorProps: {
+      attributes: { class: POST_PROSE_CLASS + " px-1 py-4" },
+    },
   });
 
   function addTag() {
@@ -105,7 +109,10 @@ export function PostEditorModal({
         });
         resetForm();
         onClose();
+        // Xem PostEditor.tsx: router.refresh() sau push de tranh Router
+        // Cache phia client giu ban RSC cu cua trang doc.
         router.push(`/u/${saved.author.username}/workspaces/${saved.slug}`);
+        router.refresh();
       } catch {
         setError("Có lỗi khi lưu, thử lại sau.");
       }
@@ -145,13 +152,17 @@ export function PostEditorModal({
     >
       <div
         style={darkTokenOverride}
-        className="flex max-h-[420px] flex-col gap-4 overflow-y-auto pr-1"
+        className="flex max-h-[500px] flex-col gap-4 overflow-y-auto pr-1"
       >
         {/* Cover */}
         {coverImageUrl ? (
           <div className="relative h-36 w-full overflow-hidden rounded-xl border border-border">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={coverImageUrl} alt="" className="size-full object-cover" />
+            <img
+              src={coverImageUrl}
+              alt=""
+              className="size-full object-cover"
+            />
             <button
               type="button"
               onClick={() => setCoverImageUrl("")}
@@ -179,7 +190,7 @@ export function PostEditorModal({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Tiêu đề bài viết"
-          rows={1}
+          rows={3}
           className="resize-none border-none bg-transparent text-2xl leading-tight font-bold tracking-tight text-ink outline-none placeholder:text-ink-faint/50"
         />
 
@@ -229,7 +240,7 @@ export function PostEditorModal({
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {editor && <PostEditorToolbar editor={editor} />}
           <div className="px-4">
-            <EditorContent editor={editor} />
+            <EditorContent editor={editor} className="min-h-[500px]" />
           </div>
         </div>
 
