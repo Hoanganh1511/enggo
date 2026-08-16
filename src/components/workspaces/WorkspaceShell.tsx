@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import type {
   ApiKnowledgeGroup,
@@ -8,7 +8,7 @@ import type {
   ApiWorkspaceWithGroups,
 } from "@/lib/api/types";
 import { getGroupDocumentsAction } from "@/actions/knowledge-groups/get-group-documents";
-import { WorkspaceSidebar } from "./WorkspaceSidebar";
+import { GroupArticleToc } from "./GroupArticleToc";
 import {
   WorkspaceShellContext,
   type WorkspaceShellContextValue,
@@ -33,16 +33,18 @@ export function WorkspaceShell({
   children: React.ReactNode;
 }) {
   const [groups, setGroups] = useState<ApiKnowledgeGroup[]>(workspace.groups);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
-    workspace.groups[0]?.id ?? null,
-  );
+  // Mac dinh KHONG chon nhom nao - man hinh mo dau la tong quan dang "tang"
+  // (KnowledgeGroupFloors.tsx), nguoi dung phai chu dong click 1 the nhom moi
+  // "vao" chi tiet. Khac ban truoc (tu dong chon nhom dau tien).
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [groupDocs, setGroupDocs] = useState<ApiDocumentSummary[]>([]);
   const [groupDocsLoading, startTransition] = useTransition();
-  // Choreography luc vao trang: ArticleDetailPanel truot vao tu ngoai le man
-  // hinh, CHI SAU KHI no "ha canh" xong stage giua moi hien trang thai/loading
-  // - tranh cam giac moi thu bung ra cung luc. Khoi tao dung tu dau - workspace
-  // khong co nhom nao thi stage mo khoa luon.
-  const [panelsReady, setPanelsReady] = useState(workspace.groups.length === 0);
+  // Choreography luc VAO 1 nhom (tu man tong quan): GroupArticleToc (trai) +
+  // ArticleDetailPanel (phai) truot vao tu ngoai le man hinh, CHI SAU KHI
+  // ArticleDetailPanel "ha canh" xong thi BranchStage moi hien noi dung - tranh
+  // cam giac moi thu bung ra cung luc. Man tong quan (chua chon nhom) khong co
+  // panel nao truot vao nen luon san sang tu dau.
+  const [panelsReady, setPanelsReady] = useState(true);
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? null;
 
@@ -57,10 +59,15 @@ export function WorkspaceShell({
 
   const selectGroup = useCallback(
     (g: ApiKnowledgeGroup) => {
+      // Chi doi lai choreography khi dang tu man tong quan (chua chon nhom
+      // nao) di VAO 1 nhom - chuyen giua 2 nhom da chon san thi panel khong
+      // remount/truot lai (xem GroupArticleToc.tsx/ArticleDetailPanel.tsx),
+      // nen khong can dat lai panelsReady.
+      if (selectedGroupId === null) setPanelsReady(false);
       setSelectedGroupId(g.id);
       loadGroupDocs(g);
     },
-    [loadGroupDocs],
+    [selectedGroupId, loadGroupDocs],
   );
 
   const selectGroupById = useCallback(
@@ -72,22 +79,48 @@ export function WorkspaceShell({
     [groups, selectedGroupId, selectGroup],
   );
 
-  // Nap bai viet cho nhom dau tien duoc chon san khi vao trang. workspace.groups
-  // la du lieu Server Component da fetch (layout.tsx), khong can goi lai
-  // listUserWorkspaces. Khong goi qua loadGroupDocs (se setGroupDocs([]) thua)
-  // de effect nay khong con setState nao chay dong bo, chi con startTransition
-  // (bat buoc, se bao loi "set-state-in-effect" neu goi truc tiep).
-  useEffect(() => {
-    const first = workspace.groups[0];
-    if (!first) return;
-    if (first.viewerCanWrite || first.visibility === "PUBLIC") {
-      startTransition(async () => {
-        setGroupDocs(await getGroupDocumentsAction(first.id));
-      });
-    }
-    // Chi chay 1 lan luc mount - workspace.id doi = layout.tsx remount qua
-    // key/route, khong phai props doi tai cho.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Ve lai man tong quan - nut "TAT CA NHOM" trong GroupArticleToc.tsx.
+  const clearSelectedGroup = useCallback(() => {
+    setSelectedGroupId(null);
+    setGroupDocs([]);
+  }, []);
+
+  const addGroup = useCallback(
+    (group: ApiKnowledgeGroup) => {
+      setGroups((prev) => [...prev, group]);
+      // Tu dong "vao" luon nhom vua tao (giong hanh vi cu cua
+      // WorkspaceSidebar/onGroupCreated) - di qua selectGroup de choreography
+      // (panelsReady) duoc xu ly nhat quan voi moi cach chon nhom khac.
+      selectGroup(group);
+    },
+    [selectGroup],
+  );
+
+  const refreshGroupDocs = useCallback(() => {
+    if (selectedGroup) loadGroupDocs(selectedGroup);
+  }, [selectedGroup, loadGroupDocs]);
+
+  // Chi ghi de name/description/goal/visibility/updatedAt (dung field response
+  // PATCH /knowledge-groups/:id THAT SU tra ve co the doi) - KHONG spread
+  // nguyen response nay de vao, vi toApi() cua endpoint update() luon tra
+  // pendingRequests=[] (khong phai danh sach that, xem knowledge-group.service.ts)
+  // va thieu han checklistTotal/checklistUnderstood - lam vay se "xoa oan"
+  // cac field do khoi state cuc bo dang co du lieu that.
+  const updateGroupInState = useCallback((updated: ApiKnowledgeGroup) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === updated.id
+          ? {
+              ...g,
+              name: updated.name,
+              description: updated.description,
+              goal: updated.goal,
+              visibility: updated.visibility,
+              updatedAt: updated.updatedAt,
+            }
+          : g,
+      ),
+    );
   }, []);
 
   const contextValue: WorkspaceShellContextValue = {
@@ -100,6 +133,10 @@ export function WorkspaceShell({
     groupDocsLoading,
     selectGroup,
     selectGroupById,
+    clearSelectedGroup,
+    addGroup,
+    updateGroupInState,
+    refreshGroupDocs,
     panelsReady,
     setPanelsReady,
   };
@@ -112,26 +149,19 @@ export function WorkspaceShell({
       className="relative z-10 flex h-full flex-col"
     >
       <div className="flex min-h-0 flex-1">
-        <WorkspaceSidebar
-          workspaceName={workspace.name}
-          groups={groups}
-          selectedGroupId={selectedGroupId}
-          onSelectGroup={selectGroup}
-          isSelf={isSelf}
-          workspaceId={workspace.id}
-          username={username}
-          onGroupCreated={(group) => {
-            setGroups((prev) => [...prev, group]);
-            setSelectedGroupId(group.id);
-            setGroupDocs([]);
-          }}
-        />
+        <WorkspaceShellContext.Provider value={contextValue}>
+          {selectedGroup && (
+            <GroupArticleToc
+              group={selectedGroup}
+              docs={groupDocs}
+              loading={groupDocsLoading}
+            />
+          )}
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          <WorkspaceShellContext.Provider value={contextValue}>
+          <div className="flex min-w-0 flex-1 flex-col">
             <div className="flex min-h-0 flex-1">{children}</div>
-          </WorkspaceShellContext.Provider>
-        </div>
+          </div>
+        </WorkspaceShellContext.Provider>
       </div>
     </motion.div>
   );

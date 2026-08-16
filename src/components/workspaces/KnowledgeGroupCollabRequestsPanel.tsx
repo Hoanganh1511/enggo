@@ -15,10 +15,12 @@ import { rejectCollabAction } from "@/actions/knowledge-groups/reject-collab";
 export function KnowledgeGroupCollabRequestsPanel({
   groupId,
   username,
+  workspaceId,
   initialRequests,
 }: {
   groupId: string;
   username: string;
+  workspaceId: string;
   initialRequests: ApiKnowledgeGroupCollabRequest[];
 }) {
   const [requests, setRequests] = useState(initialRequests);
@@ -27,9 +29,9 @@ export function KnowledgeGroupCollabRequestsPanel({
   function handle(collabId: string, action: "approve" | "reject") {
     startTransition(async () => {
       if (action === "approve") {
-        await approveCollabAction(groupId, collabId, username);
+        await approveCollabAction(groupId, collabId, username, workspaceId);
       } else {
-        await rejectCollabAction(groupId, collabId, username);
+        await rejectCollabAction(groupId, collabId, username, workspaceId);
       }
       setRequests((prev) => prev.filter((r) => r.id !== collabId));
     });

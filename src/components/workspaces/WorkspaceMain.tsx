@@ -1,19 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Folder, LoaderCircle, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, LoaderCircle, Sparkles } from "lucide-react";
 import type { ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
-import { formatRelativeTime } from "@/lib/format-time";
-import { colorOf } from "./node-color";
-import { RequestCollabButton } from "./RequestCollabButton";
-import { ArticleCard } from "./ArticleCard";
+import { KnowledgeGroupCatalog } from "./KnowledgeGroupCatalog";
+import { useWorkspaceShell } from "./workspace-shell-context";
 
-type SortOption = "latest" | "oldest" | "popular";
-
-// Doi nhom (key doi) -> AnimatePresence cho noi dung cu thu nho + mo dan
-// roi noi dung moi (ke ca "loading" trong luc cho docs) phinh to kem nay -
-// dam giu nguyen tu WorkspaceDetail.tsx cu, khong doi.
+// Doi nhom (key doi theo group.id) -> AnimatePresence cho noi dung cu thu nho
+// + mo dan noi dung moi phinh to - CHI chay 1 LAN khi group.id THAT SU doi,
+// khong con tach rieng key loading/ready nhu truoc (gay remount thua + cam
+// giac cho ca cum roi hien 1 luc).
 const stageVariants = {
   initial: { opacity: 0, scale: 0.4 },
   animate: {
@@ -28,227 +25,139 @@ const stageVariants = {
   },
 } as const;
 
+// Trung tam khi da chon 1 nhom KHONG con hien danh sach bai viet nua (danh
+// sach + tim kiem/sap xep/gop series da CHUYEN het sang GroupArticleToc.tsx,
+// theo yeu cau) - o day chi con trang thai TAM THOI truoc khi
+// WorkspaceBrowseView.tsx tu dong dieu huong thang toi bai viet moi nhat
+// (xem effect o do). Nhom chua co bai viet nao thi dung lai o day (khong co
+// gi de dieu huong toi).
+function GroupCenterStatus({ docs, loading }: { docs: ApiDocumentSummary[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2">
+        <LoaderCircle size={22} strokeWidth={1.9} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+        <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
+          Đang tải bài viết...
+        </p>
+      </div>
+    );
+  }
+  if (docs.length === 0) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-2">
+        <Sparkles size={22} strokeWidth={1.5} style={{ color: "var(--ink-faint)" }} />
+        <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
+          Nhóm này chưa có bài viết nào.
+        </p>
+      </div>
+    );
+  }
+  // Co bai viet -> WorkspaceBrowseView dang dieu huong toi bai moi nhat,
+  // chi la 1 nhip cho ngan.
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2">
+      <LoaderCircle size={22} strokeWidth={1.9} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+      <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
+        Đang mở bài viết mới nhất...
+      </p>
+    </div>
+  );
+}
+
 export function WorkspaceMain({
   group,
   docs,
   loading,
   panelsReady,
   username,
-  workspaceId,
 }: {
   group: ApiKnowledgeGroup | null;
   docs: ApiDocumentSummary[];
   loading: boolean;
   panelsReady: boolean;
   username: string;
-  workspaceId: string;
 }) {
+  const { workspace, clearSelectedGroup } = useWorkspaceShell();
+
   return (
     <main
-      className="relative min-w-0 flex-1 overflow-hidden"
+      className="flex min-w-0 flex-1 flex-col overflow-hidden"
       style={{ background: "var(--surface)" }}
     >
-      {/* panelsReady: cho ArticleDetailPanel truot vao xong (hoac khong co
-          gi de cho) roi moi hien trang thai/loading. */}
-      <AnimatePresence mode="wait">
-        {!panelsReady ? null : !group ? (
-          <motion.div
-            key="empty"
-            variants={stageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="absolute inset-0 flex h-full flex-col items-center justify-center gap-2"
+      {/* Breadcrumb CO DINH, hien o CA 2 trang thai (catalog/nhom da chon) -
+          nguoi dung phan anh dung o man chi tiet 1 nhom khong biet bam dau de
+          quay lai man chon workspace. Bam ten workspace khi dang o trong 1
+          nhom se goi clearSelectedGroup (ve catalog), khong can dieu huong
+          that qua URL. */}
+      <div
+        className="flex shrink-0 items-center gap-1.5 px-6 pt-4 pb-1 text-[12px]"
+        style={{ color: "var(--ink-faint)" }}
+      >
+        <Link
+          href={`/workspace/${username}`}
+          className="flex items-center gap-1 transition-colors duration-150 ease-out hover:text-ink"
+        >
+          <ArrowLeft size={12} strokeWidth={2.2} />
+          Tất cả workspace
+        </Link>
+        <span>/</span>
+        {group ? (
+          <button
+            type="button"
+            onClick={clearSelectedGroup}
+            className="cursor-pointer truncate transition-colors duration-150 ease-out hover:text-ink"
+            style={{ color: "var(--ink-muted)" }}
           >
-            <Sparkles size={26} strokeWidth={1.5} style={{ color: "var(--ink-faint)" }} />
-            <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
-              Chọn 1 nhóm kiến thức bên trái.
-            </p>
-          </motion.div>
-        ) : loading ? (
-          <motion.div
-            key={`${group.id}-loading`}
-            variants={stageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="absolute inset-0 flex h-full flex-col items-center justify-center gap-2"
-          >
-            <LoaderCircle
-              size={22}
-              strokeWidth={1.9}
-              className="animate-spin"
-              style={{ color: "var(--ink-faint)" }}
-            />
-            <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
-              Đang tải...
-            </p>
-          </motion.div>
+            {workspace.name}
+          </button>
         ) : (
-          <motion.div
-            key={`${group.id}-ready`}
-            variants={stageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="absolute inset-0"
-          >
-            {group.viewerCanWrite || group.visibility === "PUBLIC" ? (
-              <BranchStage
-                group={group}
-                docs={docs}
-                username={username}
-                workspaceId={workspaceId}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center p-6">
-                <RequestCollabButton groupId={group.id} />
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </main>
-  );
-}
-
-function BranchStage({
-  group,
-  docs,
-  username,
-  workspaceId,
-}: {
-  group: ApiKnowledgeGroup;
-  docs: ApiDocumentSummary[];
-  username: string;
-  workspaceId: string;
-}) {
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortOption>("latest");
-
-  // So thu tu "#1, #2, #3..." la 1 dinh danh ON DINH theo thoi gian DANG bai
-  // (createdAt, bai dang truoc luon giu so nho hon) - tach rieng khoi thu tu
-  // HIEN THI cua list (co the doi theo sort/search). Neu dung thang vi tri
-  // trong mang da sort/loc, sua 1 bai CU (chi doi updatedAt) se lam no nhay
-  // len dau va doi luon so #, gay hieu lam day la ID bai viet.
-  const publishOrder = useMemo(() => {
-    const sorted = [...docs].sort((a, b) =>
-      a.createdAt.localeCompare(b.createdAt),
-    );
-    return new Map(sorted.map((d, i) => [d.id, i]));
-  }, [docs]);
-
-  const filteredDocs = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = q
-      ? docs.filter((d) => d.title.toLowerCase().includes(q))
-      : docs;
-    const sorted = [...filtered];
-    if (sort === "latest") {
-      sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    } else if (sort === "oldest") {
-      sorted.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
-    } else {
-      sorted.sort((a, b) => b.viewCount - a.viewCount);
-    }
-    return sorted;
-  }, [docs, search, sort]);
-
-  const lastUpdated =
-    docs.length > 0
-      ? docs.reduce((max, d) => (d.updatedAt > max ? d.updatedAt : max), docs[0].updatedAt)
-      : group.updatedAt;
-
-  return (
-    <motion.div
-      className="flex h-full flex-col"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <div className="shrink-0 px-6 pt-5 pb-3">
-        <div className="flex items-center gap-2">
           <span
-            className="flex size-7 shrink-0 items-center justify-center rounded-[9px]"
-            style={{
-              color: colorOf(group.id),
-              background: `color-mix(in srgb, ${colorOf(group.id)} 12%, transparent)`,
-            }}
+            className="truncate font-semibold"
+            style={{ color: "var(--ink)" }}
           >
-            <Folder size={15} strokeWidth={1.9} />
+            {workspace.name}
           </span>
-          <h1 className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
-            {group.name}
-          </h1>
-        </div>
-        <p className="mt-1 text-[11px]" style={{ color: "var(--ink-faint)" }}>
-          {group.postCount} bài viết · Cập nhật gần nhất {formatRelativeTime(lastUpdated)}
-        </p>
-
-        <div className="mt-3 flex items-center gap-2">
-          <div
-            className="flex h-8 flex-1 items-center gap-1.5 rounded-[9px] px-2.5"
-            style={{
-              background: "var(--surface-muted)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            <Search size={13} strokeWidth={1.9} style={{ color: "var(--ink-faint)" }} />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm bài viết trong nhánh..."
-              className="min-w-0 flex-1 bg-transparent text-[11px] outline-none"
+        )}
+        {group && (
+          <>
+            <span>/</span>
+            <span
+              className="truncate font-semibold"
               style={{ color: "var(--ink)" }}
-            />
-          </div>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortOption)}
-            className="h-8 shrink-0 rounded-[9px] px-2 text-[11px]"
-            style={{
-              background: "var(--surface-muted)",
-              border: "1px solid var(--border)",
-              color: "var(--ink-muted)",
-            }}
-          >
-            <option value="latest">Mới cập nhật</option>
-            <option value="oldest">Cũ nhất</option>
-            <option value="popular">Phổ biến</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
-        {docs.length === 0 ? (
-          <p className="py-10 text-center text-xs" style={{ color: "var(--ink-faint)" }}>
-            Nhóm này chưa có bài viết nào.
-          </p>
-        ) : filteredDocs.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10">
-            <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
-              Không tìm thấy bài viết phù hợp.
-            </p>
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="cursor-pointer text-[11px] font-medium"
-              style={{ color: "var(--primary)" }}
             >
-              Xoá bộ lọc
-            </button>
-          </div>
-        ) : (
-          filteredDocs.map((d) => (
-            <ArticleCard
-              key={d.id}
-              doc={d}
-              index={publishOrder.get(d.id) ?? 0}
-              username={username}
-              workspaceId={workspaceId}
-            />
-          ))
+              {group.name}
+            </span>
+          </>
         )}
       </div>
-    </motion.div>
+
+      <div className="relative min-h-0 flex-1">
+        <AnimatePresence mode="wait">
+          {!group ? (
+            <motion.div
+              key="catalog"
+              variants={stageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="absolute inset-0 overflow-y-auto"
+            >
+              <KnowledgeGroupCatalog />
+            </motion.div>
+          ) : !panelsReady ? null : (
+            <motion.div
+              key={`${group.id}-ready`}
+              variants={stageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="absolute inset-0"
+            >
+              <GroupCenterStatus docs={docs} loading={loading} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </main>
   );
 }

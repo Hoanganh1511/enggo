@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import {
   Bookmark,
+  BookText,
   CalendarDays,
   FileText,
   Heart,
@@ -22,7 +23,8 @@ export type ProfileTab =
   | "playlists"
   | "collections"
   | "likes"
-  | "history";
+  | "history"
+  | "workspace";
 
 function formatJoinDate(iso: string): string {
   const d = new Date(iso);
@@ -131,6 +133,18 @@ const TABS: {
     label: "Bài đăng",
     icon: FileText,
     iconColor: "#818cf8",
+  },
+  {
+    // Dan sang /workspace/[username] (route rieng, khac cay /u/[username]/**)
+    // - truoc day CHI vao duoc bang cach go tay URL, khong co lien ket nao tu
+    // profile ca (xem top-header-bar.tsx: nav "Workspace" tren header LUON
+    // tro ve chinh nguoi dang dang nhap, khong dong theo profile dang xem).
+    key: "workspace",
+    path: "",
+    label: "Workspace",
+    icon: BookText,
+    iconColor: "#38bdf8",
+    standaloneHref: (username) => `/workspace/${username}`,
   },
   {
     key: "playlists",

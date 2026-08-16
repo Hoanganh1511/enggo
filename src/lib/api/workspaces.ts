@@ -1,5 +1,9 @@
 import { apiFetch } from "./client";
-import type { ApiWorkspace, ApiWorkspaceWithGroups } from "./types";
+import type {
+  ApiWorkspace,
+  ApiWorkspaceWithGroups,
+  ApiSuggestedWorkspace,
+} from "./types";
 
 export type WorkspaceInput = {
   name: string;
@@ -33,4 +37,8 @@ export function updateWorkspace(
 
 export function deleteWorkspace(id: string): Promise<void> {
   return apiFetch<void>(`/workspaces/${id}`, { method: "DELETE" });
+}
+
+export function listSuggestedWorkspaces(): Promise<ApiSuggestedWorkspace[]> {
+  return apiFetch<ApiSuggestedWorkspace[]>(`/workspaces/suggested`);
 }

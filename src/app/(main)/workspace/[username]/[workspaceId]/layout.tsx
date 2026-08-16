@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { listUserWorkspaces } from "@/lib/api/workspaces";
 import { getProfileByUsername } from "@/lib/api/users";
+import { ApiError } from "@/lib/api/client";
 import { WorkspaceShell } from "@/components/workspaces/WorkspaceShell";
 
 // Layout dung chung cho CA trang browse (./page.tsx) LAN trang doc 1 bai
@@ -22,7 +23,16 @@ export default async function WorkspaceDetailLayout({
   const { username, workspaceId } = await params;
   const uname = decodeURIComponent(username);
   const [workspaces, profile] = await Promise.all([
-    listUserWorkspaces(uname).catch(() => []),
+    // CHI coi la "khong co workspace nao" (roi 404 ben duoi) khi backend tra
+    // that 404 (username khong ton tai) - moi loi KHAC (401 het han session,
+    // network/backend chet tam thoi...) phai NEM LAI, khong duoc nuot thanh
+    // mang rong. Nuot het moi loi truoc day khien 1 workspace THAT (dung
+    // username, dung id) bi bao "khong tim thay" oan mỗi khi fetch chi can
+    // truc trac 1 chut - rat kho debug vi trieu chung y het link sai/cu.
+    listUserWorkspaces(uname).catch((e) => {
+      if (e instanceof ApiError && e.status === 404) return [];
+      throw e;
+    }),
     getProfileByUsername(uname).catch(() => null),
   ]);
 

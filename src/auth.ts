@@ -20,11 +20,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           avatarUrl: profile.picture as string | undefined,
         });
         token.userId = backendUser.id;
+        token.username = backendUser.username;
       }
       return token;
     },
     async session({ session, token }) {
       session.userId = token.userId as string;
+      session.username = token.username as string;
       return session;
     },
   },

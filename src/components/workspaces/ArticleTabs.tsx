@@ -1,23 +1,27 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { FileText, ListTree, ShieldCheck, type LucideIcon } from "lucide-react";
-import type {
-  ApiDocument,
-  ApiDocumentSummary,
-  ApiKnowledgeGroup,
-} from "@/lib/api/types";
+import {
+  FileText,
+  ListChecks,
+  ListTree,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
+import type { ApiDocument, ApiDocumentSummary } from "@/lib/api/types";
 import type { TocItem } from "./toc";
 import { sidebarStagger } from "./article-tab-shared";
 import { ArticleOverview } from "./ArticleOverview";
 import { ArticleToc } from "./ArticleToc";
 import { ArticleResources } from "./ArticleResources";
+import { ArticleChecklist } from "./ArticleChecklist";
 
-export type ArticleTabId = "overview" | "outline" | "resources";
+export type ArticleTabId = "overview" | "outline" | "checklist" | "resources";
 
 const SIDE_TABS: { id: ArticleTabId; label: string; icon: LucideIcon }[] = [
   { id: "overview", label: "Tổng quan", icon: ShieldCheck },
   { id: "outline", label: "Mục lục", icon: ListTree },
+  { id: "checklist", label: "Checklist", icon: ListChecks },
   { id: "resources", label: "Tài liệu", icon: FileText },
 ];
 
@@ -30,24 +34,22 @@ export function ArticleTabs({
   tab,
   setTab,
   doc,
-  group,
-  workspaceName,
   siblingDocs,
   username,
   workspaceId,
   toc,
   activeTocId,
+  onChecklistLogPublicChange,
 }: {
   tab: ArticleTabId;
   setTab: (t: ArticleTabId) => void;
   doc: ApiDocument | null;
-  group: ApiKnowledgeGroup | null;
-  workspaceName: string;
   siblingDocs: ApiDocumentSummary[];
   username: string;
   workspaceId: string;
   toc: TocItem[];
   activeTocId: string;
+  onChecklistLogPublicChange: (next: boolean) => void;
 }) {
   return (
     <>
@@ -121,8 +123,6 @@ export function ArticleTabs({
             {tab === "overview" && (
               <ArticleOverview
                 doc={doc}
-                group={group}
-                workspaceName={workspaceName}
                 siblingDocs={siblingDocs}
                 username={username}
                 workspaceId={workspaceId}
@@ -130,6 +130,16 @@ export function ArticleTabs({
             )}
             {tab === "outline" && (
               <ArticleToc toc={toc} activeId={activeTocId} />
+            )}
+            {tab === "checklist" && doc && (
+              <div className="p-4">
+                <ArticleChecklist
+                  documentId={doc.id}
+                  isOwner={doc.isOwner}
+                  logPublic={doc.checklistLogPublic}
+                  onLogPublicChange={onChecklistLogPublicChange}
+                />
+              </div>
             )}
             {tab === "resources" && <ArticleResources />}
           </motion.div>

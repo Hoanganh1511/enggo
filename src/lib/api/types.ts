@@ -175,17 +175,41 @@ export type ApiKnowledgeGroup = {
   workspaceId: string;
   name: string;
   description: string | null;
+  // "Muc tieu" cua nhom - Tiptap JSON, schema HAN CHE giong Document.overview
+  // (bold/italic/bulletList/orderedList, xem GroupGoalModal.tsx). Metadata
+  // cong khai (giong description) - AI cung xem duoc, chi chu workspace sua.
+  goal: Record<string, unknown> | null;
   visibility: ApiKnowledgeGroupVisibility;
   postCount: number;
   orderIndex: number;
   viewerCanWrite: boolean;
   pendingRequests: ApiKnowledgeGroupCollabRequest[];
+  // Gop tu Checklist cua moi bai trong nhom - CHI co trong response cua
+  // WorkspaceService.listByOwnerWithGroups (dung cho KnowledgeTreeCanvas.tsx),
+  // KnowledgeGroupService.findForWorkspace KHONG tra ve field nay.
+  checklistTotal?: number;
+  checklistUnderstood?: number;
   createdAt: string;
   updatedAt: string;
 };
 
 export type ApiWorkspaceWithGroups = ApiWorkspace & {
   groups: ApiKnowledgeGroup[];
+};
+
+// Dung cho strip "Gợi ý từ người bạn theo dõi" o man chon workspace
+// (WorkspaceSwitcher.tsx) - xem WorkspaceService.listSuggested o backend.
+// KHAC ApiWorkspaceWithGroups: khong keo `groups` day du (chi can 1 con so
+// tong), nhung co them `owner` (workspace cua NHIEU nguoi khac nhau, can biet
+// cua ai de hien avatar/ten + dieu huong dung /workspace/:username/:id).
+export type ApiSuggestedWorkspace = ApiWorkspace & {
+  owner: {
+    id: string;
+    username: string;
+    name: string;
+    avatarUrl: string | null;
+  };
+  groupCount: number;
 };
 
 // "Bài viết" trong 1 Knowledge Group - do nguoi dung soan bang editor lon,
@@ -196,6 +220,16 @@ export type ApiDocumentAuthor = {
   name: string;
   avatarUrl: string;
   verified: boolean;
+};
+
+// Nhom "cung chu de" (tuy chon) - xem DocumentSeries trong schema.prisma.
+export type ApiSeries = {
+  id: string;
+  knowledgeGroupId: string;
+  name: string;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ApiDocument = {
@@ -218,8 +252,68 @@ export type ApiDocument = {
   createdAt: string;
   updatedAt: string;
   isOwner: boolean;
+  // Ban rut gon cua DocumentSeries (chi id+name) - null neu bai khong thuoc
+  // series nao, xem ApiSeries cho shape day du (dung khi quan ly series).
+  series: { id: string; name: string } | null;
+  // Bat/tat hien thi lich su checklist (ChecklistItemLog) cho nguoi doc
+  // khac - xem ArticleChecklist.tsx.
+  checklistLogPublic: boolean;
   author: ApiDocumentAuthor;
+};
+
+export type ChecklistStatus = "NOT_UNDERSTOOD" | "UNDERSTOOD";
+
+export type ApiChecklistItem = {
+  id: string;
+  documentId: string;
+  label: string;
+  status: ChecklistStatus;
+  note: string | null;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiChecklistItemLog = {
+  id: string;
+  toStatus: ChecklistStatus;
+  note: string | null;
+  createdAt: string;
 };
 
 // Ban rut gon cho danh sach (khong keo `content`).
 export type ApiDocumentSummary = Omit<ApiDocument, "content">;
+
+// He thong thong bao - hien chi phuc vu luong yeu cau cong tac nhom kien
+// thuc (xem NotificationService o backend). `collabId` dung de FE goi thang
+// endpoint duyet/tu choi tu chinh dropdown thong bao (tab "Yêu cầu"), KHONG
+// phai 1 quan he Prisma that (xem comment trong schema.prisma).
+export type ApiNotificationType =
+  | "GROUP_COLLAB_REQUESTED"
+  | "GROUP_COLLAB_APPROVED"
+  | "GROUP_COLLAB_REJECTED";
+
+export type ApiNotification = {
+  id: string;
+  type: ApiNotificationType;
+  actor: {
+    id: string;
+    username: string | null;
+    name: string;
+    avatarUrl: string | null;
+  } | null;
+  group: {
+    id: string;
+    name: string;
+    workspaceId: string;
+    ownerUsername: string | null;
+  } | null;
+  collabId: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export type ApiNotificationPage = {
+  items: ApiNotification[];
+  nextCursor: string | null;
+};

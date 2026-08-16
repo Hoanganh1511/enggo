@@ -11,26 +11,18 @@ import {
   LoaderCircle,
   Network,
 } from "lucide-react";
-import type {
-  ApiDocument,
-  ApiDocumentSummary,
-  ApiKnowledgeGroup,
-} from "@/lib/api/types";
+import type { ApiDocument, ApiDocumentSummary } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
 import { formatCompact } from "@/lib/format-number";
 import { sidebarFadeUp, SidebarSectionLabel } from "./article-tab-shared";
 
 export function ArticleOverview({
   doc,
-  group,
-  workspaceName,
   siblingDocs,
   username,
   workspaceId,
 }: {
   doc: ApiDocument | null;
-  group: ApiKnowledgeGroup | null;
-  workspaceName: string;
   siblingDocs: ApiDocumentSummary[];
   // Dung de build href That cho "bai viet lien quan" (Link, khong con
   // callback onOpenDoc nhu ban truoc).
@@ -49,27 +41,16 @@ export function ArticleOverview({
     );
   }
 
+  const seriesSiblings = doc.series
+    ? siblingDocs.filter((d) => d.series?.id === doc.series!.id)
+    : [];
+  const seriesSiblingIds = new Set(seriesSiblings.map((d) => d.id));
+  const categorySiblings = siblingDocs.filter(
+    (d) => !seriesSiblingIds.has(d.id),
+  );
+
   return (
     <div className="p-4">
-      <motion.div variants={sidebarFadeUp}>
-        <SidebarSectionLabel>BREADCRUMB</SidebarSectionLabel>
-        <div
-          className="mb-4 flex flex-wrap items-center gap-1 text-[11px]"
-          style={{ color: "var(--ink-faint)" }}
-        >
-          <span className="truncate">{workspaceName}</span>
-          <ChevronRight size={11} strokeWidth={1.9} className="shrink-0" />
-          <span className="truncate">{group?.name ?? "..."}</span>
-          <ChevronRight size={11} strokeWidth={1.9} className="shrink-0" />
-          <span
-            className="truncate font-semibold"
-            style={{ color: "var(--primary)" }}
-          >
-            {doc.title}
-          </span>
-        </div>
-      </motion.div>
-
       <motion.div variants={sidebarFadeUp}>
         <SidebarSectionLabel>TỔNG QUAN BÀI VIẾT</SidebarSectionLabel>
         <div className="grid grid-cols-2 gap-1.5">
@@ -113,43 +94,75 @@ export function ArticleOverview({
         </motion.div>
       )}
 
-      {siblingDocs.length > 0 && (
-        <motion.div variants={sidebarFadeUp} className="mt-5">
-          <SidebarSectionLabel>
-            BÀI VIẾT LIÊN QUAN TRONG NHÓM
-          </SidebarSectionLabel>
-          <div className="space-y-1.5">
-            {siblingDocs.slice(0, 5).map((d) => (
-              <Link
-                key={d.id}
-                href={`/workspace/${username}/${workspaceId}/${d.slug}`}
-                className="group flex w-full translate-y-0 items-center gap-2 rounded-[9px] border p-2 text-left transition-all duration-150 ease-out hover:-translate-y-px hover:border-[color-mix(in_srgb,var(--primary)_32%,transparent)] hover:bg-hover-bg"
-                style={{ borderColor: "transparent" }}
-              >
-                <FileText
-                  size={13}
-                  strokeWidth={1.9}
-                  style={{ color: "var(--ink-faint)" }}
-                  className="shrink-0"
-                />
-                <span
-                  className="min-w-0 flex-1 truncate text-[11px]"
-                  style={{ color: "var(--ink-muted)" }}
-                >
-                  {d.title}
-                </span>
-                <ChevronRight
-                  size={12}
-                  strokeWidth={1.9}
-                  style={{ color: "var(--ink-faint)" }}
-                  className="shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
-                />
-              </Link>
-            ))}
-          </div>
-        </motion.div>
+      {/* Tach 2 nhom: "cung nhom" la cac bai CUNG DocumentSeries voi bai dang
+          xem (chu de hep, xem SeriesGroupCard.tsx) - "trong chuyen muc" la
+          phan CON LAI cua siblingDocs (cung KnowledgeGroup nhung khac/khong
+          co series, chu de rong hon). Bai da liet ke o nhom tren KHONG lap
+          lai o nhom duoi. */}
+      {seriesSiblings.length > 0 && (
+        <RelatedDocsSection
+          label="BÀI VIẾT CÙNG NHÓM"
+          docs={seriesSiblings}
+          username={username}
+          workspaceId={workspaceId}
+        />
+      )}
+      {categorySiblings.length > 0 && (
+        <RelatedDocsSection
+          label="BÀI VIẾT TRONG CHUYÊN MỤC"
+          docs={categorySiblings}
+          username={username}
+          workspaceId={workspaceId}
+        />
       )}
     </div>
+  );
+}
+
+function RelatedDocsSection({
+  label,
+  docs,
+  username,
+  workspaceId,
+}: {
+  label: string;
+  docs: ApiDocumentSummary[];
+  username: string;
+  workspaceId: string;
+}) {
+  return (
+    <motion.div variants={sidebarFadeUp} className="mt-5">
+      <SidebarSectionLabel>{label}</SidebarSectionLabel>
+      <div className="space-y-1.5">
+        {docs.slice(0, 5).map((d) => (
+          <Link
+            key={d.id}
+            href={`/workspace/${username}/${workspaceId}/${d.slug}`}
+            className="group flex w-full translate-y-0 items-center gap-2 rounded-[9px] border p-2 text-left transition-all duration-150 ease-out hover:-translate-y-px hover:border-[color-mix(in_srgb,var(--primary)_32%,transparent)] hover:bg-hover-bg"
+            style={{ borderColor: "transparent" }}
+          >
+            <FileText
+              size={13}
+              strokeWidth={1.9}
+              style={{ color: "var(--ink-faint)" }}
+              className="shrink-0"
+            />
+            <span
+              className="min-w-0 flex-1 truncate text-[11px]"
+              style={{ color: "var(--ink-muted)" }}
+            >
+              {d.title}
+            </span>
+            <ChevronRight
+              size={12}
+              strokeWidth={1.9}
+              style={{ color: "var(--ink-faint)" }}
+              className="shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
+            />
+          </Link>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 

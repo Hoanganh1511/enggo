@@ -18,6 +18,7 @@ import {
   Terminal,
   Link2,
   ImageIcon,
+  CircleHelp,
   Table as TableIcon,
   TriangleAlert,
   OctagonAlert,
@@ -67,7 +68,17 @@ function Divider() {
 // Thanh cong cu cua editor bai viet - dinh (sticky) o dau vung soan. Nhom
 // theo chuc nang: heading / inline / list / block / chen (link, anh, bang,
 // callout) / undo-redo.
-export function PostEditorToolbar({ editor }: { editor: Editor }) {
+export function PostEditorToolbar({
+  editor,
+  // true khi nhung vao 1 khung CHA da tu lo sticky/nen/vien rieng (xem
+  // FloatingEditorToolbar trong PostEditor.tsx) - tranh 2 lop sticky/nen
+  // chong nhau (truoc day gay nhin roi mat, mau nen cha bi nen rieng cua
+  // toolbar nay de len tren, khong dong nhat).
+  bare = false,
+}: {
+  editor: Editor;
+  bare?: boolean;
+}) {
   const setLink = () => {
     const prev = editor.getAttributes("link").href as string | undefined;
     const url = window.prompt("Nhập URL liên kết", prev ?? "");
@@ -84,6 +95,19 @@ export function PostEditorToolbar({ editor }: { editor: Editor }) {
     if (url) editor.chain().focus().setImage({ src: url }).run();
   };
 
+  // Chen 1 icon "?" NGAY SAU cum tu dang chon (khong boc quanh cum tu - xem
+  // glossary-hint-extension.tsx) - can 1 vung chon THAT (khong phai chi 1
+  // con tro dung yen), nen disable khi selection rong.
+  const addGlossaryHint = () => {
+    const { to, empty } = editor.state.selection;
+    if (empty) return;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(to, { type: "glossaryHint", attrs: { explanation: "" } })
+      .run();
+  };
+
   // 3 chu de callout (Warning/Danger/Good tips - xem CALLOUT_LABELS trong
   // post-extensions.ts). Dang la callout NHUNG khac chu de -> doi variant tai
   // cho (khong lift roi wrap lai, tranh nhap nhay/mat vi tri con tro).
@@ -98,7 +122,14 @@ export function PostEditorToolbar({ editor }: { editor: Editor }) {
   };
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 border-b border-border bg-surface/95 px-1 py-1.5 backdrop-blur-sm">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-0.5",
+        bare
+          ? "px-0 py-0"
+          : "sticky top-0 z-10 border-b border-border bg-surface/95 px-1 py-1.5 backdrop-blur-sm",
+      )}
+    >
       <Btn label="Tiêu đề 1" Icon={Heading1} active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
       <Btn label="Tiêu đề 2" Icon={Heading2} active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
       <Btn label="Tiêu đề 3" Icon={Heading3} active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} />
@@ -122,6 +153,12 @@ export function PostEditorToolbar({ editor }: { editor: Editor }) {
       <Divider />
       <Btn label="Liên kết" Icon={Link2} active={editor.isActive("link")} onClick={setLink} />
       <Btn label="Ảnh (URL)" Icon={ImageIcon} onClick={addImage} />
+      <Btn
+        label="Thêm chú thích cho cụm từ đang chọn"
+        Icon={CircleHelp}
+        disabled={editor.state.selection.empty}
+        onClick={addGlossaryHint}
+      />
       <Btn label="Bảng" Icon={TableIcon} active={editor.isActive("table")} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />

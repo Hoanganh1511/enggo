@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type CSSProperties } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -8,46 +8,29 @@ import { X, ImagePlus, Send } from "lucide-react";
 import { createDocumentAction } from "@/actions/documents/create-document";
 import { getPostExtensions, POST_PROSE_CLASS } from "./post-extensions";
 import { PostEditorToolbar } from "./PostEditorToolbar";
-import TransformModal from "@/components/ui/transform-modal";
-import { ModalErrorText } from "@/components/ui/modal-form";
+import { SimpleModal } from "@/components/ui/simple-modal";
+import { useWorkspaceShell } from "./workspace-shell-context";
 
 // Ban "reactor" cua trang soan bai viet (app/(main)/u/[username]/workspaces/
-// new/page.tsx + PostEditor.tsx) - mo trong TransformModal thay vi dieu
-// huong sang trang rieng, kich hoat tu nut "Viết bài mới" trong DetailsPanel
+// new/page.tsx + PostEditor.tsx) - mo trong SimpleModal thay vi dieu huong
+// sang trang rieng, kich hoat tu nut "Viết bài mới" trong DetailsPanel
 // (WorkspaceSwitcher.tsx). CHI mode "create" (sua bai van dung trang rieng
 // /workspaces/[slug]/edit, khong dong bo vao day - ngoai pham vi yeu cau).
-//
-// PostEditorToolbar/POST_PROSE_CLASS dung TOKEN CSS (var(--ink-muted),
-// var(--border)...) de tu doi theo theme sang/toi cua APP - nhung modal nay
-// luon nen toi co dinh (giong TransformModal). Thay vi fork lai toolbar chi
-// de doi mau, override CUC BO cac bien token do ngay tren div bao ngoai
-// (React inline style) bang dung gia tri theme toi "Nebula" da co san trong
-// globals.css - moi Tailwind class token (text-ink-muted, border-border...)
-// tu dong nhan gia tri toi nay ma khong dung gi den component dung chung.
-const darkTokenOverride = {
-  "--surface": "#0a1322",
-  "--surface-muted": "#07101c",
-  "--border": "#18283c",
-  "--ink": "#e7edf8",
-  "--ink-muted": "#9aaac0",
-  "--ink-faint": "#66788f",
-  "--hover-bg": "#101f32",
-  "--primary": "#22d3ee",
-  "--warning": "#f59e0b",
-  "--success": "#10b981",
-  "--danger": "#f43f5e",
-} as CSSProperties;
-
 export function PostEditorModal({
   open,
   onClose,
   groupId,
+  seriesId,
 }: {
   open: boolean;
   onClose: () => void;
   groupId: string;
+  // Gan bai viet moi vao 1 series co san (nhom "cung chu de") - dung boi nut
+  // "Thêm bài viết cùng chủ đề" trong ArticleReaderPane.tsx.
+  seriesId?: string;
 }) {
   const router = useRouter();
+  const { username, workspace, refreshGroupDocs } = useWorkspaceShell();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -65,6 +48,9 @@ export function PostEditorModal({
       }),
     ],
     immediatelyRender: false,
+    // Xem comment trong PostEditor.tsx - Tiptap v3 can bat rieng de toolbar
+    // (editor.isActive()/selection) tu lam moi khi go/chon van ban.
+    shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: { class: POST_PROSE_CLASS + " px-1 py-4" },
     },
@@ -106,12 +92,16 @@ export function PostEditorModal({
         const saved = await createDocumentAction({
           ...contentPayload,
           knowledgeGroupId: groupId,
+          seriesId,
         });
         resetForm();
         onClose();
+        refreshGroupDocs();
         // Xem PostEditor.tsx: router.refresh() sau push de tranh Router
-        // Cache phia client giu ban RSC cu cua trang doc.
-        router.push(`/u/${saved.author.username}/workspaces/${saved.slug}`);
+        // Cache phia client giu ban RSC cu cua trang doc. Dung dung URL cua
+        // cay /workspace/[username]/[workspaceId] (KHONG phai /u/.../workspaces
+        // cu) - modal nay chi duoc mo tu trong cay do (xem WorkspaceShell.tsx).
+        router.push(`/workspace/${username}/${workspace.id}/${saved.slug}`);
         router.refresh();
       } catch {
         setError("Có lỗi khi lưu, thử lại sau.");
@@ -120,21 +110,24 @@ export function PostEditorModal({
   }
 
   return (
-    <TransformModal
+    <SimpleModal
       open={open}
-      onClose={() => {
-        onClose();
-        resetForm();
+      onOpenChange={(next) => {
+        if (!next) {
+          onClose();
+          resetForm();
+        }
       }}
       title="Viết bài mới"
       description="Bài viết sẽ được gắn vào nhóm kiến thức đang chọn."
+      maxWidthClassName="max-w-2xl"
       footer={
-        <div className="flex items-center justify-between border-t border-white/[0.06] px-6 py-4">
+        <div className="flex items-center justify-between">
           <button
             type="button"
             disabled={isSaving}
             onClick={() => save(false)}
-            className="h-9 cursor-pointer rounded-md border border-white/10 px-4 text-xs font-semibold text-slate-300 transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-9 cursor-pointer rounded-md border border-border px-4 text-xs font-semibold text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-60"
           >
             Lưu nháp
           </button>
@@ -142,7 +135,7 @@ export function PostEditorModal({
             type="button"
             disabled={isSaving}
             onClick={() => save(true)}
-            className="flex h-9 items-center gap-1.5 rounded-md bg-linear-to-r from-cyan-500 to-blue-500 px-4 text-xs font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 items-center gap-1.5 rounded-md bg-community-accent px-4 text-xs font-semibold text-white transition-colors duration-150 ease-out hover:bg-community-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Send size={13} strokeWidth={2.25} />
             {isSaving ? "Đang lưu..." : "Xuất bản"}
@@ -150,10 +143,7 @@ export function PostEditorModal({
         </div>
       }
     >
-      <div
-        style={darkTokenOverride}
-        className="flex max-h-[500px] flex-col gap-4 overflow-y-auto pr-1"
-      >
+      <div className="flex flex-col gap-4">
         {/* Cover */}
         {coverImageUrl ? (
           <div className="relative h-36 w-full overflow-hidden rounded-xl border border-border">
@@ -213,7 +203,7 @@ export function PostEditorModal({
               <button
                 type="button"
                 onClick={() => setTags((p) => p.filter((t) => t !== tag))}
-                className="cursor-pointer hover:text-red-400"
+                className="cursor-pointer hover:text-danger"
               >
                 <X size={11} strokeWidth={2.5} />
               </button>
@@ -237,15 +227,15 @@ export function PostEditorModal({
         </div>
 
         {/* Editor */}
-        <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface transition-colors duration-150 ease-out focus-within:border-primary/50">
           {editor && <PostEditorToolbar editor={editor} />}
           <div className="px-4">
-            <EditorContent editor={editor} className="min-h-[500px]" />
+            <EditorContent editor={editor} className="min-h-90" />
           </div>
         </div>
 
-        {error && <ModalErrorText>{error}</ModalErrorText>}
+        {error && <p className="text-xs font-medium text-danger">{error}</p>}
       </div>
-    </TransformModal>
+    </SimpleModal>
   );
 }

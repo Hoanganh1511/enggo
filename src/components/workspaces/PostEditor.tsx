@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
-import { motion, type Easing } from "framer-motion";
+import { motion } from "framer-motion";
 import { X, ImagePlus, Send, FileText } from "lucide-react";
 import type { ApiDocument } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -37,10 +37,13 @@ export function PostEditor({
   document?: ApiDocument;
   groupId?: string;
   // Khi nhung PostEditor vao 1 noi KHONG phai trang rieng (vd panel sua
-  // trong ArticleReaderPane) - goi onSaved(saved) THAY VI router.push mac
-  // dinh, de noi nhung tu quyet dinh lam gi tiep (dong panel + cap nhat
-  // state tai cho) ma khong bi dieu huong ra khoi trang.
-  onSaved?: (saved: ApiDocument) => void;
+  // trong ArticleReaderPane) - goi onSaved(saved, publish) THAY VI router.push
+  // mac dinh, de noi nhung tu quyet dinh lam gi tiep (dong panel + cap nhat
+  // state tai cho) ma khong bi dieu huong ra khoi trang. Tham so `publish`
+  // (khac `publish` cuc bo trong save()) de noi goi phan biet duoc luu NHAP
+  // (o lai che do sua, chi bao "da luu") voi XUAT BAN (thoat che do sua) -
+  // xem ArticleReaderPane.tsx.
+  onSaved?: (saved: ApiDocument, publish: boolean) => void;
   // Tach bo toolbar dinh dang ra 1 the kinh noi rieng (sticky, tu lat+mo
   // dan xuat hien) thay vi nam trong khung border cung EditorContent - dung
   // cho ArticleReaderPane's edit-mode choreography. Cac noi dung khac
@@ -70,6 +73,14 @@ export function PostEditor({
     ],
     content: doc?.content ?? undefined,
     immediatelyRender: false,
+    // Tiptap v3: useEditor() KHONG tu re-render component moi transaction
+    // nua tru khi bat co nay (khac han v2) - thieu no thi editor.isActive()/
+    // editor.state.selection trong toolbar (PostEditorToolbar.tsx) chi doc
+    // dung LUC RENDER GAN NHAT, "dong bang" cho toi khi co 1 nguyen nhan
+    // KHAC (vd go vao o title/summary) buoc PostEditor re-render - bam nut
+    // toolbar hoac chon van ban trong THAN editor khong tu lam moi duoc
+    // trang thai active/disabled cua chinh no.
+    shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: { class: POST_PROSE_CLASS + " min-h-[420px] px-1 py-4" },
     },
@@ -84,6 +95,7 @@ export function PostEditor({
     ],
     content: doc?.overview ?? undefined,
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: { class: OVERVIEW_PROSE_CLASS + " min-h-[64px] px-3 py-2" },
     },
@@ -123,7 +135,7 @@ export function PostEditor({
                 knowledgeGroupId: groupId!,
               })
             : await updateDocumentAction(doc!.id, contentPayload);
-        if (onSaved) onSaved(saved);
+        if (onSaved) onSaved(saved, publish);
         else {
           // router.push roi thoi la CHUA du - Router Cache phia client cua
           // Next co the van giu ban RSC cu cua trang doc (neu vua ghe qua no
@@ -197,7 +209,7 @@ export function PostEditor({
         <p className="mb-1.5 text-xs font-medium text-ink-faint">
           Tổng quan nội dung (tùy chọn)
         </p>
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface transition-colors duration-150 ease-out focus-within:border-primary/50">
           {overviewEditor && <OverviewEditorToolbar editor={overviewEditor} />}
           <EditorContent editor={overviewEditor} />
         </div>
@@ -243,14 +255,18 @@ export function PostEditor({
           {editor && (
             <FloatingEditorToolbar editor={editor} onCancel={onCancel} />
           )}
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          {/* Khong con bo goc/vien 2 ben nhu ban truoc - toolbar sticky (co
+              goc bo tron + vien rieng) de len TREN khung nay khi cuon, 2 lop
+              bo goc/vien chong nhau nhin roi mat (theo phan hoi nguoi dung).
+              Chi con nen surface, khong khung rieng nua. */}
+          <div className="bg-surface">
             <div className="px-4">
               <EditorContent editor={editor} />
             </div>
           </div>
         </>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface transition-colors duration-150 ease-out focus-within:border-primary/50">
           {editor && <PostEditorToolbar editor={editor} />}
           <div className="px-4">
             <EditorContent editor={editor} />
@@ -336,32 +352,9 @@ export function PostEditor({
   );
 }
 
-// Toolbar dinh dang tach rieng thanh 1 the kinh (dung cho floatingToolbar).
-// Xuat hien qua 1 chuoi CHUYEN DONG lien tuc, 4 pha tren CUNG 1 timeline
-// (dung keyframe arrays dung "times" thay vi spring, vi spring khong ho tro
-// nhieu waypoint):
-//   1. (0 -> 0.28)  keo cheo tu goc duoi-trai len (x,y cung dich chuyen).
-//   2. (0.28 -> 0.72) tiep tuc keo NGANG ve dung vi tri x=0.
-//   3. (0.52 -> 0.86) lat (rotateX) tu up mat sau ve dung chieu, gan cuoi
-//      doan ngang de "lat" xay ra ngay khi vua toi noi.
-//   4. (0.86 -> 1)  "khop noi lap rap": scale nay len roi on dinh lai
-//      (1 -> 1.06 -> 1) ngay sau khi lat xong, mo phong cam giac ruynh 1
-//      cai vua khop vao vi tri.
-// Do mo (blur) CHI la 1 class TINH duoc bat/tat DUNG 1 LAN qua onUpdate theo
-// dung tien do rotateX thuc te - KHONG animate gia tri filter qua Framer
-// (dung nguyen tac da chot trong docs/workspace-style-guide.md: animate
-// filter lien tuc gay mo du/giat), nen o day filter chi doi trang thai roi
-// dung yen, khong noi suy tung frame.
-const TOOLBAR_ENTRANCE_TIMES = [0, 0.28, 0.52, 0.72, 0.86, 0.93, 1];
-const TOOLBAR_ENTRANCE_EASE: Easing[] = [
-  "easeOut",
-  "easeInOut",
-  "easeIn",
-  "easeOut",
-  [0.34, 1.56, 0.64, 1],
-  "easeIn",
-];
-
+// Toolbar dinh dang tach rieng thanh 1 the kinh (dung cho floatingToolbar) -
+// fade+truot nhe don gian, khong con chuoi lat/blur/spring nhieu pha nhu
+// truoc (gay cam giac ram ra/lag khi vao mode edit).
 function FloatingEditorToolbar({
   editor,
   onCancel,
@@ -369,38 +362,18 @@ function FloatingEditorToolbar({
   editor: Editor;
   onCancel?: () => void;
 }) {
-  const [flipped, setFlipped] = useState(true);
   return (
     <motion.div
-      initial={{ opacity: 0, x: -64, y: 46, rotateX: -115, scale: 0.94 }}
-      animate={{
-        opacity: [0, 1, 1, 1, 1, 1, 1],
-        x: [-64, -58, -16, 0, 0, 0, 0],
-        y: [46, 40, 6, 0, 0, 0, 0],
-        rotateX: [-115, -115, -115, -55, 0, 0, 0],
-        scale: [0.94, 0.96, 0.98, 1, 1, 1.06, 1],
-      }}
-      transition={{
-        duration: 0.9,
-        times: TOOLBAR_ENTRANCE_TIMES,
-        ease: TOOLBAR_ENTRANCE_EASE,
-      }}
-      onUpdate={(latest) => {
-        const rx = typeof latest.rotateX === "number" ? latest.rotateX : 0;
-        if (flipped && Math.abs(rx) < 35) setFlipped(false);
-      }}
-      className={cn(
-        "sticky top-0 z-10 mb-3 flex items-center gap-1 rounded-2xl border px-2 py-1.5 shadow-panel",
-        flipped && "blur-[3px]",
-      )}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+      className="sticky top-0 z-10 mb-3 flex items-center gap-1 px-2 py-1.5"
       style={{
-        transformPerspective: 900,
-        borderColor: "var(--border)",
-        background: "color-mix(in srgb, var(--surface) 88%, transparent)",
-        backdropFilter: "blur(14px)",
+        borderBottom: "1px solid var(--border)",
+        background: "var(--surface-muted)",
       }}
     >
-      <PostEditorToolbar editor={editor} />
+      <PostEditorToolbar editor={editor} bare />
       {onCancel && (
         <>
           <span

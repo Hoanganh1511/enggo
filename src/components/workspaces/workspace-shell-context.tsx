@@ -28,6 +28,21 @@ export type WorkspaceShellContextValue = {
   // co the vao thang URL bai viet (khong qua click tu list), luc do
   // selectedGroup mac dinh (nhom dau tien) co the SAI.
   selectGroupById: (groupId: string) => void;
+  // Ve lai man tong quan (khong nhom nao duoc chon) - dung boi nut "Tat ca
+  // nhom" trong GroupArticleToc.tsx de thoat khoi 1 nhom dang xem.
+  clearSelectedGroup: () => void;
+  // Them 1 nhom MOI tao vao state cuc bo (KnowledgeGroupFloors.tsx goi sau
+  // khi CreateGroupButton tao thanh cong) - khong con di qua prop
+  // onGroupCreated rieng nhu ban cu (sidebar cu la noi DUY NHAT dung no).
+  addGroup: (group: ApiKnowledgeGroup) => void;
+  // Cap nhat 1 nhom da co san trong state cuc bo (vd sau khi sua ten/mo ta/
+  // quyen xem qua modal sua nhom) - patch DUNG 1 phan tu trong `groups` bang
+  // response moi nhat tu backend, khong refetch lai toan bo danh sach.
+  updateGroupInState: (group: ApiKnowledgeGroup) => void;
+  // Nap lai groupDocs cua nhom dang chon - dung sau khi tao/sua/xoa series
+  // (gop bai vao 1 nhom "cung chu de") vi groupDocs la client state rieng
+  // (khong qua Next.js page cache/revalidatePath, xem WorkspaceShell.tsx).
+  refreshGroupDocs: () => void;
   panelsReady: boolean;
   setPanelsReady: (ready: boolean) => void;
 };

@@ -153,6 +153,9 @@
      lam --font-sans mac dinh vi chi ap dung cho card post, khong doi font
      toan app. */
   --font-card: var(--font-be-vietnam-pro);
+  /* Font rieng cho breadcrumb khu vuc Workspace (class "font-breadcrumb") -
+     Work Sans, lua chon mien phi gan Amazon Ember nhat - xem layout.tsx. */
+  --font-breadcrumb: var(--font-work-sans);
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
@@ -431,14 +434,18 @@ body {
   transition: transform 300ms ease;
 }
 
-/* Scrollbar toan site - thanh gradient tim (dong bo --community-accent dung
-   cho khu vuc Community), thay cho mau xam trung tinh truoc day.
+/* Scrollbar toan site - thanh gradient xanh lam->xanh duong, DUNG DUNG bang
+   mau "concept" cua khu vuc Workspace (xem docs/workspace-style-guide.md muc
+   8 - gradient CO DINH #20c5d8 -> #269ce9 -> #326eea, dung cho nut CTA chinh
+   "Viet bai moi"/WorkspaceButton). Doi tu --community-accent (tim, khu vuc
+   Community) sang gradient nay vi phan lon thoi gian dung app hien nam o
+   Workspace/chi tiet Workspace - scrollbar theo mau do se thay nhat quan hon.
    "scrollbar-color" (Firefox) chi nhan 1 mau dac, KHONG the gradient - dung
-   --community-accent lam mau dac thay the rieng cho Firefox; Chrome/Edge/
+   stop giua (#269ce9) lam mau dac thay the rieng cho Firefox; Chrome/Edge/
    Safari (*::-webkit-scrollbar-thumb) moi thuc su hien gradient. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--community-accent) transparent;
+  scrollbar-color: #269ce9 transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
@@ -450,20 +457,22 @@ body {
 
 *::-webkit-scrollbar-thumb {
   /* color-mix voi white de nhat mau di (thumb dam qua se nang, khong hop
-     voi tinh than "airy" cua cac trang) - van bam theo --community-accent
-     lam nguon mau, chi giam do bao hoa. */
+     voi tinh than "airy" cua cac trang) - van giu dung 3 stop cua gradient
+     concept, chi giam do bao hoa. */
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--community-accent) 55%, white),
-    color-mix(in srgb, var(--community-accent-dark) 55%, white)
+    color-mix(in srgb, #20c5d8 55%, white),
+    color-mix(in srgb, #269ce9 55%, white),
+    color-mix(in srgb, #326eea 55%, white)
   );
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--community-accent-hover) 65%, white),
-    color-mix(in srgb, var(--community-accent-dark) 65%, white)
+    color-mix(in srgb, #20c5d8 70%, white),
+    color-mix(in srgb, #269ce9 70%, white),
+    color-mix(in srgb, #326eea 70%, white)
   );
 }
 
@@ -674,12 +683,19 @@ body {
   width: 4px;
 }
 .focus-panel-scroll::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--primary) 22%, transparent);
+  /* Cung gradient concept voi scrollbar toan site (xem *::-webkit-scrollbar-thumb
+     o tren) - chi giam do bao hoa hon vi thanh nay mong (4px), dung cho 1
+     cot sidebar phu, khong can noi bat. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #20c5d8 30%, transparent),
+    color-mix(in srgb, #326eea 30%, transparent)
+  );
   border-radius: 99px;
 }
 .focus-panel-scroll {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--primary) 22%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, #269ce9 30%, transparent) transparent;
   overscroll-behavior: contain;
 }
 
@@ -730,7 +746,7 @@ body {
   }
 }
 
-/* KnowledgeBranchItem dang active (WorkspaceSidebar.tsx, sidebar nhom kien thuc) -
+/* Hang dang active trong GroupArticleToc.tsx (muc luc bai viet cua 1 nhom) -
    nen "loang" tinh cu chi la 1 linear-gradient co dinh, them 2 khoi plasma
    (radial-gradient mau var(--primary), lam mo + troi cham) chay ben duoi
    noi dung de tao cam giac "dung dich phat sang" thay vi mang mau tinh. */

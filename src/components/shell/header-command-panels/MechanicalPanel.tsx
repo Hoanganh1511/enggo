@@ -4,27 +4,26 @@ import { motion, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
 
 // Vo panel dung chung cho 4 dropdown "Da luu/Tin nhan/Thong bao/Tro giup"
-// tren TopHeaderBar - bê nguyên UI/UX/animation tu source rieng
-// "treecareer-topbar-command-center" (MechanicalPanel.tsx), nhung doi toan bo
-// mau HARDCODE (cyan/slate) sang TOKEN CSS (var(--...) tu globals.css) de tu
-// dong doi theo theme sang/toi giong phan con lai cua header, thay vi khoa
-// cung giao dien toi nhu ban demo.
+// tren TopHeaderBar. Ban DON GIAN - chi fade+scale nhe (khop dung cach
+// PopoverContent trong components/ui/popover.tsx dang dung cho dropdown
+// "Khám phá"/HeaderSearch), thay cho ban cu animate rotateX (xoay 3D) +
+// filter:blur() qua Framer Motion + 1 duong "scan" quet vo han - dung nguyen
+// tac da chot trong docs/workspace-style-guide.md: KHONG animate filter/blur
+// (buoc trinh duyet rasterize rieng 1 layer, gay mo du/giat), va khong glow/
+// pulse thuan trang tri khong gan trang thai that.
 const panelVariants: Variants = {
-  closed: { opacity: 0, scale: 0.72, y: -10, rotateX: -12, filter: "blur(7px)" },
+  closed: { opacity: 0, scale: 0.96, y: -6 },
   open: {
     opacity: 1,
     scale: 1,
     y: 0,
-    rotateX: 0,
-    filter: "blur(0px)",
-    transition: { type: "spring", stiffness: 280, damping: 24 },
+    transition: { duration: 0.15, ease: "easeOut" },
   },
   exit: {
     opacity: 0,
-    scale: 0.88,
+    scale: 0.96,
     y: -6,
-    filter: "blur(4px)",
-    transition: { duration: 0.18 },
+    transition: { duration: 0.12, ease: "easeIn" },
   },
 };
 
@@ -50,27 +49,12 @@ export default function MechanicalPanel({
       animate="open"
       exit="exit"
       style={{
-        transformPerspective: 1000,
-        border: "1px solid color-mix(in srgb, var(--primary) 22%, transparent)",
+        border: "1px solid var(--border-strong)",
         background: "var(--surface-raised)",
-        boxShadow:
-          "0 24px 80px rgba(0,0,0,.28), 0 0 45px color-mix(in srgb, var(--primary) 10%, transparent)",
+        boxShadow: "var(--shadow-dropdown)",
       }}
-      className={`pointer-events-auto overflow-hidden rounded-2xl backdrop-blur-2xl ${width}`}
+      className={`pointer-events-auto overflow-hidden rounded-2xl ${width}`}
     >
-      <div
-        className="absolute inset-x-0 top-0 h-px overflow-hidden"
-        style={{ background: "color-mix(in srgb, var(--primary) 20%, transparent)" }}
-      >
-        <div
-          className="scan h-full w-1/2"
-          style={{
-            background:
-              "linear-gradient(to right, transparent, color-mix(in srgb, var(--primary) 70%, transparent), transparent)",
-          }}
-        />
-      </div>
-
       <header
         className="flex items-center justify-between px-4 py-3.5"
         style={{ borderBottom: "1px solid var(--border)" }}

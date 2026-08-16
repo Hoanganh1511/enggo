@@ -6,6 +6,11 @@ import { AnimatePresence, motion } from "framer-motion";
 export const PopoverRoot = RadixPopover.Root;
 export const PopoverTrigger = RadixPopover.Trigger;
 export const PopoverClose = RadixPopover.Close;
+// Dung khi trigger THAT (vd 1 input dang go) can tu quan ly hanh vi mo/dong
+// rieng (focus, go chu...) thay vi hanh vi click-toggle mac dinh cua
+// PopoverTrigger - Anchor CHI lam moc dinh vi cho PopoverContent, khong gan
+// listener click/toggle nao ca.
+export const PopoverAnchor = RadixPopover.Anchor;
 
 type PopoverContentProps = React.ComponentProps<typeof RadixPopover.Content> & {
   open: boolean;

@@ -6,6 +6,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
+import { GlossaryHint } from "./glossary-hint-extension";
 
 export type CalloutVariant = "info" | "warn" | "danger" | "success";
 
@@ -131,6 +132,7 @@ export function getPostExtensions(): Extensions {
     Image.configure({ inline: false, allowBase64: false }),
     TableKit.configure({ table: { resizable: true } }),
     Callout,
+    GlossaryHint,
   ];
 }
 
@@ -157,7 +159,7 @@ export function getOverviewExtensions(): Extensions {
 // Prose gon cho box tong quan (nho hon POST_PROSE_CLASS, chi can style cho
 // dung 4 loai duoc phep: bold/italic/bulletList/orderedList).
 export const OVERVIEW_PROSE_CLASS =
-  "text-[13px] leading-relaxed " +
+  "text-[13px] leading-relaxed focus:outline-none " +
   "[&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 " +
   "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 " +
   "[&_strong]:font-semibold [&_em]:italic " +

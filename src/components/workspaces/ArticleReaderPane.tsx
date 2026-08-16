@@ -6,11 +6,15 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEditor, EditorContent } from "@tiptap/react";
 import {
-  ArrowLeft,
+  Blocks,
   CheckCircle2,
+  ChevronRight,
   Clock3,
+  FileTextIcon,
+  Folder,
   Highlighter,
   History,
+  Layers,
   LoaderCircle,
   MessageCircle,
   Pencil,
@@ -19,8 +23,11 @@ import {
 } from "lucide-react";
 import type { ApiDocument } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
+import { toast } from "@/lib/toast/toast-store";
 import { getPostExtensions, POST_PROSE_CLASS } from "./post-extensions";
 import { PostEditor } from "./PostEditor";
+import { PostEditorModal } from "./PostEditorModal";
+import { CreateSeriesModal } from "./CreateSeriesModal";
 import type { TocItem } from "./toc";
 import { PANEL_SPRING } from "./motion";
 import { ArticleTabs, type ArticleTabId } from "./ArticleTabs";
@@ -36,36 +43,20 @@ import { useWorkspaceShell } from "./workspace-shell-context";
 // dieu huong That (Link) ve trang browse - trinh duyet tu lo back/forward.
 //
 // Edit mode: 1 chuoi buoc rieng dieu phoi boi EditPhase (state cuc bo trong
-// trang nay, khong lien quan gi den routing):
+// trang nay, khong lien quan gi den routing) - CO Y DON GIAN, khong con hieu
+// ung chuyen canh phuc tap (truoc day co them buoc "collapsing" cho
+// ArticleBody bap bung/thu nho + toolbar lat 4 pha, gay ram ra/lag):
 //   "idle"      -> bam nut "Chỉnh sửa" tren ReaderToolbar.
 //   "toast"     -> hien 1 toast nho "Dang chuyen mode Edit" (het han sau 1
 //                  khoang thoi gian co dinh - day la thong bao thuan tuy,
 //                  khong cho doi task that nao ca nen dung timeout la hop ly).
-//   "collapsing"-> ArticleBody "bap bung" (opacity nhap nhay vai lan) roi
-//                  thu nho ve giua va bien mat - ket thuc bang onAnimationComplete
-//                  THAT (khong doan timeout) moi chuyen tiep "preparing".
-//   "preparing" -> spinner ngan (dang mo trinh soan thao).
-//   "editing"   -> PostEditor (mode="edit") THAT hien ra, voi bo toolbar cua
-//                  no tach rieng thanh 1 the kinh (FloatingEditorToolbar
-//                  trong PostEditor.tsx) tu lat+mo dan xuong vi tri top:0.
+//   "preparing" -> tat bai viet, hien spinner ngan (dang mo trinh soan thao).
+//   "editing"   -> PostEditor (mode="edit") THAT hien ra.
 // Luu qua updateDocumentAction that; luu xong cap nhat state `doc` cuc bo
 // (khong propagate nguoc ve danh sach groupDocs trong WorkspaceShell - giong
 // han vi ban cu, chi hien anh huong ngay tren trang dang xem).
 
-type EditPhase = "idle" | "toast" | "collapsing" | "preparing" | "editing";
-
-const articleCollapseVariants = {
-  idle: { opacity: 1, scale: 1 },
-  collapsing: {
-    opacity: [1, 0.35, 1, 0.25, 0.9, 0],
-    scale: [1, 1, 1, 1, 0.94, 0.25],
-    transition: {
-      duration: 0.85,
-      times: [0, 0.15, 0.32, 0.48, 0.72, 1],
-      ease: "easeInOut" as const,
-    },
-  },
-};
+type EditPhase = "idle" | "toast" | "preparing" | "editing";
 
 // `doc.id` duoc dung lam key luc render component nay (xem [slug]/page.tsx)
 // de React TU REMOUNT khi dieu huong sang 1 bai viet KHAC (cung route
@@ -74,14 +65,35 @@ const articleCollapseVariants = {
 // pattern "mirror prop vao state", ESLint react-hooks/set-state-in-effect
 // se bao loi neu lam vay).
 export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
-  const { workspace, username, selectedGroup, groupDocs, selectGroupById } =
-    useWorkspaceShell();
+  const {
+    workspace,
+    username,
+    selectedGroup,
+    groupDocs,
+    selectGroupById,
+    refreshGroupDocs,
+  } = useWorkspaceShell();
   const [doc, setDoc] = useState(initialDoc);
   const [sideTab, setSideTab] = useState<ArticleTabId>("overview");
   const [editPhase, setEditPhase] = useState<EditPhase>("idle");
   const [toc, setToc] = useState<TocItem[]>([]);
   const [activeTocId, setActiveTocId] = useState("");
   const postScrollRef = useRef<HTMLDivElement>(null);
+  const [addRelatedOpen, setAddRelatedOpen] = useState(false);
+  const [createSeriesOpen, setCreateSeriesOpen] = useState(false);
+
+  // Nut "Thêm bài viết cùng chủ đề" (ReaderToolbar) - neu bai hien tai CHUA
+  // thuoc series nao, mo CreateSeriesModal de hoi ten nhom (tao series MOI gan
+  // luon bai nay vao, documentIds: [doc.id]) truoc khi mo composer; da co san
+  // series thi mo thang composer voi seriesId do. Composer (PostEditorModal)
+  // tu gan seriesId cho bai MOI luc tao qua CreateDocumentDto.seriesId.
+  function handleAddRelated() {
+    if (doc.series) {
+      setAddRelatedOpen(true);
+      return;
+    }
+    setCreateSeriesOpen(true);
+  }
 
   // Dam bao sidebar/danh sach nhom dung voi nhom cua bai dang doc - can
   // thiet vi nguoi dung co the vao THANG url bai viet (khong qua click tu
@@ -93,11 +105,11 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
 
   useEffect(() => {
     if (editPhase === "toast") {
-      const t = setTimeout(() => setEditPhase("collapsing"), 900);
+      const t = setTimeout(() => setEditPhase("preparing"), 900);
       return () => clearTimeout(t);
     }
     if (editPhase === "preparing") {
-      const t = setTimeout(() => setEditPhase("editing"), 520);
+      const t = setTimeout(() => setEditPhase("editing"), 300);
       return () => clearTimeout(t);
     }
   }, [editPhase]);
@@ -140,29 +152,51 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* Breadcrumb thay cho nut back + tieu de rieng le truoc day - vua dieu
+          huong (click workspace/nhom) vua cho biet dang o dau, khong can 2
+          vung rieng nua. Chuyen tu ArticleOverview.tsx (tab "Tong quan") len
+          day - khong con lap lai o do. */}
       <div
-        className="flex h-[52px] shrink-0 items-center gap-3 px-4"
+        className="font-breadcrumb flex h-13 shrink-0 items-center gap-1.5 overflow-hidden px-4 text-[13px]"
         style={{
-          borderBottom: "1px solid var(--border)",
+          // borderBottom: "1px solid var(--border)",
           background: "var(--surface)",
         }}
       >
         <Link
           href={`/workspace/${username}/${workspace.id}`}
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors duration-150 ease-out hover:text-primary-hover!"
-          style={{
-            border: "1px solid var(--border)",
-            color: "var(--ink-muted)",
-            background: "var(--surface)",
-          }}
+          className="flex shrink-0 items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
         >
-          <ArrowLeft size={15} strokeWidth={1.9} />
+          <Blocks size={13} strokeWidth={1.9} className="shrink-0" />
+          <span className="truncate">{workspace.name}</span>
         </Link>
+        <ChevronRight
+          size={13}
+          strokeWidth={1.9}
+          className="shrink-0"
+          style={{ color: "var(--ink-faint)" }}
+        />
+        <Link
+          href={`/workspace/${username}/${workspace.id}`}
+          className="flex min-w-0 shrink items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
+        >
+          <Folder size={13} strokeWidth={1.9} className="shrink-0" />
+          <span className="min-w-0 truncate">
+            {selectedGroup?.name ?? "..."}
+          </span>
+        </Link>
+        <ChevronRight
+          size={13}
+          strokeWidth={1.9}
+          className="shrink-0"
+          style={{ color: "var(--ink-faint)" }}
+        />
         <span
-          className="min-w-0 flex-1 truncate text-[13px] font-semibold"
+          className="flex min-w-0 flex-1 items-center gap-1 font-semibold"
           style={{ color: "var(--ink)" }}
         >
-          {doc.title}
+          <FileTextIcon size={13} strokeWidth={1.9} className="shrink-0" />
+          <span className="min-w-0 truncate">{doc.title}</span>
         </span>
       </div>
 
@@ -174,41 +208,32 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
           {editPhase === "preparing" ? (
             <EditorPreparingStage />
           ) : editPhase === "editing" ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full px-6 lg:px-10"
-            >
+            <div className="h-full px-6 lg:px-10">
               <PostEditor
                 mode="edit"
                 document={doc}
                 floatingToolbar
                 onCancel={() => setEditPhase("idle")}
-                onSaved={(saved) => {
+                onSaved={(saved, publish) => {
                   setDoc(saved);
-                  setEditPhase("idle");
+                  // Luu NHAP: o lai che do sua (khong thoat), chi bao da luu
+                  // - theo phan hoi nguoi dung. Xuat ban van thoat nhu cu (da
+                  // "xong" bai, khong con ly do o lai man sua nua).
+                  if (publish) {
+                    setEditPhase("idle");
+                  } else {
+                    toast.success("Đã lưu thay đổi nháp.");
+                  }
                 }}
               />
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={editPhase === "collapsing" ? "collapsing" : "idle"}
-              variants={articleCollapseVariants}
-              style={{ transformOrigin: "center center" }}
-              onAnimationComplete={(def) => {
-                if (def === "collapsing") setEditPhase("preparing");
-              }}
-              className="h-full"
-            >
-              <ArticleBody
-                key={doc.id}
-                doc={doc}
-                scrollRoot={postScrollRef}
-                onTocChange={setToc}
-              />
-            </motion.div>
+            <ArticleBody
+              key={doc.id}
+              doc={doc}
+              scrollRoot={postScrollRef}
+              onTocChange={setToc}
+            />
           )}
           <AnimatePresence>
             {editPhase === "toast" && <EditModeToast key="edit-toast" />}
@@ -219,9 +244,9 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
           initial={{ x: 520, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={PANEL_SPRING}
-          className="flex w-130 shrink-0 flex-col overflow-hidden"
+          className="flex w-90 shrink-0 flex-col overflow-hidden"
           style={{
-            borderLeft: "1px solid var(--border)",
+            // borderLeft: "1px solid var(--border)",
             background: "var(--surface)",
           }}
         >
@@ -232,6 +257,7 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
                 canEdit={doc.isOwner}
                 onEdit={() => setEditPhase("toast")}
                 onNotes={() => setSideTab("resources")}
+                onAddRelated={handleAddRelated}
               />
             )}
           </AnimatePresence>
@@ -239,16 +265,38 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
             tab={sideTab}
             setTab={setSideTab}
             doc={doc}
-            group={selectedGroup}
-            workspaceName={workspace.name}
             siblingDocs={siblingDocs}
             username={username}
             workspaceId={workspace.id}
             toc={toc}
             activeTocId={activeTocId}
+            onChecklistLogPublicChange={(next) =>
+              setDoc((prev) => ({ ...prev, checklistLogPublic: next }))
+            }
           />
         </motion.aside>
       </div>
+      <PostEditorModal
+        open={addRelatedOpen}
+        onClose={() => setAddRelatedOpen(false)}
+        groupId={doc.knowledgeGroupId}
+        seriesId={doc.series?.id}
+      />
+      <CreateSeriesModal
+        open={createSeriesOpen}
+        onOpenChange={setCreateSeriesOpen}
+        groupId={doc.knowledgeGroupId}
+        documentIds={[doc.id]}
+        defaultName={doc.title}
+        onCreated={(series) => {
+          setDoc((prev) => ({
+            ...prev,
+            series: { id: series.id, name: series.name },
+          }));
+          refreshGroupDocs();
+          setAddRelatedOpen(true);
+        }}
+      />
     </div>
   );
 }
@@ -466,13 +514,24 @@ function ReaderToolbar({
   canEdit,
   onEdit,
   onNotes,
+  onAddRelated,
 }: {
   canEdit: boolean;
   onEdit: () => void;
   onNotes: () => void;
+  onAddRelated: () => void;
 }) {
   const items: { icon: LucideIcon; label: string; onClick: () => void }[] = [
     ...(canEdit ? [{ icon: Pencil, label: "Chỉnh sửa", onClick: onEdit }] : []),
+    ...(canEdit
+      ? [
+          {
+            icon: Layers,
+            label: "Thêm bài viết cùng chủ đề",
+            onClick: onAddRelated,
+          },
+        ]
+      : []),
     { icon: StickyNote, label: "Ghi chú", onClick: onNotes },
     { icon: Highlighter, label: "Chú thích", onClick: onNotes },
     { icon: MessageCircle, label: "Thảo luận", onClick: onNotes },

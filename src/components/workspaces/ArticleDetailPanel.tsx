@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Folder } from "lucide-react";
-import type { ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
-import { colorOf } from "./node-color";
+import { Folder } from "lucide-react";
+import type { ApiKnowledgeGroup } from "@/lib/api/types";
 import { PANEL_SPRING } from "./motion";
 import { KnowledgeGroupCollabRequestsPanel } from "./KnowledgeGroupCollabRequestsPanel";
 import { PostEditorModal } from "./PostEditorModal";
@@ -34,19 +32,13 @@ function Metric({ value, label }: { value: string | number; label: string }) {
   );
 }
 
-// Panel phai - tong quan NHOM dang chon. Chi con 1 che do duy nhat (bo han
-// che do preview bai viet Overview/Muc luc/Tai lieu ban truoc - "Bai viet
-// trong nhom" gio dieu huong That qua next/link, dong bo voi ArticleCard,
-// nen khong con ai kich hoat che do preview do nua). Truot vao 1 LAN duy
-// nhat luc mount (khong doi lai luc chuyen nhom), bao panelsReady qua
-// context khi animation settle xong.
-export function ArticleDetailPanel({
-  group,
-  docs,
-}: {
-  group: ApiKnowledgeGroup;
-  docs: ApiDocumentSummary[];
-}) {
+// Panel phai - tong quan NHOM dang chon. Danh sach "Bai viet trong nhom" da
+// CHUYEN het sang GroupArticleToc.tsx (panel trai, xem yeu cau nguoi dung) -
+// bo phan preview trung lap o day, chi con thong tin tong quan + hanh dong
+// (duyet yeu cau cong tac, viet bai moi). Truot vao 1 LAN duy nhat luc mount
+// (khong doi lai luc chuyen nhom), bao panelsReady qua context khi animation
+// settle xong.
+export function ArticleDetailPanel({ group }: { group: ApiKnowledgeGroup }) {
   const { username, isSelf, workspace, setPanelsReady } = useWorkspaceShell();
   const [composerOpen, setComposerOpen] = useState(false);
 
@@ -122,57 +114,10 @@ export function ArticleDetailPanel({
               <KnowledgeGroupCollabRequestsPanel
                 groupId={group.id}
                 username={username}
+                workspaceId={workspace.id}
                 initialRequests={group.pendingRequests}
               />
             </div>
-          )}
-
-          {docs.length > 0 && (
-            <section className="mt-5">
-              <div className="mb-2 flex items-center justify-between">
-                <h3
-                  className="text-[11px] font-semibold"
-                  style={{ color: "var(--ink)" }}
-                >
-                  Bài viết trong nhóm
-                </h3>
-              </div>
-              {docs.slice(0, 5).map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/workspace/${username}/${workspace.id}/${d.slug}`}
-                  className="my-1.5 grid w-full grid-cols-[12px_1fr_30px] items-center gap-2"
-                >
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{
-                      background: colorOf(d.id),
-                      boxShadow: `0 0 8px ${colorOf(d.id)}`,
-                    }}
-                  />
-                  <span className="min-w-0 text-left">
-                    <strong
-                      className="block truncate text-[9px]"
-                      style={{ color: "var(--ink)" }}
-                    >
-                      {d.title}
-                    </strong>
-                    <small
-                      className="mt-0.5 block text-[7px]"
-                      style={{ color: "var(--ink-faint)" }}
-                    >
-                      {d.viewCount} lượt xem
-                    </small>
-                  </span>
-                  <b
-                    className="text-right text-[8px]"
-                    style={{ color: "var(--ink-faint)" }}
-                  >
-                    →
-                  </b>
-                </Link>
-              ))}
-            </section>
           )}
 
           {group.viewerCanWrite && (

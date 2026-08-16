@@ -10,6 +10,12 @@ export type DocumentInput = {
   content: Record<string, unknown>;
   tags?: string[];
   isPublished?: boolean;
+  // Gan bai viet moi vao 1 series co san (nhom "cung chu de") - dung boi nut
+  // "Thêm bài viết cùng chủ đề", xem PostEditor.tsx.
+  seriesId?: string;
+  // Bat/tat hien thi lich su checklist cho nguoi doc khac - xem
+  // ArticleChecklist.tsx.
+  checklistLogPublic?: boolean;
 };
 
 export function listUserDocuments(

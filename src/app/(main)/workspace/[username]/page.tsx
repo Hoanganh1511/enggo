@@ -1,4 +1,4 @@
-import { listUserWorkspaces } from "@/lib/api/workspaces";
+import { listUserWorkspaces, listSuggestedWorkspaces } from "@/lib/api/workspaces";
 import { getProfileByUsername } from "@/lib/api/users";
 import { WorkspaceSwitcher } from "@/components/workspaces/WorkspaceSwitcher";
 
@@ -15,9 +15,13 @@ export default async function WorkspaceHubPage({
 }) {
   const { username } = await params;
   const uname = decodeURIComponent(username);
-  const [workspaces, profile] = await Promise.all([
+  // suggested luon fetch song song (re, chi top 12 workspace tu nguoi
+  // viewer dang follow) - CHI hien khi isSelf (xem WorkspaceSwitcher.tsx),
+  // nhung fetch truoc o day de tranh phai await tuan tu sau khi biet isSelf.
+  const [workspaces, profile, suggested] = await Promise.all([
     listUserWorkspaces(uname).catch(() => []),
     getProfileByUsername(uname).catch(() => null),
+    listSuggestedWorkspaces().catch(() => []),
   ]);
 
   return (
@@ -25,6 +29,9 @@ export default async function WorkspaceHubPage({
       workspaces={workspaces}
       username={uname}
       isSelf={profile?.isSelf ?? false}
+      ownerName={profile?.displayName ?? uname}
+      ownerAvatarUrl={profile?.avatarUrl ?? null}
+      suggested={suggested}
     />
   );
 }

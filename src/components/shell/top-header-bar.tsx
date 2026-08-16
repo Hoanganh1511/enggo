@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
@@ -19,7 +20,6 @@ import {
   Mountain,
   Orbit,
   Plus,
-  Search,
   StickyNote,
   Target,
   Trophy,
@@ -33,13 +33,10 @@ import {
 import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import Logo from "../ui/logo";
-import { profile } from "@/content/user-profile";
-import {
-  SavedPanel,
-  MessagesPanel,
-  NotificationsPanel,
-  HelpPanel,
-} from "./header-command-panels/Panels";
+import { HeaderSearch } from "./HeaderSearch";
+import { SavedPanel, MessagesPanel, HelpPanel } from "./header-command-panels/Panels";
+import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
+import { getUnreadNotificationCountAction } from "@/actions/notifications/get-unread-count";
 
 // Header bê nguyên UI/UX tu source "knowledge-workspace-react" (Topbar
 // trong main.jsx), nhung dung TOKEN CSS (var(--...) tu globals.css) thay vi
@@ -77,60 +74,81 @@ const MY_TOWN_CHILDREN: NavChild[] = [
   { key: "notes", title: "Notes", icon: StickyNote, available: false },
 ];
 
-const NAV_ITEMS: {
+type NavItem = {
   title: string;
   icon: typeof Home;
   href?: string;
   matchPrefixes?: string[];
   children?: NavChild[];
-}[] = [
-  { title: "Trang chủ", icon: Home, href: "/home", matchPrefixes: ["/home"] },
-  {
-    title: "Bài đăng",
-    icon: FileText,
-    href: `/u/${profile.username}/posts`,
-    matchPrefixes: [`/u/${profile.username}/posts`],
-  },
-  {
-    title: "Workspace",
-    icon: BookText,
-    href: `/workspace/${profile.username}`,
-    // /workspace/[username]/[workspaceId] cua nguoi KHAC cung tinh la active
-    // (dang o "khu vuc" workspace) - khac "Bai dang" chi khop dung 1 nhanh.
-    matchPrefixes: ["/workspace"],
-  },
-  {
-    title: "Khám phá",
-    icon: LayoutDashboard,
-    children: MY_TOWN_CHILDREN,
-  },
-];
+};
+
+// Nhan `username` cua NGUOI DANG DANG NHAP (tu useSession(), xem component
+// ben duoi) thay vi hardcode 1 user demo tinh (`@/content/user-profile`) nhu
+// truoc - loi cu: MOI nguoi dung, bat ke dang dang nhap la ai, deu bi dieu
+// huong "Bài đăng"/"Workspace" sang dung 1 tai khoan demo co dinh
+// ("tuananh.fe"). Tra ve href=undefined khi chua co username (session dang
+// loading/chua dang nhap) - nut van hien nhung khong lam gi (xem
+// `onClick={() => href && handleNavigate(href)}` ben duoi), tranh dieu huong
+// sang URL sai truoc khi biet dung user.
+function buildNavItems(username: string | undefined): NavItem[] {
+  return [
+    { title: "Trang chủ", icon: Home, href: "/home", matchPrefixes: ["/home"] },
+    {
+      title: "Bài đăng",
+      icon: FileText,
+      href: username ? `/u/${username}/posts` : undefined,
+      matchPrefixes: username ? [`/u/${username}/posts`] : undefined,
+    },
+    {
+      title: "Workspace",
+      icon: BookText,
+      href: username ? `/workspace/${username}` : undefined,
+      // /workspace/[username]/[workspaceId] cua nguoi KHAC cung tinh la active
+      // (dang o "khu vuc" workspace) - khac "Bai dang" chi khop dung 1 nhanh.
+      matchPrefixes: ["/workspace"],
+    },
+    {
+      title: "Khám phá",
+      icon: LayoutDashboard,
+      children: MY_TOWN_CHILDREN,
+    },
+  ];
+}
 
 type HeaderCommandId = "saved" | "messages" | "notifications" | "help";
 
-const HEADER_COMMANDS: {
+// Nhan unreadCount + onUnreadCountChange (thay vi badge tinh "3" hardcode
+// truoc day) - NotificationsPanel goi lai onUnreadCountChange sau moi hanh
+// dong doc/duyet/tu choi de badge tren nut chuong dong bo NGAY, khong doi
+// den lan mo dropdown tiep theo.
+function buildHeaderCommands(
+  unreadCount: number,
+  onUnreadCountChange: (count: number) => void,
+): {
   id: HeaderCommandId;
   label: string;
   icon: LucideIcon;
   badge?: string;
   panel: ReactNode;
-}[] = [
-  { id: "saved", label: "Đã lưu", icon: Bookmark, panel: <SavedPanel /> },
-  {
-    id: "messages",
-    label: "Tin nhắn",
-    icon: MessageCircle,
-    panel: <MessagesPanel />,
-  },
-  {
-    id: "notifications",
-    label: "Thông báo",
-    icon: Bell,
-    badge: "3",
-    panel: <NotificationsPanel />,
-  },
-  { id: "help", label: "Trợ giúp", icon: CircleHelp, panel: <HelpPanel /> },
-];
+}[] {
+  return [
+    { id: "saved", label: "Đã lưu", icon: Bookmark, panel: <SavedPanel /> },
+    {
+      id: "messages",
+      label: "Tin nhắn",
+      icon: MessageCircle,
+      panel: <MessagesPanel />,
+    },
+    {
+      id: "notifications",
+      label: "Thông báo",
+      icon: Bell,
+      badge: unreadCount > 0 ? (unreadCount > 9 ? "9+" : String(unreadCount)) : undefined,
+      panel: <NotificationsPanel onUnreadCountChange={onUnreadCountChange} />,
+    },
+    { id: "help", label: "Trợ giúp", icon: CircleHelp, panel: <HelpPanel /> },
+  ];
+}
 
 type TopHeaderBarProps = {
   accountSlot: ReactNode;
@@ -139,6 +157,8 @@ type TopHeaderBarProps = {
 const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session } = useSession();
+  const navItems = buildNavItems(session?.username);
   const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [townOpen, setTownOpen] = useState(false);
@@ -147,6 +167,21 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   );
   const toggleCommandPanel = (id: HeaderCommandId) =>
     setCommandPanel((p) => (p === id ? null : id));
+
+  // Fetch 1 lan luc mount (chi khi da dang nhap) - CHUA co polling/real-time,
+  // badge dong bo lai khi NotificationsPanel bao qua onUnreadCountChange sau
+  // hanh dong, hoac khi tab/trang duoc mo lai tu dau.
+  const [unreadCount, setUnreadCount] = useState(0);
+  useEffect(() => {
+    if (!session?.username) return;
+    getUnreadNotificationCountAction()
+      .then((r) => setUnreadCount(r.count))
+      .catch(() => {});
+  }, [session?.username]);
+  const handleUnreadCountChange = useCallback((count: number) => {
+    setUnreadCount(count);
+  }, []);
+  const headerCommands = buildHeaderCommands(unreadCount, handleUnreadCountChange);
 
   const handleNavigate = (href: string) => {
     if (pathname === href) return;
@@ -185,7 +220,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
 
       {/* Nhom dieu huong chinh */}
       <nav className="flex h-full shrink-0 items-center gap-0.5">
-        {NAV_ITEMS.map(
+        {navItems.map(
           ({ title, icon: Icon, href, matchPrefixes, children }) => {
             const isActive = matchPrefixes
               ? matchPrefixes.some((prefix) => pathname.startsWith(prefix))
@@ -202,12 +237,17 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
               <span className="hidden truncate lg:inline">{title}</span>
             );
 
+            // Gradient CO DINH "concept" cua khu vuc Workspace (xem
+            // docs/workspace-style-guide.md muc 8) - ap cho thanh active nav
+            // thay vi mau dac var(--primary) truoc day, dong bo voi scrollbar
+            // toan site + cac trang thai khac tren header.
             const underline = isActive && (
               <span
                 className="absolute right-3.5 bottom-0 left-3.5 h-[2px]"
                 style={{
-                  background: "var(--primary)",
-                  boxShadow: "0 0 14px var(--primary)",
+                  background:
+                    "linear-gradient(90deg, #20c5d8, #269ce9, #326eea)",
+                  boxShadow: "0 0 14px color-mix(in srgb, #269ce9 70%, transparent)",
                 }}
               />
             );
@@ -330,25 +370,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
 
       {/* O tim kiem */}
       <div className="ml-2 hidden min-w-0 flex-1 justify-center md:flex">
-        <div
-          className="flex h-[38px] w-full max-w-[210px] items-center gap-2 rounded-[20px] px-3.5"
-          style={{
-            border: "1px solid var(--search-border)",
-            background: "var(--surface)",
-          }}
-        >
-          <Search
-            size={15}
-            strokeWidth={1.75}
-            style={{ color: "var(--icon)" }}
-            className="shrink-0"
-          />
-          <input
-            placeholder="Tìm kiếm..."
-            className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-            style={{ color: "var(--ink)" }}
-          />
-        </div>
+        <HeaderSearch />
       </div>
 
       {/* Cum ben phai */}
@@ -371,7 +393,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
           )}
         </AnimatePresence>
 
-        {HEADER_COMMANDS.map(({ id, label, icon: Icon, badge, panel }) => {
+        {headerCommands.map(({ id, label, icon: Icon, badge, panel }) => {
           const active = commandPanel === id;
           return (
             <div key={id} className="relative">
@@ -385,9 +407,11 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                 style={
                   active
                     ? {
-                        color: "var(--primary)",
+                        color: "#269ce9",
                         background:
-                          "color-mix(in srgb, var(--primary) 8%, transparent)",
+                          "linear-gradient(135deg, color-mix(in srgb, #20c5d8 14%, transparent), color-mix(in srgb, #326eea 14%, transparent))",
+                        border:
+                          "1px solid color-mix(in srgb, #269ce9 25%, transparent)",
                       }
                     : undefined
                 }
@@ -396,7 +420,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                 {badge && (
                   <span
                     className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full  text-[10px] font-semibold text-white"
-                    style={{ background: "var(--secondary)" }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #20c5d8, #326eea)",
+                    }}
                   >
                     {badge}
                   </span>

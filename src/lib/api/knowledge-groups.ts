@@ -9,6 +9,7 @@ export type KnowledgeGroupInput = {
   name: string;
   description?: string;
   visibility?: ApiKnowledgeGroupVisibility;
+  goal?: Record<string, unknown>;
 };
 
 export function listWorkspaceGroups(

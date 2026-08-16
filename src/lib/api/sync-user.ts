@@ -9,7 +9,7 @@ type SyncUserInput = {
 
 export async function syncUserToBackend(
   input: SyncUserInput,
-): Promise<{ id: string }> {
+): Promise<{ id: string; username: string }> {
   const token = await signSyncToken();
   const res = await fetch(`${process.env.CAREER_TREE_API_URL}/users/sync`, {
     method: "POST",

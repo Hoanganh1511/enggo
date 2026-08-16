@@ -2,15 +2,52 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
-import type { ApiWorkspaceWithGroups } from "@/lib/api/types";
+import { Plus, Users } from "lucide-react";
+import type { ApiSuggestedWorkspace, ApiWorkspaceWithGroups } from "@/lib/api/types";
 import { useRipple } from "@/components/ui/ripple";
 import { CreateWorkspaceButton } from "./CreateWorkspaceButton";
 import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
 import { useWorkspaceToolbar } from "./workspace-toolbar-context";
 import { WorkspaceGatewayOverlay } from "./WorkspaceGatewayOverlay";
+
+// Mau "concept" cua khu vuc Workspace (xem docs/workspace-style-guide.md muc
+// 8 + KnowledgeGroupCatalog.tsx) - dung cho avatar fallback/icon mac dinh
+// trong strip goi y, KHONG dung var(--primary) (mau teal cu khac concept).
+const CONCEPT_BLUE = "#269ce9";
+
+function OwnerAvatar({
+  name,
+  avatarUrl,
+  size,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  size: number;
+}) {
+  if (avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt=""
+        referrerPolicy="no-referrer"
+        style={{ width: size, height: size }}
+        className="shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <span
+      className="flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
+      style={{ width: size, height: size, fontSize: size * 0.42, background: CONCEPT_BLUE }}
+    >
+      {name.trim().charAt(0).toUpperCase() || "?"}
+    </span>
+  );
+}
 
 // Trang CHON workspace (danh sach the) - man chi tiet BEN TRONG 1 workspace
 // da tach thanh trang rieng /workspace/[username]/[workspaceId] (xem
@@ -124,14 +161,57 @@ function WorkspaceCard({
   );
 }
 
+// The goi y (workspace cua nguoi khac, tu strip "Gợi ý từ người bạn theo
+// dõi") - dieu huong THANG qua Link, KHONG dung chung hieu ung "cong" sci-fi
+// (layoutId + WorkspaceGatewayOverlay) voi cac the o luoi chinh: overlay do
+// gan voi NGU CANH "workspace cua chinh trang nay" (1 chu so huu), dua no
+// vao 1 workspace cua NGUOI KHAC se lam sai lech y nghia hieu ung.
+function SuggestedWorkspaceCard({ ws }: { ws: ApiSuggestedWorkspace }) {
+  const accent = ws.color ?? CONCEPT_BLUE;
+  return (
+    <Link
+      href={`/workspace/${ws.owner.username}/${ws.id}`}
+      className="flex w-[210px] shrink-0 flex-col gap-2.5 rounded-lg p-3.5 transition-colors duration-150 ease-out hover:border-border-strong"
+      style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+    >
+      <div className="flex items-center gap-1.5">
+        <OwnerAvatar name={ws.owner.name} avatarUrl={ws.owner.avatarUrl} size={18} />
+        <span className="truncate text-[11px]" style={{ color: "var(--ink-faint)" }}>
+          {ws.owner.name}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className="flex size-8 shrink-0 items-center justify-center rounded-lg text-base"
+          style={{ background: `color-mix(in srgb, ${accent} 12%, transparent)`, color: accent }}
+        >
+          {ws.icon ?? "📁"}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
+          {ws.name}
+        </span>
+      </div>
+      <span className="text-[11px]" style={{ color: "var(--ink-faint)" }}>
+        {ws.groupCount} nhóm kiến thức
+      </span>
+    </Link>
+  );
+}
+
 export function WorkspaceSwitcher({
   workspaces,
   username,
   isSelf,
+  ownerName,
+  ownerAvatarUrl,
+  suggested,
 }: {
   workspaces: ApiWorkspaceWithGroups[];
   username: string;
   isSelf: boolean;
+  ownerName: string;
+  ownerAvatarUrl: string | null;
+  suggested: ApiSuggestedWorkspace[];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState<ApiWorkspaceWithGroups | null>(null);
@@ -199,6 +279,29 @@ export function WorkspaceSwitcher({
               />
             </motion.div>
           </h1>
+
+          {/* Chu so huu RO RANG - truoc day man nay chi co logo + tagline
+              chung chung, dung o trang cua ai cung giong het nhau, khong the
+              phan biet "workspace cua minh" hay "cua nguoi khac" (nguoi dung
+              phan anh: "tôi không biết đây là workspaces của mình hay của
+              người khác"). */}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <OwnerAvatar name={ownerName} avatarUrl={ownerAvatarUrl} size={26} />
+            <span className="text-[13px]" style={{ color: "var(--ink-muted)" }}>
+              {isSelf ? (
+                <>
+                  Workspace của <strong style={{ color: "var(--ink)" }}>bạn</strong>
+                </>
+              ) : (
+                <>
+                  Workspace của{" "}
+                  <strong style={{ color: "var(--ink)" }}>{ownerName}</strong>{" "}
+                  <span style={{ color: "var(--ink-faint)" }}>@{username}</span>
+                </>
+              )}
+            </span>
+          </div>
+
           <p className="mt-2 text-sm" style={{ color: "var(--ink-faint)" }}>
             Mỗi workspace là 1 vùng kiến thức riêng - chọn 1 cái để bước vào.
           </p>
@@ -218,7 +321,7 @@ export function WorkspaceSwitcher({
             </p>
           )
         ) : (
-          <div className="mb-auto grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {workspaces.map((ws, i) => (
               <WorkspaceCard
                 key={ws.id}
@@ -231,6 +334,32 @@ export function WorkspaceSwitcher({
             ))}
           </div>
         )}
+
+        {/* Goi y workspace tu nguoi dang follow - CHI hien tren trang cua
+            CHINH MINH (isSelf), vi day la goi y RIENG cho viewer, dua vao
+            trang cua nguoi khac se lac de/khong lien quan gi den boi canh
+            dang xem. */}
+        {isSelf && !isTransitioning && suggested.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.35 }}
+            className="mb-auto w-full max-w-5xl"
+          >
+            <div className="mt-10 mb-3 flex items-center gap-1.5">
+              <Users size={13} strokeWidth={2} style={{ color: "var(--ink-faint)" }} />
+              <h2 className="text-[12px] font-bold tracking-wide" style={{ color: "var(--ink-faint)" }}>
+                GỢI Ý TỪ NGƯỜI BẠN THEO DÕI
+              </h2>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {suggested.map((ws) => (
+                <SuggestedWorkspaceCard key={ws.id} ws={ws} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+
         <div className="mb-auto" />
       </motion.div>
 

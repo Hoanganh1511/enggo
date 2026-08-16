@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Settings, SunMoon, User, Users, LogOut } from "lucide-react";
 import {
   PopoverRoot,
@@ -9,7 +10,6 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { signOutAction } from "@/actions/auth/sign-out-action";
-import { profile } from "@/content/user-profile";
 
 type AccountUser = {
   name?: string | null;
@@ -51,6 +51,13 @@ function Avatar({ user, size }: { user: AccountUser; size: number }) {
 
 const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
   const [open, setOpen] = useState(false);
+  // username KHONG nam trong `user` (chi name/email/image, tu session.user
+  // mac dinh cua next-auth) - doc rieng qua session.username (custom field,
+  // xem auth.ts). Dung useSession() (client-side, cache san tu Suspense o
+  // CurrentUser/(main)/layout.tsx render lan dau) thay vi phai truyen them 1
+  // prop rieng xuyen qua CurrentUser -> AccountMenu.
+  const { data: session } = useSession();
+  const username = session?.username;
 
   if (!user) return null;
 
@@ -87,7 +94,7 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
           <MenuRow
             icon={User}
             label="Profile"
-            href={`/u/${profile.username}`}
+            href={username ? `/u/${username}` : undefined}
             onNavigate={() => setOpen(false)}
           />
           <MenuRow
