@@ -284,6 +284,13 @@ export type ApiChecklistItemLog = {
 // Ban rut gon cho danh sach (khong keo `content`).
 export type ApiDocumentSummary = Omit<ApiDocument, "content">;
 
+// 1 luot hoi/dap voi Tro ly AI cua workspace - client giu nguyen mang nay
+// (khong luu DB) va gui lai het moi lan hoi tiep de giu ngu canh nhieu luot.
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 // He thong thong bao - hien chi phuc vu luong yeu cau cong tac nhom kien
 // thuc (xem NotificationService o backend). `collabId` dung de FE goi thang
 // endpoint duyet/tu choi tu chinh dropdown thong bao (tab "Yêu cầu"), KHONG

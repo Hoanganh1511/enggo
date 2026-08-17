@@ -8,7 +8,9 @@ import type {
   ApiWorkspaceWithGroups,
 } from "@/lib/api/types";
 import { getGroupDocumentsAction } from "@/actions/knowledge-groups/get-group-documents";
+import { toast } from "@/lib/toast/toast-store";
 import { GroupArticleToc } from "./GroupArticleToc";
+import { WorkspaceAiAssistant } from "./WorkspaceAiAssistant";
 import {
   WorkspaceShellContext,
   type WorkspaceShellContextValue,
@@ -48,11 +50,21 @@ export function WorkspaceShell({
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? null;
 
+  // Bat try/catch NGAY TRONG startTransition - neu getGroupDocumentsAction
+  // reject ma khong bat, isPending (groupDocsLoading) co the ket qua bi ket
+  // lai true mai mai (khong co state update nao de "chot" transition), khien
+  // panel trai quay loading vo han khi backend loi/timeout giua chung.
   const loadGroupDocs = useCallback((g: ApiKnowledgeGroup) => {
     setGroupDocs([]);
     if (g.viewerCanWrite || g.visibility === "PUBLIC") {
       startTransition(async () => {
-        setGroupDocs(await getGroupDocumentsAction(g.id));
+        try {
+          setGroupDocs(await getGroupDocumentsAction(g.id));
+        } catch (err) {
+          console.error("getGroupDocumentsAction failed", err);
+          setGroupDocs([]);
+          toast.danger("Không tải được danh sách bài viết, thử lại sau.");
+        }
       });
     }
   }, []);
@@ -163,6 +175,8 @@ export function WorkspaceShell({
           </div>
         </WorkspaceShellContext.Provider>
       </div>
+
+      <WorkspaceAiAssistant workspaceId={workspace.id} />
     </motion.div>
   );
 }

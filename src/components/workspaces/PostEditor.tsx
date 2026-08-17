@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -61,7 +61,7 @@ export function PostEditor({
   const [tags, setTags] = useState<string[]>(doc?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -107,7 +107,12 @@ export function PostEditor({
     setTagDraft("");
   }
 
-  function save(publish: boolean) {
+  // KHONG dung useTransition() o day: router.push/router.refresh goi BEN
+  // TRONG 1 startTransition se khien MOI state update phat sinh tu do bi
+  // React gom chung vao transition dang cho, nen "Đang lưu…" dung im cho toi
+  // khi ca router.refresh() (refetch lai trang moi, co the vai giay) xong -
+  // xem comment tuong tu trong PostEditorModal.tsx (loi da gap that o do).
+  async function save(publish: boolean) {
     setError(null);
     if (!title.trim()) {
       setError("Bài viết cần có tiêu đề.");
@@ -126,31 +131,33 @@ export function PostEditor({
       tags,
       isPublished: publish,
     };
-    startTransition(async () => {
-      try {
-        const saved =
-          mode === "create"
-            ? await createDocumentAction({
-                ...contentPayload,
-                knowledgeGroupId: groupId!,
-              })
-            : await updateDocumentAction(doc!.id, contentPayload);
-        if (onSaved) onSaved(saved, publish);
-        else {
-          // router.push roi thoi la CHUA du - Router Cache phia client cua
-          // Next co the van giu ban RSC cu cua trang doc (neu vua ghe qua no
-          // truoc khi bam Sua), khien vua luu xong quay lai van thay noi dung
-          // CU (vd callout van hien "Lưu ý" du da doi variant "danger"
-          // trong luc soan). router.refresh() ep lam moi cay Router Cache
-          // NGAY SAU khi dieu huong, dam bao trang dich luon fetch du lieu
-          // that moi tu server thay vi tai lai ban cache.
-          router.push(`/u/${saved.author.username}/workspaces/${saved.slug}`);
-          router.refresh();
-        }
-      } catch {
-        setError("Có lỗi khi lưu, thử lại sau.");
+    setIsSaving(true);
+    try {
+      const saved =
+        mode === "create"
+          ? await createDocumentAction({
+              ...contentPayload,
+              knowledgeGroupId: groupId!,
+            })
+          : await updateDocumentAction(doc!.id, contentPayload);
+      if (onSaved) onSaved(saved, publish);
+      else {
+        // router.push roi thoi la CHUA du - Router Cache phia client cua
+        // Next co the van giu ban RSC cu cua trang doc (neu vua ghe qua no
+        // truoc khi bam Sua), khien vua luu xong quay lai van thay noi dung
+        // CU (vd callout van hien "Lưu ý" du da doi variant "danger"
+        // trong luc soan). router.refresh() ep lam moi cay Router Cache
+        // NGAY SAU khi dieu huong, dam bao trang dich luon fetch du lieu
+        // that moi tu server thay vi tai lai ban cache.
+        router.push(`/u/${saved.author.username}/workspaces/${saved.slug}`);
+        router.refresh();
       }
-    });
+    } catch (err) {
+      console.error("save document failed", err);
+      setError("Có lỗi khi lưu, thử lại sau.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   // Noi dung field (cover/title/summary/tags/editor/error) dung CHUNG cho ca

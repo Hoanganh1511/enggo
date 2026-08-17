@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -37,7 +37,7 @@ export function PostEditorModal({
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isSaving, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -72,7 +72,15 @@ export function PostEditorModal({
     editor?.commands.clearContent();
   }
 
-  function save(publish: boolean) {
+  // KHONG dung useTransition() o day: router.push/router.refresh goi BEN
+  // TRONG 1 startTransition se khien MOI state update phat sinh tu do (ke ca
+  // onClose() dong modal) bi React gom chung vao transition dang cho, nen
+  // modal/nut "Đang lưu..." dung im cho toi khi ca router.refresh() (refetch
+  // lai layout + trang moi, co the vai giay) xong - CAM GIAC nhu bi treo dù
+  // request tao bai da thanh cong tu lau. Dung state thuong (setIsSaving) de
+  // "Đang lưu..." CHI phan anh dung luc dang goi createDocumentAction, modal
+  // dong ngay khi co ket qua.
+  async function save(publish: boolean) {
     setError(null);
     if (!title.trim()) {
       setError("Bài viết cần có tiêu đề.");
@@ -87,26 +95,28 @@ export function PostEditorModal({
       tags,
       isPublished: publish,
     };
-    startTransition(async () => {
-      try {
-        const saved = await createDocumentAction({
-          ...contentPayload,
-          knowledgeGroupId: groupId,
-          seriesId,
-        });
-        resetForm();
-        onClose();
-        refreshGroupDocs();
-        // Xem PostEditor.tsx: router.refresh() sau push de tranh Router
-        // Cache phia client giu ban RSC cu cua trang doc. Dung dung URL cua
-        // cay /workspace/[username]/[workspaceId] (KHONG phai /u/.../workspaces
-        // cu) - modal nay chi duoc mo tu trong cay do (xem WorkspaceShell.tsx).
-        router.push(`/workspace/${username}/${workspace.id}/${saved.slug}`);
-        router.refresh();
-      } catch {
-        setError("Có lỗi khi lưu, thử lại sau.");
-      }
-    });
+    setIsSaving(true);
+    try {
+      const saved = await createDocumentAction({
+        ...contentPayload,
+        knowledgeGroupId: groupId,
+        seriesId,
+      });
+      resetForm();
+      onClose();
+      refreshGroupDocs();
+      // Xem PostEditor.tsx: router.refresh() sau push de tranh Router
+      // Cache phia client giu ban RSC cu cua trang doc. Dung dung URL cua
+      // cay /workspace/[username]/[workspaceId] (KHONG phai /u/.../workspaces
+      // cu) - modal nay chi duoc mo tu trong cay do (xem WorkspaceShell.tsx).
+      router.push(`/workspace/${username}/${workspace.id}/${saved.slug}`);
+      router.refresh();
+    } catch (err) {
+      console.error("createDocumentAction failed", err);
+      setError("Có lỗi khi lưu, thử lại sau.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
