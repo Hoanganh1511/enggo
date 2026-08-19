@@ -188,7 +188,8 @@ export function ObjectiveItemRow({
                       saveNote();
                       setNoteModalOpen(false);
                     }}
-                    className="h-9 cursor-pointer rounded-md bg-community-accent px-4 text-xs font-semibold text-white transition-colors duration-150 ease-out hover:bg-community-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-9 cursor-pointer rounded-md px-4 text-xs font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{ background: "linear-gradient(to right, #20c5d8, #269ce9, #326eea)" }}
                   >
                     Lưu
                   </button>

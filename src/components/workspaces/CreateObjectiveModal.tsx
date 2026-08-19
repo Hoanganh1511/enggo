@@ -8,6 +8,12 @@ import { SimpleModal } from "@/components/ui/simple-modal";
 import { createObjectiveAction } from "@/actions/objectives/create-objective";
 import { createObjectiveItemAction } from "@/actions/objectives/create-objective-item";
 
+// Gradient dung chung cho nut CTA/hanh dong noi bat trong khu vuc Workspace
+// (xem docs/workspace-style-guide.md muc 8) - dung XUYEN SUOT ca modal nay
+// (tab active + nut Luu), khong tron voi bg-community-accent (tim, accent
+// rieng cua Community) de tranh 2 mau CTA lac nhau trong CUNG 1 modal.
+const CTA_GRADIENT = "linear-gradient(to right, #20c5d8, #269ce9, #326eea)";
+
 const TABS: { key: ApiObjectiveItemType; label: string; Icon: typeof Book; addLabel: string; placeholder: string }[] = [
   { key: "KNOWLEDGE", label: "Knowledge", Icon: Book, addLabel: "Thêm knowledge", placeholder: "VD: Federated access & identity services" },
   { key: "SKILL", label: "Skills", Icon: Wrench, addLabel: "Thêm skill", placeholder: "VD: Design role-based access control" },
@@ -112,7 +118,8 @@ export function CreateObjectiveModal({
             type="button"
             disabled={isSaving}
             onClick={handleSave}
-            className="h-9 cursor-pointer rounded-md bg-community-accent px-4 text-xs font-semibold text-white transition-colors duration-150 ease-out hover:bg-community-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-9 cursor-pointer rounded-md px-4 text-xs font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            style={{ background: CTA_GRADIENT }}
           >
             {isSaving ? "Đang lưu..." : "Lưu mục tiêu"}
           </button>
@@ -158,10 +165,9 @@ export function CreateObjectiveModal({
               onClick={() => setActiveTab(tab.key)}
               className={cn(
                 "flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-sm text-xs font-semibold transition-colors duration-150 ease-out",
-                activeTab === tab.key
-                  ? "bg-gradient-to-r from-[#20c5d8] to-[#326eea] text-white"
-                  : "text-ink-muted hover:text-ink",
+                activeTab !== tab.key && "text-ink-muted hover:text-ink",
               )}
+              style={activeTab === tab.key ? { background: CTA_GRADIENT, color: "#fff" } : undefined}
             >
               <tab.Icon size={13} strokeWidth={2} />
               {tab.label}
