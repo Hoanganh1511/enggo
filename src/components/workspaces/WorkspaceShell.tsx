@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type {
   ApiKnowledgeGroup,
@@ -9,10 +10,11 @@ import type {
 } from "@/lib/api/types";
 import { getGroupDocumentsAction } from "@/actions/knowledge-groups/get-group-documents";
 import { toast } from "@/lib/toast/toast-store";
-import { GroupArticleToc } from "./GroupArticleToc";
+import { GroupSidebar } from "./GroupSidebar";
 import { WorkspaceAiAssistant } from "./WorkspaceAiAssistant";
 import {
   WorkspaceShellContext,
+  type GroupSection,
   type WorkspaceShellContextValue,
 } from "./workspace-shell-context";
 
@@ -34,6 +36,7 @@ export function WorkspaceShell({
   isSelf: boolean;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [groups, setGroups] = useState<ApiKnowledgeGroup[]>(workspace.groups);
   // Mac dinh KHONG chon nhom nao - man hinh mo dau la tong quan dang "tang"
   // (KnowledgeGroupFloors.tsx), nguoi dung phai chu dong click 1 the nhom moi
@@ -47,6 +50,9 @@ export function WorkspaceShell({
   // cam giac moi thu bung ra cung luc. Man tong quan (chua chon nhom) khong co
   // panel nao truot vao nen luon san sang tu dau.
   const [panelsReady, setPanelsReady] = useState(true);
+  // "Trang" dang xem trong nhom da chon (Overview/Roadmap/Kien thuc/Bai
+  // viet/...) - xem GroupSection trong workspace-shell-context.tsx.
+  const [activeSection, setActiveSection] = useState<GroupSection>("overview");
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? null;
 
@@ -73,9 +79,15 @@ export function WorkspaceShell({
     (g: ApiKnowledgeGroup) => {
       // Chi doi lai choreography khi dang tu man tong quan (chua chon nhom
       // nao) di VAO 1 nhom - chuyen giua 2 nhom da chon san thi panel khong
-      // remount/truot lai (xem GroupArticleToc.tsx/ArticleDetailPanel.tsx),
-      // nen khong can dat lai panelsReady.
-      if (selectedGroupId === null) setPanelsReady(false);
+      // remount/truot lai (xem GroupSidebar.tsx/ArticleDetailPanel.tsx), nen
+      // khong can dat lai panelsReady. Cung CHI reset activeSection ve
+      // "overview" luc nay - vao lai 1 nhom (tu man tong quan) luon bat dau
+      // o Overview, nhung chuyen QUA LAI giua cac nhom da chon (vd tu sidebar/
+      // breadcrumb) thi GIU nguyen trang dang xem.
+      if (selectedGroupId === null) {
+        setPanelsReady(false);
+        setActiveSection("overview");
+      }
       setSelectedGroupId(g.id);
       loadGroupDocs(g);
     },
@@ -102,10 +114,12 @@ export function WorkspaceShell({
       setGroups((prev) => [...prev, group]);
       // Tu dong "vao" luon nhom vua tao (giong hanh vi cu cua
       // WorkspaceSidebar/onGroupCreated) - di qua selectGroup de choreography
-      // (panelsReady) duoc xu ly nhat quan voi moi cach chon nhom khac.
+      // (panelsReady) duoc xu ly nhat quan voi moi cach chon nhom khac, roi
+      // dieu huong toi URL that cua nhom (xem group/[groupId]/page.tsx).
       selectGroup(group);
+      router.push(`/workspace/${username}/${workspace.id}/group/${group.id}`);
     },
-    [selectGroup],
+    [selectGroup, router, username, workspace.id],
   );
 
   const refreshGroupDocs = useCallback(() => {
@@ -151,6 +165,8 @@ export function WorkspaceShell({
     refreshGroupDocs,
     panelsReady,
     setPanelsReady,
+    activeSection,
+    setActiveSection,
   };
 
   return (
@@ -161,20 +177,14 @@ export function WorkspaceShell({
       className="relative z-10 flex h-full flex-col"
     >
       {/* gap-3 + p-3: cac panel (sidebar/main/aside) gio la CARD noi rieng
-          (rounded-[13px] + border, xem GroupArticleToc.tsx/ArticleReaderPane.tsx/
+          (rounded-[13px] + border, xem GroupSidebar.tsx/ArticleReaderPane.tsx/
           WorkspaceMain.tsx) thay vi flush sat nhau - khoang ho giua chung +
           quanh rim de lo mau nen trang (var(--background), nhat hon
           var(--surface) cua panel - xem body trong globals.css), theo phan
           hoi nguoi dung. */}
       <div className="flex min-h-0 flex-1 gap-3 p-3">
         <WorkspaceShellContext.Provider value={contextValue}>
-          {selectedGroup && (
-            <GroupArticleToc
-              group={selectedGroup}
-              docs={groupDocs}
-              loading={groupDocsLoading}
-            />
-          )}
+          {selectedGroup && <GroupSidebar group={selectedGroup} />}
 
           <div className="flex min-w-0 flex-1 flex-col">
             {/* gap-3 o day rieng cho hang con (vd WorkspaceMain + ArticleDetailPanel/

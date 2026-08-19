@@ -45,7 +45,26 @@ export type WorkspaceShellContextValue = {
   refreshGroupDocs: () => void;
   panelsReady: boolean;
   setPanelsReady: (ready: boolean) => void;
+  // "Trang" dang xem BEN TRONG 1 nhom da chon (GroupSidebar.tsx) - client-side
+  // view state, KHONG phai URL route rieng (giu group selection/nav don gian,
+  // cung tinh than voi ArticleTabs.tsx trong ArticleReaderPane.tsx). Reset ve
+  // "overview" moi lan CHUYEN TU man tong quan VAO 1 nhom - xem selectGroup
+  // trong WorkspaceShell.tsx.
+  activeSection: GroupSection;
+  setActiveSection: (section: GroupSection) => void;
 };
+
+export type GroupSection =
+  | "overview"
+  | "roadmap"
+  | "knowledge"
+  | "articles"
+  | "goals"
+  | "tasks"
+  | "review"
+  | "progress"
+  | "members"
+  | "settings";
 
 export const WorkspaceShellContext =
   createContext<WorkspaceShellContextValue | null>(null);

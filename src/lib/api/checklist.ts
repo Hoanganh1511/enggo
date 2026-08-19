@@ -1,5 +1,10 @@
 import { apiFetch } from "./client";
-import type { ApiChecklistItem, ApiChecklistItemLog, ChecklistStatus } from "./types";
+import type {
+  ApiChecklistItem,
+  ApiChecklistItemLog,
+  ChecklistGroup,
+  ChecklistStatus,
+} from "./types";
 
 export function listChecklistItems(
   documentId: string,
@@ -9,7 +14,7 @@ export function listChecklistItems(
 
 export function createChecklistItem(
   documentId: string,
-  dto: { label: string; note?: string },
+  dto: { label: string; note?: string; group?: ChecklistGroup },
 ): Promise<ApiChecklistItem> {
   return apiFetch<ApiChecklistItem>(`/documents/${documentId}/checklist`, {
     method: "POST",

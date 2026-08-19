@@ -73,6 +73,7 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
     selectGroupById,
     refreshGroupDocs,
     clearSelectedGroup,
+    setActiveSection,
   } = useWorkspaceShell();
   const [doc, setDoc] = useState(initialDoc);
   const [sideTab, setSideTab] = useState<ArticleTabId>("overview");
@@ -193,7 +194,14 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
             style={{ color: "var(--ink-faint)" }}
           />
           <Link
-            href={`/workspace/${username}/${workspace.id}`}
+            href={`/workspace/${username}/${workspace.id}/group/${doc.knowledgeGroupId}`}
+            // Ve TRANG NHOM that (Tong quan) - truoc day tro nham ve URL danh
+            // muc (KnowledgeGroupCatalog), tu hoi ban dau khi nhom CHUA co URL
+            // rieng (group/[groupId]/page.tsx). Ep activeSection ve "overview"
+            // vi state co the dang giu 1 "trang" khac tu truoc do (vd "Bài
+            // viết"), trong khi bam ten nhom o day nghia la "ve tong quan
+            // nhom", khong phai "giu nguyen trang dang xem".
+            onClick={() => setActiveSection("overview")}
             className="flex min-w-0 shrink items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
           >
             <Folder size={13} strokeWidth={1.9} className="shrink-0" />
@@ -304,7 +312,7 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
         onCreated={(series) => {
           setDoc((prev) => ({
             ...prev,
-            series: { id: series.id, name: series.name },
+            series: { id: series.id, name: series.name, category: series.category },
           }));
           refreshGroupDocs();
           setAddRelatedOpen(true);

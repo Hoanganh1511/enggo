@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Lock, Search, Sparkles } from "lucide-react";
 import type { ApiKnowledgeGroup } from "@/lib/api/types";
@@ -45,6 +46,7 @@ function monthLabel(key: string) {
 export function KnowledgeGroupCatalog() {
   const { workspace, groups, isSelf, selectGroup, addGroup, username } =
     useWorkspaceShell();
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -79,8 +81,15 @@ export function KnowledgeGroupCatalog() {
 
   function openGroup(g: ApiKnowledgeGroup) {
     const locked = g.visibility === "PRIVATE" && !g.viewerCanWrite;
-    if (locked) setLockedGroup(g);
-    else selectGroup(g);
+    if (locked) {
+      setLockedGroup(g);
+      return;
+    }
+    // Cap nhat state NGAY (choreography truot vao quen thuoc) truoc khi URL
+    // kip doi - WorkspaceBrowseView.tsx se tu dong bo lai qua selectGroupById
+    // khi route moi mount, luc do state da dung san nen la no-op.
+    selectGroup(g);
+    router.push(`/workspace/${username}/${workspace.id}/group/${g.id}`);
   }
 
   return (
@@ -171,7 +180,7 @@ export function KnowledgeGroupCatalog() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {pageGroups.map((g) => (
                   <KnowledgeGroupCard key={g.id} group={g} onOpen={() => openGroup(g)} />
                 ))}
@@ -309,7 +318,7 @@ function KnowledgeGroupCard({ group, onOpen }: { group: ApiKnowledgeGroup; onOpe
               (17px, tang tu 15px), dam hon (font-bold thay semibold), giam
               line-clamp con anh huong toi mat do doc luoi 3 cot. */}
           <h3
-            className="line-clamp-1 min-w-0 text-[17px] leading-tight font-bold group-hover:underline"
+            className="line-clamp-1 min-w-0 text-[15px] leading-tight font-bold group-hover:underline"
             style={{ color: CONCEPT_BLUE }}
           >
             {group.name}

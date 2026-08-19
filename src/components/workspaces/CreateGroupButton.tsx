@@ -62,25 +62,17 @@ export function CreateGroupButton({
     <>
       {/* Mau gradient/bo cuc CTA lay dung tu thiet ke "khu vuon tri thuc"
           (KnowledgeGroupFloors.tsx) - noi DUY NHAT con dung nut nay sau khi
-          WorkspaceSidebar.tsx (kieu nut vien dashed cu) bi xoa. Hover KHONG
-          con nhay len (-translate-y) nua - thay bang 1 khoi tron mo (blur,
-          KHONG phai clip-path canh cung - canh cung nhin nhu hop chu nhat mo
-          ra chu khong "loang" duoc) phong to tu tam ra, dung filter blur de
-          canh mem/huu co giong giot muc loang trong nuoc thay vi 1 duong
-          cat hinh hoc ro ret. */}
+          WorkspaceSidebar.tsx (kieu nut vien dashed cu) bi xoa. Hover NHE -
+          chi nang shadow + sang nhe (brightness), KHONG con khoi tron mo
+          phong to tu tam (nguoi dung phan anh "hiệu ứng hover vào hơi đậm và
+          xấu"). */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group relative flex shrink-0 cursor-pointer items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#25bddd] to-[#3574ee] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(45,130,235,.2)] transition-shadow duration-200 hover:shadow-[0_12px_28px_rgba(45,130,235,.28)]"
+        className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-[#25bddd] to-[#3574ee] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_6px_16px_rgba(45,130,235,.16)] transition-all duration-200 ease-out hover:shadow-[0_9px_20px_rgba(45,130,235,.22)] hover:brightness-[1.05]"
       >
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 size-64 -translate-x-1/2 -translate-y-1/2 scale-0 rounded-full bg-[radial-gradient(circle,#4dd8f0_0%,#2f5ff0_65%)] blur-[10px] transition-transform duration-500 ease-out group-hover:scale-100"
-        />
-        <span className="relative z-10 flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Tạo nhóm kiến thức
-        </span>
+        <Plus className="h-4 w-4" />
+        Tạo nhóm kiến thức
       </button>
 
       <SimpleModal

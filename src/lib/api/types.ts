@@ -245,6 +245,7 @@ export type ApiSeries = {
   id: string;
   knowledgeGroupId: string;
   name: string;
+  category: string | null;
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
@@ -270,22 +271,38 @@ export type ApiDocument = {
   createdAt: string;
   updatedAt: string;
   isOwner: boolean;
-  // Ban rut gon cua DocumentSeries (chi id+name) - null neu bai khong thuoc
-  // series nao, xem ApiSeries cho shape day du (dung khi quan ly series).
-  series: { id: string; name: string } | null;
+  // Ban rut gon cua DocumentSeries (id+name+category) - null neu bai khong
+  // thuoc series nao, xem ApiSeries cho shape day du (dung khi quan ly series).
+  series: { id: string; name: string; category: string | null } | null;
   // Bat/tat hien thi lich su checklist (ChecklistItemLog) cho nguoi doc
   // khac - xem ArticleChecklist.tsx.
   checklistLogPublic: boolean;
+  // Tien do "Kế hoạch học tập" cua bai (tong so muc / so muc da nam) - dung
+  // hien trong ArticleCard.tsx danh sach bai viet. checklistTotal === 0 nghia
+  // la bai chua thiet lap muc tieu nao.
+  checklistTotal: number;
+  checklistUnderstood: number;
   author: ApiDocumentAuthor;
 };
 
-export type ChecklistStatus = "NOT_UNDERSTOOD" | "UNDERSTOOD";
+// NOT_UNDERSTOOD/UNDERSTOOD la 2 gia tri GOC (giu nguyen ten khop voi enum
+// backend) - IN_PROGRESS/NEEDS_REVIEW la 2 trang thai them cho "Ke hoach hoc
+// tap" (○ Chua hoc / ◐ Dang hoc / ✓ Da nam / ⚠ Can on).
+export type ChecklistStatus =
+  | "NOT_UNDERSTOOD"
+  | "IN_PROGRESS"
+  | "UNDERSTOOD"
+  | "NEEDS_REVIEW";
+
+// Section trong "Ke hoach hoc tap" (xem ArticleChecklist.tsx).
+export type ChecklistGroup = "OBJECTIVE" | "RESOURCE" | "PRACTICE" | "ASSESSMENT";
 
 export type ApiChecklistItem = {
   id: string;
   documentId: string;
   label: string;
   status: ChecklistStatus;
+  group: ChecklistGroup;
   note: string | null;
   orderIndex: number;
   createdAt: string;
@@ -297,6 +314,35 @@ export type ApiChecklistItemLog = {
   toStatus: ChecklistStatus;
   note: string | null;
   createdAt: string;
+};
+
+// "Mục tiêu học tập" cua 1 nhom - danh sach NHIEU LearningObjective (vd "1.1
+// Design secure access to AWS resources"), khac han KnowledgeGroup.goal (1 o
+// rich-text tu do cua ca nhom - xem GroupGoalModal.tsx, khong lien quan).
+// KNOWLEDGE = "biet", SKILL = "lam duoc" - xem GroupGoalsSection.tsx.
+export type ApiObjectiveItemType = "KNOWLEDGE" | "SKILL";
+
+export type ApiObjectiveItem = {
+  id: string;
+  objectiveId: string;
+  type: ApiObjectiveItemType;
+  label: string;
+  status: ChecklistStatus;
+  note: string | null;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiObjective = {
+  id: string;
+  knowledgeGroupId: string;
+  title: string;
+  description: string | null;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+  items: ApiObjectiveItem[];
 };
 
 // Ban rut gon cho danh sach (khong keo `content`).

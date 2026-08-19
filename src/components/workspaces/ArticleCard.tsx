@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useTransition } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { generateHTML } from "@tiptap/core";
-import { Check, FileTextIcon } from "lucide-react";
+import { Check, FileTextIcon, Trash2 } from "lucide-react";
 import type { ApiDocumentSummary } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { deleteDocumentAction } from "@/actions/documents/delete-document";
 import { getOverviewExtensions, OVERVIEW_PROSE_CLASS } from "./post-extensions";
+import { useWorkspaceShell } from "./workspace-shell-context";
 
 // Hang bai viet trong ArticleList - "#so_thu_tu: tieu de" + (neu co) 1 box
 // tong quan noi dung ngay duoi (Document.overview, Tiptap JSON schema han
@@ -43,6 +45,9 @@ export function ArticleCard({
   // active truot muot giua cac hang khi doi bai.
   active?: boolean;
 }) {
+  const { refreshGroupDocs } = useWorkspaceShell();
+  const [isDeleting, startDelete] = useTransition();
+
   const overviewHtml = useMemo(() => {
     if (!doc.overview) return null;
     const html = generateHTML(doc.overview, getOverviewExtensions());
@@ -50,6 +55,20 @@ export function ArticleCard({
     // bo qua case do thay vi hien 1 box trong (so text sau khi strip tag).
     return html.replace(/<[^>]*>/g, "").trim().length > 0 ? html : null;
   }, [doc.overview]);
+
+  // Xoa nhanh ngay trong danh sach (khong can mo bai viet roi vao PostView.tsx
+  // moi xoa duoc nhu truoc) - CHI cho chu bai (doc.isOwner), an trong che do
+  // "chon nhieu de gop series" de tranh 2 y nghia click chong nhau tren cung 1
+  // hang. preventDefault/stopPropagation vi hang binh thuong la 1 Link.
+  function remove(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm("Xóa bài viết này? Không thể hoàn tác.")) return;
+    startDelete(async () => {
+      await deleteDocumentAction(doc.id, doc.author.username);
+      refreshGroupDocs();
+    });
+  }
 
   const rowClassName = cn(
     "group relative -mx-2 flex items-start gap-1.5 rounded-[9px] px-2 py-1.5 text-left transition-colors duration-150 ease-out",
@@ -82,8 +101,8 @@ export function ArticleCard({
         <FileTextIcon className="text-primary mt-1 size-4 shrink-0" />
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="text-[12px] leading-relaxed group-hover:underline group-hover:decoration-primary group-hover:decoration-dashed group-hover:decoration-2 group-hover:underline-offset-[6px]">
+      <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+        <span className="min-w-0 text-[12px] leading-relaxed group-hover:underline group-hover:decoration-primary group-hover:decoration-dashed group-hover:decoration-2 group-hover:underline-offset-[6px]">
           <span style={{ color: active ? "var(--primary)" : "var(--ink)" }}>
             #{index + 1}:
           </span>{" "}
@@ -91,6 +110,25 @@ export function ArticleCard({
             {doc.title}
           </span>
         </span>
+        {/* Tien do "Kế hoạch học tập" cua bai - chua co muc tieu nao thi noi
+            that ("Chưa có mục tiêu") thay vi 0/0 vo nghia. */}
+        {doc.checklistTotal === 0 ? (
+          <span className="shrink-0 text-[11px]" style={{ color: "var(--ink-faint)" }}>
+            Chưa có mục tiêu
+          </span>
+        ) : (
+          <span
+            className="shrink-0 text-[11px] font-medium"
+            style={{
+              color:
+                doc.checklistUnderstood === doc.checklistTotal
+                  ? "var(--success)"
+                  : "var(--ink-faint)",
+            }}
+          >
+            {doc.checklistUnderstood}/{doc.checklistTotal} đã nắm
+          </span>
+        )}
         {/* {overviewHtml && (
           <div
             className={OVERVIEW_PROSE_CLASS + " px-3 py-2"}
@@ -99,6 +137,19 @@ export function ArticleCard({
           />
         )} */}
       </div>
+
+      {!selectable && doc.isOwner && (
+        <button
+          type="button"
+          onClick={remove}
+          disabled={isDeleting}
+          title="Xóa bài viết"
+          aria-label="Xóa bài viết"
+          className="mt-0.5 flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint opacity-0 transition-colors duration-150 ease-out group-hover:opacity-100 hover:bg-danger/10 hover:text-danger disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Trash2 size={13} strokeWidth={1.9} />
+        </button>
+      )}
     </>
   );
 

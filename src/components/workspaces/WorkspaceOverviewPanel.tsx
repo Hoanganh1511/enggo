@@ -10,12 +10,18 @@ function Metric({ value, label }: { value: string | number; label: string }) {
   return (
     <div
       className="rounded-[9px] p-2.5 text-center"
-      style={{ border: "1px solid var(--border)", background: "var(--surface-muted)" }}
+      style={{
+        border: "1px solid var(--border)",
+        background: "var(--surface-muted)",
+      }}
     >
       <strong className="block text-[13px]" style={{ color: "var(--ink)" }}>
         {value}
       </strong>
-      <span className="mt-0.5 block text-[7px]" style={{ color: "var(--ink-faint)" }}>
+      <span
+        className="mt-0.5 block text-[7px]"
+        style={{ color: "var(--ink-faint)" }}
+      >
         {label}
       </span>
     </div>
@@ -42,7 +48,7 @@ export function WorkspaceOverviewPanel() {
       initial={{ x: 420, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={PANEL_SPRING}
-      className="shadow-panel flex w-[420px] shrink-0 flex-col overflow-hidden rounded-[13px] backdrop-blur-md"
+      className="shadow-panel flex w-[340px] shrink-0 flex-col self-start overflow-hidden rounded-[13px] backdrop-blur-md"
       style={{
         border: "1px solid var(--border)",
         background: "color-mix(in srgb, var(--surface) 82%, transparent)",
@@ -53,7 +59,8 @@ export function WorkspaceOverviewPanel() {
           className="flex items-center gap-3 rounded-[13px] p-3.5"
           style={{
             border: "1px solid var(--border)",
-            background: "linear-gradient(135deg, var(--surface-raised), var(--surface))",
+            background:
+              "linear-gradient(135deg, var(--surface-raised), var(--surface))",
           }}
         >
           <span
@@ -65,10 +72,16 @@ export function WorkspaceOverviewPanel() {
             {workspace.icon ?? "📁"}
           </span>
           <div className="min-w-0">
-            <span className="text-[9px] font-bold tracking-wide" style={{ color: "var(--ink-faint)" }}>
+            <span
+              className="text-[9px] font-bold tracking-wide"
+              style={{ color: "var(--ink-faint)" }}
+            >
               WORKSPACE
             </span>
-            <h1 className="mt-0.5 truncate text-[15px] font-bold" style={{ color: "var(--ink)" }}>
+            <h1
+              className="mt-0.5 truncate text-[15px] font-bold"
+              style={{ color: "var(--ink)" }}
+            >
               {workspace.name}
             </h1>
             <p
@@ -82,7 +95,8 @@ export function WorkspaceOverviewPanel() {
 
         {!isSelf && (
           <p className="mt-3 text-[10px]" style={{ color: "var(--ink-faint)" }}>
-            Chủ sở hữu: <span style={{ color: "var(--ink-muted)" }}>@{username}</span>
+            Chủ sở hữu:{" "}
+            <span style={{ color: "var(--ink-muted)" }}>@{username}</span>
           </p>
         )}
 

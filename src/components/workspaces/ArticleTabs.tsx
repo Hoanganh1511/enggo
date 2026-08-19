@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Brain,
   FileText,
-  ListChecks,
   ListTree,
   ShieldCheck,
   type LucideIcon,
@@ -21,7 +21,7 @@ export type ArticleTabId = "overview" | "outline" | "checklist" | "resources";
 const SIDE_TABS: { id: ArticleTabId; label: string; icon: LucideIcon }[] = [
   { id: "overview", label: "Tổng quan", icon: ShieldCheck },
   { id: "outline", label: "Mục lục", icon: ListTree },
-  { id: "checklist", label: "Checklist", icon: ListChecks },
+  { id: "checklist", label: "Kế hoạch", icon: Brain },
   { id: "resources", label: "Tài liệu", icon: FileText },
 ];
 

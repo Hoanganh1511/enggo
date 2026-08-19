@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
-import { X, ImagePlus, Send } from "lucide-react";
+import { X, ImagePlus, Send, Layers } from "lucide-react";
 import { createDocumentAction } from "@/actions/documents/create-document";
 import { getPostExtensions, POST_PROSE_CLASS } from "./post-extensions";
 import { PostEditorToolbar } from "./PostEditorToolbar";
@@ -30,7 +30,7 @@ export function PostEditorModal({
   seriesId?: string;
 }) {
   const router = useRouter();
-  const { username, workspace, refreshGroupDocs } = useWorkspaceShell();
+  const { username, workspace, groupDocs, refreshGroupDocs } = useWorkspaceShell();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -38,6 +38,20 @@ export function PostEditorModal({
   const [tagDraft, setTagDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  // Danh muc (DocumentSeries, vd "aws - IAM") de gan bai viet moi vao NGAY
+  // luc tao - truoc day chi gan duoc SAU khi tao, bang cach chon nhieu bai roi
+  // "Gộp thành 1 nhóm" (xem GroupArticlesSection.tsx). Chi cho chon khi mo
+  // composer o che do chung (khong co seriesId co san tu "Thêm bài viết cùng
+  // chủ đề" - luc do da co dinh 1 danh muc roi, khong can chon lai).
+  const [selectedSeriesId, setSelectedSeriesId] = useState(seriesId ?? "");
+  const seriesOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const d of groupDocs) {
+      if (d.series && !seen.has(d.series.id)) seen.set(d.series.id, d.series.name);
+    }
+    return [...seen.entries()].map(([id, name]) => ({ id, name }));
+  }, [groupDocs]);
+  const canPickSeries = !seriesId && seriesOptions.length > 0;
 
   const editor = useEditor({
     extensions: [
@@ -69,6 +83,7 @@ export function PostEditorModal({
     setTags([]);
     setTagDraft("");
     setError(null);
+    setSelectedSeriesId(seriesId ?? "");
     editor?.commands.clearContent();
   }
 
@@ -100,7 +115,7 @@ export function PostEditorModal({
       const saved = await createDocumentAction({
         ...contentPayload,
         knowledgeGroupId: groupId,
-        seriesId,
+        seriesId: seriesId ?? (selectedSeriesId || undefined),
       });
       resetForm();
       onClose();
@@ -154,6 +169,27 @@ export function PostEditorModal({
       }
     >
       <div className="flex flex-col gap-4">
+        {/* Danh muc (series) - chi hien khi nhom da co san it nhat 1 danh muc
+            VA khong bi khoa boi seriesId (xem comment o selectedSeriesId phia
+            tren). */}
+        {canPickSeries && (
+          <div className="flex items-center gap-2">
+            <Layers size={14} strokeWidth={1.9} className="shrink-0 text-ink-faint" />
+            <select
+              value={selectedSeriesId}
+              onChange={(e) => setSelectedSeriesId(e.target.value)}
+              className="h-8 min-w-0 flex-1 cursor-pointer rounded-md border border-border bg-surface-muted px-2 text-xs font-medium text-ink-muted outline-none"
+            >
+              <option value="">Không thuộc danh mục nào</option>
+              {seriesOptions.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Cover */}
         {coverImageUrl ? (
           <div className="relative h-36 w-full overflow-hidden rounded-xl border border-border">
