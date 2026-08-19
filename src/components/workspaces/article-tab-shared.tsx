@@ -28,3 +28,42 @@ export function SidebarSectionLabel({ children }: { children: React.ReactNode })
     </div>
   );
 }
+
+// The metric nho (icon + nhan + tri) dung chung trong panel Tong quan -
+// ArticleOverview.tsx (so lieu bai viet) va GroupProgressWidget.tsx (so lieu
+// nhom). Dat o day (khong phai trong ArticleOverview.tsx) de tranh import
+// vong: GroupProgressWidget can dung lai component nay nhung ArticleOverview
+// lai can render GroupProgressWidget.
+export function SidebarMetric({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div
+      className="rounded-[11px] p-2.5"
+      style={{
+        border: "1px solid var(--border)",
+        background: "var(--surface-muted)",
+      }}
+    >
+      <div
+        className="flex items-center gap-1 text-[9px]"
+        style={{ color: "var(--ink-faint)" }}
+      >
+        {icon}
+        {label}
+      </div>
+      <div
+        className="mt-1 truncate text-[12px] font-semibold"
+        style={{ color: "var(--ink)" }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}

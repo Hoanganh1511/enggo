@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { WorkspaceMain } from "./WorkspaceMain";
 import { ArticleDetailPanel } from "./ArticleDetailPanel";
 import { WorkspaceOverviewPanel } from "./WorkspaceOverviewPanel";
+import { WorkspaceAsideSkeleton } from "./WorkspaceAsideSkeleton";
 import { useWorkspaceShell } from "./workspace-shell-context";
 
 // Noi dung trang browse (danh sach nhom da o WorkspaceSidebar, day chi con
@@ -32,6 +33,16 @@ export function WorkspaceBrowseView() {
     router.replace(`/workspace/${username}/${workspace.id}/${newest.slug}`);
   }, [selectedGroup, groupDocs, groupDocsLoading, username, workspace.id, router]);
 
+  // Ngay khi biet SE dieu huong (docs da tai xong VA co bai) - thay
+  // ArticleDetailPanel (du lieu THAT: postCount/nut "Viết bài mới"...) bang 1
+  // khung RONG cung kich thuoc (WorkspaceAsideSkeleton) thay vi an han (null)
+  // - [slug]/loading.tsx dung CHUNG khung nay, nen ca chuoi chuyen tiep (browse
+  // dang chon nhom -> dang dieu huong -> route [slug] dang tai -> bai viet
+  // that) LUON giu dung 1 bo cuc 2 cot, khong bi nhay be rong/"tat bat" giua
+  // cac buoc - dung phan hoi nguoi dung ("giữ nguyên panel, chỉ thêm loading").
+  const redirecting =
+    !!selectedGroup && !groupDocsLoading && groupDocs.length > 0;
+
   return (
     <>
       <WorkspaceMain
@@ -45,7 +56,9 @@ export function WorkspaceBrowseView() {
       {/* Cot phai: tong quan NHOM dang chon, hoac tong quan CA WORKSPACE khi
           chua chon nhom nao (xem WorkspaceOverviewPanel.tsx) - luon co gi do
           o cot phai thay vi de trong khi dang o man tong quan. */}
-      {selectedGroup ? (
+      {redirecting ? (
+        <WorkspaceAsideSkeleton />
+      ) : selectedGroup ? (
         <ArticleDetailPanel group={selectedGroup} />
       ) : (
         <WorkspaceOverviewPanel />

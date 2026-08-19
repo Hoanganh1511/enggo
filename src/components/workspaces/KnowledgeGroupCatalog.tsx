@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Lock, Search, Sparkles } from "lucide-react";
 import type { ApiKnowledgeGroup } from "@/lib/api/types";
 import { CreateGroupButton } from "./CreateGroupButton";
+import { GroupIconGlyph } from "./group-icons";
 import { RequestCollabModal } from "./RequestCollabModal";
 import { useWorkspaceShell } from "./workspace-shell-context";
 
@@ -293,16 +294,27 @@ function KnowledgeGroupCard({ group, onOpen }: { group: ApiKnowledgeGroup; onOpe
       }}
     >
       <div className="flex items-start justify-between gap-2">
-        {/* Title: NANG BAC ro ret so voi mo ta (nguoi dung phan anh "font
-            size... không đủ chênh lệch để phân biệt vai trò") - to hon
-            (17px, tang tu 15px), dam hon (font-bold thay semibold), giam
-            line-clamp con anh huong toi mat do doc luoi 3 cot. */}
-        <h3
-          className="line-clamp-1 text-[17px] leading-tight font-bold group-hover:underline"
-          style={{ color: CONCEPT_BLUE }}
-        >
-          {group.name}
-        </h3>
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg"
+            style={{
+              background: `color-mix(in srgb, ${CONCEPT_BLUE} 14%, transparent)`,
+              color: CONCEPT_BLUE,
+            }}
+          >
+            <GroupIconGlyph name={group.icon} size={14} />
+          </span>
+          {/* Title: NANG BAC ro ret so voi mo ta (nguoi dung phan anh "font
+              size... không đủ chênh lệch để phân biệt vai trò") - to hon
+              (17px, tang tu 15px), dam hon (font-bold thay semibold), giam
+              line-clamp con anh huong toi mat do doc luoi 3 cot. */}
+          <h3
+            className="line-clamp-1 min-w-0 text-[17px] leading-tight font-bold group-hover:underline"
+            style={{ color: CONCEPT_BLUE }}
+          >
+            {group.name}
+          </h3>
+        </div>
         {locked && (
           <Lock size={13} strokeWidth={2.1} className="mt-0.5 shrink-0" style={{ color: "var(--ink-faint)" }} />
         )}

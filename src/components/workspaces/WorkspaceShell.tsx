@@ -160,7 +160,13 @@ export function WorkspaceShell({
       transition={{ duration: 0.25 }}
       className="relative z-10 flex h-full flex-col"
     >
-      <div className="flex min-h-0 flex-1">
+      {/* gap-3 + p-3: cac panel (sidebar/main/aside) gio la CARD noi rieng
+          (rounded-[13px] + border, xem GroupArticleToc.tsx/ArticleReaderPane.tsx/
+          WorkspaceMain.tsx) thay vi flush sat nhau - khoang ho giua chung +
+          quanh rim de lo mau nen trang (var(--background), nhat hon
+          var(--surface) cua panel - xem body trong globals.css), theo phan
+          hoi nguoi dung. */}
+      <div className="flex min-h-0 flex-1 gap-3 p-3">
         <WorkspaceShellContext.Provider value={contextValue}>
           {selectedGroup && (
             <GroupArticleToc
@@ -171,7 +177,11 @@ export function WorkspaceShell({
           )}
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="flex min-h-0 flex-1">{children}</div>
+            {/* gap-3 o day rieng cho hang con (vd WorkspaceMain + ArticleDetailPanel/
+                WorkspaceOverviewPanel tren trang browse, hoac card giua +
+                aside tren trang doc bai - xem ArticleReaderPane.tsx da tu
+                dat gap-3 rieng nen khong bi cong don). */}
+            <div className="flex min-h-0 flex-1 gap-3">{children}</div>
           </div>
         </WorkspaceShellContext.Provider>
       </div>

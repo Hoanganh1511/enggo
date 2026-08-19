@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -34,7 +40,11 @@ import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import Logo from "../ui/logo";
 import { HeaderSearch } from "./HeaderSearch";
-import { SavedPanel, MessagesPanel, HelpPanel } from "./header-command-panels/Panels";
+import {
+  SavedPanel,
+  MessagesPanel,
+  HelpPanel,
+} from "./header-command-panels/Panels";
 import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
 import { getUnreadNotificationCountAction } from "@/actions/notifications/get-unread-count";
 
@@ -143,7 +153,12 @@ function buildHeaderCommands(
       id: "notifications",
       label: "Thông báo",
       icon: Bell,
-      badge: unreadCount > 0 ? (unreadCount > 9 ? "9+" : String(unreadCount)) : undefined,
+      badge:
+        unreadCount > 0
+          ? unreadCount > 9
+            ? "9+"
+            : String(unreadCount)
+          : undefined,
       panel: <NotificationsPanel onUnreadCountChange={onUnreadCountChange} />,
     },
     { id: "help", label: "Trợ giúp", icon: CircleHelp, panel: <HelpPanel /> },
@@ -181,7 +196,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const handleUnreadCountChange = useCallback((count: number) => {
     setUnreadCount(count);
   }, []);
-  const headerCommands = buildHeaderCommands(unreadCount, handleUnreadCountChange);
+  const headerCommands = buildHeaderCommands(
+    unreadCount,
+    handleUnreadCountChange,
+  );
 
   const handleNavigate = (href: string) => {
     if (pathname === href) return;
@@ -206,7 +224,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
       }}
     >
       <div
-        className="flex size-[42px] shrink-0 items-center justify-center rounded-[13px]"
+        className="flex size-[32px] shrink-0 items-center justify-center rounded-[13px]"
         style={{
           color: "var(--primary)",
           background:
@@ -247,7 +265,8 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                 style={{
                   background:
                     "linear-gradient(90deg, #20c5d8, #269ce9, #326eea)",
-                  boxShadow: "0 0 14px color-mix(in srgb, #269ce9 70%, transparent)",
+                  boxShadow:
+                    "0 0 14px color-mix(in srgb, #269ce9 70%, transparent)",
                 }}
               />
             );
@@ -267,8 +286,8 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                       style={itemStyle}
                     >
                       <Icon
-                        strokeWidth={isActive ? 2.25 : 1.75}
-                        className="size-4.5 shrink-0"
+                        strokeWidth={isActive ? 2 : 1.75}
+                        className="size-4 shrink-0"
                       />
                       {label}
                       <ChevronDown
@@ -356,8 +375,8 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                   <Spinner size={18} className="shrink-0" />
                 ) : (
                   <Icon
-                    strokeWidth={isActive ? 2.25 : 1.75}
-                    className="size-4 shrink-0"
+                    strokeWidth={isActive ? 2 : 1.75}
+                    className="size-3.5 shrink-0"
                   />
                 )}
                 {label}
@@ -421,8 +440,7 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
                   <span
                     className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full  text-[10px] font-semibold text-white"
                     style={{
-                      background:
-                        "linear-gradient(135deg, #20c5d8, #326eea)",
+                      background: "linear-gradient(135deg, #20c5d8, #326eea)",
                     }}
                   >
                     {badge}

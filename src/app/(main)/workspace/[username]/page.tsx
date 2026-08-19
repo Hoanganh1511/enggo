@@ -1,6 +1,7 @@
 import { listUserWorkspaces, listSuggestedWorkspaces } from "@/lib/api/workspaces";
 import { getProfileByUsername } from "@/lib/api/users";
 import { WorkspaceSwitcher } from "@/components/workspaces/WorkspaceSwitcher";
+import { WorkspaceHubChrome } from "@/components/workspaces/WorkspaceHubChrome";
 
 // Trang workspace DOC LAP - khong nam duoi u/[username]/layout.tsx nen
 // khong bi ProfileShell (cover/user-info/ProfileNav) bao quanh. Tab
@@ -25,13 +26,15 @@ export default async function WorkspaceHubPage({
   ]);
 
   return (
-    <WorkspaceSwitcher
-      workspaces={workspaces}
-      username={uname}
-      isSelf={profile?.isSelf ?? false}
-      ownerName={profile?.displayName ?? uname}
-      ownerAvatarUrl={profile?.avatarUrl ?? null}
-      suggested={suggested}
-    />
+    <WorkspaceHubChrome>
+      <WorkspaceSwitcher
+        workspaces={workspaces}
+        username={uname}
+        isSelf={profile?.isSelf ?? false}
+        ownerName={profile?.displayName ?? uname}
+        ownerAvatarUrl={profile?.avatarUrl ?? null}
+        suggested={suggested}
+      />
+    </WorkspaceHubChrome>
   );
 }

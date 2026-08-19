@@ -31,11 +31,22 @@ const stageVariants = {
 // WorkspaceBrowseView.tsx tu dong dieu huong thang toi bai viet moi nhat
 // (xem effect o do). Nhom chua co bai viet nao thi dung lai o day (khong co
 // gi de dieu huong toi).
-function GroupCenterStatus({ docs, loading }: { docs: ApiDocumentSummary[]; loading: boolean }) {
+function GroupCenterStatus({
+  docs,
+  loading,
+}: {
+  docs: ApiDocumentSummary[];
+  loading: boolean;
+}) {
   if (loading) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2">
-        <LoaderCircle size={22} strokeWidth={1.9} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+        <LoaderCircle
+          size={22}
+          strokeWidth={1.9}
+          className="animate-spin"
+          style={{ color: "var(--ink-faint)" }}
+        />
         <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
           Đang tải bài viết...
         </p>
@@ -45,7 +56,11 @@ function GroupCenterStatus({ docs, loading }: { docs: ApiDocumentSummary[]; load
   if (docs.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2">
-        <Sparkles size={22} strokeWidth={1.5} style={{ color: "var(--ink-faint)" }} />
+        <Sparkles
+          size={22}
+          strokeWidth={1.5}
+          style={{ color: "var(--ink-faint)" }}
+        />
         <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
           Nhóm này chưa có bài viết nào.
         </p>
@@ -56,7 +71,12 @@ function GroupCenterStatus({ docs, loading }: { docs: ApiDocumentSummary[]; load
   // chi la 1 nhip cho ngan.
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2">
-      <LoaderCircle size={22} strokeWidth={1.9} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+      <LoaderCircle
+        size={22}
+        strokeWidth={1.9}
+        className="animate-spin"
+        style={{ color: "var(--ink-faint)" }}
+      />
       <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
         Đang mở bài viết mới nhất...
       </p>
@@ -81,8 +101,11 @@ export function WorkspaceMain({
 
   return (
     <main
-      className="flex min-w-0 flex-1 flex-col overflow-hidden"
-      style={{ background: "var(--surface)" }}
+      className="shadow-panel flex min-w-0 flex-1 flex-col overflow-hidden rounded-[13px] backdrop-blur-md"
+      style={{
+        border: "1px solid var(--border)",
+        background: "color-mix(in srgb, var(--surface) 82%, transparent)",
+      }}
     >
       {/* Breadcrumb CO DINH, hien o CA 2 trang thai (catalog/nhom da chon) -
           nguoi dung phan anh dung o man chi tiet 1 nhom khong biet bam dau de

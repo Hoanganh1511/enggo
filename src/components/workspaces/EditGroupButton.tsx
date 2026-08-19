@@ -6,6 +6,8 @@ import { updateGroupAction } from "@/actions/knowledge-groups/update-group";
 import type { ApiKnowledgeGroup, ApiKnowledgeGroupVisibility } from "@/lib/api/types";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { cn } from "@/lib/utils";
+import { GroupIconPicker } from "./GroupIconPicker";
+import { WorkspaceButton } from "./WorkspaceButton";
 import { useWorkspaceShell } from "./workspace-shell-context";
 
 // Icon but "Sua nhom" - CHUA co UI nao goi toi updateGroupAction da co san
@@ -22,6 +24,7 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(group.name);
   const [description, setDescription] = useState(group.description ?? "");
+  const [icon, setIcon] = useState<string | null>(group.icon);
   const [visibility, setVisibility] = useState<ApiKnowledgeGroupVisibility>(group.visibility);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -29,6 +32,7 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
   function resetForm() {
     setName(group.name);
     setDescription(group.description ?? "");
+    setIcon(group.icon);
     setVisibility(group.visibility);
     setError(null);
   }
@@ -41,6 +45,10 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
         const updated = await updateGroupAction(group.id, username, {
           name,
           description,
+          // Gui "" (khong phai undefined) khi bo chon - PATCH bo qua field
+          // undefined (khong doi), nen phai gui rong thuc su moi XOA duoc
+          // icon cu (giong cach description da xu ly "xoa mo ta").
+          icon: icon ?? "",
           visibility,
         });
         updateGroupInState(updated);
@@ -83,7 +91,7 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="VD: React nâng cao"
-              className="h-9 rounded-md border border-border bg-surface px-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-community-accent"
+              className="h-9 rounded-md border border-border bg-surface px-3 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-primary"
             />
           </div>
 
@@ -96,8 +104,13 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-community-accent"
+              className="resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-primary"
             />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-ink">Icon nhóm (tuỳ chọn)</span>
+            <GroupIconPicker value={icon} onChange={setIcon} />
           </div>
 
           <div className="flex flex-col gap-1">
@@ -115,8 +128,12 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
                   onClick={() => setVisibility(opt.value)}
                   className={cn(
                     "h-8 flex-1 cursor-pointer rounded-sm text-xs font-semibold transition-colors duration-150 ease-out",
+                    // Concept mau khu vuc Workspace la gradient xanh duong co
+                    // dinh (xem docs/workspace-style-guide.md muc 8), KHONG
+                    // dung bg-community-accent (tim - accent rieng cua
+                    // Community, khac feature).
                     visibility === opt.value
-                      ? "bg-community-accent text-white"
+                      ? "bg-gradient-to-r from-[#20c5d8] to-[#326eea] text-white"
                       : "text-ink-muted hover:text-ink",
                   )}
                 >
@@ -134,13 +151,14 @@ export function EditGroupButton({ group }: { group: ApiKnowledgeGroup }) {
 
           {error && <p className="text-xs font-medium text-danger">{error}</p>}
 
-          <button
+          <WorkspaceButton
             type="submit"
             disabled={isPending}
-            className="mt-1 h-9 cursor-pointer rounded-md bg-community-accent text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-community-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+            showPlane={false}
+            className="mt-1 w-full justify-center"
           >
             {isPending ? "Đang lưu..." : "Lưu thay đổi"}
-          </button>
+          </WorkspaceButton>
         </form>
       </SimpleModal>
     </>

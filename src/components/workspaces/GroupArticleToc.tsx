@@ -18,8 +18,8 @@ import type { ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
 import { SidebarSectionLabel } from "./article-tab-shared";
 import { PANEL_SPRING } from "./motion";
 import { ArticleCard } from "./ArticleCard";
-import { SeriesGroupCard } from "./SeriesGroupCard";
 import { CreateSeriesModal } from "./CreateSeriesModal";
+import { GroupIconGlyph } from "./group-icons";
 import { EditGroupButton } from "./EditGroupButton";
 import { GroupGoalButton } from "./GroupGoalModal";
 import { PostEditorModal } from "./PostEditorModal";
@@ -66,6 +66,9 @@ export function GroupArticleToc({
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [createSeriesOpen, setCreateSeriesOpen] = useState(false);
+  // Tab loc theo series ("nhóm cùng chủ đề") ngay duoi title - null = "Tất
+  // cả". Xem seriesList/renderItems ben duoi.
+  const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null);
   // Composer "Viết bài mới" - tuong tu nut cung ten trong ArticleDetailPanel.tsx
   // (cot phai), them ban sao o day de luon bam duoc ngay tu panel trai, khong
   // phu thuoc panel phai dang hien gi (ArticleDetailPanel/WorkspaceOverviewPanel).
@@ -87,53 +90,40 @@ export function GroupArticleToc({
     return new Map(sorted.map((d, i) => [d.id, i]));
   }, [docs]);
 
+  // Danh sach series ("nhóm cùng chủ đề") xuat hien trong nhom hien tai -
+  // dung lam cac tab loc duoi title, giu thu tu xuat hien dau tien trong
+  // `docs` (khong sap xep lai rieng).
+  const seriesList = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const d of docs) {
+      if (d.series && !seen.has(d.series.id)) {
+        seen.set(d.series.id, d.series.name);
+      }
+    }
+    return [...seen.entries()].map(([id, name]) => ({ id, name }));
+  }, [docs]);
+
   const filteredDocs = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = q
+    let filtered = q
       ? docs.filter((d) => d.title.toLowerCase().includes(q))
       : docs;
+    if (activeSeriesId) {
+      filtered = filtered.filter((d) => d.series?.id === activeSeriesId);
+    }
     const sorted = [...filtered];
+    // "latest"/"oldest" theo thoi gian TAO bai (createdAt), khong phai lan
+    // sua cuoi (updatedAt) - mac dinh "latest" la thu tu duy nhat dang hien
+    // (UI doi sort dang tat), bai moi tao luon len dau.
     if (sort === "latest") {
-      sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     } else if (sort === "oldest") {
-      sorted.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+      sorted.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
     } else {
       sorted.sort((a, b) => b.viewCount - a.viewCount);
     }
     return sorted;
-  }, [docs, search, sort]);
-
-  // Gop cac bai CUNG series thanh 1 khoi (SeriesGroupCard) - khoi xuat hien
-  // tai VI TRI cua bai dau tien (theo thu tu dang hien) gap phai.
-  type RenderItem =
-    | { kind: "doc"; doc: ApiDocumentSummary }
-    | {
-        kind: "series";
-        seriesId: string;
-        seriesName: string;
-        docs: ApiDocumentSummary[];
-      };
-  const renderItems = useMemo<RenderItem[]>(() => {
-    const items: RenderItem[] = [];
-    const consumed = new Set<string>();
-    for (const d of filteredDocs) {
-      if (consumed.has(d.id)) continue;
-      if (!d.series) {
-        items.push({ kind: "doc", doc: d });
-        continue;
-      }
-      const seriesId = d.series.id;
-      const members = filteredDocs.filter((x) => x.series?.id === seriesId);
-      members.forEach((m) => consumed.add(m.id));
-      items.push({
-        kind: "series",
-        seriesId,
-        seriesName: d.series.name,
-        docs: members,
-      });
-    }
-    return items;
-  }, [filteredDocs]);
+  }, [docs, search, sort, activeSeriesId]);
 
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
@@ -173,10 +163,10 @@ export function GroupArticleToc({
       variants={panelVariants}
       initial="hidden"
       animate="visible"
-      className="flex shrink-0 flex-col overflow-hidden"
+      className="shadow-panel flex shrink-0 flex-col overflow-hidden rounded-[13px] backdrop-blur-md"
       style={{
-        borderRight: "1px solid var(--border)",
-        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        background: "color-mix(in srgb, var(--surface) 82%, transparent)",
       }}
     >
       <motion.div
@@ -209,7 +199,13 @@ export function GroupArticleToc({
                 </Link>
                 {toggleButton}
               </div>
-              <div className="mt-0.5 flex items-center gap-1">
+              <div className="mt-0.5 flex items-center gap-1.5">
+                <GroupIconGlyph
+                  name={group.icon}
+                  size={13}
+                  strokeWidth={2}
+                  className="shrink-0 text-ink-muted"
+                />
                 <h2
                   className="min-w-0 flex-1 truncate text-sm font-semibold"
                   style={{ color: "var(--ink)" }}
@@ -245,6 +241,46 @@ export function GroupArticleToc({
           <>
             <div className="shrink-0 px-4 pt-3 pb-2">
               <SidebarSectionLabel>BÀI VIẾT TRONG NHÓM</SidebarSectionLabel>
+              {seriesList.length > 0 && (
+                <div className="-mx-0.5 flex flex-wrap gap-1.5 px-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSeriesId(null)}
+                    className="cursor-pointer rounded-[9px] px-2.5 py-1 text-[11px] font-medium transition-colors duration-150 ease-out"
+                    style={
+                      activeSeriesId === null
+                        ? { background: "var(--active-bg)", color: "var(--primary)" }
+                        : {
+                            background: "var(--surface-muted)",
+                            border: "1px solid var(--border)",
+                            color: "var(--ink-muted)",
+                          }
+                    }
+                  >
+                    Tất cả
+                  </button>
+                  {seriesList.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setActiveSeriesId(s.id)}
+                      title={s.name}
+                      className="max-w-36 cursor-pointer truncate rounded-[9px] px-2.5 py-1 text-[11px] font-medium transition-colors duration-150 ease-out"
+                      style={
+                        activeSeriesId === s.id
+                          ? { background: "var(--active-bg)", color: "var(--primary)" }
+                          : {
+                              background: "var(--surface-muted)",
+                              border: "1px solid var(--border)",
+                              color: "var(--ink-muted)",
+                            }
+                      }
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               {/* <div
                 className="flex h-8 items-center gap-1.5 rounded-[9px] px-2.5"
                 style={{
@@ -360,30 +396,19 @@ export function GroupArticleToc({
                   />
                 ))
               ) : (
-                renderItems.map((item) =>
-                  item.kind === "doc" ? (
-                    <ArticleCard
-                      key={item.doc.id}
-                      doc={item.doc}
-                      index={publishOrder.get(item.doc.id) ?? 0}
-                      username={username}
-                      workspaceId={workspace.id}
-                      active={item.doc.id === activeDocId}
-                    />
-                  ) : (
-                    <SeriesGroupCard
-                      key={item.seriesId}
-                      seriesId={item.seriesId}
-                      seriesName={item.seriesName}
-                      docs={item.docs}
-                      publishOrder={publishOrder}
-                      username={username}
-                      workspaceId={workspace.id}
-                      canEdit={group.viewerCanWrite}
-                      activeDocId={activeDocId}
-                    />
-                  ),
-                )
+                // Danh sach phang - khong con gop cac bai cung series vao 1
+                // box rieng (SeriesGroupCard) o tab "Tất cả" nua, loc theo
+                // series gio da co thanh tab rieng ben tren (theo phan hoi).
+                filteredDocs.map((d) => (
+                  <ArticleCard
+                    key={d.id}
+                    doc={d}
+                    index={publishOrder.get(d.id) ?? 0}
+                    username={username}
+                    workspaceId={workspace.id}
+                    active={d.id === activeDocId}
+                  />
+                ))
               )}
             </div>
 

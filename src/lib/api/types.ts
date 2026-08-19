@@ -175,6 +175,14 @@ export type ApiKnowledgeGroup = {
   workspaceId: string;
   name: string;
   description: string | null;
+  // Ten export cua 1 icon lucide-react (vd "BookOpen") - null = chua chon,
+  // FE fallback ve icon Folder. Xem group-icons.tsx.
+  icon: string | null;
+  // Ten/ma chung chi MUC TIEU cua nhom (vd "AWS Solutions Architect"/"SAA-C03") -
+  // null = chua thiet lap, GroupProgressWidget.tsx an di. Sua qua
+  // GroupCertSettingsModal.tsx.
+  certName: string | null;
+  certCode: string | null;
   // "Muc tieu" cua nhom - Tiptap JSON, schema HAN CHE giong Document.overview
   // (bold/italic/bulletList/orderedList, xem GroupGoalModal.tsx). Metadata
   // cong khai (giong description) - AI cung xem duoc, chi chu workspace sua.
@@ -191,6 +199,16 @@ export type ApiKnowledgeGroup = {
   checklistUnderstood?: number;
   createdAt: string;
   updatedAt: string;
+};
+
+// So lieu cho GroupProgressWidget.tsx - certName/certCode/postCount KHONG
+// lap lai o day (da co san tren ApiKnowledgeGroup). Xem
+// KnowledgeGroupService.getProgress o backend.
+export type ApiGroupProgress = {
+  progressPercent: number;
+  totalStudyDays: number;
+  topicCount: number;
+  currentStreak: number;
 };
 
 export type ApiWorkspaceWithGroups = ApiWorkspace & {

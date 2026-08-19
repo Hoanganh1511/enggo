@@ -1,5 +1,6 @@
 import { apiFetch } from "./client";
 import type {
+  ApiGroupProgress,
   ApiKnowledgeGroup,
   ApiKnowledgeGroupCollabRequest,
   ApiKnowledgeGroupVisibility,
@@ -8,6 +9,12 @@ import type {
 export type KnowledgeGroupInput = {
   name: string;
   description?: string;
+  // Ten export cua 1 icon lucide-react (vd "BookOpen") - xem group-icons.tsx.
+  icon?: string;
+  // Ten/ma chung chi muc tieu (vd "AWS Solutions Architect"/"SAA-C03") - xem
+  // GroupCertSettingsModal.tsx.
+  certName?: string;
+  certCode?: string;
   visibility?: ApiKnowledgeGroupVisibility;
   goal?: Record<string, unknown>;
 };
@@ -40,6 +47,10 @@ export function updateKnowledgeGroup(
 
 export function deleteKnowledgeGroup(id: string): Promise<void> {
   return apiFetch<void>(`/knowledge-groups/${id}`, { method: "DELETE" });
+}
+
+export function getGroupProgress(groupId: string): Promise<ApiGroupProgress> {
+  return apiFetch<ApiGroupProgress>(`/knowledge-groups/${groupId}/progress`);
 }
 
 export function requestCollab(

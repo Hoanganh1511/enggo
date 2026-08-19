@@ -42,10 +42,10 @@ export function WorkspaceOverviewPanel() {
       initial={{ x: 420, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={PANEL_SPRING}
-      className="flex w-[420px] shrink-0 flex-col overflow-hidden"
+      className="shadow-panel flex w-[420px] shrink-0 flex-col overflow-hidden rounded-[13px] backdrop-blur-md"
       style={{
-        borderLeft: "1px solid var(--border)",
-        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        background: "color-mix(in srgb, var(--surface) 82%, transparent)",
       }}
     >
       <div className="min-h-0 flex-1 overflow-y-auto p-4">

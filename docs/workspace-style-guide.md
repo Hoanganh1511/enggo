@@ -29,6 +29,15 @@ là màn đọc/sửa bài viết, ưu tiên dễ đọc và nhất quán hơn h
 > file vẫn giữ lại phòng cần dùng lại, nhưng ngoại lệ ở trên hiện chỉ còn áp
 > dụng thật sự cho `WorkspaceGatewayOverlay.tsx`.
 
+> **Cập nhật 2026-08-17:** `WorkspaceGatewayOverlay.tsx` đã bị XOÁ hẳn (không
+> còn hiệu ứng "cổng" khi chọn workspace, bấm thẻ điều hướng thẳng — xem
+> `docs/engineering-log.md`). Ngoại lệ fixed-palette ở trang chọn workspace
+> chuyển sang `workspace/[username]/layout.tsx` (nền ảnh `workspace-bg.png` —
+> bầu trời/đảo nổi cố định, không đổi theo theme) và các màu `HERO_INK*`
+> trong `WorkspaceSwitcher.tsx` (chữ tông tối cố định để luôn đọc được trên
+> nền ảnh sáng cố định đó) — lý do tương tự nhóm cũ: đây là bề mặt trình diễn
+> có ảnh nền riêng, không phải màn đọc/sửa nội dung.
+
 ## 1. Màu sắc — luôn dùng token, không hardcode hex/slate/cyan
 
 Mọi màu phải đi qua CSS variable đã có trong `globals.css` (tự đổi theo

@@ -11,19 +11,22 @@ import {
   LoaderCircle,
   Network,
 } from "lucide-react";
-import type { ApiDocument, ApiDocumentSummary } from "@/lib/api/types";
+import type { ApiDocument, ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
 import { formatCompact } from "@/lib/format-number";
-import { sidebarFadeUp, SidebarSectionLabel } from "./article-tab-shared";
+import { sidebarFadeUp, SidebarMetric, SidebarSectionLabel } from "./article-tab-shared";
+import { GroupProgressWidget } from "./GroupProgressWidget";
 
 export function ArticleOverview({
   doc,
   siblingDocs,
+  group,
   username,
   workspaceId,
 }: {
   doc: ApiDocument | null;
   siblingDocs: ApiDocumentSummary[];
+  group: ApiKnowledgeGroup | null;
   // Dung de build href That cho "bai viet lien quan" (Link, khong con
   // callback onOpenDoc nhu ban truoc).
   username: string;
@@ -51,6 +54,8 @@ export function ArticleOverview({
 
   return (
     <div className="p-4">
+      {group && <GroupProgressWidget group={group} />}
+
       <motion.div variants={sidebarFadeUp}>
         <SidebarSectionLabel>TỔNG QUAN BÀI VIẾT</SidebarSectionLabel>
         <div className="grid grid-cols-2 gap-1.5">
@@ -163,39 +168,5 @@ function RelatedDocsSection({
         ))}
       </div>
     </motion.div>
-  );
-}
-
-function SidebarMetric({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div
-      className="rounded-[11px] p-2.5"
-      style={{
-        border: "1px solid var(--border)",
-        background: "var(--surface-muted)",
-      }}
-    >
-      <div
-        className="flex items-center gap-1 text-[9px]"
-        style={{ color: "var(--ink-faint)" }}
-      >
-        {icon}
-        {label}
-      </div>
-      <div
-        className="mt-1 truncate text-[12px] font-semibold"
-        style={{ color: "var(--ink)" }}
-      >
-        {value}
-      </div>
-    </div>
   );
 }

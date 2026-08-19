@@ -16,6 +16,10 @@ type WorkspaceButtonProps = {
   variant?: "primary" | "soft" | "outline";
   showPlane?: boolean;
   className?: string;
+  // Mac dinh "button" (hanh dong tuc thi, vd mo modal) - form can submit
+  // that (vd CreateWorkspaceModal) truyen "submit" de tai dung dung nut nay
+  // lam nut submit cua <form>, khong phai tu viet lai gradient rieng.
+  type?: "button" | "submit";
 };
 
 const sizes = {
@@ -32,12 +36,13 @@ export function WorkspaceButton({
   variant = "primary",
   showPlane = true,
   className = "",
+  type = "button",
 }: WorkspaceButtonProps) {
   const s = sizes[size];
 
   return (
     <motion.button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
       whileHover={!disabled ? { y: -1 } : undefined}

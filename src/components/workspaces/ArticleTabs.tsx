@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
-import type { ApiDocument, ApiDocumentSummary } from "@/lib/api/types";
+import type { ApiDocument, ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
 import type { TocItem } from "./toc";
 import { sidebarStagger } from "./article-tab-shared";
 import { ArticleOverview } from "./ArticleOverview";
@@ -35,6 +35,7 @@ export function ArticleTabs({
   setTab,
   doc,
   siblingDocs,
+  group,
   username,
   workspaceId,
   toc,
@@ -45,6 +46,9 @@ export function ArticleTabs({
   setTab: (t: ArticleTabId) => void;
   doc: ApiDocument | null;
   siblingDocs: ApiDocumentSummary[];
+  // Nhom kien thuc chua bai dang doc - dung de hien GroupProgressWidget.tsx
+  // (muc tieu chung chi cua CA nhom) trong tab Tong quan.
+  group: ApiKnowledgeGroup | null;
   username: string;
   workspaceId: string;
   toc: TocItem[];
@@ -124,6 +128,7 @@ export function ArticleTabs({
               <ArticleOverview
                 doc={doc}
                 siblingDocs={siblingDocs}
+                group={group}
                 username={username}
                 workspaceId={workspaceId}
               />

@@ -8,6 +8,77 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-08-19 — Sửa nền/toolbar/banner "vũ trụ" bị lộ sang màn chi tiết workspace
+
+**Bug:** `WorkspaceHubChrome` (nền ảnh bầu trời + `WorkspaceQuickToolbar` +
+`WorkspaceDiscoverBanner`, xem entry 2026-08-17 bên dưới) ban đầu đặt trong
+`workspace/[username]/layout.tsx` — quên rằng `layout.tsx` trong Next.js App
+Router áp dụng cho **cả route con** (`[workspaceId]`, `[workspaceId]/[slug]`),
+không chỉ riêng `page.tsx` cùng cấp. Kết quả: nền/toolbar/banner chỉ định
+riêng cho màn CHỌN workspace lại lộ ra cả màn CHI TIẾT workspace
+(`WorkspaceShell`, 3 panel sidebar/main/aside) — trông như panel bị "xuyên
+thấu" qua ảnh nền phía sau, người dùng phải báo lại 2 lần mới xác định đúng
+nguyên nhân.
+
+**Fix:** chuyển hẳn nội dung layout.tsx thành 1 component thường
+(`WorkspaceHubChrome.tsx`), dùng TRỰC TIẾP trong `workspace/[username]/page.tsx`
+bọc quanh `<WorkspaceSwitcher>` — xoá hẳn `layout.tsx` của segment này (không
+còn cần thiết, không route con nào khác dùng tới `WorkspaceToolbarContext`).
+Bài học: `layout.tsx` chỉ nên chứa UI thật sự muốn CHIA SẺ với route con;
+chrome riêng cho đúng 1 trang thì đặt trong `page.tsx` của chính route đó.
+
+**Sự cố phụ đi kèm:** `WorkspaceMain.tsx` cũng bị mất `background: var(--surface)`
+giữa chừng (còn mỗi `border`) trong lúc thao tác — cộng với bug trên khiến
+hiện tượng "xuyên thấu" càng rõ. Đã thêm lại.
+
+---
+
+## 2026-08-17 — Đổi concept trang chọn Workspace: từ "cổng sci-fi" sang "đảo mây"
+
+**Bối cảnh:** trang `/workspace/[username]` (danh sách workspace) trước đó
+theo concept "vũ trụ": `StarfieldBackground` (lưới chấm), hiệu ứng thẻ phóng
+to thành cổng khi chọn workspace (`WorkspaceGatewayOverlay` + `layoutId`
+FLIP), toolbar cơ khí `ControlCenterReactor` (đang tắt, chưa dùng thật).
+Người dùng cung cấp 1 ảnh mẫu concept mới (sáng, thân thiện — bầu trời mây +
+đảo nổi/cổng) kèm ảnh nền thật (`workspace-bg.png`) và yêu cầu đổi layout
+theo đó.
+
+**Bỏ hẳn `WorkspaceGatewayOverlay.tsx` (xoá file, không giữ lại như
+`KnowledgeUniverseCanvas.tsx`):** hiệu ứng "cổng" gắn chặt với tông sci-fi cũ,
+không có cách nào tái dùng cho tông sáng mới — khác với map view (bị NGƯNG
+DÙNG nhưng có thể cần lại), hiệu ứng này bị thay thế hẳn bởi điều hướng
+`<Link>` thẳng, không có kịch bản dùng lại.
+
+**`ControlCenterReactor` giữ nguyên file nhưng KHÔNG dùng ở trang này nữa:**
+viết `WorkspaceQuickToolbar.tsx` mới (toolbar tĩnh, không hiệu ứng deploy/
+retract) thay vì cố "skin" lại reactor theo tông sáng — 2 phong cách (cơ khí
+chi tiết cao vs. icon tròn tối giản) khác nhau quá nhiều để dùng chung 1
+component mà không phải viết lại gần như toàn bộ.
+
+**Icon toolbar tĩnh (lưới/biểu đồ/sao/trợ giúp) đổi từ 2 tool cũ
+(Đổi giao diện/Hướng dẫn) sang đúng 4 icon trong ảnh mẫu, nhưng KHÔNG gán
+`onClick`:** chưa có tính năng thật đứng sau (không có toggle theme thủ công,
+không có trang thống kê/yêu thích) — hiện disabled thật + tooltip "Sắp có"
+thay vì giả vờ hoạt động, đúng quy ước "gắn nhãn rõ thay vì giả vờ là tính
+năng thật" trong `workspace-style-guide.md`.
+
+**Mục "gợi ý từ người bạn theo dõi" giữ nguyên nguồn dữ liệu
+(`WorkspaceService.listSuggested`), chỉ đổi UI thành card đánh số thứ tự:**
+ảnh mẫu có mục "đang lên xu hướng" với %/biểu đồ tăng trưởng, nhưng backend
+không lưu lịch sử số thành viên theo thời gian để tính % thật — quyết định
+KHÔNG bịa số liệu giả (kể cả gắn nhãn DEMO), giữ nguyên ý nghĩa thật của mục
+này (gợi ý theo người đang follow) thay vì đổi tên thành "trending" gây hiểu
+lầm.
+
+**Nền ảnh cố định + màu chữ cố định (`HERO_INK*` trong
+`WorkspaceSwitcher.tsx`) là ngoại lệ có chủ đích, không dùng token
+`--ink`/`--surface` thích ứng theme** — lý do: ảnh nền do người dùng cung cấp
+là ảnh tĩnh (không có bản dark mode), muốn chữ đọc được thì phải cố định
+theo đúng tông sáng của ảnh, bất kể theme hệ thống đang là gì. Đã cập nhật
+danh sách ngoại lệ trong `workspace-style-guide.md`.
+
+---
+
 ## 2026-08-14 — Redesign màn Workspace Detail theo WORKSPACE_UI_SPEC.md: bỏ map view, tách ArticleTabs dùng chung
 
 **Bối cảnh:** áp dụng 1 spec UI/UX mới (Knowledge Workspace kiểu GitHub×Linear×

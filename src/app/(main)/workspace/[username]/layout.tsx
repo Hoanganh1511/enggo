@@ -1,46 +1,28 @@
-"use client";
-
-import { useState } from "react";
-import { CircleHelp, SunMoon } from "lucide-react";
-import StarfieldBackground from "@/components/background/StarfieldBackground";
-import {
-  ControlCenterReactor,
-  type ReactorTool,
-} from "@/components/ui/control-center-reactor";
-import { WorkspaceToolbarContext } from "@/components/workspaces/workspace-toolbar-context";
-
-// Danh sach chuc nang tinh cua toolbar - component tu no da lo phan
-// deploy/retract + toast "{label} đã sẵn sàng", chi can truyen tools that
-// (xem control-center-reactor.tsx). Tool "Tao workspace" KHONG nam trong
-// day vi no chi ton tai khi isSelf - xem dynamicTool ben duoi.
-const staticTools: ReactorTool[] = [
-  { id: "theme", label: "Đổi giao diện", icon: SunMoon, tone: "cyan" },
-  { id: "guide", label: "Hướng dẫn", icon: CircleHelp, tone: "violet" },
-];
-
-const WorkspaceHubLayout = ({ children }: { children: React.ReactNode }) => {
-  // Tool dong duy nhat hien tai: "Tao workspace", do WorkspaceSwitcher (con
-  // cua children) tu dang ky qua context khi isSelf - xem
-  // workspace-toolbar-context.tsx de biet ly do can context thay vi prop.
-  const [dynamicTool, setDynamicTool] = useState<ReactorTool | null>(null);
-  const tools = dynamicTool ? [...staticTools, dynamicTool] : staticTools;
-
+// Nen anh bau troi/dao noi DUNG CHUNG cho CA cay /workspace/[username]/**
+// (man chon workspace LAN man chi tiet workspace/doc bai - [workspaceId],
+// [workspaceId]/[slug]) - dat o day (layout.tsx, ap dung cho moi route con)
+// la CO CHU DICH lan nay, khac voi WorkspaceHubChrome.tsx (toolbar/banner/
+// context CHI danh cho man chon workspace, dat trong page.tsx cua dung
+// segment do de KHONG lo xuong route con - xem docs/engineering-log.md).
+// Server Component thuan (khong can "use client", khong co hook/state).
+export default function WorkspaceAreaLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    // h-full: WorkspaceSwitcher tu no dung "size-full" (mong 100% chieu cao
-    // cha) de choan het vung noi dung - thieu class nay thi cha (div tran,
-    // khong dat height) tinh height:auto, khien height:100% cua con bi quy
-    // ve "auto" (theo spec CSS), lam trang co lai bang dung noi dung thay vi
-    // choan het MainContentArea nhu 1 trang binh thuong.
     <div className="relative h-full">
-      <StarfieldBackground />
-      <WorkspaceToolbarContext.Provider
-        value={{ registerTool: setDynamicTool }}
-      >
-        <div className="relative z-10 h-full">{children}</div>
-      </WorkspaceToolbarContext.Provider>
-      {/* <ControlCenterReactor tools={tools} /> */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 mask-[linear-gradient(to_bottom,#000_55%,transparent_92%)]"
+        style={{
+          backgroundImage: "url(/assets/images/workspaces/workspace-bg.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "right top",
+          backgroundColor: "var(--background)",
+        }}
+      />
+      <div className="relative z-10 h-full">{children}</div>
     </div>
   );
-};
-
-export default WorkspaceHubLayout;
+}

@@ -128,7 +128,7 @@
      class h-[var(--header-height)]) - tach thanh bien de noi nao can tinh
      "phan con lai duoi header" (vd ProfileShell luc 1 tab con chiem full man
      hinh) tham chieu dung 1 nguon, khong bi lech neu doi chieu cao header. */
-  --header-height: 58px;
+  --header-height: 52px;
 }
 
 @media (min-width: 1024px) {

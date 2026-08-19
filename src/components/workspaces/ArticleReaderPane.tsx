@@ -72,6 +72,7 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
     groupDocs,
     selectGroupById,
     refreshGroupDocs,
+    clearSelectedGroup,
   } = useWorkspaceShell();
   const [doc, setDoc] = useState(initialDoc);
   const [sideTab, setSideTab] = useState<ArticleTabId>("overview");
@@ -151,60 +152,71 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
   const siblingDocs = groupDocs.filter((d) => d.id !== doc.id);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Breadcrumb thay cho nut back + tieu de rieng le truoc day - vua dieu
-          huong (click workspace/nhom) vua cho biet dang o dau, khong can 2
-          vung rieng nua. Chuyen tu ArticleOverview.tsx (tab "Tong quan") len
-          day - khong con lap lai o do. */}
+    <div className="relative flex min-h-0 flex-1 gap-3">
+      {/* Card giua: breadcrumb + noi dung bai viet gop chung 1 khoi bo tron
+          (rounded-[13px] + border, dong bo voi sidebar/aside - xem
+          WorkspaceShell.tsx/GroupArticleToc.tsx) thay vi breadcrumb la 1
+          thanh rieng troi qua ca 2 cot nhu truoc. */}
       <div
-        className="font-breadcrumb flex h-13 shrink-0 items-center gap-1.5 overflow-hidden px-4 text-[13px]"
+        className="shadow-panel relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-[13px] backdrop-blur-md"
         style={{
-          // borderBottom: "1px solid var(--border)",
-          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          background: "color-mix(in srgb, var(--surface) 82%, transparent)",
         }}
       >
-        <Link
-          href={`/workspace/${username}/${workspace.id}`}
-          className="flex shrink-0 items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
+        {/* Breadcrumb thay cho nut back + tieu de rieng le truoc day - vua dieu
+            huong (click workspace/nhom) vua cho biet dang o dau, khong can 2
+            vung rieng nua. Chuyen tu ArticleOverview.tsx (tab "Tong quan") len
+            day - khong con lap lai o do. */}
+        <div
+          className="font-breadcrumb flex h-13 shrink-0 items-center gap-1.5 overflow-hidden px-4 text-[13px]"
+          style={{ borderBottom: "1px solid var(--border)" }}
         >
-          <Blocks size={13} strokeWidth={1.9} className="shrink-0" />
-          <span className="truncate">{workspace.name}</span>
-        </Link>
-        <ChevronRight
-          size={13}
-          strokeWidth={1.9}
-          className="shrink-0"
-          style={{ color: "var(--ink-faint)" }}
-        />
-        <Link
-          href={`/workspace/${username}/${workspace.id}`}
-          className="flex min-w-0 shrink items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
-        >
-          <Folder size={13} strokeWidth={1.9} className="shrink-0" />
-          <span className="min-w-0 truncate">
-            {selectedGroup?.name ?? "..."}
+          <Link
+            href={`/workspace/${username}/${workspace.id}`}
+            // Xoa selectedGroup - thieu dong nay thi dieu huong ve trang
+            // browse van con giu state nhom dang chon (WorkspaceShell.tsx),
+            // khien WorkspaceBrowseView tu dong nhay THANG lai bai viet moi
+            // nhat cua CHINH nhom nay thay vi ve man chon nhom kien thuc
+            // (KnowledgeGroupCatalog) - dung y nguoi dung phan anh "vẫn nháy
+            // ở màn chi tiết bài viết hiện tại".
+            onClick={clearSelectedGroup}
+            className="flex shrink-0 items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
+          >
+            <Blocks size={13} strokeWidth={1.9} className="shrink-0" />
+            <span className="truncate">{workspace.name}</span>
+          </Link>
+          <ChevronRight
+            size={13}
+            strokeWidth={1.9}
+            className="shrink-0"
+            style={{ color: "var(--ink-faint)" }}
+          />
+          <Link
+            href={`/workspace/${username}/${workspace.id}`}
+            className="flex min-w-0 shrink items-center gap-1 font-medium text-ink-muted transition-colors duration-150 ease-out hover:text-ink hover:underline hover:underline-offset-2"
+          >
+            <Folder size={13} strokeWidth={1.9} className="shrink-0" />
+            <span className="min-w-0 truncate">
+              {selectedGroup?.name ?? "..."}
+            </span>
+          </Link>
+          <ChevronRight
+            size={13}
+            strokeWidth={1.9}
+            className="shrink-0"
+            style={{ color: "var(--ink-faint)" }}
+          />
+          <span
+            className="flex min-w-0 flex-1 items-center gap-1 font-semibold"
+            style={{ color: "var(--ink)" }}
+          >
+            <FileTextIcon size={13} strokeWidth={1.9} className="shrink-0" />
+            <span className="min-w-0 truncate">{doc.title}</span>
           </span>
-        </Link>
-        <ChevronRight
-          size={13}
-          strokeWidth={1.9}
-          className="shrink-0"
-          style={{ color: "var(--ink-faint)" }}
-        />
-        <span
-          className="flex min-w-0 flex-1 items-center gap-1 font-semibold"
-          style={{ color: "var(--ink)" }}
-        >
-          <FileTextIcon size={13} strokeWidth={1.9} className="shrink-0" />
-          <span className="min-w-0 truncate">{doc.title}</span>
-        </span>
-      </div>
+        </div>
 
-      <div className="flex min-h-0 flex-1">
-        <main
-          className="relative min-w-0 flex-1 overflow-hidden"
-          style={{ background: "var(--surface)" }}
-        >
+        <main className="relative min-h-0 flex-1 overflow-hidden">
           {editPhase === "preparing" ? (
             <EditorPreparingStage />
           ) : editPhase === "editing" ? (
@@ -239,43 +251,44 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
             {editPhase === "toast" && <EditModeToast key="edit-toast" />}
           </AnimatePresence>
         </main>
-
-        <motion.aside
-          initial={{ x: 520, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={PANEL_SPRING}
-          className="flex w-90 shrink-0 flex-col overflow-hidden"
-          style={{
-            // borderLeft: "1px solid var(--border)",
-            background: "var(--surface)",
-          }}
-        >
-          <AnimatePresence>
-            {editPhase === "idle" && (
-              <ReaderToolbar
-                key="reader-toolbar"
-                canEdit={doc.isOwner}
-                onEdit={() => setEditPhase("toast")}
-                onNotes={() => setSideTab("resources")}
-                onAddRelated={handleAddRelated}
-              />
-            )}
-          </AnimatePresence>
-          <ArticleTabs
-            tab={sideTab}
-            setTab={setSideTab}
-            doc={doc}
-            siblingDocs={siblingDocs}
-            username={username}
-            workspaceId={workspace.id}
-            toc={toc}
-            activeTocId={activeTocId}
-            onChecklistLogPublicChange={(next) =>
-              setDoc((prev) => ({ ...prev, checklistLogPublic: next }))
-            }
-          />
-        </motion.aside>
       </div>
+
+      <motion.aside
+        initial={{ x: 520, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={PANEL_SPRING}
+        className="shadow-panel flex w-90 shrink-0 flex-col overflow-hidden rounded-[13px] backdrop-blur-md"
+        style={{
+          border: "1px solid var(--border)",
+          background: "color-mix(in srgb, var(--surface) 82%, transparent)",
+        }}
+      >
+        <AnimatePresence>
+          {editPhase === "idle" && (
+            <ReaderToolbar
+              key="reader-toolbar"
+              canEdit={doc.isOwner}
+              onEdit={() => setEditPhase("toast")}
+              onNotes={() => setSideTab("resources")}
+              onAddRelated={handleAddRelated}
+            />
+          )}
+        </AnimatePresence>
+        <ArticleTabs
+          tab={sideTab}
+          setTab={setSideTab}
+          doc={doc}
+          siblingDocs={siblingDocs}
+          group={selectedGroup}
+          username={username}
+          workspaceId={workspace.id}
+          toc={toc}
+          activeTocId={activeTocId}
+          onChecklistLogPublicChange={(next) =>
+            setDoc((prev) => ({ ...prev, checklistLogPublic: next }))
+          }
+        />
+      </motion.aside>
       <PostEditorModal
         open={addRelatedOpen}
         onClose={() => setAddRelatedOpen(false)}
