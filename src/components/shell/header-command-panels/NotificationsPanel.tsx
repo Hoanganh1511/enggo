@@ -31,18 +31,23 @@ function notificationText(n: ApiNotification): string {
       return `Yêu cầu cộng tác vào "${groupName}" đã được duyệt`;
     case "GROUP_COLLAB_REJECTED":
       return `Yêu cầu cộng tác vào "${groupName}" đã bị từ chối`;
+    case "FOLLOW":
+      return `${actorName} đã theo dõi bạn`;
     default:
       return "Bạn có 1 thông báo mới";
   }
 }
 
 function notificationHref(n: ApiNotification): string | undefined {
+  if (n.type === "FOLLOW") {
+    return n.actor?.username ? `/u/${n.actor.username}` : undefined;
+  }
   if (!n.group || !n.group.ownerUsername) return undefined;
   return `/workspace/${n.group.ownerUsername}/${n.group.workspaceId}`;
 }
 
-// Dropdown thong bao THAT (thay EmptyPanelState placeholder cu) - hien tai
-// CHI phuc vu 3 loai lien quan yeu cau cong tac nhom kien thuc (xem
+// Dropdown thong bao THAT (thay EmptyPanelState placeholder cu) - phuc vu
+// cac loai lien quan yeu cau cong tac nhom kien thuc va follow (xem
 // NotificationService o backend). Tab "Yêu cầu" (loc type=GROUP_COLLAB_REQUESTED)
 // theo dung yeu cau nguoi dung: "request này sẽ ở trong tab Yêu cầu". Cho
 // phep duyet/tu choi NGAY tu dropdown (khong bat buoc dieu huong sang trang

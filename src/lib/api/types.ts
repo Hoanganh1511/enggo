@@ -359,14 +359,15 @@ export type ChatMessage = {
   content: string;
 };
 
-// He thong thong bao - hien chi phuc vu luong yeu cau cong tac nhom kien
-// thuc (xem NotificationService o backend). `collabId` dung de FE goi thang
-// endpoint duyet/tu choi tu chinh dropdown thong bao (tab "Yêu cầu"), KHONG
-// phai 1 quan he Prisma that (xem comment trong schema.prisma).
+// He thong thong bao - phuc vu luong yeu cau cong tac nhom kien thuc va
+// follow (xem NotificationService o backend). `collabId` dung de FE goi
+// thang endpoint duyet/tu choi tu chinh dropdown thong bao (tab "Yêu cầu"),
+// KHONG phai 1 quan he Prisma that (xem comment trong schema.prisma).
 export type ApiNotificationType =
   | "GROUP_COLLAB_REQUESTED"
   | "GROUP_COLLAB_APPROVED"
-  | "GROUP_COLLAB_REJECTED";
+  | "GROUP_COLLAB_REJECTED"
+  | "FOLLOW";
 
 export type ApiNotification = {
   id: string;
