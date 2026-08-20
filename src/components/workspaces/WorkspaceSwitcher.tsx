@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Plus, Users } from "lucide-react";
+import { ArrowRight, Pencil, Plus, Users } from "lucide-react";
 import type { ApiSuggestedWorkspace, ApiWorkspaceWithGroups } from "@/lib/api/types";
 import { useRipple } from "@/components/ui/ripple";
 import { CreateWorkspaceButton } from "./CreateWorkspaceButton";
 import { CreateWorkspaceModal } from "./CreateWorkspaceModal";
+import { EditWorkspaceModal } from "./EditWorkspaceModal";
 import { useWorkspaceToolbar } from "./workspace-toolbar-context";
 
 // Mau "concept" cua khu vuc Workspace (xem docs/workspace-style-guide.md muc
@@ -62,16 +63,19 @@ function OwnerAvatar({
 function WorkspaceCard({
   ws,
   username,
+  isSelf,
   ownerName,
   ownerAvatarUrl,
 }: {
   ws: ApiWorkspaceWithGroups;
   username: string;
+  isSelf: boolean;
   ownerName: string;
   ownerAvatarUrl: string | null;
 }) {
   const accent = ws.color ?? "var(--primary)";
   const { onPointerDown, rippleLayer } = useRipple(accent);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <Link
@@ -85,6 +89,37 @@ function WorkspaceCard({
       }}
     >
       {rippleLayer}
+      {/* Sua thong tin co ban - CHI chu workspace (isSelf). Nam trong Link
+          (dieu huong ca the) nen phai preventDefault+stopPropagation de
+          khong bi dieu huong nham khi bam nut nay. */}
+      {isSelf && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setEditOpen(true);
+          }}
+          title="Sửa workspace"
+          aria-label="Sửa workspace"
+          className="absolute top-3 right-3 z-10 flex size-7 cursor-pointer items-center justify-center rounded-full opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100"
+          style={{
+            background: "color-mix(in srgb, white 85%, transparent)",
+            color: HERO_INK_FAINT,
+          }}
+        >
+          <Pencil size={12} strokeWidth={2} />
+        </button>
+      )}
+      {isSelf && (
+        <EditWorkspaceModal
+          workspace={ws}
+          username={username}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+      )}
+
       <div className="flex items-start gap-3">
         <span
           className="flex size-10 shrink-0 items-center justify-center rounded-xl text-lg"
@@ -314,6 +349,7 @@ export function WorkspaceSwitcher({
                 key={ws.id}
                 ws={ws}
                 username={username}
+                isSelf={isSelf}
                 ownerName={ownerName}
                 ownerAvatarUrl={ownerAvatarUrl}
               />
