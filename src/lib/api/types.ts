@@ -187,6 +187,10 @@ export type ApiKnowledgeGroup = {
   // (bold/italic/bulletList/orderedList, xem GroupGoalModal.tsx). Metadata
   // cong khai (giong description) - AI cung xem duoc, chi chu workspace sua.
   goal: Record<string, unknown> | null;
+  // "Lo trinh hoc tap" - Tiptap JSON, schema DAY DU (getPostExtensions(),
+  // giong Document.content) - hien o GroupRoadmapSection.tsx, KHAC goal
+  // (schema han che, chi 1 doan ngan).
+  roadmap: Record<string, unknown> | null;
   visibility: ApiKnowledgeGroupVisibility;
   postCount: number;
   orderIndex: number;

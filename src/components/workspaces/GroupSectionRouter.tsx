@@ -4,24 +4,24 @@ import {
   BarChart3,
   BookOpen,
   CheckSquare,
-  Map,
   RotateCw,
-  Settings,
   Users,
 } from "lucide-react";
 import type { ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
 import { GroupOverviewSection } from "./GroupOverviewSection";
 import { GroupArticlesSection } from "./GroupArticlesSection";
 import { GroupGoalsSection } from "./GroupGoalsSection";
+import { GroupRoadmapSection } from "./GroupRoadmapSection";
+import { GroupSettingsSection } from "./GroupSettingsSection";
 import { GroupSectionPlaceholder } from "./GroupSectionPlaceholder";
 import { useWorkspaceShell } from "./workspace-shell-context";
 
 // Chuyen "trang" hien thi trong khu vuc trung tam theo activeSection (xem
-// GroupSidebar.tsx/workspace-shell-context.tsx) - Overview va Bai viet la
-// trang THAT, con lai la placeholder trung thuc (khong du lieu gia) cho phase
-// sau. Doc du lieu group/docs/loading tu context thay vi nhan lai qua props -
-// WorkspaceMain.tsx (cha) da co san qua useWorkspaceShell() nen truyen thang
-// xuong day cho gon.
+// GroupSidebar.tsx/workspace-shell-context.tsx) - Overview/Bai viet/Lo trinh/
+// Muc tieu/Cai dat la trang THAT, con lai la placeholder trung thuc (khong
+// du lieu gia) cho phase sau. Doc du lieu group/docs/loading tu context thay
+// vi nhan lai qua props - WorkspaceMain.tsx (cha) da co san qua
+// useWorkspaceShell() nen truyen thang xuong day cho gon.
 export function GroupSectionRouter({
   group,
   docs,
@@ -39,13 +39,7 @@ export function GroupSectionRouter({
     case "articles":
       return <GroupArticlesSection group={group} docs={docs} loading={loading} />;
     case "roadmap":
-      return (
-        <GroupSectionPlaceholder
-          icon={Map}
-          title="Lộ trình học tập"
-          description="Bản đồ trực quan các chủ đề cần học, theo thứ tự và mức độ hoàn thành."
-        />
-      );
+      return <GroupRoadmapSection group={group} />;
     case "knowledge":
       return (
         <GroupSectionPlaceholder
@@ -89,13 +83,7 @@ export function GroupSectionRouter({
         />
       );
     case "settings":
-      return (
-        <GroupSectionPlaceholder
-          icon={Settings}
-          title="Cài đặt"
-          description="Các thiết lập khác cho nhóm kiến thức này."
-        />
-      );
+      return <GroupSettingsSection group={group} />;
     default:
       return null;
   }

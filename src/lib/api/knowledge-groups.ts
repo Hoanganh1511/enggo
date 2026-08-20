@@ -17,6 +17,8 @@ export type KnowledgeGroupInput = {
   certCode?: string;
   visibility?: ApiKnowledgeGroupVisibility;
   goal?: Record<string, unknown>;
+  // "Lo trinh hoc tap" - xem GroupRoadmapSection.tsx.
+  roadmap?: Record<string, unknown>;
 };
 
 export function listWorkspaceGroups(
