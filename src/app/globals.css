@@ -445,7 +445,10 @@ body {
    Safari (*::-webkit-scrollbar-thumb) moi thuc su hien gradient. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #269ce9 transparent;
+  /* Nhat di giong webkit thumb ben duoi (color-mix voi white) thay vi mau
+     dac #269ce9 - Firefox khong the gradient nen dung dung 1 stop giua da
+     lam nhat lam thay the. */
+  scrollbar-color: color-mix(in srgb, #269ce9 20%, white) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
@@ -458,21 +461,22 @@ body {
 *::-webkit-scrollbar-thumb {
   /* color-mix voi white de nhat mau di (thumb dam qua se nang, khong hop
      voi tinh than "airy" cua cac trang) - van giu dung 3 stop cua gradient
-     concept, chi giam do bao hoa. */
+     concept, chi giam do bao hoa. 55% -> 32% -> 20% qua 2 lan phan hoi nguoi
+     dung (van con qua dam/noi bat o cac muc truoc). */
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #20c5d8 55%, white),
-    color-mix(in srgb, #269ce9 55%, white),
-    color-mix(in srgb, #326eea 55%, white)
+    color-mix(in srgb, #20c5d8 20%, white),
+    color-mix(in srgb, #269ce9 20%, white),
+    color-mix(in srgb, #326eea 20%, white)
   );
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, #20c5d8 70%, white),
-    color-mix(in srgb, #269ce9 70%, white),
-    color-mix(in srgb, #326eea 70%, white)
+    color-mix(in srgb, #20c5d8 35%, white),
+    color-mix(in srgb, #269ce9 35%, white),
+    color-mix(in srgb, #326eea 35%, white)
   );
 }
 
