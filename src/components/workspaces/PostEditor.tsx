@@ -315,7 +315,7 @@ export function PostEditor({
           type="button"
           disabled={isSaving}
           onClick={() => save(true)}
-          className="flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-community-accent px-5 text-sm font-semibold text-white hover:bg-community-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-gradient-to-r from-[#20c5d8] to-[#326eea] px-5 text-sm font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={14} strokeWidth={2.25} />
           {isSaving ? "Đang lưu…" : "Xuất bản"}
@@ -333,16 +333,18 @@ export function PostEditor({
   // dung cho co dinh cua no trong flex-col, khong the bi noi dung "chay
   // qua" duoc nua.
   //
-  // "mx-auto max-w-3xl" CHI dat 1 LAN o container NGOAI CUNG (bao ca vung
+  // "mx-auto max-w-7xl" CHI dat 1 LAN o container NGOAI CUNG (bao ca vung
   // scroll lan footer) - truoc day fields va footer moi ben tu can giua
   // RIENG, nen scrollbar cua vung scroll (chi fields co) lam be rong kha
   // dung cua NO hep hon vai px so voi footer (khong co scrollbar), khien 2
-  // cot can giua lech nhau vai px du cung max-w-3xl. Dat 1 lan o ngoai roi
-  // de fields/footer chi "w-full" ben trong thi ca 2 LUON chung dung 1 cap
-  // canh trai/phai, khong the lech nua.
+  // cot can giua lech nhau vai px du cung max-w. Dat 1 lan o ngoai roi de
+  // fields/footer chi "w-full" ben trong thi ca 2 LUON chung dung 1 cap canh
+  // trai/phai, khong the lech nua. max-w-7xl khop voi be rong doc bai that
+  // (ArticleBody trong ArticleReaderPane.tsx) - truoc day max-w-3xl khien
+  // che do sua bi co hep lai so voi che do doc, theo phan hoi nguoi dung.
   if (floatingToolbar) {
     return (
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="pt-6 pb-10">{fields}</div>
         </div>

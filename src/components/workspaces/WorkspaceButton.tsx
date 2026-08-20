@@ -167,6 +167,10 @@ function getVariantStyles(variant: WorkspaceButtonProps["variant"], disabled: bo
 
     case "primary":
     default:
-      return "bg-gradient-to-r from-[#20c5d8] via-[#269ce9] to-[#326eea] text-white border border-white/30 shadow-[0_7px_18px_rgba(40,125,235,0.24)] hover:shadow-[0_10px_25px_rgba(40,125,235,0.30)]";
+      // Vien trang dung inset box-shadow (khong dung `border` that) - `border`
+      // trong suot + bg gradient bo goc bi trinh duyet anti-alias lech giua 2
+      // lop clip rieng (border vs background) tai duong bo tron, tao vet mau
+      // chom/ke manh o mep. Gop chung 1 lop shadow duy nhat tranh duoc seam nay.
+      return "bg-gradient-to-r from-[#20c5d8] via-[#269ce9] to-[#326eea] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),0_7px_18px_rgba(40,125,235,0.24)] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),0_10px_25px_rgba(40,125,235,0.30)]";
   }
 }
