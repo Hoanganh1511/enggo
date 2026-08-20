@@ -393,3 +393,34 @@ export type ApiNotificationPage = {
   items: ApiNotification[];
   nextCursor: string | null;
 };
+
+// Chat 1-1 that (khac han ChatMessage o tren - do la Q&A voi Tro ly AI,
+// khong luu DB). Xem ChatService o backend.
+export type ApiConversationUser = {
+  id: string;
+  username: string | null;
+  name: string;
+  avatarUrl: string | null;
+  verified: boolean;
+};
+
+export type ApiChatMessage = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  createdAt: string;
+};
+
+export type ApiConversationSummary = {
+  id: string;
+  otherUser: ApiConversationUser | null;
+  lastMessage: ApiChatMessage | null;
+  unreadCount: number;
+  updatedAt: string;
+};
+
+export type ApiChatMessagePage = {
+  items: ApiChatMessage[];
+  nextCursor: string | null;
+};

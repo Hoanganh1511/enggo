@@ -40,15 +40,13 @@ import { cn } from "@/lib/utils";
 import Spinner from "@/components/ui/spinner";
 import Logo from "../ui/logo";
 import { HeaderSearch } from "./HeaderSearch";
-import {
-  SavedPanel,
-  MessagesPanel,
-  HelpPanel,
-} from "./header-command-panels/Panels";
+import { SavedPanel, HelpPanel } from "./header-command-panels/Panels";
 import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
 import { getUnreadNotificationCountAction } from "@/actions/notifications/get-unread-count";
+import { getUnreadChatCountAction } from "@/actions/chat/get-unread-count";
 import { useNotificationSocket } from "@/lib/use-notification-socket";
-import type { ApiNotification } from "@/lib/api/types";
+import { useChatSocket } from "@/lib/use-chat-socket";
+import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 
 // Header bê nguyên UI/UX tu source "knowledge-workspace-react" (Topbar
 // trong main.jsx), nhung dung TOKEN CSS (var(--...) tu globals.css) thay vi
@@ -137,12 +135,17 @@ function buildHeaderCommands(
   unreadCount: number,
   onUnreadCountChange: (count: number) => void,
   liveNotification: ApiNotification | null,
+  unreadChatCount: number,
 ): {
   id: HeaderCommandId;
   label: string;
   icon: LucideIcon;
   badge?: string;
   panel: ReactNode;
+  // Neu co, nut nay DIEU HUONG sang href (khong toggle dropdown panel) -
+  // dung cho "messages" (co han trang /messages rieng thay vi mini-panel,
+  // giong cach "Workspace" tren nav trai da lam).
+  href?: string;
 }[] {
   return [
     { id: "saved", label: "Đã lưu", icon: Bookmark, panel: <SavedPanel /> },
@@ -150,7 +153,14 @@ function buildHeaderCommands(
       id: "messages",
       label: "Tin nhắn",
       icon: MessageCircle,
-      panel: <MessagesPanel />,
+      badge:
+        unreadChatCount > 0
+          ? unreadChatCount > 9
+            ? "9+"
+            : String(unreadChatCount)
+          : undefined,
+      panel: null,
+      href: "/messages",
     },
     {
       id: "notifications",
@@ -220,10 +230,32 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
     }, []),
   );
 
+  // Badge tin nhan chua doc - cung pattern voi thong bao (fetch 1 lan +
+  // socket bump real-time). Refetch moi khi doi trang (dac biet luc ROI khoi
+  // /messages) de dong bo lai voi cac hoi thoai vua duoc danh dau da doc
+  // ngay trong trang do (MessagesShell.tsx), vi state o day khong tu biet
+  // duoc dieu do.
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  useEffect(() => {
+    if (!session?.username) return;
+    getUnreadChatCountAction()
+      .then((r) => setUnreadChatCount(r.count))
+      .catch(() => {});
+  }, [session?.username, pathname]);
+  useChatSocket(
+    Boolean(session?.username),
+    useCallback((m: ApiChatMessage) => {
+      if (m.senderId !== session?.userId) {
+        setUnreadChatCount((c) => c + 1);
+      }
+    }, [session?.userId]),
+  );
+
   const headerCommands = buildHeaderCommands(
     unreadCount,
     handleUnreadCountChange,
     liveNotification,
+    unreadChatCount,
   );
 
   const handleNavigate = (href: string) => {
@@ -437,14 +469,14 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
           )}
         </AnimatePresence>
 
-        {headerCommands.map(({ id, label, icon: Icon, badge, panel }) => {
-          const active = commandPanel === id;
+        {headerCommands.map(({ id, label, icon: Icon, badge, panel, href }) => {
+          const active = href ? pathname === href : commandPanel === id;
           return (
             <div key={id} className="relative">
               <motion.button
                 type="button"
                 title={label}
-                onClick={() => toggleCommandPanel(id)}
+                onClick={() => (href ? handleNavigate(href) : toggleCommandPanel(id))}
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.92 }}
                 className="relative flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out hover:text-primary-hover!"
