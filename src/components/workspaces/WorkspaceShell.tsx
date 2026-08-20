@@ -149,6 +149,17 @@ export function WorkspaceShell({
     );
   }, []);
 
+  const removeGroupFromState = useCallback(
+    (groupId: string) => {
+      setGroups((prev) => prev.filter((g) => g.id !== groupId));
+      if (selectedGroupId === groupId) {
+        setSelectedGroupId(null);
+        setGroupDocs([]);
+      }
+    },
+    [selectedGroupId],
+  );
+
   const contextValue: WorkspaceShellContextValue = {
     workspace,
     username,
@@ -162,6 +173,7 @@ export function WorkspaceShell({
     clearSelectedGroup,
     addGroup,
     updateGroupInState,
+    removeGroupFromState,
     refreshGroupDocs,
     panelsReady,
     setPanelsReady,

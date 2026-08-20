@@ -39,6 +39,10 @@ export type WorkspaceShellContextValue = {
   // quyen xem qua modal sua nhom) - patch DUNG 1 phan tu trong `groups` bang
   // response moi nhat tu backend, khong refetch lai toan bo danh sach.
   updateGroupInState: (group: ApiKnowledgeGroup) => void;
+  // Bo 1 nhom khoi state cuc bo sau khi xoa that (xem GroupSettingsSection.tsx) -
+  // neu dung la nhom dang chon thi tu clear selection (giong clearSelectedGroup),
+  // tranh con tro toi 1 nhom da khong con ton tai.
+  removeGroupFromState: (groupId: string) => void;
   // Nap lai groupDocs cua nhom dang chon - dung sau khi tao/sua/xoa series
   // (gop bai vao 1 nhom "cung chu de") vi groupDocs la client state rieng
   // (khong qua Next.js page cache/revalidatePath, xem WorkspaceShell.tsx).
