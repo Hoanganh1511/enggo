@@ -2,11 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import ProfileHeader from "./ProfileHeader";
-import ProfileNav from "./ProfileNav";
-import ProfileFooter from "./ProfileFooter";
-import SectionContainer from "@/components/ui/section-container";
-import ProfileSidePanel from "./ProfileSidePanel";
+import { ProfileSidebar } from "./ProfileSidebar";
 import { UserProfileApiShape } from "@/lib/api/users";
 import {
   followUserAction,
@@ -14,16 +10,12 @@ import {
 } from "@/actions/discover/follow-user";
 
 // Khung chung quanh moi tab cua trang profile (xem [username]/layout.tsx) -
-// ProfileHeader + ProfileNav (gio la Link that, mang username tren URL) +
-// sidebar + footer nam O DAY, "children" la noi dung feed rieng cua tung tab
-// (page.tsx con). State follow (following/followerCount/pending) so huu O
-// DAY vi ProfileHeader (nut bam) va ProfileNav (hien so) deu can dung chung,
-// khong duoc moi noi tu quan ly rieng se bi lech nhau.
-//
-// Tab "Workspace" KHONG con la 1 route con o day nua (da chuyen sang
-// /workspace/[username], route doc lap - xem WorkspaceSwitcher.tsx), nen
-// ProfileShell luon hien cover/user-info/ProfileNav binh thuong, khong can
-// co che "focus" (an di) nhu truoc.
+// port tu source treecareer-profile-universe-v2 ("navy sidebar" thay cho
+// cover-photo header cu). ProfileSidebar (avatar/ten/bio/stat/nav that) nam
+// O DAY, "children" la noi dung rieng cua tung tab (page.tsx con), render
+// trong vung giay (#f8f8f5) ben phai sidebar. State follow (following/
+// followerCount/pending) so huu o day vi ca nut Theo doi (ProfileSidebar)
+// lan so lieu "Nguoi theo doi" (cung ProfileSidebar) deu can dung chung.
 const ProfileShell = ({
   profile,
   children,
@@ -72,41 +64,26 @@ const ProfileShell = ({
 
   return (
     // min-h tinh bang 100vh tru chieu cao TopHeaderBar (h-14 = 3.5rem) va
-    // padding doc cua MainContentArea (pt-4 + pb-4 = 2rem) - dam bao Footer
-    // luon it nhat cham day viewport thay vi troi len ngay sau noi dung khi
-    // trang it du lieu (vd danh sach follower rong/it nguoi).
-    <div className="flex min-h-[calc(100vh-5.5rem)] flex-col">
-      <ProfileHeader
-        profile={profile}
+    // padding doc cua MainContentArea (pt-4 + pb-4 = 2rem) - dam bao vung
+    // giay ben phai luon it nhat cham day viewport, khong bi ngan cut nham
+    // khi trang it noi dung.
+    <div className="flex min-h-[calc(100vh-5.5rem)] bg-[#f8f8f5]">
+      <ProfileSidebar
+        profile={{ ...profile, followerCount }}
         following={following}
         pending={pending}
         onToggleFollow={handleToggleFollow}
+        activeHref={activeHref}
+        onNavClick={handleNavClick}
       />
 
-      <SectionContainer as="div" className="flex flex-1 flex-col">
-        <ProfileNav
-          username={profile.username!}
-          activeHref={activeHref}
-          onNavClick={handleNavClick}
-          isSelf={profile.isSelf}
-          postCount={profile.postCount}
-          followingCount={profile.followingCount}
-          followerCount={followerCount}
-          createdAt={profile.createdAt}
-          websiteUrl={profile.websiteUrl}
-        />
-
-        <div
-          className={`flex flex-1 gap-6 py-4 transition-opacity duration-150 ease-out ${
-            isPending ? "pointer-events-none opacity-50" : "opacity-100"
-          }`}
-        >
-          <div className="min-w-0 flex-1">{children}</div>
-          {/* <ProfileSidePanel /> */}
-        </div>
-
-        <ProfileFooter displayName={profile.displayName} />
-      </SectionContainer>
+      <main
+        className={`min-w-0 flex-1 transition-opacity duration-150 ease-out ${
+          isPending ? "pointer-events-none opacity-50" : "opacity-100"
+        }`}
+      >
+        {children}
+      </main>
     </div>
   );
 };

@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono, Be_Vietnam_Pro, Work_Sans } from "next/font/google";
+import {
+  Inter,
+  Geist_Mono,
+  Be_Vietnam_Pro,
+  Work_Sans,
+  Patrick_Hand,
+} from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
@@ -34,6 +40,18 @@ const workSans = Work_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+// Font vien tay/nhan manh rieng cho trang Profile ("font-hand" trong
+// globals.css) - port tu source treecareer-profile-universe-v2, dung cho ten
+// hien thi/tieu de dang "note ca nhan" trong sidebar profile va cac khoi
+// Universe/Journey. KHONG co bo Vietnamese cho Patrick Hand (Google Fonts
+// khong cung cap), text tieng Viet co dau se tu fallback ve Be Vietnam Pro
+// qua khai bao font-family list trong .font-hand.
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick-hand",
+  subsets: ["latin"],
+  weight: "400",
+});
+
 export const metadata: Metadata = {
   title: "Career Tree",
   description: "Created by Tuấn Anh",
@@ -53,7 +71,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistMono.variable} ${beVietnamPro.variable} ${workSans.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} ${beVietnamPro.variable} ${workSans.variable} ${patrickHand.variable} h-full antialiased`}
     >
       <body className="flex h-dvh flex-col overflow-hidden ">
         <AuthSessionProvider>{children}</AuthSessionProvider>

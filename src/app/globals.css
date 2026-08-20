@@ -156,6 +156,10 @@
   /* Font rieng cho breadcrumb khu vuc Workspace (class "font-breadcrumb") -
      Work Sans, lua chon mien phi gan Amazon Ember nhat - xem layout.tsx. */
   --font-breadcrumb: var(--font-work-sans);
+  /* Font vien tay rieng cho trang Profile (class "font-hand") - Patrick Hand,
+     khong co dau tieng Viet nen tu fallback ve Be Vietnam Pro cho ky tu co
+     dau (xem layout.tsx). */
+  --font-hand: var(--font-patrick-hand), var(--font-be-vietnam-pro), cursive;
 
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
