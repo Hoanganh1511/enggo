@@ -12,6 +12,8 @@ const secret = new TextEncoder().encode(process.env.INTERNAL_API_SECRET);
 export const TOKEN_ISSUER = "enggo-web";
 export const AUDIENCE_API = "career-tree-api";
 export const AUDIENCE_SYNC = "career-tree-api/sync";
+// Phai khop voi career-tree-api/src/auth/token-audience.ts.
+export const AUDIENCE_SOCKET = "career-tree-api/socket";
 
 // Token goi API thay mat 1 user cu the. `sub` PHAI luon lay tu auth(), tuyet
 // doi khong tu input client - xem client.ts.
@@ -20,6 +22,21 @@ export function signInternalToken(userId: string): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer(TOKEN_ISSUER)
     .setAudience(AUDIENCE_API)
+    .setIssuedAt()
+    .setExpirationTime("60s")
+    .sign(secret);
+}
+
+// Token cho trinh duyet ket noi TRUC TIEP toi NotificationGateway (socket.io)
+// tren backend - khac han signInternalToken (chi dung server-side, khong bao
+// gio ra khoi may chu Next.js). Het han sau 60s nhung khong sao: FE luon ky
+// token MOI moi lan (re)connect qua callback `auth` cua socket.io-client,
+// khong tai su dung token cu.
+export function signSocketToken(userId: string): Promise<string> {
+  return new SignJWT({ sub: userId })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuer(TOKEN_ISSUER)
+    .setAudience(AUDIENCE_SOCKET)
     .setIssuedAt()
     .setExpirationTime("60s")
     .sign(secret);

@@ -47,6 +47,8 @@ import {
 } from "./header-command-panels/Panels";
 import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
 import { getUnreadNotificationCountAction } from "@/actions/notifications/get-unread-count";
+import { useNotificationSocket } from "@/lib/use-notification-socket";
+import type { ApiNotification } from "@/lib/api/types";
 
 // Header bê nguyên UI/UX tu source "knowledge-workspace-react" (Topbar
 // trong main.jsx), nhung dung TOKEN CSS (var(--...) tu globals.css) thay vi
@@ -134,6 +136,7 @@ type HeaderCommandId = "saved" | "messages" | "notifications" | "help";
 function buildHeaderCommands(
   unreadCount: number,
   onUnreadCountChange: (count: number) => void,
+  liveNotification: ApiNotification | null,
 ): {
   id: HeaderCommandId;
   label: string;
@@ -159,7 +162,12 @@ function buildHeaderCommands(
             ? "9+"
             : String(unreadCount)
           : undefined,
-      panel: <NotificationsPanel onUnreadCountChange={onUnreadCountChange} />,
+      panel: (
+        <NotificationsPanel
+          onUnreadCountChange={onUnreadCountChange}
+          liveNotification={liveNotification}
+        />
+      ),
     },
     { id: "help", label: "Trợ giúp", icon: CircleHelp, panel: <HelpPanel /> },
   ];
@@ -183,9 +191,10 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const toggleCommandPanel = (id: HeaderCommandId) =>
     setCommandPanel((p) => (p === id ? null : id));
 
-  // Fetch 1 lan luc mount (chi khi da dang nhap) - CHUA co polling/real-time,
-  // badge dong bo lai khi NotificationsPanel bao qua onUnreadCountChange sau
-  // hanh dong, hoac khi tab/trang duoc mo lai tu dau.
+  // Fetch 1 lan luc mount (chi khi da dang nhap) de co so lieu ban dau, sau
+  // do socket (useNotificationSocket ben duoi) tu day cap nhat real-time -
+  // badge cung dong bo lai khi NotificationsPanel bao qua onUnreadCountChange
+  // sau hanh dong doc/duyet/tu choi.
   const [unreadCount, setUnreadCount] = useState(0);
   useEffect(() => {
     if (!session?.username) return;
@@ -196,9 +205,25 @@ const TopHeaderBar = ({ accountSlot }: TopHeaderBarProps) => {
   const handleUnreadCountChange = useCallback((count: number) => {
     setUnreadCount(count);
   }, []);
+
+  // Thong bao MOI NHAT nhan qua socket - bump len +1 badge NGAY, va truyen
+  // xuong NotificationsPanel de neu dropdown dang mo thi noi len dau danh
+  // sach ngay lap tuc (xem NotificationsPanel.tsx). Khong dung mang [] vi
+  // moi lan nhan chi can 1 gia tri moi nhat, panel tu khu trung theo id.
+  const [liveNotification, setLiveNotification] =
+    useState<ApiNotification | null>(null);
+  useNotificationSocket(
+    Boolean(session?.username),
+    useCallback((n: ApiNotification) => {
+      setUnreadCount((c) => c + 1);
+      setLiveNotification(n);
+    }, []),
+  );
+
   const headerCommands = buildHeaderCommands(
     unreadCount,
     handleUnreadCountChange,
+    liveNotification,
   );
 
   const handleNavigate = (href: string) => {

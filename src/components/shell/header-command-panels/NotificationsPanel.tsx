@@ -55,8 +55,13 @@ function notificationHref(n: ApiNotification): string | undefined {
 // action ma KnowledgeGroupCollabRequestsPanel.tsx dang dung).
 export function NotificationsPanel({
   onUnreadCountChange,
+  liveNotification,
 }: {
   onUnreadCountChange: (count: number) => void;
+  // Thong bao moi nhat nhan qua WebSocket (xem top-header-bar.tsx) - null
+  // neu chua co gi. Chi apply cho tab "all": tab "requests" da loc rieng
+  // theo type nen 1 thong bao FOLLOW moi (vd) khong thuoc ve no.
+  liveNotification: ApiNotification | null;
 }) {
   const [tab, setTab] = useState<Tab>("all");
   const [items, setItems] = useState<ApiNotification[] | null>(null);
@@ -84,6 +89,27 @@ export function NotificationsPanel({
       cancelled = true;
     };
   }, [tab]);
+
+  // Noi thong bao moi nhan qua socket len DAU danh sach dang mo, thay vi bat
+  // nguoi dung phai dong/mo lai dropdown moi thay - chi khi hop voi tab dang
+  // xem (tab "requests" chi nhan GROUP_COLLAB_REQUESTED), va bo qua neu da co
+  // san id do (vd fetch ban dau vua xong dung luc socket cung ban). Boc trong
+  // startFetchTransition (cung 1 transition dung cho fetch ben tren) de tranh
+  // ESLint react-hooks/set-state-in-effect - setState dong bo truc tiep
+  // trong than effect bi chan, xem comment o effect fetch phia tren.
+  useEffect(() => {
+    if (!liveNotification) return;
+    if (tab === "requests" && liveNotification.type !== "GROUP_COLLAB_REQUESTED") {
+      return;
+    }
+    startFetchTransition(() => {
+      setItems((prev) => {
+        if (!prev) return prev;
+        if (prev.some((n) => n.id === liveNotification.id)) return prev;
+        return [liveNotification, ...prev];
+      });
+    });
+  }, [liveNotification, tab]);
 
   function loadMore() {
     if (!nextCursor) return;
