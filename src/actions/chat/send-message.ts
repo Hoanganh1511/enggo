@@ -1,7 +1,10 @@
 "use server";
 
-import { sendMessage } from "@/lib/api/chat";
+import { sendMessage, type SendMessageInput } from "@/lib/api/chat";
 
-export async function sendMessageAction(conversationId: string, content: string) {
-  return sendMessage(conversationId, content);
+export async function sendMessageAction(
+  conversationId: string,
+  input: SendMessageInput,
+) {
+  return sendMessage(conversationId, input);
 }

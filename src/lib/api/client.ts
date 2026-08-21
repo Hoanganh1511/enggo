@@ -17,8 +17,11 @@ export async function apiFetch<T>(
   init?: RequestInit,
 ): Promise<T> {
   const session = await auth();
+  // FormData (upload file) khong duoc ep Content-Type: application/json -
+  // fetch tu sinh boundary dung khi body la FormData, ghi de vao se hong request.
+  const isFormData = init?.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(init?.headers as Record<string, string> | undefined),
   };
   if (session?.userId) {

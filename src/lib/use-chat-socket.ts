@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 import { getSocketTokenAction } from "@/actions/notifications/get-socket-token";
-import type { ApiChatMessage } from "./api/types";
+import type { ApiChatMessage, ApiPoll } from "./api/types";
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_CAREER_TREE_API_URL ?? "http://localhost:3001";
@@ -17,10 +17,17 @@ const SOCKET_URL =
 export function useChatSocket(
   enabled: boolean,
   onMessage: (m: ApiChatMessage) => void,
+  // Tuy chon - chi MessagesShell.tsx can (cap nhat so vote poll real-time tu
+  // phia con lai), TopHeaderBar.tsx chi dung onMessage nen khong truyen.
+  onPollUpdate?: (p: ApiPoll) => void,
 ) {
   const callbackRef = useRef(onMessage);
   useEffect(() => {
     callbackRef.current = onMessage;
+  });
+  const pollCallbackRef = useRef(onPollUpdate);
+  useEffect(() => {
+    pollCallbackRef.current = onPollUpdate;
   });
 
   useEffect(() => {
@@ -36,6 +43,9 @@ export function useChatSocket(
 
     socket.on("chat:message", (m: ApiChatMessage) => {
       callbackRef.current(m);
+    });
+    socket.on("chat:poll-update", (p: ApiPoll) => {
+      pollCallbackRef.current?.(p);
     });
 
     return () => {

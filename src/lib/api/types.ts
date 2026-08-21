@@ -404,11 +404,35 @@ export type ApiConversationUser = {
   verified: boolean;
 };
 
+export type ApiMessageType = "TEXT" | "IMAGE" | "FILE" | "VOICE" | "GIF" | "POLL";
+
+export type ApiPollOption = {
+  id: string;
+  text: string;
+  voteCount: number;
+  votedByMe: boolean;
+};
+
+export type ApiPoll = {
+  id: string;
+  messageId: string;
+  question: string;
+  options: ApiPollOption[];
+  totalVotes: number;
+};
+
 export type ApiChatMessage = {
   id: string;
   conversationId: string;
   senderId: string;
-  content: string;
+  type: ApiMessageType;
+  content: string | null;
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentMimeType: string | null;
+  attachmentSize: number | null;
+  durationSeconds: number | null;
+  poll: ApiPoll | null;
   createdAt: string;
   // Chi co gia tri tren su kien socket "chat:message" (xem ChatService.sendMessage
   // o backend) - REST (listMessages) khong tra ve 2 field nay. Dung de hien

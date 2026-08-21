@@ -5,24 +5,61 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import {
+  BarChart3,
+  File as FileIcon,
   FunnelIcon,
+  ImagePlus,
   LoaderCircle,
   MessageCircle,
+  Mic,
+  Paperclip,
+  Plus,
   Search,
   Send,
+  Smile,
   SquarePenIcon,
+  X,
 } from "lucide-react";
-import type { ApiChatMessage, ApiConversationSummary } from "@/lib/api/types";
+import type {
+  ApiChatMessage,
+  ApiConversationSummary,
+  ApiMessageType,
+  ApiPoll,
+} from "@/lib/api/types";
+import type { ApiGif } from "@/lib/api/gif";
+import type { ApiUploadResult } from "@/lib/api/upload";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast/toast-store";
 import { listConversationsAction } from "@/actions/chat/list-conversations";
 import { listMessagesAction } from "@/actions/chat/list-messages";
 import { sendMessageAction } from "@/actions/chat/send-message";
 import { markConversationReadAction } from "@/actions/chat/mark-conversation-read";
+import { uploadChatAttachmentAction } from "@/actions/chat/upload-attachment";
+import { votePollAction } from "@/actions/chat/vote-poll";
 import { useChatSocket } from "@/lib/use-chat-socket";
-import { formatRelativeTime, formatTimeOnly } from "@/lib/format-time";
+import { formatRelativeTime } from "@/lib/format-time";
+import { formatMessagePreview } from "@/lib/chat-message-preview";
 import { MessageInfoPanel } from "./MessageInfoPanel";
+import { MessageBubble } from "./MessageBubble";
+import { EmojiPickerPopover } from "./EmojiPickerPopover";
+import { GifPickerPopover } from "./GifPickerPopover";
+import { PollComposerModal } from "./PollComposerModal";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 type ChatTab = "all" | "favorites" | "groups" | "unread";
+type AttachmentKind = "image" | "file" | "voice";
+type PendingAttachment = {
+  kind: AttachmentKind;
+  file: File;
+  previewUrl: string;
+  uploading: boolean;
+  uploaded: ApiUploadResult | null;
+  durationSeconds?: number;
+};
 
 // "Yêu thích"/"Nhóm" CHUA CO du lieu that dang sau (ApiConversationSummary
 // chi co `otherUser` SO (1-1), khong co khai niem group/gan sao - xem
@@ -36,13 +73,16 @@ const CHAT_TABS: { key: ChatTab; label: string; disabled?: boolean }[] = [
   { key: "unread", label: "Chưa đọc" },
 ];
 
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 // Khung chinh trang /messages (port tu source treecareer-profile-universe-v2,
 // BO Spaces/InfoPanel theo pham vi MVP - xem page.tsx). 2 cot: danh sach hoi
 // thoai (trai) + khung chat cua hoi thoai dang chon (phai). Real-time qua
-// useChatSocket (event "chat:message"), khong polling. Ty le chu/khoang cach
-// tang len ca khoi + accent doi ve var(--primary) (cam, theo bang mau Frozen
-// mist) - truoc do con hardcode tim (#5b54d6/#5a4ccf) tu ban port dau, lech
-// het voi mau chu dao hien tai cua app.
+// useChatSocket (event "chat:message" + "chat:poll-update"), khong polling.
 export function MessagesShell() {
   const { data: session } = useSession();
   const myId = session?.userId as string | undefined;
@@ -70,6 +110,26 @@ export function MessagesShell() {
   });
 
   const [, startFetchTransition] = useTransition();
+
+  // Toolbar composer: dinh kem (anh/file/ghi am) - 1 attachment "cho" tai 1
+  // thoi diem (upload NGAY luc chon, "cho" den khi bam Gui - dung yeu cau
+  // "de o preview truoc"), popover Plus/emoji/gif, ghi am qua MediaRecorder.
+  const [pendingAttachment, setPendingAttachment] =
+    useState<PendingAttachment | null>(null);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [gifOpen, setGifOpen] = useState(false);
+  const [pollModalOpen, setPollModalOpen] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSeconds, setRecordSeconds] = useState(0);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordStreamRef = useRef<MediaStream | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordStartRef = useRef(0);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const composerBusy = pendingAttachment !== null || recording;
 
   function setActiveId(id: string) {
     setActiveIdState(id);
@@ -150,7 +210,12 @@ export function MessagesShell() {
       markConversationReadAction(m.conversationId).catch(() => {});
     }
   }, []);
-  useChatSocket(Boolean(myId), handleIncoming);
+  const handlePollUpdate = useCallback((p: ApiPoll) => {
+    setMessages(
+      (prev) => prev?.map((m) => (m.poll?.id === p.id ? { ...m, poll: p } : m)) ?? prev,
+    );
+  }, []);
+  useChatSocket(Boolean(myId), handleIncoming, handlePollUpdate);
 
   async function handleLoadOlder() {
     if (!activeId || !nextCursor || loadingOlder) return;
@@ -164,29 +229,200 @@ export function MessagesShell() {
     }
   }
 
+  function appendSentMessage(msg: ApiChatMessage) {
+    setMessages((prev) => (prev ? [...prev, msg] : prev));
+    setConversations((prev) => {
+      if (!prev) return prev;
+      const idx = prev.findIndex((c) => c.id === activeId);
+      if (idx === -1) return prev;
+      const updated: ApiConversationSummary = {
+        ...prev[idx],
+        lastMessage: msg,
+        updatedAt: msg.createdAt,
+      };
+      return [updated, ...prev.filter((c) => c.id !== activeId)];
+    });
+  }
+
+  function cancelPendingAttachment() {
+    if (pendingAttachment?.kind === "image" && pendingAttachment.previewUrl) {
+      URL.revokeObjectURL(pendingAttachment.previewUrl);
+    }
+    setPendingAttachment(null);
+  }
+
+  async function uploadAndStage(
+    file: File,
+    kind: AttachmentKind,
+    durationSeconds?: number,
+  ) {
+    const previewUrl = kind === "image" ? URL.createObjectURL(file) : "";
+    setPendingAttachment({
+      kind,
+      file,
+      previewUrl,
+      uploading: true,
+      uploaded: null,
+      durationSeconds,
+    });
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("kind", kind);
+      const uploaded = await uploadChatAttachmentAction(formData);
+      setPendingAttachment((prev) =>
+        prev?.file === file ? { ...prev, uploading: false, uploaded } : prev,
+      );
+    } catch {
+      toast.danger(
+        "Tải lên thất bại - có thể chưa cấu hình AWS S3 (AWS_REGION/AWS_S3_BUCKET).",
+      );
+      if (kind === "image") URL.revokeObjectURL(previewUrl);
+      setPendingAttachment(null);
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recordStreamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+      recordStartRef.current = Date.now();
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+        recordStreamRef.current = null;
+        const elapsedSec = Math.max(
+          1,
+          Math.round((Date.now() - recordStartRef.current) / 1000),
+        );
+        const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+        const file = new File([blob], `voice-${Date.now()}.webm`, {
+          type: "audio/webm",
+        });
+        void uploadAndStage(file, "voice", elapsedSec);
+      };
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecording(true);
+      setRecordSeconds(0);
+      recordTimerRef.current = setInterval(() => {
+        setRecordSeconds((s) => s + 1);
+      }, 1000);
+    } catch {
+      toast.danger("Không thể truy cập micro - kiểm tra quyền trình duyệt.");
+    }
+  }
+
+  function stopRecordingTimer() {
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+      recordTimerRef.current = null;
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    setRecording(false);
+    stopRecordingTimer();
+  }
+
+  function cancelRecording() {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
+    recordStreamRef.current?.getTracks().forEach((t) => t.stop());
+    recordStreamRef.current = null;
+    setRecording(false);
+    stopRecordingTimer();
+  }
+
   async function handleSend() {
+    if (!activeId || sending) return;
     const text = draft.trim();
-    if (!text || !activeId || sending) return;
+
+    if (pendingAttachment) {
+      if (pendingAttachment.uploading || !pendingAttachment.uploaded) return;
+      const type: ApiMessageType =
+        pendingAttachment.kind === "image"
+          ? "IMAGE"
+          : pendingAttachment.kind === "voice"
+            ? "VOICE"
+            : "FILE";
+      setSending(true);
+      try {
+        const msg = await sendMessageAction(activeId, {
+          type,
+          content: text || undefined,
+          attachmentUrl: pendingAttachment.uploaded.url,
+          attachmentName: pendingAttachment.uploaded.name,
+          attachmentMimeType: pendingAttachment.uploaded.mimeType,
+          attachmentSize: pendingAttachment.uploaded.size,
+          durationSeconds: pendingAttachment.durationSeconds,
+        });
+        appendSentMessage(msg);
+        setDraft("");
+        cancelPendingAttachment();
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
+    if (!text) return;
     setDraft("");
     setSending(true);
     try {
-      const msg = await sendMessageAction(activeId, text);
-      setMessages((prev) => (prev ? [...prev, msg] : prev));
-      setConversations((prev) => {
-        if (!prev) return prev;
-        const idx = prev.findIndex((c) => c.id === activeId);
-        if (idx === -1) return prev;
-        const updated: ApiConversationSummary = {
-          ...prev[idx],
-          lastMessage: msg,
-          updatedAt: msg.createdAt,
-        };
-        return [updated, ...prev.filter((c) => c.id !== activeId)];
-      });
+      const msg = await sendMessageAction(activeId, { content: text });
+      appendSentMessage(msg);
     } finally {
       setSending(false);
     }
   }
+
+  async function handleSelectGif(gif: ApiGif) {
+    if (!activeId || !gif.url) return;
+    setGifOpen(false);
+    setSending(true);
+    try {
+      const msg = await sendMessageAction(activeId, {
+        type: "GIF",
+        attachmentUrl: gif.url,
+        attachmentName: gif.title || "GIF",
+        attachmentMimeType: "image/gif",
+      });
+      appendSentMessage(msg);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleCreatePoll(poll: {
+    question: string;
+    options: { text: string }[];
+  }) {
+    if (!activeId) return;
+    const msg = await sendMessageAction(activeId, { type: "POLL", poll });
+    appendSentMessage(msg);
+  }
+
+  const handleVote = useCallback((pollId: string, optionId: string) => {
+    votePollAction(pollId, optionId)
+      .then((tally) => {
+        setMessages(
+          (prev) =>
+            prev?.map((m) => (m.poll?.id === pollId ? { ...m, poll: tally } : m)) ??
+            prev,
+        );
+      })
+      .catch(() => toast.danger("Không thể bình chọn, thử lại sau."));
+  }, []);
 
   const filtered =
     conversations?.filter((c) => {
@@ -312,7 +548,7 @@ export function MessagesShell() {
                   <div className="mt-1 flex justify-between gap-2">
                     <p className="truncate text-[13px] text-slate-600">
                       {c.lastMessage
-                        ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${c.lastMessage.content}`
+                        ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${formatMessagePreview(c.lastMessage)}`
                         : "Chưa có tin nhắn"}
                     </p>
                     {c.unreadCount > 0 && (
@@ -384,6 +620,7 @@ export function MessagesShell() {
                       key={m.id}
                       message={m}
                       isMine={m.senderId === myId}
+                      onVote={handleVote}
                     />
                   ))
                 )}
@@ -391,30 +628,194 @@ export function MessagesShell() {
             </div>
 
             <div className="border-t border-slate-100 p-5">
-              <div className="mx-auto flex max-w-[820px] items-end gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
-                <textarea
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleSend();
+              <div className="mx-auto flex max-w-[820px] flex-col gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
+                {pendingAttachment && (
+                  <AttachmentPreviewStrip
+                    attachment={pendingAttachment}
+                    onCancel={cancelPendingAttachment}
+                  />
+                )}
+                {recording && (
+                  <div className="flex items-center gap-2.5 rounded-xl bg-red-50 px-3.5 py-2.5">
+                    <span className="size-2 shrink-0 animate-pulse rounded-full bg-red-500" />
+                    <span className="text-[13px] font-semibold text-red-600">
+                      Đang ghi âm... {formatDuration(recordSeconds)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={cancelRecording}
+                      className="ml-auto cursor-pointer text-[13px] font-medium text-red-500 hover:text-red-700"
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopRecording}
+                      className="cursor-pointer rounded-lg bg-red-600 px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-red-700"
+                    >
+                      Dừng & Gửi
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-end gap-1.5">
+                  <div className="flex shrink-0 items-center gap-0.5 pb-1.5">
+                    <PopoverRoot open={plusOpen} onOpenChange={setPlusOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={composerBusy}
+                          title="Thêm"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Plus size={19} />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent open={plusOpen} align="start" sideOffset={10}>
+                        <div className="w-60 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPlusOpen(false);
+                              fileInputRef.current?.click();
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+                          >
+                            <Paperclip size={16} className="text-slate-500" />
+                            Đính kèm file
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPlusOpen(false);
+                              setPollModalOpen(true);
+                            }}
+                            className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+                          >
+                            <BarChart3 size={16} className="text-slate-500" />
+                            Tạo tin nhắn thăm dò ý kiến
+                          </button>
+                        </div>
+                      </PopoverContent>
+                    </PopoverRoot>
+
+                    <button
+                      type="button"
+                      disabled={composerBusy}
+                      title="Gửi ảnh"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ImagePlus size={18} />
+                    </button>
+
+                    <PopoverRoot open={emojiOpen} onOpenChange={setEmojiOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={composerBusy}
+                          title="Chọn sticker"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Smile size={18} />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent open={emojiOpen} align="start" sideOffset={10}>
+                        <EmojiPickerPopover
+                          onSelect={(emoji) => {
+                            setDraft((prev) => prev + emoji);
+                            setEmojiOpen(false);
+                          }}
+                        />
+                      </PopoverContent>
+                    </PopoverRoot>
+
+                    <PopoverRoot open={gifOpen} onOpenChange={setGifOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={composerBusy}
+                          title="Tìm GIF"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-[11px] font-black tracking-tight text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          GIF
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent open={gifOpen} align="start" sideOffset={10}>
+                        <GifPickerPopover onSelect={(gif) => void handleSelectGif(gif)} />
+                      </PopoverContent>
+                    </PopoverRoot>
+
+                    <button
+                      type="button"
+                      disabled={pendingAttachment !== null}
+                      title="Ghi âm tin nhắn thoại"
+                      onClick={() => (recording ? stopRecording() : void startRecording())}
+                      className={cn(
+                        "grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
+                        recording
+                          ? "bg-red-50 text-red-600 hover:bg-red-100"
+                          : "text-slate-500 hover:bg-slate-100 hover:text-[#182338]",
+                      )}
+                    >
+                      <Mic size={18} />
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSend();
+                      }
+                    }}
+                    rows={1}
+                    disabled={recording}
+                    className="max-h-24 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
+                    placeholder="Nhập tin nhắn..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleSend()}
+                    disabled={
+                      sending ||
+                      recording ||
+                      (pendingAttachment
+                        ? pendingAttachment.uploading
+                        : !draft.trim())
                     }
-                  }}
-                  rows={1}
-                  className="max-h-24 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400"
-                  placeholder="Nhập tin nhắn..."
-                />
-                <button
-                  type="button"
-                  onClick={() => void handleSend()}
-                  disabled={!draft.trim() || sending}
-                  className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ background: "var(--primary)" }}
-                >
-                  <Send size={19} />
-                </button>
+                    className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{ background: "var(--primary)" }}
+                  >
+                    <Send size={19} />
+                  </button>
+                </div>
               </div>
+
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadAndStage(file, "image");
+                  e.target.value = "";
+                }}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="*/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void uploadAndStage(file, "file");
+                  e.target.value = "";
+                }}
+              />
             </div>
           </>
         )}
@@ -423,6 +824,59 @@ export function MessagesShell() {
       {activeConversation?.otherUser && (
         <MessageInfoPanel otherUser={activeConversation.otherUser} />
       )}
+
+      <PollComposerModal
+        open={pollModalOpen}
+        onOpenChange={setPollModalOpen}
+        onSubmit={handleCreatePoll}
+      />
+    </div>
+  );
+}
+
+function AttachmentPreviewStrip({
+  attachment,
+  onCancel,
+}: {
+  attachment: PendingAttachment;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
+      {attachment.kind === "image" ? (
+        // eslint-disable-next-line @next/next/no-img-element -- preview tu File cuc bo (object URL), khong phai anh remote
+        <img
+          src={attachment.previewUrl}
+          alt={attachment.file.name}
+          className="size-12 shrink-0 rounded-lg object-cover"
+        />
+      ) : (
+        <div className="grid size-12 shrink-0 place-items-center rounded-lg bg-slate-200">
+          {attachment.kind === "voice" ? (
+            <Mic size={18} className="text-slate-500" />
+          ) : (
+            <FileIcon size={18} className="text-slate-500" />
+          )}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-medium text-[#182338]">
+          {attachment.file.name}
+        </p>
+        <p className="text-[11px] text-slate-500">
+          {attachment.uploading ? "Đang tải lên..." : "Sẵn sàng gửi"}
+        </p>
+      </div>
+      {attachment.uploading && (
+        <LoaderCircle size={16} className="shrink-0 animate-spin text-slate-400" />
+      )}
+      <button
+        type="button"
+        onClick={onCancel}
+        className="shrink-0 cursor-pointer rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+      >
+        <X size={16} />
+      </button>
     </div>
   );
 }
@@ -452,33 +906,5 @@ function ConversationAvatar({
     >
       {(name ?? "?").trim().charAt(0).toUpperCase()}
     </span>
-  );
-}
-
-function MessageBubble({
-  message,
-  isMine,
-}: {
-  message: ApiChatMessage;
-  isMine: boolean;
-}) {
-  return (
-    <div className={`mb-4 flex ${isMine ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[72%] rounded-2xl px-5 py-3 text-[15px] leading-6 ${
-          isMine
-            ? "rounded-br-md text-white"
-            : "rounded-bl-md bg-[#f0f1f3] text-[#182338]"
-        }`}
-        style={isMine ? { background: "var(--primary)" } : undefined}
-      >
-        {message.content}
-        <div
-          className={`mt-1.5 text-right text-[11px] ${isMine ? "text-white/70" : "text-slate-500"}`}
-        >
-          {formatTimeOnly(message.createdAt)}
-        </div>
-      </div>
-    </div>
   );
 }

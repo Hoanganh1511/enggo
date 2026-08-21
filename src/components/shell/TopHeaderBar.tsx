@@ -18,6 +18,11 @@ import { getUnreadNotificationCountAction } from "@/actions/notifications/get-un
 import { getUnreadChatCountAction } from "@/actions/chat/get-unread-count";
 import { useNotificationSocket } from "@/lib/use-notification-socket";
 import { useChatSocket } from "@/lib/use-chat-socket";
+import {
+  notifyNewChatMessage,
+  requestNotificationPermission,
+} from "@/lib/browser-notifications";
+import { formatMessagePreview } from "@/lib/chat-message-preview";
 import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 
 // Header ngang - thay AppSidebar.tsx (sidebar trai) theo yeu cau nguoi dung,
@@ -59,12 +64,27 @@ const TopHeaderBar = () => {
       .then((r) => setUnreadChatCount(r.count))
       .catch(() => {});
   }, [session?.username, pathname]);
+  // Xin quyen Notification 1 lan khi da dang nhap - trinh duyet chi hoi neu
+  // permission con "default" (xem browser-notifications.ts).
+  useEffect(() => {
+    if (!session?.username) return;
+    requestNotificationPermission();
+  }, [session?.username]);
   useChatSocket(
     Boolean(session?.username),
     useCallback(
       (m: ApiChatMessage) => {
         if (m.senderId !== session?.userId) {
           setUnreadChatCount((c) => c + 1);
+          // senderName/senderAvatarUrl chi co tren socket event (khong qua
+          // REST) - notifyNewChatMessage tu bo qua neu tab dang focus/chua
+          // duoc cap quyen (xem browser-notifications.ts).
+          notifyNewChatMessage({
+            senderName: m.senderName ?? "Tin nhắn mới",
+            content: formatMessagePreview(m),
+            avatarUrl: m.senderAvatarUrl,
+            conversationId: m.conversationId,
+          });
         }
       },
       [session?.userId],

@@ -3,6 +3,8 @@ import type {
   ApiChatMessage,
   ApiChatMessagePage,
   ApiConversationSummary,
+  ApiMessageType,
+  ApiPoll,
 } from "./types";
 
 export function listConversations(): Promise<ApiConversationSummary[]> {
@@ -34,13 +36,24 @@ export function listMessages(
   );
 }
 
+export type SendMessageInput = {
+  type?: ApiMessageType;
+  content?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentMimeType?: string;
+  attachmentSize?: number;
+  durationSeconds?: number;
+  poll?: { question: string; options: { text: string }[] };
+};
+
 export function sendMessage(
   conversationId: string,
-  content: string,
+  input: SendMessageInput,
 ): Promise<ApiChatMessage> {
   return apiFetch<ApiChatMessage>(`/conversations/${conversationId}/messages`, {
     method: "POST",
-    body: JSON.stringify({ content }),
+    body: JSON.stringify(input),
   });
 }
 
@@ -52,4 +65,11 @@ export function markConversationRead(conversationId: string) {
 
 export function getUnreadChatCount(): Promise<{ count: number }> {
   return apiFetch<{ count: number }>("/conversations/unread-count");
+}
+
+export function votePoll(pollId: string, optionId: string): Promise<ApiPoll> {
+  return apiFetch<ApiPoll>(`/polls/${pollId}/vote`, {
+    method: "POST",
+    body: JSON.stringify({ optionId }),
+  });
 }
