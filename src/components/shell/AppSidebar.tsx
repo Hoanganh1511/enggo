@@ -48,6 +48,10 @@ import { getUnreadNotificationCountAction } from "@/actions/notifications/get-un
 import { getUnreadChatCountAction } from "@/actions/chat/get-unread-count";
 import { useNotificationSocket } from "@/lib/use-notification-socket";
 import { useChatSocket } from "@/lib/use-chat-socket";
+import {
+  notifyNewChatMessage,
+  requestNotificationPermission,
+} from "@/lib/browser-notifications";
 import { signOutAction } from "@/actions/auth/sign-out-action";
 import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 
@@ -117,27 +121,10 @@ type SidebarRow =
 // Gop buildNavItems + buildHeaderCommands cu (TopHeaderBar.tsx ban truoc) -
 // username KHONG co (chua dang nhap/dang tai session) thi bo qua cac muc can
 // no (Bai dang/Workspace), giu dung hanh vi cu (nut van hien nhung khong lam
-// gi thay vi dieu huong sai URL).
-function buildRows(
-  username: string | undefined,
-  unreadCount: number,
-  unreadChatCount: number,
-  onUnreadCountChange: (count: number) => void,
-  liveNotification: ApiNotification | null,
-): SidebarRow[] {
-  const chatBadge =
-    unreadChatCount > 0
-      ? unreadChatCount > 9
-        ? "9+"
-        : String(unreadChatCount)
-      : undefined;
-  const notifBadge =
-    unreadCount > 0
-      ? unreadCount > 9
-        ? "9+"
-        : String(unreadCount)
-      : undefined;
-
+// gi thay vi dieu huong sai URL). Tin nhan/Thong bao KHONG con trong danh
+// sach nav nay nua - da chuyen len cum info user o dau sidebar (xem JSX
+// trong AppSidebar), theo yeu cau nguoi dung.
+function buildRows(username: string | undefined): SidebarRow[] {
   const rows: SidebarRow[] = [
     {
       kind: "link",
@@ -149,14 +136,14 @@ function buildRows(
     },
   ];
   if (username) {
-    rows.push({
-      kind: "link",
-      id: "posts",
-      title: "Bài đăng",
-      icon: FileText,
-      href: `/u/${username}/posts`,
-      matchPrefixes: [`/u/${username}/posts`],
-    });
+    // rows.push({
+    //   kind: "link",
+    //   id: "posts",
+    //   title: "Bài đăng",
+    //   icon: FileText,
+    //   href: `/u/${username}/posts`,
+    //   matchPrefixes: [`/u/${username}/posts`],
+    // });
     rows.push({
       kind: "link",
       id: "workspace",
@@ -172,27 +159,6 @@ function buildRows(
     title: "Khám phá",
     icon: LayoutDashboard,
     children: MY_TOWN_CHILDREN,
-  });
-  rows.push({
-    kind: "link",
-    id: "messages",
-    title: "Tin nhắn",
-    icon: MessageCircle,
-    href: "/messages",
-    badge: chatBadge,
-  });
-  rows.push({
-    kind: "flyout-panel",
-    id: "notifications",
-    title: "Thông báo",
-    icon: Bell,
-    badge: notifBadge,
-    panel: (
-      <NotificationsPanel
-        onUnreadCountChange={onUnreadCountChange}
-        liveNotification={liveNotification}
-      />
-    ),
   });
   rows.push({
     kind: "flyout-panel",
@@ -273,25 +239,47 @@ const AppSidebar = () => {
       .then((r) => setUnreadChatCount(r.count))
       .catch(() => {});
   }, [session?.username, pathname]);
+  // Xin quyen browser notification 1 lan sau khi dang nhap (chi hoi neu
+  // "default" - chua tung hoi/tu choi truoc do, xem requestNotificationPermission).
+  useEffect(() => {
+    if (session?.username) requestNotificationPermission();
+  }, [session?.username]);
   useChatSocket(
     Boolean(session?.username),
     useCallback(
       (m: ApiChatMessage) => {
         if (m.senderId !== session?.userId) {
           setUnreadChatCount((c) => c + 1);
+          // Chi bao "tab khong focus" (xem browser-notifications.ts) - neu
+          // nguoi dung dang mo dung /messages voi hoi thoai nay va tab dang
+          // focus thi khong can noti (da thay tin nhan ngay tren man hinh).
+          notifyNewChatMessage({
+            senderName: m.senderName ?? "Tin nhắn mới",
+            content: m.content,
+            avatarUrl: m.senderAvatarUrl,
+            conversationId: m.conversationId,
+          });
         }
       },
       [session?.userId],
     ),
   );
 
-  const rows = buildRows(
-    session?.username,
-    unreadCount,
-    unreadChatCount,
-    handleUnreadCountChange,
-    liveNotification,
-  );
+  const rows = buildRows(session?.username);
+
+  const chatBadge =
+    unreadChatCount > 0
+      ? unreadChatCount > 9
+        ? "9+"
+        : String(unreadChatCount)
+      : undefined;
+  const notifBadge =
+    unreadCount > 0
+      ? unreadCount > 9
+        ? "9+"
+        : String(unreadCount)
+      : undefined;
+  const [notifOpen, setNotifOpen] = useState(false);
 
   const handleNavigate = (href: string) => {
     if (pathname === href) return;
@@ -320,42 +308,100 @@ const AppSidebar = () => {
         <span className="truncate text-[15px] font-bold text-white">Career Tree</span>
       </div> */}
 
+      {/* Cum info user - avatar/ten/username + 2 icon Tin nhan/Thong bao
+          CUNG hang (chuyen tu danh sach nav chinh len day theo yeu cau nguoi
+          dung). KHONG con la 1 <Link> bao ngoai duy nhat nua (nested
+          <button> trong <a> khong hop le HTML) - avatar/ten van la link toi
+          trang ca nhan, 2 icon la element rieng ben canh. */}
       {session?.user && (
-        <Link
-          href={session.username ? `/u/${session.username}` : "#"}
-          className="mx-3 mb-3 flex shrink-0 items-center gap-2.5 rounded-lg p-2.5 transition-colors duration-150 ease-out hover:bg-sidebar-hover"
-        >
-          <Avatar user={session.user} size={38} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-semibold text-white">
-              {session.user.name ?? "Người dùng"}
-            </p>
-            {session.username && (
-              <p
-                className="truncate text-[11.5px]"
-                style={{ color: "rgba(255,255,255,0.5)" }}
-              >
-                @{session.username}
-              </p>
-            )}
-            {/* "Online" chi mang y nghia "ban dang mo app luc nay" (tu than
-                dung, khong phai presence that cua nguoi khac) - khong phai du
-                lieu gia, khac han fake status ve NGUOI KHAC. */}
-            <span
-              className="mt-0.5 flex items-center gap-1 text-[11px] font-medium"
-              style={{ color: "#34d399" }}
+        <div className="mx-3 my-3 flex shrink-0 flex-col gap-2 rounded-lg p-2.5">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href={session.username ? `/u/${session.username}` : "#"}
+              className="-m-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1 transition-colors duration-150 ease-out hover:bg-sidebar-hover"
             >
-              <span
-                className="size-1.5 shrink-0 rounded-full"
-                style={{ background: "#34d399" }}
-              />
-              Online
-            </span>
+              <Avatar user={session.user} size={38} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13.5px] font-semibold text-white">
+                  {session.user.name ?? "Người dùng"}
+                </p>
+                {session.username && (
+                  <p
+                    className="truncate text-[11.5px]"
+                    style={{ color: "rgba(255,255,255,0.5)" }}
+                  >
+                    @{session.username}
+                  </p>
+                )}
+              </div>
+            </Link>
+
+            <Link
+              href="/messages"
+              title="Tin nhắn"
+              className="relative flex size-7.5 shrink-0 items-center justify-center rounded-md text-white/60 transition-colors duration-150 ease-out hover:bg-sidebar-hover hover:text-white"
+            >
+              <MessageCircle size={15} strokeWidth={1.85} />
+              {chatBadge && (
+                <span
+                  className="absolute -top-1 -right-1 grid h-3.5 min-w-3.5 place-items-center rounded-full px-0.5 text-[8px] font-semibold text-white"
+                  style={{ background: "var(--notification)" }}
+                >
+                  {chatBadge}
+                </span>
+              )}
+            </Link>
+
+            <PopoverRoot open={notifOpen} onOpenChange={setNotifOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  title="Thông báo"
+                  className="relative flex size-7.5 shrink-0 cursor-pointer items-center justify-center rounded-md text-white/60 transition-colors duration-150 ease-out hover:bg-sidebar-hover hover:text-white"
+                >
+                  <Bell size={15} strokeWidth={1.85} />
+                  {notifBadge && (
+                    <span
+                      className="absolute -top-1 -right-1 grid h-3.5 min-w-3.5 place-items-center rounded-full px-0.5 text-[8px] font-semibold text-white"
+                      style={{ background: "var(--notification)" }}
+                    >
+                      {notifBadge}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                open={notifOpen}
+                side="right"
+                align="start"
+                sideOffset={12}
+                className="z-50"
+              >
+                <NotificationsPanel
+                  onUnreadCountChange={handleUnreadCountChange}
+                  liveNotification={liveNotification}
+                />
+              </PopoverContent>
+            </PopoverRoot>
           </div>
-        </Link>
+
+          {/* "Online" chi mang y nghia "ban dang mo app luc nay" (tu than
+              dung, khong phai presence that cua nguoi khac) - khong phai du
+              lieu gia, khac han fake status ve NGUOI KHAC. */}
+          <span
+            className="flex items-center gap-1 pl-1 text-[11px] font-medium"
+            style={{ color: "#34d399" }}
+          >
+            <span
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ background: "#34d399" }}
+            />
+            Online
+          </span>
+        </div>
       )}
 
-      <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
+      <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
         {rows.map((row) => {
           const active =
             row.kind === "link"
@@ -390,10 +436,7 @@ const AppSidebar = () => {
                 key={row.id}
                 type="button"
                 onClick={() => handleNavigate(row.href)}
-                className={cn(
-                  rowClass,
-                  "hover:bg-sidebar-hover hover:text-white",
-                )}
+                className={cn(rowClass, "hover:underline hover:text-white")}
                 style={style}
               >
                 {isItemPending ? (

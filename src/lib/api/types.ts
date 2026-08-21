@@ -410,6 +410,11 @@ export type ApiChatMessage = {
   senderId: string;
   content: string;
   createdAt: string;
+  // Chi co gia tri tren su kien socket "chat:message" (xem ChatService.sendMessage
+  // o backend) - REST (listMessages) khong tra ve 2 field nay. Dung de hien
+  // browser Notification ma khong can fetch rieng thong tin nguoi gui.
+  senderName?: string | null;
+  senderAvatarUrl?: string | null;
 };
 
 export type ApiConversationSummary = {
