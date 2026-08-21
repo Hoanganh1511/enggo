@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ConversationAvatar } from "./ConversationAvatar";
 import {
+  ArrowLeft,
   BarChart3,
   BellOff,
   Check,
@@ -278,6 +279,16 @@ export function MessagesShell() {
     if (pendingAttachment) cancelPendingAttachment();
     if (recording) cancelRecording();
     router.replace(`/messages?c=${id}`, { scroll: false });
+  }
+
+  // Nut "<-" chi hien tren mobile (xem JSX header khung chat) - danh sach
+  // hoi thoai va khung chat KHONG hien dong thoi tren man hep (xem className
+  // 2 panel <section>/<main> o duoi), nen can 1 cach quay lai danh sach.
+  // KHONG reset messages/draft/... nhu setActiveId() - chi "an" khung chat
+  // di, giu nguyen state phong khi nguoi dung mo lai DUNG hoi thoai nay.
+  function handleBackToList() {
+    setActiveIdState(null);
+    router.replace("/messages", { scroll: false });
   }
 
   // Tai danh sach hoi thoai 1 lan luc mount - neu URL co san ?c=<id> (dieu
@@ -968,8 +979,17 @@ export function MessagesShell() {
 
   return (
     <div className="flex h-full overflow-hidden border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
-      {/* Danh sach hoi thoai */}
-      <section className="flex w-[380px] shrink-0 flex-col border-r border-slate-200">
+      {/* Danh sach hoi thoai - man hep (< md) chi hien 1 trong 2 panel (danh
+          sach HOAC khung chat), khong hien song song nhu desktop. activeId
+          quyet dinh panel nao hien - da co san (dung de biet hoi thoai nao
+          dang mo), tai dung lam luon "che do xem" tren mobile, khong can
+          them state rieng. */}
+      <section
+        className={cn(
+          "flex w-full shrink-0 flex-col md:w-[380px] md:border-r md:border-slate-200",
+          activeId && "hidden md:flex",
+        )}
+      >
         <div className="border-b border-slate-100 p-6">
           <div className="flex items-center justify-between">
             <h1 className="text-[28px] font-bold text-[#182338]">Tin nhắn</h1>
@@ -1169,8 +1189,14 @@ export function MessagesShell() {
         </div>
       </section>
 
-      {/* Khung chat */}
-      <main className="relative flex min-w-0 flex-1 flex-col bg-white">
+      {/* Khung chat - an hoan toan tren mobile khi CHUA chon hoi thoai (xem
+          comment o <section> danh sach hoi thoai o tren). */}
+      <main
+        className={cn(
+          "relative flex min-w-0 flex-1 flex-col bg-white",
+          !activeId && "hidden md:flex",
+        )}
+      >
         {conversations === null ? (
           <ChatWindowSkeleton />
         ) : !activeConversation ? (
@@ -1186,6 +1212,14 @@ export function MessagesShell() {
           <>
             <div className="relative z-10 flex h-21 shrink-0 items-center justify-between gap-3.5 border-b border-slate-100 bg-white px-5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
               <div className="flex min-w-0 items-center gap-3.5">
+                <button
+                  type="button"
+                  title="Quay lại danh sách"
+                  onClick={handleBackToList}
+                  className="-ml-1.5 grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] md:hidden"
+                >
+                  <ArrowLeft size={20} />
+                </button>
                 <ConversationAvatar
                   name={activeConversation.otherUser?.name}
                   avatarUrl={activeConversation.otherUser?.avatarUrl}
@@ -1265,7 +1299,7 @@ export function MessagesShell() {
                 }
               }}
               className={cn(
-                "flex-1 overflow-y-auto px-8 pt-6 pb-30",
+                "flex-1 overflow-y-auto px-4 pt-6 pb-30 md:px-8",
                 getChatBackground(chatBgId).base,
               )}
               style={getChatBackground(chatBgId).patternStyle}
@@ -1405,7 +1439,7 @@ export function MessagesShell() {
               </div>
             )}
 
-            <div className="absolute bottom-0 left-0 w-full p-5">
+            <div className="absolute bottom-0 left-0 w-full p-3 md:p-5">
               <div className=" flex  flex-col gap-2.5 rounded-lg border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
                 <AnimatePresence initial={false}>
                   {replyTarget && (
