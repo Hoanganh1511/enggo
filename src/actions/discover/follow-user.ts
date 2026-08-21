@@ -1,11 +1,24 @@
 "use server";
-import { followUser, unfollowUser, getFollowing, getFollowers } from "@/lib/api/follow";
+import {
+  followUser,
+  unfollowUser,
+  blockUser,
+  unblockUser,
+  getFollowing,
+  getFollowers,
+} from "@/lib/api/follow";
 
 export async function followUserAction(username: string) {
   return followUser(username);
 }
 export async function unfollowUserAction(username: string) {
   return unfollowUser(username);
+}
+export async function blockUserAction(username: string) {
+  return blockUser(username);
+}
+export async function unblockUserAction(username: string) {
+  return unblockUser(username);
 }
 
 // "Xem them" o trang danh sach Dang theo doi/Nguoi theo doi - client component

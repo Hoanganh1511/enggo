@@ -8,6 +8,14 @@ export function unfollowUser(username: string): Promise<void> {
   return apiFetch<void>(`/follow/${username}`, { method: "DELETE" });
 }
 
+export function blockUser(username: string): Promise<void> {
+  return apiFetch<void>(`/follow/block/${username}`, { method: "POST" });
+}
+
+export function unblockUser(username: string): Promise<void> {
+  return apiFetch<void>(`/follow/block/${username}`, { method: "DELETE" });
+}
+
 export type FollowListItem = {
   id: string;
   username: string | null;

@@ -20,6 +20,7 @@ import { sendMessageAction } from "@/actions/chat/send-message";
 import { markConversationReadAction } from "@/actions/chat/mark-conversation-read";
 import { useChatSocket } from "@/lib/use-chat-socket";
 import { formatRelativeTime, formatTimeOnly } from "@/lib/format-time";
+import { MessageInfoPanel } from "./MessageInfoPanel";
 
 type ChatTab = "all" | "favorites" | "groups" | "unread";
 
@@ -418,6 +419,10 @@ export function MessagesShell() {
           </>
         )}
       </main>
+
+      {activeConversation?.otherUser && (
+        <MessageInfoPanel otherUser={activeConversation.otherUser} />
+      )}
     </div>
   );
 }
