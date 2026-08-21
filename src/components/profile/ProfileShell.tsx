@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ProfileSidebar } from "./ProfileSidebar";
+import { ProfileContext } from "./profile-context";
 import { UserProfileApiShape } from "@/lib/api/users";
 import {
   followUserAction,
@@ -62,29 +63,39 @@ const ProfileShell = ({
     }
   }
 
+  const mergedProfile = { ...profile, followerCount };
+
   return (
     // min-h tinh bang 100vh tru chieu cao TopHeaderBar (h-14 = 3.5rem) va
     // padding doc cua MainContentArea (pt-4 + pb-4 = 2rem) - dam bao vung
     // giay ben phai luon it nhat cham day viewport, khong bi ngan cut nham
     // khi trang it noi dung.
-    <div className="flex min-h-[calc(100vh-5.5rem)] bg-[#f8f8f5]">
-      <ProfileSidebar
-        profile={{ ...profile, followerCount }}
-        following={following}
-        pending={pending}
-        onToggleFollow={handleToggleFollow}
-        activeHref={activeHref}
-        onNavClick={handleNavClick}
-      />
+    <ProfileContext.Provider
+      value={{
+        profile: mergedProfile,
+        following,
+        pending,
+        onToggleFollow: handleToggleFollow,
+        activeHref,
+        onNavClick: handleNavClick,
+      }}
+    >
+      <div className="flex min-h-[calc(100vh-5.5rem)] bg-[#f8f8f5]">
+        <ProfileSidebar
+          profile={mergedProfile}
+          activeHref={activeHref}
+          onNavClick={handleNavClick}
+        />
 
-      <main
-        className={`min-w-0 flex-1 transition-opacity duration-150 ease-out ${
-          isPending ? "pointer-events-none opacity-50" : "opacity-100"
-        }`}
-      >
-        {children}
-      </main>
-    </div>
+        <main
+          className={`min-w-0 flex-1 transition-opacity duration-150 ease-out ${
+            isPending ? "pointer-events-none opacity-50" : "opacity-100"
+          }`}
+        >
+          {children}
+        </main>
+      </div>
+    </ProfileContext.Provider>
   );
 };
 

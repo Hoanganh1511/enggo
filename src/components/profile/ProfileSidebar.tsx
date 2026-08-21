@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Activity,
   Bookmark,
@@ -16,9 +14,7 @@ import {
   Home,
   ListVideo,
   LogOut,
-  MessageSquare,
   Moon,
-  Plus,
   Rocket,
   Settings,
   Sparkles,
@@ -27,8 +23,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { signOutAction } from "@/actions/auth/sign-out-action";
-import { createConversationAction } from "@/actions/chat/create-conversation";
-import { formatCompact } from "@/lib/format-number";
 import type { UserProfileApiShape } from "@/lib/api/users";
 
 type NavItem = {
@@ -91,35 +85,16 @@ const COMING_SOON_ITEMS: { label: string; icon: LucideIcon }[] = [
 
 export function ProfileSidebar({
   profile,
-  following,
-  pending,
-  onToggleFollow,
   activeHref,
   onNavClick,
 }: {
   profile: UserProfileApiShape;
-  following: boolean;
-  pending: boolean;
-  onToggleFollow: () => void;
   activeHref: string;
   onNavClick: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
 }) {
   const realItems = buildRealNavItems(profile.username ?? "").filter(
     (item) => !item.selfOnly || profile.isSelf,
   );
-  const router = useRouter();
-  const [messaging, setMessaging] = useState(false);
-
-  async function handleMessage() {
-    if (!profile.username || messaging) return;
-    setMessaging(true);
-    try {
-      const conversation = await createConversationAction(profile.username);
-      router.push(`/messages?c=${conversation.id}`);
-    } finally {
-      setMessaging(false);
-    }
-  }
 
   return (
     <aside className="hidden min-h-[calc(100vh-68px)] w-[240px] shrink-0 flex-col bg-[#111b2d] text-white lg:flex">
@@ -144,60 +119,12 @@ export function ProfileSidebar({
             “{profile.bio}”
           </p>
         )}
-
-        {profile.isSelf ? (
-          <Link
-            href="/settings"
-            className="mt-5 flex h-9 w-full items-center justify-center gap-1.5 rounded-full bg-[#5a4ccf] text-[12px] font-semibold text-white transition-opacity duration-150 ease-out hover:opacity-90"
-          >
-            <Settings size={13} strokeWidth={2} />
-            Chỉnh sửa hồ sơ
-          </Link>
-        ) : (
-          <div className="mt-5 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onToggleFollow}
-              disabled={pending}
-              className={`flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full text-[12px] font-semibold transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60 ${
-                following
-                  ? "border border-white/20 bg-white/5 text-white hover:bg-white/10"
-                  : "bg-[#5a4ccf] text-white hover:opacity-90"
-              }`}
-            >
-              {!following && <Plus size={13} strokeWidth={2.5} />}
-              {following ? "Đang theo dõi" : "Theo dõi"}
-            </button>
-            <button
-              type="button"
-              onClick={handleMessage}
-              disabled={messaging}
-              title="Nhắn tin"
-              className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full border border-white/20 bg-white/5 text-white transition-colors duration-150 ease-out hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <MessageSquare size={14} strokeWidth={1.9} />
-            </button>
-          </div>
-        )}
       </div>
 
-      <div className="mx-5 grid grid-cols-3 border-y border-white/10 py-4 text-center">
-        <Stat value={profile.postCount} label="Bài viết" />
-        <StatLink
-          href={`/u/${profile.username}/following`}
-          value={profile.followingCount}
-          label="Đang theo dõi"
-          active={activeHref === `/u/${profile.username}/following`}
-          onNavClick={onNavClick}
-        />
-        <StatLink
-          href={`/u/${profile.username}/followers`}
-          value={profile.followerCount}
-          label="Người theo dõi"
-          active={activeHref === `/u/${profile.username}/followers`}
-          onNavClick={onNavClick}
-        />
-      </div>
+      {/* Nut Theo doi/Nhan tin/Chinh sua ho so + 3 stat (Bai viet/Dang theo
+          doi/Nguoi theo doi) da CHUYEN sang page.tsx (tab "Trang chu") -
+          doc profile/following/pending qua useProfileContext() thay vi nhan
+          props o day, xem profile-context.tsx. */}
 
       <nav className="mt-4 space-y-1 px-3">
         {realItems.map((item) => {
@@ -278,43 +205,5 @@ export function ProfileSidebar({
         </div>
       )}
     </aside>
-  );
-}
-
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
-    <div>
-      <div className="text-[15px] font-bold">{formatCompact(value)}</div>
-      <div className="mt-1 text-[9px] text-slate-400">{label}</div>
-    </div>
-  );
-}
-
-function StatLink({
-  href,
-  value,
-  label,
-  active,
-  onNavClick,
-}: {
-  href: string;
-  value: number;
-  label: string;
-  active: boolean;
-  onNavClick: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={(e) => onNavClick(e, href)}
-      className="block hover:opacity-80"
-    >
-      <div
-        className={`text-[15px] font-bold ${active ? "text-[#aaa1ff]" : ""}`}
-      >
-        {formatCompact(value)}
-      </div>
-      <div className="mt-1 text-[9px] text-slate-400">{label}</div>
-    </Link>
   );
 }
