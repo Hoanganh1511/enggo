@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Merienda, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
@@ -8,9 +8,10 @@ import { AuthSessionProvider } from "@/components/providers/session-provider";
 // (Be Vietnam Pro cho PostCard, Work Sans cho breadcrumb Workspace, Patrick
 // Hand cho Profile/Sidebar) da BO theo yeu cau nguoi dung - toan app gio
 // dung dung 1 font Inter, khong con ngoai le.
-const inter = Inter({
+const inter = Merienda({
   variable: "--font-inter",
-  subsets: ["latin", "latin-ext"],
+  weight: "400",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
