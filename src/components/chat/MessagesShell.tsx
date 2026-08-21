@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import {
-  Edit2Icon,
   FunnelIcon,
   LoaderCircle,
   MessageCircle,
@@ -39,7 +38,10 @@ const CHAT_TABS: { key: ChatTab; label: string; disabled?: boolean }[] = [
 // Khung chinh trang /messages (port tu source treecareer-profile-universe-v2,
 // BO Spaces/InfoPanel theo pham vi MVP - xem page.tsx). 2 cot: danh sach hoi
 // thoai (trai) + khung chat cua hoi thoai dang chon (phai). Real-time qua
-// useChatSocket (event "chat:message"), khong polling.
+// useChatSocket (event "chat:message"), khong polling. Ty le chu/khoang cach
+// tang len ca khoi + accent doi ve var(--primary) (cam, theo bang mau Frozen
+// mist) - truoc do con hardcode tim (#5b54d6/#5a4ccf) tu ban port dau, lech
+// het voi mau chu dao hien tai cua app.
 export function MessagesShell() {
   const { data: session } = useSession();
   const myId = session?.userId as string | undefined;
@@ -194,25 +196,24 @@ export function MessagesShell() {
       return matchesQuery && matchesTab;
     }) ?? [];
   const unreadTotal =
-    conversations?.reduce((sum, c) => sum + (c.unreadCount > 0 ? 1 : 0), 0) ?? 0;
+    conversations?.reduce((sum, c) => sum + (c.unreadCount > 0 ? 1 : 0), 0) ??
+    0;
   const activeConversation = conversations?.find((c) => c.id === activeId);
 
   return (
-    <div className="flex h-full min-h-[520px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
+    <div className="flex h-[calc(100vh-140px)] min-h-[680px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
       {/* Danh sach hoi thoai */}
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-slate-200">
-        <div className="border-b border-slate-100 p-5">
+      <section className="flex w-[380px] shrink-0 flex-col border-r border-slate-200">
+        <div className="border-b border-slate-100 p-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-[24px] font-semibold text-[#182338]">
-              Tin nhắn
-            </h1>
-            <div className="flex items-center gap-x-2">
-              <FunnelIcon className="size-4.5" strokeWidth={2} />
-              <SquarePenIcon className="size-4.5" strokeWidth={2} />
+            <h1 className="text-[28px] font-bold text-[#182338]">Tin nhắn</h1>
+            <div className="flex items-center gap-x-3 text-slate-500">
+              <FunnelIcon className="size-5.5" strokeWidth={2} />
+              <SquarePenIcon className="size-5.5" strokeWidth={2} />
             </div>
           </div>
 
-          <div className="mt-3 flex items-center gap-4 border-b border-slate-100">
+          <div className="mt-4 flex items-center gap-5 border-b border-slate-100">
             {CHAT_TABS.map((t) => {
               const active = !t.disabled && tab === t.key;
               const badgeCount =
@@ -229,22 +230,23 @@ export function MessagesShell() {
                   title={t.disabled ? "Sắp có" : undefined}
                   onClick={() => setTab(t.key)}
                   className={cn(
-                    "relative flex items-center gap-1.5 pb-2.5 text-[12px] transition-colors duration-150 ease-out",
+                    "relative flex items-center gap-1.5 pb-3 text-[14px] transition-colors duration-150 ease-out",
                     t.disabled
                       ? "cursor-not-allowed text-slate-300"
                       : active
                         ? "cursor-pointer font-semibold"
-                        : "cursor-pointer font-medium text-slate-400 hover:text-slate-600",
+                        : "cursor-pointer font-medium text-slate-500 hover:text-slate-700",
                   )}
                   style={active ? { color: "var(--primary)" } : undefined}
                 >
                   {t.label}
                   {badgeCount > 0 && (
                     <span
-                      className="grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-semibold text-white"
+                      className="grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-semibold text-white"
                       style={{
                         background: "var(--primary)",
-                        boxShadow: "0 2px 6px color-mix(in srgb, var(--primary) 45%, transparent)",
+                        boxShadow:
+                          "0 2px 6px color-mix(in srgb, var(--primary) 45%, transparent)",
                       }}
                     >
                       {badgeCount}
@@ -261,12 +263,12 @@ export function MessagesShell() {
             })}
           </div>
 
-          <div className="mt-3 flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-[#fafbfc] px-3">
-            <Search size={15} className="text-slate-400" />
+          <div className="mt-4 flex h-11 items-center gap-2.5 rounded-xl border border-slate-200 bg-[#fafbfc] px-3.5">
+            <Search size={17} className="shrink-0 text-slate-500" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-transparent text-[12px] outline-none placeholder:text-slate-400"
+              className="w-full bg-transparent text-[14px] text-[#182338] outline-none placeholder:text-slate-400"
               placeholder="Tìm kiếm hội thoại..."
             />
           </div>
@@ -274,12 +276,12 @@ export function MessagesShell() {
         <div className="flex-1 overflow-y-auto p-3">
           {conversations === null ? (
             <div className="flex justify-center py-10">
-              <LoaderCircle size={18} className="animate-spin text-slate-400" />
+              <LoaderCircle size={20} className="animate-spin text-slate-400" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-              <MessageCircle size={22} className="text-slate-300" />
-              <p className="text-[11px] text-slate-400">
+            <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
+              <MessageCircle size={26} className="text-slate-300" />
+              <p className="text-[13px] text-slate-500">
                 Chưa có hội thoại nào.
               </p>
             </div>
@@ -289,7 +291,7 @@ export function MessagesShell() {
                 key={c.id}
                 type="button"
                 onClick={() => setActiveId(c.id)}
-                className={`flex w-full gap-3 border-b border-slate-100 p-4 text-left transition ${
+                className={`flex w-full gap-3.5 rounded-lg p-4 text-left transition ${
                   activeId === c.id ? "bg-[#f3f3fc]" : "hover:bg-slate-50"
                 }`}
               >
@@ -299,21 +301,21 @@ export function MessagesShell() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between gap-2">
-                    <b className="truncate text-[12px] text-[#182338]">
+                    <b className="truncate text-[15px] text-[#182338]">
                       {c.otherUser?.name ?? "Người dùng"}
                     </b>
-                    <span className="shrink-0 text-[9px] text-slate-400">
+                    <span className="shrink-0 text-[11px] text-slate-500">
                       {formatRelativeTime(c.updatedAt)}
                     </span>
                   </div>
                   <div className="mt-1 flex justify-between gap-2">
-                    <p className="truncate text-[10px] text-slate-500">
+                    <p className="truncate text-[13px] text-slate-600">
                       {c.lastMessage
                         ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${c.lastMessage.content}`
                         : "Chưa có tin nhắn"}
                     </p>
                     {c.unreadCount > 0 && (
-                      <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-[#ee7068] px-1 text-[8px] text-white">
+                      <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#ee7068] px-1.5 text-[10px] font-semibold text-white">
                         {c.unreadCount}
                       </span>
                     )}
@@ -329,39 +331,40 @@ export function MessagesShell() {
       <main className="flex min-w-0 flex-1 flex-col bg-white">
         {!activeConversation ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-            <MessageCircle size={26} className="text-slate-300" />
-            <p className="text-[12px] text-slate-400">
+            <MessageCircle size={30} className="text-slate-300" />
+            <p className="text-[14px] text-slate-500">
               Chọn 1 hội thoại để bắt đầu
             </p>
           </div>
         ) : (
           <>
-            <div className="flex h-[72px] shrink-0 items-center gap-3 border-b border-slate-100 px-6">
+            <div className="flex h-[84px] shrink-0 items-center gap-3.5 border-b border-slate-100 px-8">
               <ConversationAvatar
                 name={activeConversation.otherUser?.name}
                 avatarUrl={activeConversation.otherUser?.avatarUrl}
               />
               <div>
-                <b className="text-[14px] text-[#182338]">
+                <b className="text-[17px] text-[#182338]">
                   {activeConversation.otherUser?.name ?? "Người dùng"}
                 </b>
                 {activeConversation.otherUser?.username && (
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[13px] text-slate-500">
                     @{activeConversation.otherUser.username}
                   </p>
                 )}
               </div>
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5">
-              <div className="mx-auto max-w-[720px]">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
+              <div className="mx-auto max-w-[820px]">
                 {nextCursor && (
                   <div className="mb-4 flex justify-center">
                     <button
                       type="button"
                       onClick={handleLoadOlder}
                       disabled={loadingOlder}
-                      className="cursor-pointer text-[11px] font-medium text-[#5a4ccf] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="cursor-pointer text-[13px] font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ color: "var(--primary)" }}
                     >
                       {loadingOlder ? "Đang tải..." : "Xem tin nhắn cũ hơn"}
                     </button>
@@ -370,7 +373,7 @@ export function MessagesShell() {
                 {messages === null ? (
                   <div className="flex justify-center py-10">
                     <LoaderCircle
-                      size={18}
+                      size={20}
                       className="animate-spin text-slate-400"
                     />
                   </div>
@@ -386,8 +389,8 @@ export function MessagesShell() {
               </div>
             </div>
 
-            <div className="border-t border-slate-100 p-4">
-              <div className="mx-auto flex max-w-[720px] items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
+            <div className="border-t border-slate-100 p-5">
+              <div className="mx-auto flex max-w-[820px] items-end gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
                 <textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
@@ -398,16 +401,17 @@ export function MessagesShell() {
                     }
                   }}
                   rows={1}
-                  className="max-h-24 flex-1 resize-none bg-transparent px-2 py-2 text-[12px] outline-none placeholder:text-slate-400"
+                  className="max-h-24 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400"
                   placeholder="Nhập tin nhắn..."
                 />
                 <button
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!draft.trim() || sending}
-                  className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-xl bg-[#5b54d6] text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ background: "var(--primary)" }}
                 >
-                  <Send size={16} />
+                  <Send size={19} />
                 </button>
               </div>
             </div>
@@ -430,14 +434,17 @@ function ConversationAvatar({
       <Image
         src={avatarUrl}
         alt={name ?? ""}
-        width={44}
-        height={44}
-        className="size-11 shrink-0 rounded-full object-cover"
+        width={52}
+        height={52}
+        className="size-13 shrink-0 rounded-full object-cover"
       />
     );
   }
   return (
-    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#f1effb] text-[15px] font-semibold text-[#5a4ccf]">
+    <span
+      className="grid size-13 shrink-0 place-items-center rounded-full text-[18px] font-semibold text-white"
+      style={{ background: "var(--primary)" }}
+    >
       {(name ?? "?").trim().charAt(0).toUpperCase()}
     </span>
   );
@@ -451,17 +458,18 @@ function MessageBubble({
   isMine: boolean;
 }) {
   return (
-    <div className={`mb-3 flex ${isMine ? "justify-end" : "justify-start"}`}>
+    <div className={`mb-4 flex ${isMine ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-[12px] leading-5 ${
+        className={`max-w-[72%] rounded-2xl px-5 py-3 text-[15px] leading-6 ${
           isMine
-            ? "rounded-br-md bg-[#5b54d6] text-white"
-            : "rounded-bl-md bg-[#f0f1f3] text-slate-700"
+            ? "rounded-br-md text-white"
+            : "rounded-bl-md bg-[#f0f1f3] text-[#182338]"
         }`}
+        style={isMine ? { background: "var(--primary)" } : undefined}
       >
         {message.content}
         <div
-          className={`mt-1 text-right text-[8px] ${isMine ? "text-white/60" : "text-slate-400"}`}
+          className={`mt-1.5 text-right text-[11px] ${isMine ? "text-white/70" : "text-slate-500"}`}
         >
           {formatTimeOnly(message.createdAt)}
         </div>
