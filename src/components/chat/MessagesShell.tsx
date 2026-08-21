@@ -212,7 +212,8 @@ export function MessagesShell() {
   }, []);
   const handlePollUpdate = useCallback((p: ApiPoll) => {
     setMessages(
-      (prev) => prev?.map((m) => (m.poll?.id === p.id ? { ...m, poll: p } : m)) ?? prev,
+      (prev) =>
+        prev?.map((m) => (m.poll?.id === p.id ? { ...m, poll: p } : m)) ?? prev,
     );
   }, []);
   useChatSocket(Boolean(myId), handleIncoming, handlePollUpdate);
@@ -299,7 +300,9 @@ export function MessagesShell() {
           1,
           Math.round((Date.now() - recordStartRef.current) / 1000),
         );
-        const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
+        const blob = new Blob(recordedChunksRef.current, {
+          type: "audio/webm",
+        });
         const file = new File([blob], `voice-${Date.now()}.webm`, {
           type: "audio/webm",
         });
@@ -417,8 +420,9 @@ export function MessagesShell() {
       .then((tally) => {
         setMessages(
           (prev) =>
-            prev?.map((m) => (m.poll?.id === pollId ? { ...m, poll: tally } : m)) ??
-            prev,
+            prev?.map((m) =>
+              m.poll?.id === pollId ? { ...m, poll: tally } : m,
+            ) ?? prev,
         );
       })
       .catch(() => toast.danger("Không thể bình chọn, thử lại sau."));
@@ -472,7 +476,7 @@ export function MessagesShell() {
                       ? "cursor-not-allowed text-slate-300"
                       : active
                         ? "cursor-pointer font-semibold"
-                        : "cursor-pointer font-medium text-slate-500 hover:text-slate-700",
+                        : "cursor-pointer font-medium text-black ",
                   )}
                   style={active ? { color: "var(--primary)" } : undefined}
                 >
@@ -671,7 +675,11 @@ export function MessagesShell() {
                           <Plus size={19} />
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent open={plusOpen} align="start" sideOffset={10}>
+                      <PopoverContent
+                        open={plusOpen}
+                        align="start"
+                        sideOffset={10}
+                      >
                         <div className="w-60 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)]">
                           <button
                             type="button"
@@ -720,7 +728,11 @@ export function MessagesShell() {
                           <Smile size={18} />
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent open={emojiOpen} align="start" sideOffset={10}>
+                      <PopoverContent
+                        open={emojiOpen}
+                        align="start"
+                        sideOffset={10}
+                      >
                         <EmojiPickerPopover
                           onSelect={(emoji) => {
                             setDraft((prev) => prev + emoji);
@@ -741,8 +753,14 @@ export function MessagesShell() {
                           GIF
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent open={gifOpen} align="start" sideOffset={10}>
-                        <GifPickerPopover onSelect={(gif) => void handleSelectGif(gif)} />
+                      <PopoverContent
+                        open={gifOpen}
+                        align="start"
+                        sideOffset={10}
+                      >
+                        <GifPickerPopover
+                          onSelect={(gif) => void handleSelectGif(gif)}
+                        />
                       </PopoverContent>
                     </PopoverRoot>
 
@@ -750,7 +768,9 @@ export function MessagesShell() {
                       type="button"
                       disabled={pendingAttachment !== null}
                       title="Ghi âm tin nhắn thoại"
-                      onClick={() => (recording ? stopRecording() : void startRecording())}
+                      onClick={() =>
+                        recording ? stopRecording() : void startRecording()
+                      }
                       className={cn(
                         "grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
                         recording
@@ -868,7 +888,10 @@ function AttachmentPreviewStrip({
         </p>
       </div>
       {attachment.uploading && (
-        <LoaderCircle size={16} className="shrink-0 animate-spin text-slate-400" />
+        <LoaderCircle
+          size={16}
+          className="shrink-0 animate-spin text-slate-400"
+        />
       )}
       <button
         type="button"

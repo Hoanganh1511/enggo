@@ -5,8 +5,7 @@ import { io, type Socket } from "socket.io-client";
 import { getSocketTokenAction } from "@/actions/notifications/get-socket-token";
 import type { ApiNotification } from "./api/types";
 
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_CAREER_TREE_API_URL ?? "http://localhost:3001";
+const SOCKET_URL = process.env.CAREER_TREE_API_URL ?? "http://localhost:3001";
 
 // Ket noi WebSocket toi NotificationGateway (backend) de nhan thong bao
 // real-time thay vi doi nguoi dung tu mo lai dropdown/reload trang. `auth`

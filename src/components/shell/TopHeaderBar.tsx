@@ -92,9 +92,17 @@ const TopHeaderBar = () => {
   );
 
   const chatBadge =
-    unreadChatCount > 0 ? (unreadChatCount > 9 ? "9+" : String(unreadChatCount)) : undefined;
+    unreadChatCount > 0
+      ? unreadChatCount > 9
+        ? "9+"
+        : String(unreadChatCount)
+      : undefined;
   const notifBadge =
-    unreadCount > 0 ? (unreadCount > 9 ? "9+" : String(unreadCount)) : undefined;
+    unreadCount > 0
+      ? unreadCount > 9
+        ? "9+"
+        : String(unreadCount)
+      : undefined;
 
   // Focus/dieu huong toi composer o trang Home - giu dung logic cu (xem git
   // history top-header-bar.tsx): dang o /home thi cuon+focus thang, khac thi
@@ -156,7 +164,7 @@ const TopHeaderBar = () => {
         <button
           type="button"
           onClick={handleCompose}
-          className="ml-1 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-ink px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+          className="ml-1 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm bg-black/90 px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
         >
           <SquarePen size={15} strokeWidth={2} />
           Viết bài
