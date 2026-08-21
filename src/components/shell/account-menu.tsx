@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { signOutAction } from "@/actions/auth/sign-out-action";
 
-type AccountUser = {
+export type AccountUser = {
   name?: string | null;
   email?: string | null;
   image?: string | null;
@@ -25,7 +25,9 @@ function getInitials(name?: string | null): string {
   return (first + last).toUpperCase();
 }
 
-function Avatar({ user, size }: { user: AccountUser; size: number }) {
+// Export de AppSidebar.tsx dung lai cho the profile (avatar + fallback chu
+// cai dau) thay vi viet lai logic fallback rieng.
+export function Avatar({ user, size }: { user: AccountUser; size: number }) {
   if (user.image) {
     return (
       // eslint-disable-next-line @next/next/no-img-element

@@ -4,14 +4,37 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { LoaderCircle, MessageCircle, Search, Send } from "lucide-react";
+import {
+  Edit2Icon,
+  FunnelIcon,
+  LoaderCircle,
+  MessageCircle,
+  Search,
+  Send,
+  SquarePenIcon,
+} from "lucide-react";
 import type { ApiChatMessage, ApiConversationSummary } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
 import { listConversationsAction } from "@/actions/chat/list-conversations";
 import { listMessagesAction } from "@/actions/chat/list-messages";
 import { sendMessageAction } from "@/actions/chat/send-message";
 import { markConversationReadAction } from "@/actions/chat/mark-conversation-read";
 import { useChatSocket } from "@/lib/use-chat-socket";
 import { formatRelativeTime, formatTimeOnly } from "@/lib/format-time";
+
+type ChatTab = "all" | "favorites" | "groups" | "unread";
+
+// "Yêu thích"/"Nhóm" CHUA CO du lieu that dang sau (ApiConversationSummary
+// chi co `otherUser` SO (1-1), khong co khai niem group/gan sao - xem
+// Conversation model o backend, khong co field nao cho 2 thu nay) - disable
+// 2 tab do (nhan "Sắp có") thay vi loc ra 1 danh sach rong gia vo la du lieu
+// that. "Tất cả"/"Chưa đọc" loc that tren unreadCount da co san.
+const CHAT_TABS: { key: ChatTab; label: string; disabled?: boolean }[] = [
+  { key: "all", label: "Tất cả" },
+  { key: "favorites", label: "Yêu thích", disabled: true },
+  { key: "groups", label: "Nhóm", disabled: true },
+  { key: "unread", label: "Chưa đọc" },
+];
 
 // Khung chinh trang /messages (port tu source treecareer-profile-universe-v2,
 // BO Spaces/InfoPanel theo pham vi MVP - xem page.tsx). 2 cot: danh sach hoi
@@ -33,6 +56,7 @@ export function MessagesShell() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<ChatTab>("all");
   const scrollRef = useRef<HTMLDivElement>(null);
   // Gan trong effect KHONG deps (chay sau MOI render) thay vi truc tiep trong
   // than ham - mutate ref luc render bi React coi la khong an toan (cung ly
@@ -103,29 +127,26 @@ export function MessagesShell() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
-  const handleIncoming = useCallback(
-    (m: ApiChatMessage) => {
-      setConversations((prev) => {
-        if (!prev) return prev;
-        const idx = prev.findIndex((c) => c.id === m.conversationId);
-        if (idx === -1) return prev;
-        const isActive = activeIdRef.current === m.conversationId;
-        const updated: ApiConversationSummary = {
-          ...prev[idx],
-          lastMessage: m,
-          updatedAt: m.createdAt,
-          unreadCount: isActive ? 0 : prev[idx].unreadCount + 1,
-        };
-        return [updated, ...prev.filter((c) => c.id !== m.conversationId)];
-      });
+  const handleIncoming = useCallback((m: ApiChatMessage) => {
+    setConversations((prev) => {
+      if (!prev) return prev;
+      const idx = prev.findIndex((c) => c.id === m.conversationId);
+      if (idx === -1) return prev;
+      const isActive = activeIdRef.current === m.conversationId;
+      const updated: ApiConversationSummary = {
+        ...prev[idx],
+        lastMessage: m,
+        updatedAt: m.createdAt,
+        unreadCount: isActive ? 0 : prev[idx].unreadCount + 1,
+      };
+      return [updated, ...prev.filter((c) => c.id !== m.conversationId)];
+    });
 
-      if (m.conversationId === activeIdRef.current) {
-        setMessages((prev) => (prev ? [...prev, m] : prev));
-        markConversationReadAction(m.conversationId).catch(() => {});
-      }
-    },
-    [],
-  );
+    if (m.conversationId === activeIdRef.current) {
+      setMessages((prev) => (prev ? [...prev, m] : prev));
+      markConversationReadAction(m.conversationId).catch(() => {});
+    }
+  }, []);
   useChatSocket(Boolean(myId), handleIncoming);
 
   async function handleLoadOlder() {
@@ -165,20 +186,82 @@ export function MessagesShell() {
   }
 
   const filtered =
-    conversations?.filter((c) =>
-      (c.otherUser?.name ?? "").toLowerCase().includes(query.toLowerCase()),
-    ) ?? [];
+    conversations?.filter((c) => {
+      const matchesQuery = (c.otherUser?.name ?? "")
+        .toLowerCase()
+        .includes(query.toLowerCase());
+      const matchesTab = tab === "unread" ? c.unreadCount > 0 : true;
+      return matchesQuery && matchesTab;
+    }) ?? [];
+  const unreadTotal =
+    conversations?.reduce((sum, c) => sum + (c.unreadCount > 0 ? 1 : 0), 0) ?? 0;
   const activeConversation = conversations?.find((c) => c.id === activeId);
 
   return (
-    <div className="flex h-[calc(100vh-9rem)] min-h-[520px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
+    <div className="flex h-full min-h-[520px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
       {/* Danh sach hoi thoai */}
       <section className="flex w-[320px] shrink-0 flex-col border-r border-slate-200">
         <div className="border-b border-slate-100 p-5">
-          <h1 className="font-hand text-[24px] font-semibold text-[#182338]">
-            Tin nhắn
-          </h1>
-          <div className="mt-3 flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-[#fafbfc] px-3">
+          <div className="flex items-center justify-between">
+            <h1 className="font-hand text-[24px] font-semibold text-[#182338]">
+              Tin nhắn
+            </h1>
+            <div className="flex items-center gap-x-2">
+              <FunnelIcon className="size-4.5" strokeWidth={2} />
+              <SquarePenIcon className="size-4.5" strokeWidth={2} />
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center gap-4 border-b border-slate-100">
+            {CHAT_TABS.map((t) => {
+              const active = !t.disabled && tab === t.key;
+              const badgeCount =
+                t.key === "all"
+                  ? (conversations?.length ?? 0)
+                  : t.key === "unread"
+                    ? unreadTotal
+                    : 0;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  disabled={t.disabled}
+                  title={t.disabled ? "Sắp có" : undefined}
+                  onClick={() => setTab(t.key)}
+                  className={cn(
+                    "relative flex items-center gap-1.5 pb-2.5 text-[12px] transition-colors duration-150 ease-out",
+                    t.disabled
+                      ? "cursor-not-allowed text-slate-300"
+                      : active
+                        ? "cursor-pointer font-semibold"
+                        : "cursor-pointer font-medium text-slate-400 hover:text-slate-600",
+                  )}
+                  style={active ? { color: "var(--primary)" } : undefined}
+                >
+                  {t.label}
+                  {badgeCount > 0 && (
+                    <span
+                      className="grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-semibold text-white"
+                      style={{
+                        background: "var(--primary)",
+                        boxShadow: "0 2px 6px color-mix(in srgb, var(--primary) 45%, transparent)",
+                      }}
+                    >
+                      {badgeCount}
+                    </span>
+                  )}
+                  {active && (
+                    <span
+                      className="absolute right-0 bottom-0 left-0 h-0.5 rounded-full"
+                      style={{ background: "var(--primary)" }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-[#fafbfc] px-3">
             <Search size={15} className="text-slate-400" />
             <input
               value={query}
@@ -188,7 +271,7 @@ export function MessagesShell() {
             />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-3">
           {conversations === null ? (
             <div className="flex justify-center py-10">
               <LoaderCircle size={18} className="animate-spin text-slate-400" />
@@ -293,7 +376,11 @@ export function MessagesShell() {
                   </div>
                 ) : (
                   messages.map((m) => (
-                    <MessageBubble key={m.id} message={m} isMine={m.senderId === myId} />
+                    <MessageBubble
+                      key={m.id}
+                      message={m}
+                      isMine={m.senderId === myId}
+                    />
                   ))
                 )}
               </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Bell, Check, LoaderCircle, X } from "lucide-react";
+import { ArrowRight, Check, LoaderCircle, X } from "lucide-react";
 import MechanicalPanel from "./MechanicalPanel";
 import type { ApiNotification } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
@@ -180,8 +180,6 @@ export function NotificationsPanel({
   return (
     <MechanicalPanel
       title="Thông báo"
-      eyebrow="NOTIFICATION CORE"
-      icon={<Bell size={17} />}
       width="w-[380px]"
       action={
         hasUnread ? (

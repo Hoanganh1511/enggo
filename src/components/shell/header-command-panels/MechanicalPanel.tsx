@@ -29,15 +29,11 @@ const panelVariants: Variants = {
 
 export default function MechanicalPanel({
   title,
-  eyebrow = "SYSTEM MODULE",
-  icon,
   children,
   width = "w-[360px]",
   action,
 }: {
   title: string;
-  eyebrow?: string;
-  icon: ReactNode;
   children: ReactNode;
   width?: string;
   action?: ReactNode;
@@ -59,29 +55,9 @@ export default function MechanicalPanel({
         className="flex items-center justify-between px-4 py-3.5"
         style={{ borderBottom: "1px solid var(--border)" }}
       >
-        <div className="flex items-center gap-3">
-          <div
-            className="grid h-9 w-9 place-items-center rounded-xl"
-            style={{
-              border: "1px solid color-mix(in srgb, var(--primary) 25%, transparent)",
-              background: "color-mix(in srgb, var(--primary) 8%, transparent)",
-              color: "var(--primary)",
-            }}
-          >
-            {icon}
-          </div>
-          <div>
-            <div
-              className="text-[8px] font-semibold tracking-[.18em]"
-              style={{ color: "color-mix(in srgb, var(--primary) 65%, var(--ink-faint))" }}
-            >
-              {eyebrow}
-            </div>
-            <h2 className="mt-0.5 text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-              {title}
-            </h2>
-          </div>
-        </div>
+        <h2 className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+          {title}
+        </h2>
         {action}
       </header>
       {children}

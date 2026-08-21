@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-// Khu vuc noi dung chinh - nam ngay duoi TopHeaderBar trong layout 1 cot
-// (xem (main)/layout.tsx). Khong con Sidebar nen khong phai dong bo
-// margin-left voi thu gi ca, chi la 1 div padding tinh + vung cuon.
+// Khu vuc noi dung chinh - nam ben phai AppSidebar (xem (main)/layout.tsx),
+// flexbox tu danh chieu rong con lai, khong phai tinh margin-left thu cong.
+// Header ngang cu (TopHeaderBar) da xoa hoan toan theo yeu cau nguoi dung.
 //
 // Vung cuon THAT nam o day (overflow-auto), khong phai window - <body> da
 // khoa overflow-hidden (xem app/layout.tsx). Next.js chi tu reset scroll cho
@@ -24,7 +24,7 @@ const MainContentArea = ({ children }: { children: React.ReactNode }) => {
   }, [pathname]);
 
   return (
-    <div ref={ref} className="min-h-0 flex-1 scroll-smooth overflow-auto pb-4">
+    <div ref={ref} className="min-h-0 min-w-0 flex-1 scroll-smooth overflow-auto pb-4">
       {children}
     </div>
   );

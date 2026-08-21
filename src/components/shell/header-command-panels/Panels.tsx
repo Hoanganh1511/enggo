@@ -1,6 +1,5 @@
 "use client";
 
-import { Bookmark, CircleHelp } from "lucide-react";
 import MechanicalPanel from "./MechanicalPanel";
 
 // 2 dropdown noi dung con lai cua TopHeaderBar (Thong bao da tach rieng sang
@@ -20,12 +19,7 @@ function EmptyPanelState({ text }: { text: string }) {
 
 export function SavedPanel() {
   return (
-    <MechanicalPanel
-      title="Đã lưu"
-      eyebrow="LIBRARY"
-      icon={<Bookmark size={17} />}
-      width="w-[340px]"
-    >
+    <MechanicalPanel title="Đã lưu" width="w-[340px]">
       <EmptyPanelState text="Chưa có mục nào được lưu." />
     </MechanicalPanel>
   );
@@ -33,12 +27,7 @@ export function SavedPanel() {
 
 export function HelpPanel() {
   return (
-    <MechanicalPanel
-      title="Trợ giúp"
-      eyebrow="SYSTEM SUPPORT"
-      icon={<CircleHelp size={17} />}
-      width="w-[320px]"
-    >
+    <MechanicalPanel title="Trợ giúp" width="w-[320px]">
       <EmptyPanelState text="Chưa có nội dung trợ giúp nào." />
     </MechanicalPanel>
   );
