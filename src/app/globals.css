@@ -2,79 +2,76 @@
 @import "@xyflow/react/dist/style.css" layer(xyflow);
 
 :root {
-  /* He semantic token day du - light "Cloud" / dark "Nebula" (xem khoi
-     @media ben duoi). GIU NGUYEN TEN token cu (--ink, --surface, --border...)
-     de moi component dang dung Tailwind class (bg-surface, text-ink-muted...)
-     tu dong nhan gia tri moi, khong can sua tung file. Cac token MOI (chua
-     ton tai truoc) duoc them cuoi khoi, danh cho component se lam sau. */
-  --background: #f7f9fc;
-  --background-secondary: #f1f5f9;
-  --foreground: #172033;
+  /* He semantic token day du - bang mau "Frozen mist" (5 mau chu dao nguoi
+     dung chon: #7C7D75/#ADACA7/#FCF8D8/#D9DADF trung tinh am + #DD700B lam
+     accent duy nhat). CHI 1 theme sang, KHONG con dark mode (da bo han khoi
+     @media (prefers-color-scheme: dark) theo yeu cau nguoi dung). GIU NGUYEN
+     TEN token cu (--ink, --surface, --border...) de
+     moi component dang dung Tailwind class (bg-surface, text-ink-muted...)
+     tu dong nhan gia tri moi, khong can sua tung file. --knowledge/
+     --community-accent (tim, rieng cho AI/Community) KHONG doi - la ngoai le
+     co chu dich rieng cho tung khu vuc, khong thuoc "tong mau chu dao". */
+  --background: #fcf8d8;
+  --background-secondary: #d9dadf;
+  --foreground: #7c7d75;
   --active: var(--primary);
 
-  --primary: #5a5ecf;
-  --primary-hover: #5152c2;
-  --primary-dark: #4645a8;
-  --primary-soft: #eeeeff;
-  /* Mau chu/icon DAT TREN 1 nen to mau --primary (nut, pill active) - can
-     doi theo theme vi primary sang toi khac nhau giua 2 theme. */
+  --primary: #dd700b;
+  --primary-hover: #c4630a;
+  --primary-dark: #a85509;
+  --primary-soft: color-mix(in srgb, var(--primary) 12%, white);
+  /* Mau chu/icon DAT TREN 1 nen to mau --primary (nut, pill active). */
   --on-primary: #ffffff;
 
-  --secondary: #2563eb;
-  --secondary-hover: #1d4ed8;
+  --secondary: var(--primary);
+  --secondary-hover: var(--primary-hover);
 
   /* Rieng cho AI/knowledge-graph/goi y thong minh - KHAC --community-accent
      (thuong hieu khu vuc Community, gia tri gan giong nhung co chu dich
-     rieng, xem comment o duoi). */
+     rieng, xem comment o duoi). KHONG doi theo Frozen mist - xem comment
+     dau khoi. */
   --knowledge: #7c3aed;
   --knowledge-hover: #6d28d9;
   --knowledge-soft: #f5f3ff;
 
   /* Tim - RIENG cho khu vuc Community/"Đi cùng mọi người" (dong bo voi
      SERIES_ACCENT trong series-style.ts, vi trang Community duoc dan toi tu
-     day va dung chung minh hoa nui/may tim). KHONG dung --primary (xanh,
+     day va dung chung minh hoa nui/may tim). KHONG dung --primary (cam,
      dung cho toan site) trong cac component community/*.tsx. */
   --community-accent: #7c3aed;
   --community-accent-hover: #6d28d9;
   --community-accent-dark: #5b21b6;
 
-  --overlay: rgba(17, 24, 39, 0.45);
+  --overlay: rgba(56, 46, 30, 0.45);
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-muted: #f1f5f9;
+  --surface-muted: #d9dadf;
   --surface-header: color-mix(in srgb, var(--background) 86%, transparent);
-  --hover-bg: #f4f8fc;
-  --press-bg: #eaf5ff;
-  --active-bg: #eaf5ff;
+  --hover-bg: color-mix(in srgb, #d9dadf 45%, white);
+  --press-bg: color-mix(in srgb, var(--primary) 10%, white);
+  --active-bg: color-mix(in srgb, var(--primary) 10%, white);
   --active-bg-strong: color-mix(in srgb, var(--active-bg), var(--primary) 18%);
   --active-border: color-mix(in srgb, var(--primary) 35%, transparent);
 
-  --ink: #172033;
-  --ink-muted: #68738a;
-  --ink-faint: #7d8ca0;
-  --ink-disabled: #b4c0ce;
+  --ink: #7c7d75;
+  --ink-muted: #adaca7;
+  --ink-faint: color-mix(in srgb, #adaca7 65%, white);
+  --ink-disabled: color-mix(in srgb, #adaca7 35%, white);
 
-  --border: #e8eaf0;
-  --border-subtle: #eaf0f6;
-  --border-strong: #b9c8d8;
+  --border: #d9dadf;
+  --border-subtle: color-mix(in srgb, #d9dadf 55%, white);
+  --border-strong: #adaca7;
   --search-border: var(--border-strong);
   --hover-border: var(--border-strong);
   --focus-border: var(--primary);
   --tree-line: var(--border-subtle);
 
-  /* Sidebar dieu huong trai (AppSidebar.tsx) - CO DINH navy bat ke light/
-     dark mode (ngoai le co chu dich, xem comment trong AppSidebar.tsx), nen
-     KHONG khai bao lai trong khoi @media (prefers-color-scheme: dark) o duoi -
-     de gia tri :root nay giu nguyen xuyen suot ca 2 theme. */
-  --sidebar: #0b1427;
-  --sidebar-hover: #151f36;
-
   --icon: var(--ink-muted);
   --icon-hover: var(--ink);
   --icon-active: var(--primary);
 
-  --shadow-panel-base: 0 20px 48px rgba(16, 24, 40, 0.12);
-  --shadow-dropdown-base: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --shadow-panel-base: 0 20px 48px rgba(124, 125, 117, 0.16);
+  --shadow-dropdown-base: 0 8px 24px rgba(124, 125, 117, 0.12);
   --shadow-focus-base: 0 0 0 3px
     color-mix(in srgb, var(--primary) 20%, transparent);
 
@@ -106,13 +103,13 @@
      dung chung cho moi UI can nhung khai niem nay ve sau, khong phai component
      nao cung dung ngay. */
   --divider: var(--border-subtle);
-  --selection: #38bdf8;
-  --link: #2563eb;
-  --link-hover: #1d4ed8;
+  --selection: color-mix(in srgb, var(--primary) 35%, white);
+  --link: var(--primary);
+  --link-hover: var(--primary-hover);
   --skeleton: var(--background-secondary);
   --skeleton-highlight: var(--hover-bg);
-  --tooltip-bg: #172033;
-  --tooltip-text: #f7f9fc;
+  --tooltip-bg: var(--ink);
+  --tooltip-text: #ffffff;
   --code-bg: var(--background-secondary);
   --code-border: var(--border);
   --quote: var(--knowledge);
@@ -192,9 +189,6 @@
   --color-ink-faint: var(--ink-faint);
   --color-ink-disabled: var(--ink-disabled);
 
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-hover: var(--sidebar-hover);
-
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);
   --color-border-strong: var(--border-strong);
@@ -251,68 +245,6 @@
   --color-card-background: var(--card-background);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark theme "Nebula" - nen navy sau + accent cyan (#22D3EE), dong bo
-       voi bang mau day du 12 muc da chot (brand/semantic/category). Chi
-       override trong khoi dark nay - light mode ("Cloud") khong doi. */
-    --background: #050914;
-    --background-secondary: #07101c;
-    --foreground: #e7edf8;
-
-    --primary: #22d3ee;
-    --primary-hover: #67e8f9;
-    --primary-dark: #0891b2;
-    --primary-soft: #083344;
-    --on-primary: #04121f;
-
-    --secondary: #3b82f6;
-    --secondary-hover: #60a5fa;
-
-    --knowledge: #8b5cf6;
-    --knowledge-hover: #a78bfa;
-    --knowledge-soft: #1e1b3a;
-
-    --overlay: rgba(0, 0, 0, 0.6);
-    --surface: #0a1322;
-    --surface-raised: #0d1929;
-    --surface-muted: #07101c;
-    --hover-bg: #101f32;
-    --press-bg: #122a43;
-    --active-bg: #122a43;
-
-    --ink: #e7edf8;
-    --ink-muted: #9aaac0;
-    --ink-faint: #66788f;
-    --ink-disabled: #3f5065;
-
-    --border: #18283c;
-    --border-subtle: #112033;
-    --border-strong: #29435e;
-
-    --shadow-panel-base: 0 24px 80px rgba(0, 0, 0, 0.7);
-    --shadow-dropdown-base: 0 12px 32px rgba(0, 0, 0, 0.6);
-
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #f43f5e;
-
-    --follow-bg: rgba(255, 255, 255, 0.02);
-
-    --tag-bg: rgba(255, 255, 255, 0.05);
-    --tag-border: rgba(255, 255, 255, 0.08);
-
-    --selection: #38bdf8;
-    --link: #38bdf8;
-    --link-hover: #67e8f9;
-    --skeleton: #122033;
-    --skeleton-highlight: #1b2d43;
-    --tooltip-bg: #101a29;
-    --tooltip-text: #e7edf8;
-    --code-bg: #07111e;
-    --code-border: #1a3047;
-  }
-}
 
 body {
   background: white;
@@ -529,20 +461,11 @@ body {
   fill: currentColor;
 }
 
-/* Nen wallpaper cua trang cong dong (/communities/[slug]) - anh pastel sang o
-   light mode; dark mode BO anh (anh sang lam chuong mat), thay bang nen phang
-   theo token --background. Dung class rieng thay vi bg-[url(...)] inline de co
-   the override duoc trong khoi @media dark. */
+/* Nen wallpaper cua trang cong dong (/communities/[slug]). */
 .community-wallpaper {
   background-image: url("/bg-community.png");
   background-size: cover;
   background-position: center;
-}
-@media (prefers-color-scheme: dark) {
-  .community-wallpaper {
-    background-image: none;
-    background-color: var(--background);
-  }
 }
 
 /* ControlCenterReactor (toolbar goc phai man Workspace, xem

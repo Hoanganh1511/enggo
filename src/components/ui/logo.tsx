@@ -26,8 +26,8 @@ export function LogoIcon({ size = 32, className, variant = "gradient" }: LogoIco
       {variant === "gradient" && (
         <defs>
           <linearGradient id={gradientId} x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#60a5fa" />
-            <stop offset="100%" stopColor="#2563eb" />
+            <stop offset="0%" stopColor="#f2a65a" />
+            <stop offset="100%" stopColor="#dd700b" />
           </linearGradient>
         </defs>
       )}

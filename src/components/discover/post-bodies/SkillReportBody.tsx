@@ -12,22 +12,17 @@ type SkillReportPost = Extract<Post, { kind: "skill-report" }>;
 // them ngoai nhung gi da luu trong post).
 export function SkillReportBody({ post }: { post: SkillReportPost }) {
   return (
-    <div className="relative mt-2 flex flex-col gap-2.5 overflow-hidden rounded-md border border-amber-200/70 bg-amber-50 p-4 shadow-sm dark:border-amber-400/25 dark:bg-amber-400/12">
+    <div className="relative mt-2 flex flex-col gap-2.5 overflow-hidden rounded-md border border-amber-200/70 bg-amber-50 p-4 shadow-sm">
         {/* Goc giay gap - hieu ung note that dan tren mat ban, thuan CSS
             border-trick. Mau dung tong amber DAM HON nen (gia lam "mat sau"
             to giay) + shadow nho tao chieu sau - dung black/10 phang se ra
-            vet xam nhat trong nhu loi hien thi tren nen sang.
-            Dark mode: nen/vien/goc gap TRUOC DAY qua nhat (amber-400/6,
-            amber-400/15, amber-900/60) gan nhu tan vao nen den cua app,
-            khien khoi "note" khong con doc duoc nhu 1 mat phang rieng - tang
-            do dam nen+vien va DOI goc gap sang mau SANG hon nen (amber-500)
-            de no noi bat len thay vi chim xuong tren nen toi. */}
+            vet xam nhat trong nhu loi hien thi tren nen sang. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute top-0 right-0 h-0 w-0 border-t-16 border-r-16 border-t-amber-200 border-r-transparent shadow-[-1px_1px_2px_rgba(0,0,0,0.12)] dark:border-t-amber-500/80"
+          className="pointer-events-none absolute top-0 right-0 h-0 w-0 border-t-16 border-r-16 border-t-amber-200 border-r-transparent shadow-[-1px_1px_2px_rgba(0,0,0,0.12)]"
         />
 
-        <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-amber-900/60 dark:text-amber-200/60">
+        <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs text-amber-900/60">
           <Layers
             size={12}
             strokeWidth={2}
@@ -46,7 +41,7 @@ export function SkillReportBody({ post }: { post: SkillReportPost }) {
           </span>
         </div>
 
-        <p className="text-sm wrap-break-word text-amber-950/80 dark:text-amber-50/80">
+        <p className="text-sm wrap-break-word text-amber-950/80">
           {post.content}
         </p>
     </div>
