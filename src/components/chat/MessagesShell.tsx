@@ -12,6 +12,7 @@ import {
   LoaderCircle,
   MessageCircle,
   Mic,
+  MoreHorizontal,
   Paperclip,
   Plus,
   Search,
@@ -25,6 +26,7 @@ import type {
   ApiConversationSummary,
   ApiMessageType,
   ApiPoll,
+  ApiPresenceUpdate,
 } from "@/lib/api/types";
 import type { ApiGif } from "@/lib/api/gif";
 import type { ApiUploadResult } from "@/lib/api/upload";
@@ -44,6 +46,7 @@ import { MessageBubble } from "./MessageBubble";
 import { EmojiPickerPopover } from "./EmojiPickerPopover";
 import { GifPickerPopover } from "./GifPickerPopover";
 import { PollComposerModal } from "./PollComposerModal";
+import { MessageSearchPopover } from "./MessageSearchPopover";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -100,6 +103,8 @@ export function MessagesShell() {
   const [sending, setSending] = useState(false);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<ChatTab>("all");
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Gan trong effect KHONG deps (chay sau MOI render) thay vi truc tiep trong
   // than ham - mutate ref luc render bi React coi la khong an toan (cung ly
@@ -216,7 +221,17 @@ export function MessagesShell() {
         prev?.map((m) => (m.poll?.id === p.id ? { ...m, poll: p } : m)) ?? prev,
     );
   }, []);
-  useChatSocket(Boolean(myId), handleIncoming, handlePollUpdate);
+  const handlePresenceUpdate = useCallback((p: ApiPresenceUpdate) => {
+    setConversations(
+      (prev) =>
+        prev?.map((c) =>
+          c.otherUser?.id === p.userId
+            ? { ...c, otherUser: { ...c.otherUser, online: p.online } }
+            : c,
+        ) ?? prev,
+    );
+  }, []);
+  useChatSocket(Boolean(myId), handleIncoming, handlePollUpdate, handlePresenceUpdate);
 
   async function handleLoadOlder() {
     if (!activeId || !nextCursor || loadingOlder) return;
@@ -539,6 +554,7 @@ export function MessagesShell() {
                 <ConversationAvatar
                   name={c.otherUser?.name}
                   avatarUrl={c.otherUser?.avatarUrl}
+                  online={c.otherUser?.online}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between gap-2">
@@ -579,20 +595,58 @@ export function MessagesShell() {
           </div>
         ) : (
           <>
-            <div className="flex h-[84px] shrink-0 items-center gap-3.5 border-b border-slate-100 px-8">
-              <ConversationAvatar
-                name={activeConversation.otherUser?.name}
-                avatarUrl={activeConversation.otherUser?.avatarUrl}
-              />
-              <div>
-                <b className="text-[17px] text-[#182338]">
-                  {activeConversation.otherUser?.name ?? "Người dùng"}
-                </b>
-                {activeConversation.otherUser?.username && (
+            <div className="flex h-[84px] shrink-0 items-center justify-between gap-3.5 border-b border-slate-100 px-8">
+              <div className="flex min-w-0 items-center gap-3.5">
+                <ConversationAvatar
+                  name={activeConversation.otherUser?.name}
+                  avatarUrl={activeConversation.otherUser?.avatarUrl}
+                  online={activeConversation.otherUser?.online}
+                />
+                <div className="min-w-0">
+                  <b className="truncate text-[17px] text-[#182338]">
+                    {activeConversation.otherUser?.name ?? "Người dùng"}
+                  </b>
                   <p className="text-[13px] text-slate-500">
-                    @{activeConversation.otherUser.username}
+                    {activeConversation.otherUser?.online ? (
+                      <span className="font-medium text-emerald-600">
+                        Đang hoạt động
+                      </span>
+                    ) : activeConversation.otherUser?.username ? (
+                      `@${activeConversation.otherUser.username}`
+                    ) : (
+                      "Ngoại tuyến"
+                    )}
                   </p>
-                )}
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-1">
+                <PopoverRoot open={searchOpen} onOpenChange={setSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      title="Tìm tin nhắn"
+                      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338]"
+                    >
+                      <Search size={18} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent open={searchOpen} align="end" sideOffset={10}>
+                    <MessageSearchPopover conversationId={activeConversation.id} />
+                  </PopoverContent>
+                </PopoverRoot>
+
+                <button
+                  type="button"
+                  title={rightPanelOpen ? "Ẩn bảng thông tin" : "Hiện bảng thông tin"}
+                  onClick={() => setRightPanelOpen((v) => !v)}
+                  className={cn(
+                    "grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors duration-150 ease-out hover:bg-slate-100",
+                    rightPanelOpen ? "text-[#182338]" : "text-slate-500",
+                  )}
+                >
+                  <MoreHorizontal size={18} />
+                </button>
               </div>
             </div>
 
@@ -841,7 +895,7 @@ export function MessagesShell() {
         )}
       </main>
 
-      {activeConversation?.otherUser && (
+      {activeConversation?.otherUser && rightPanelOpen && (
         <MessageInfoPanel otherUser={activeConversation.otherUser} />
       )}
 
@@ -907,27 +961,33 @@ function AttachmentPreviewStrip({
 function ConversationAvatar({
   name,
   avatarUrl,
+  online,
 }: {
   name: string | undefined;
   avatarUrl: string | null | undefined;
+  online?: boolean;
 }) {
-  if (avatarUrl) {
-    return (
-      <Image
-        src={avatarUrl}
-        alt={name ?? ""}
-        width={52}
-        height={52}
-        className="size-13 shrink-0 rounded-full object-cover"
-      />
-    );
-  }
   return (
-    <span
-      className="grid size-13 shrink-0 place-items-center rounded-full text-[18px] font-semibold text-white"
-      style={{ background: "var(--primary)" }}
-    >
-      {(name ?? "?").trim().charAt(0).toUpperCase()}
+    <span className="relative inline-flex shrink-0">
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt={name ?? ""}
+          width={52}
+          height={52}
+          className="size-13 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <span
+          className="grid size-13 shrink-0 place-items-center rounded-full text-[18px] font-semibold text-white"
+          style={{ background: "var(--primary)" }}
+        >
+          {(name ?? "?").trim().charAt(0).toUpperCase()}
+        </span>
+      )}
+      {online && (
+        <span className="absolute right-0 bottom-0 size-3 rounded-full bg-emerald-500 ring-2 ring-white" />
+      )}
     </span>
   );
 }

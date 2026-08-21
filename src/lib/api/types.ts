@@ -402,6 +402,9 @@ export type ApiConversationUser = {
   name: string;
   avatarUrl: string | null;
   verified: boolean;
+  // Snapshot tai thoi diem fetch /conversations - cap nhat real-time qua
+  // socket event "presence:update" (xem use-chat-socket.ts).
+  online: boolean;
 };
 
 export type ApiMessageType = "TEXT" | "IMAGE" | "FILE" | "VOICE" | "GIF" | "POLL";
@@ -452,4 +455,10 @@ export type ApiConversationSummary = {
 export type ApiChatMessagePage = {
   items: ApiChatMessage[];
   nextCursor: string | null;
+};
+
+// Payload cua socket event "presence:update" - xem NotificationGateway.
+export type ApiPresenceUpdate = {
+  userId: string;
+  online: boolean;
 };

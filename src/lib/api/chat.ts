@@ -73,3 +73,15 @@ export function votePoll(pollId: string, optionId: string): Promise<ApiPoll> {
     body: JSON.stringify({ optionId }),
   });
 }
+
+// Tim tin nhan cu trong 1 hoi thoai theo tu khoa (chi khop `content`) - xem
+// ChatService.searchMessages o backend.
+export function searchMessages(
+  conversationId: string,
+  query: string,
+): Promise<ApiChatMessage[]> {
+  const params = new URLSearchParams({ q: query });
+  return apiFetch<ApiChatMessage[]>(
+    `/conversations/${conversationId}/messages/search?${params.toString()}`,
+  );
+}

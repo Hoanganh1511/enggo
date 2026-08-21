@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 import { getSocketTokenAction } from "@/actions/notifications/get-socket-token";
-import type { ApiChatMessage, ApiPoll } from "./api/types";
+import type { ApiChatMessage, ApiPoll, ApiPresenceUpdate } from "./api/types";
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_CAREER_TREE_API_URL ?? "http://localhost:3001";
@@ -20,6 +20,8 @@ export function useChatSocket(
   // Tuy chon - chi MessagesShell.tsx can (cap nhat so vote poll real-time tu
   // phia con lai), TopHeaderBar.tsx chi dung onMessage nen khong truyen.
   onPollUpdate?: (p: ApiPoll) => void,
+  // Tuy chon - badge online/offline tren header hoi thoai (xem MessagesShell.tsx).
+  onPresenceUpdate?: (p: ApiPresenceUpdate) => void,
 ) {
   const callbackRef = useRef(onMessage);
   useEffect(() => {
@@ -28,6 +30,10 @@ export function useChatSocket(
   const pollCallbackRef = useRef(onPollUpdate);
   useEffect(() => {
     pollCallbackRef.current = onPollUpdate;
+  });
+  const presenceCallbackRef = useRef(onPresenceUpdate);
+  useEffect(() => {
+    presenceCallbackRef.current = onPresenceUpdate;
   });
 
   useEffect(() => {
@@ -46,6 +52,9 @@ export function useChatSocket(
     });
     socket.on("chat:poll-update", (p: ApiPoll) => {
       pollCallbackRef.current?.(p);
+    });
+    socket.on("presence:update", (p: ApiPresenceUpdate) => {
+      presenceCallbackRef.current?.(p);
     });
 
     return () => {
