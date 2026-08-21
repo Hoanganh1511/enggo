@@ -202,7 +202,7 @@ export function MessagesShell() {
   const activeConversation = conversations?.find((c) => c.id === activeId);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] min-h-[680px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
+    <div className="flex h-[calc(100vh-var(--header-height)-2rem)] min-h-[680px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
       {/* Danh sach hoi thoai */}
       <section className="flex w-[380px] shrink-0 flex-col border-r border-slate-200">
         <div className="border-b border-slate-100 p-6">

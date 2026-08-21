@@ -88,7 +88,7 @@ const TopHeaderBar = () => {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-surface px-5">
+    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-4 border-b border-border bg-surface px-5">
       <Link href="/home" className="shrink-0">
         <Logo orientation="horizontal" size={24} />
       </Link>

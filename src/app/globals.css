@@ -128,11 +128,14 @@
      thay luon giu dung content-width du padding doi theo man hinh. */
   --layout-padding: 24px;
 
-  /* Chieu cao that cua TopHeaderBar (xem components/shell/top-header-bar.tsx,
+  /* Chieu cao that cua TopHeaderBar (xem components/shell/TopHeaderBar.tsx,
      class h-[var(--header-height)]) - tach thanh bien de noi nao can tinh
-     "phan con lai duoi header" (vd ProfileShell luc 1 tab con chiem full man
-     hinh) tham chieu dung 1 nguon, khong bi lech neu doi chieu cao header. */
-  --header-height: 52px;
+     "phan con lai duoi header" (vd MessagesShell.tsx, ProfileShell luc 1 tab
+     con chiem full man hinh) tham chieu dung 1 nguon, khong bi lech neu doi
+     chieu cao header. Truoc day 52px trong khi header that la h-14 (56px,
+     TopHeaderBar chua thuc su dung bien nay) - gay lech vai px moi noi tham
+     chieu no; gio ca 2 cung 1 nguon. */
+  --header-height: 56px;
 }
 
 @media (min-width: 1024px) {

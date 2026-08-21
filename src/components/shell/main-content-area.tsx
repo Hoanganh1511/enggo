@@ -3,9 +3,8 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-// Khu vuc noi dung chinh - nam ben phai AppSidebar (xem (main)/layout.tsx),
-// flexbox tu danh chieu rong con lai, khong phai tinh margin-left thu cong.
-// Header ngang cu (TopHeaderBar) da xoa hoan toan theo yeu cau nguoi dung.
+// Khu vuc noi dung chinh - nam duoi TopHeaderBar (xem (main)/layout.tsx),
+// flex-1 tu danh het chieu cao con lai (khong phai tinh margin-top thu cong).
 //
 // Vung cuon THAT nam o day (overflow-auto), khong phai window - <body> da
 // khoa overflow-hidden (xem app/layout.tsx). Next.js chi tu reset scroll cho
