@@ -1172,9 +1172,9 @@ export function MessagesShell() {
                       }
                     }}
                     rows={1}
-                    disabled={recording}
-                    className="max-h-24 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
-                    placeholder="Nhập tin nhắn..."
+                    disabled={recording || sending}
+                    className="max-h-24 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    placeholder={sending ? "Đang gửi..." : "Nhập tin nhắn..."}
                   />
                   <button
                     type="button"
@@ -1186,10 +1186,24 @@ export function MessagesShell() {
                         ? pendingAttachment.uploading
                         : !draft.trim())
                     }
-                    className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                    className={cn(
+                      "grid size-11 shrink-0 place-items-center rounded-xl text-white shadow-sm transition-transform duration-150 ease-out",
+                      sending
+                        ? "scale-95 cursor-wait"
+                        : recording ||
+                            (pendingAttachment
+                              ? pendingAttachment.uploading
+                              : !draft.trim())
+                          ? "cursor-not-allowed opacity-60"
+                          : "cursor-pointer hover:scale-105",
+                    )}
                     style={{ background: "var(--primary)" }}
                   >
-                    <Send size={19} />
+                    {sending ? (
+                      <LoaderCircle size={19} className="animate-spin" />
+                    ) : (
+                      <Send size={19} />
+                    )}
                   </button>
                 </div>
               </div>

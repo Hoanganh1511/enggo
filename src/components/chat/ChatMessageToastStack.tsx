@@ -147,7 +147,7 @@ export function ChatMessageToastStack() {
                 return (
                   <div
                     key={item.id}
-                    className="absolute inset-x-0 top-0 rounded-2xl border border-slate-200 bg-white shadow-[0_6px_20px_rgba(15,23,42,.1)]"
+                    className="absolute inset-x-0 top-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_6px_20px_rgba(15,23,42,.1)]"
                     style={{
                       transform: `translateY(${idx * 8}px) scale(${1 - idx * 0.035})`,
                       zIndex: 10 - idx,
