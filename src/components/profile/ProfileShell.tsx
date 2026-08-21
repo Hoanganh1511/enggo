@@ -3,7 +3,9 @@
 import { useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ProfileSidebar } from "./ProfileSidebar";
+import { ProfileTabBar } from "./ProfileTabBar";
 import { ProfileContext } from "./profile-context";
+import SectionContainer from "@/components/ui/section-container";
 import { UserProfileApiShape } from "@/lib/api/users";
 import {
   followUserAction,
@@ -11,12 +13,14 @@ import {
 } from "@/actions/discover/follow-user";
 
 // Khung chung quanh moi tab cua trang profile (xem [username]/layout.tsx) -
-// port tu source treecareer-profile-universe-v2 ("navy sidebar" thay cho
-// cover-photo header cu). ProfileSidebar (avatar/ten/bio/stat/nav that) nam
-// O DAY, "children" la noi dung rieng cua tung tab (page.tsx con), render
-// trong vung giay (#f8f8f5) ben phai sidebar. State follow (following/
-// followerCount/pending) so huu o day vi ca nut Theo doi (ProfileSidebar)
-// lan so lieu "Nguoi theo doi" (cung ProfileSidebar) deu can dung chung.
+// port layout note.com (sidebar identity/follow/Magazine + tab ngang tren
+// dau noi dung chinh, thay cho "navy sidebar Universe" ban truoc). Dung TOKEN
+// mau chuan (bg-surface/text-ink...) thay vi bang mau rieng nhu Universe -
+// note.com trung tinh (den/trang/xam), khong can ngoai le fixed-palette.
+// ProfileSidebar/ProfileTabBar deu doc qua ProfileContext (profile-context.tsx),
+// KHONG nhan props nua. State follow (following/followerCount/pending) so
+// huu o day vi ca ProfileSidebar (nut Theo doi + so lieu) lan cac noi dung
+// con (vd nut Nhắn tin) deu can dung chung.
 const ProfileShell = ({
   profile,
   children,
@@ -66,10 +70,6 @@ const ProfileShell = ({
   const mergedProfile = { ...profile, followerCount };
 
   return (
-    // min-h tinh bang 100vh tru chieu cao TopHeaderBar (h-14 = 3.5rem) va
-    // padding doc cua MainContentArea (pt-4 + pb-4 = 2rem) - dam bao vung
-    // giay ben phai luon it nhat cham day viewport, khong bi ngan cut nham
-    // khi trang it noi dung.
     <ProfileContext.Provider
       value={{
         profile: mergedProfile,
@@ -80,21 +80,18 @@ const ProfileShell = ({
         onNavClick: handleNavClick,
       }}
     >
-      <div className="flex min-h-[calc(100vh-5.5rem)] bg-[#f8f8f5]">
-        <ProfileSidebar
-          profile={mergedProfile}
-          activeHref={activeHref}
-          onNavClick={handleNavClick}
-        />
+      <SectionContainer as="div" maxWidth="7xl" className="flex gap-6 py-6">
+        <ProfileSidebar />
 
         <main
           className={`min-w-0 flex-1 transition-opacity duration-150 ease-out ${
             isPending ? "pointer-events-none opacity-50" : "opacity-100"
           }`}
         >
+          <ProfileTabBar />
           {children}
         </main>
-      </div>
+      </SectionContainer>
     </ProfileContext.Provider>
   );
 };

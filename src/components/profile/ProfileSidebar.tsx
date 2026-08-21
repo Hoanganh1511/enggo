@@ -1,209 +1,135 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Activity,
-  Bookmark,
-  BriefcaseBusiness,
-  CircleHelp,
-  Compass,
-  FileText,
-  Heart,
-  History,
-  Home,
-  ListVideo,
-  LogOut,
-  Moon,
-  Rocket,
-  Settings,
-  Sparkles,
-  Trophy,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
-import { signOutAction } from "@/actions/auth/sign-out-action";
-import type { UserProfileApiShape } from "@/lib/api/users";
+import { useRouter } from "next/navigation";
+import { MessageSquare, MoreHorizontal, Plus, Settings } from "lucide-react";
+import { createConversationAction } from "@/actions/chat/create-conversation";
+import { formatCompact } from "@/lib/format-number";
+import { useProfileContext } from "./profile-context";
 
-type NavItem = {
-  key: string;
-  label: string;
-  icon: LucideIcon;
-  href: string;
-  selfOnly?: boolean;
-};
+// Sidebar profile - port layout note.com (anh chup nguoi dung gui): the
+// avatar/ten/"..."/bio/stat-theo-doi/nut Theo doi hoac Chinh sua ho so, roi
+// toi khoi "Magazine" (bo suu tap bai viet theo chu de do CHINH CHU tu gom) -
+// KHONG co du lieu that cho khoi Magazine (khong co model nao ho tro nhom
+// Post cua 1 user thanh cac "tuyen" dat ten - da khao sat truoc khi lam,
+// Playlists/Collections hien tai CUNG la vo rong khong data that), nen chi
+// la trang thai "Sắp ra mắt" trung thuc thay vi bia noi dung. Doc profile/
+// following/pending/onToggleFollow qua useProfileContext() (ProfileShell.tsx
+// la provider) thay vi nhan props - KHONG con giu nav doc (da chuyen sang
+// ProfileTabBar.tsx, hang ngang tren dau main content nhu ban goc note.com).
+export function ProfileSidebar() {
+  const { profile, following, pending, onToggleFollow } = useProfileContext();
+  const router = useRouter();
+  const [messaging, setMessaging] = useState(false);
 
-// Cac tab THAT (co route/du lieu that) - giu dung tap hop tab cu cua
-// ProfileNav.tsx, chi doi cach hien thi tu hang ngang sang danh sach doc
-// trong sidebar navy (xem source treecareer-profile-universe-v2).
-function buildRealNavItems(username: string): NavItem[] {
-  const base = `/u/${username}`;
-  return [
-    { key: "home", label: "Trang chủ", icon: Home, href: base },
-    { key: "posts", label: "Bài đăng", icon: FileText, href: `${base}/posts` },
-    {
-      key: "workspace",
-      label: "Workspace",
-      icon: BriefcaseBusiness,
-      href: `/workspace/${username}`,
-    },
-    {
-      key: "playlists",
-      label: "Danh sách phát",
-      icon: ListVideo,
-      href: `${base}/playlists`,
-    },
-    {
-      key: "collections",
-      label: "Bộ sưu tập",
-      icon: Bookmark,
-      href: `${base}/collections`,
-    },
-    { key: "likes", label: "Thích", icon: Heart, href: `${base}/likes` },
-    {
-      key: "history",
-      label: "Lịch sử",
-      icon: History,
-      href: `${base}/history`,
-      selfOnly: true,
-    },
-  ];
-}
-
-// Cac muc CHUA co du lieu that (Universe/Journey/Skills/Projects/Milestones/
-// Activity - dung khai niem/icon dung nhu source) - nut disabled thay vi
-// link that, theo dung nguyen tac "không tạo fake functionality giả vờ hoạt
-// động" da ap dung o GroupSectionPlaceholder.tsx.
-const COMING_SOON_ITEMS: { label: string; icon: LucideIcon }[] = [
-  { label: "Universe", icon: Sparkles },
-  { label: "Journey", icon: Compass },
-  { label: "Skills", icon: Zap },
-  { label: "Projects", icon: Rocket },
-  { label: "Milestones", icon: Trophy },
-  { label: "Activity", icon: Activity },
-];
-
-export function ProfileSidebar({
-  profile,
-  activeHref,
-  onNavClick,
-}: {
-  profile: UserProfileApiShape;
-  activeHref: string;
-  onNavClick: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
-}) {
-  const realItems = buildRealNavItems(profile.username ?? "").filter(
-    (item) => !item.selfOnly || profile.isSelf,
-  );
+  async function handleMessage() {
+    if (!profile.username || messaging) return;
+    setMessaging(true);
+    try {
+      const conversation = await createConversationAction(profile.username);
+      router.push(`/messages?c=${conversation.id}`);
+    } finally {
+      setMessaging(false);
+    }
+  }
 
   return (
-    <aside className="hidden min-h-[calc(100vh-68px)] w-[240px] shrink-0 flex-col bg-[#111b2d] text-white lg:flex">
-      <div className="p-5">
-        <div className="relative mx-auto mb-4 size-[132px] overflow-hidden rounded-full border-[5px] border-[#ebe7d8] shadow-[0_0_0_8px_rgba(255,255,255,.05)]">
+    <aside className="hidden w-72 shrink-0 flex-col gap-4 lg:flex">
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <div className="flex items-start justify-between gap-2">
           <Image
             src={profile.avatarUrl}
             alt={profile.displayName}
-            fill
-            sizes="132px"
-            className="object-cover"
+            width={72}
+            height={72}
+            className="size-18 shrink-0 rounded-full object-cover"
           />
+          <button
+            type="button"
+            disabled
+            title="Sắp ra mắt"
+            className="flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-full text-ink-faint"
+          >
+            <MoreHorizontal size={18} strokeWidth={1.85} />
+          </button>
         </div>
-        <h1 className="font-hand text-center text-[25px] font-semibold">
+
+        <h1 className="mt-3 text-lg font-bold text-ink">
           {profile.displayName}
         </h1>
-        <p className="mt-1 text-center text-[12px] text-slate-400">
-          @{profile.username}
-        </p>
+
         {profile.bio && (
-          <p className="font-hand mx-auto mt-5 max-w-[195px] text-center text-[15px] leading-6 text-slate-300">
-            “{profile.bio}”
+          <p className="mt-2 line-clamp-3 text-[13px] leading-5 text-ink-muted">
+            {profile.bio}
           </p>
+        )}
+
+        <div className="mt-3 flex items-center gap-3 text-[13px]">
+          <Link
+            href={`/u/${profile.username}/following`}
+            className="text-ink-muted hover:text-ink hover:underline"
+          >
+            <b className="text-ink">{formatCompact(profile.followingCount)}</b>{" "}
+            Đang theo dõi
+          </Link>
+          <Link
+            href={`/u/${profile.username}/followers`}
+            className="text-ink-muted hover:text-ink hover:underline"
+          >
+            <b className="text-ink">{formatCompact(profile.followerCount)}</b>{" "}
+            Người theo dõi
+          </Link>
+        </div>
+
+        {profile.isSelf ? (
+          <Link
+            href="/settings"
+            className="mt-4 flex h-10 w-full items-center justify-center gap-1.5 rounded-full bg-primary text-sm font-semibold text-on-primary transition-opacity duration-150 ease-out hover:opacity-90"
+          >
+            <Settings size={14} strokeWidth={2} />
+            Chỉnh sửa hồ sơ
+          </Link>
+        ) : (
+          <div className="mt-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleFollow}
+              disabled={pending}
+              className={`flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full text-sm font-semibold transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60 ${
+                following
+                  ? "border border-border text-ink hover:bg-hover-bg"
+                  : "bg-primary text-on-primary hover:opacity-90"
+              }`}
+            >
+              {!following && <Plus size={14} strokeWidth={2.5} />}
+              {following ? "Đang theo dõi" : "Theo dõi"}
+            </button>
+            <button
+              type="button"
+              onClick={handleMessage}
+              disabled={messaging}
+              title="Nhắn tin"
+              className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full border border-border text-ink transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <MessageSquare size={15} strokeWidth={1.9} />
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Nut Theo doi/Nhan tin/Chinh sua ho so + 3 stat (Bai viet/Dang theo
-          doi/Nguoi theo doi) da CHUYEN sang page.tsx (tab "Trang chu") -
-          doc profile/following/pending qua useProfileContext() thay vi nhan
-          props o day, xem profile-context.tsx. */}
-
-      <nav className="mt-4 space-y-1 px-3">
-        {realItems.map((item) => {
-          const isActive = activeHref === item.href;
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              onClick={(e) => onNavClick(e, item.href)}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-[13px] transition ${
-                isActive
-                  ? "bg-[#37355f] text-white shadow-sm"
-                  : "text-slate-300 hover:bg-white/5"
-              }`}
-            >
-              <item.icon size={18} strokeWidth={1.9} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Cac khoi concept cua source (Universe/Journey/Skills/Projects/
-          Milestones/Activity) - chua co du lieu that, disabled thay vi
-          link, tach rieng khoi nav THAT o tren bang 1 duong ke + nhan. */}
-      <div className="mt-4 px-3">
-        <p className="px-4 pb-1.5 text-[10px] font-semibold tracking-wide text-slate-500">
-          SẮP RA MẮT
+      <div className="rounded-lg border border-border bg-surface p-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-ink">Magazine</h3>
+          <span className="rounded-full bg-active-bg px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
+            SẮP RA MẮT
+          </span>
+        </div>
+        <p className="mt-2 text-[12px] leading-relaxed text-ink-faint">
+          Gom các bài viết cùng chủ đề thành 1 tuyển tập riêng.
         </p>
-        <div className="space-y-1">
-          {COMING_SOON_ITEMS.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              disabled
-              className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-4 py-2.5 text-left text-[12.5px] text-slate-500"
-            >
-              <item.icon size={16} strokeWidth={1.9} />
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
       </div>
-
-      {profile.isSelf && (
-        <div className="mt-auto flex items-center gap-2 border-t border-white/10 p-4">
-          <Link
-            href="/settings"
-            className="grid size-9 place-items-center rounded-full text-slate-400 transition-colors duration-150 ease-out hover:bg-white/10 hover:text-white"
-          >
-            <Settings size={17} strokeWidth={1.9} />
-          </Link>
-          <button
-            type="button"
-            disabled
-            title="Sắp ra mắt"
-            className="grid size-9 cursor-not-allowed place-items-center rounded-full text-slate-600"
-          >
-            <Moon size={17} strokeWidth={1.9} />
-          </button>
-          <button
-            type="button"
-            disabled
-            title="Sắp ra mắt"
-            className="grid size-9 cursor-not-allowed place-items-center rounded-full text-slate-600"
-          >
-            <CircleHelp size={17} strokeWidth={1.9} />
-          </button>
-          <form action={signOutAction} className="ml-auto">
-            <button
-              type="submit"
-              title="Đăng xuất"
-              className="grid size-9 cursor-pointer place-items-center rounded-full text-slate-400 transition-colors duration-150 ease-out hover:bg-white/10 hover:text-white"
-            >
-              <LogOut size={17} strokeWidth={1.9} />
-            </button>
-          </form>
-        </div>
-      )}
     </aside>
   );
 }

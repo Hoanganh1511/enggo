@@ -1,4 +1,4 @@
-import ProfileFeedBox from "@/components/profile/ProfileFeedBox";
+import ProfileArticleGrid from "@/components/profile/ProfileArticleGrid";
 import { listPostsAction } from "@/actions/discover/list-posts";
 
 // Tab "Bai dang" - toan bo bai cua chinh chu profile nay (khong gioi han 10
@@ -13,5 +13,5 @@ export default async function ProfilePostsTabPage({
     authorUsername: decodeURIComponent(username),
     limit: 50,
   });
-  return <ProfileFeedBox heading="Tất cả bài đăng" posts={posts} />;
+  return <ProfileArticleGrid heading="Tất cả bài đăng" posts={posts} />;
 }
