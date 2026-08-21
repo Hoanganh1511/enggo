@@ -67,7 +67,7 @@ export function CommunityStatsBar() {
           className="hidden shrink-0 text-ink-faint sm:block"
         />
         <div className="min-w-0 flex-1">
-          <p className="font-card text-sm leading-snug font-semibold text-ink">
+          <p className="text-sm leading-snug font-semibold text-ink">
             Đi nhanh thì đi một mình, đi xa thì đi cùng nhau.
           </p>
           <p className="mt-1 text-xs text-ink-faint">— Tục ngữ châu Phi</p>

@@ -88,7 +88,7 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
   // shadow khong an thua, chinh border moi la thu tach lop.
   if (variant === "card") {
     return (
-      <article className="font-card flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_1px_3px_rgba(16,24,40,0.1)] transition-[box-shadow,border-color] duration-150 ease-out hover:border-hover-border hover:shadow-[0_4px_14px_rgba(16,24,40,0.1)]">
+      <article className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_1px_3px_rgba(16,24,40,0.1)] transition-[box-shadow,border-color] duration-150 ease-out hover:border-hover-border hover:shadow-[0_4px_14px_rgba(16,24,40,0.1)]">
         <div className="flex items-center justify-between gap-2">
           {/* Icon nam trong khoi tron dac mau accent, nhan chi la chu thuong
               (khong con pill nen mau) - doi theo phong cach the mau nguoi
@@ -156,7 +156,7 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
   }
 
   return (
-    <article className="font-card py-4 first:pt-5 last:pb-5">
+    <article className="py-4 first:pt-5 last:pb-5">
       <div className="flex items-start gap-3">
         {/* Marker loai bai viet - ngoi tren duong ke doc cua danh sach
             (variant="timeline"), luon dung icon/mau THEO KIND (khong phai

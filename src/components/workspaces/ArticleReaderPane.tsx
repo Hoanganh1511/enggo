@@ -170,7 +170,7 @@ export function ArticleReaderPane({ doc: initialDoc }: { doc: ApiDocument }) {
             vung rieng nua. Chuyen tu ArticleOverview.tsx (tab "Tong quan") len
             day - khong con lap lai o do. */}
         <div
-          className="font-breadcrumb flex h-13 shrink-0 items-center gap-1.5 overflow-hidden px-4 text-[13px]"
+          className="flex h-13 shrink-0 items-center gap-1.5 overflow-hidden px-4 text-[13px]"
           style={{ borderBottom: "1px solid var(--border)" }}
         >
           <Link

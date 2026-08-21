@@ -203,7 +203,7 @@ export function MessagesShell() {
       <section className="flex w-[320px] shrink-0 flex-col border-r border-slate-200">
         <div className="border-b border-slate-100 p-5">
           <div className="flex items-center justify-between">
-            <h1 className="font-hand text-[24px] font-semibold text-[#182338]">
+            <h1 className="text-[24px] font-semibold text-[#182338]">
               Tin nhắn
             </h1>
             <div className="flex items-center gap-x-2">
