@@ -13,7 +13,6 @@ import {
   Search,
   ShieldOff,
   Video,
-  Volume2,
   type LucideIcon,
 } from "lucide-react";
 import type { ApiConversationUser } from "@/lib/api/types";
@@ -27,12 +26,11 @@ function formatJoinDate(iso: string): string {
   return `tháng ${d.getMonth() + 1} năm ${d.getFullYear()}`;
 }
 
-// 4 nut hanh dong tren cung - DEU chua co tinh nang that dang sau (khong co
-// he thong goi thoai/video, khong co tim kiem trong 1 hoi thoai) nen de
-// disabled + nhan "Sắp có" thay vi gia vo bam duoc, dung nguyen tac da ap
-// dung xuyen suot session (GroupSectionPlaceholder.tsx, Profile Universe...).
+// 3 nut hanh dong tren cung - DEU chua co tinh nang that dang sau (khong co
+// he thong goi video, khong co tim kiem trong 1 hoi thoai) nen de disabled +
+// nhan "Sắp có" thay vi gia vo bam duoc, dung nguyen tac da ap dung xuyen
+// suot session (GroupSectionPlaceholder.tsx, Profile Universe...).
 const QUICK_ACTIONS: { icon: LucideIcon; label: string }[] = [
-  { icon: Volume2, label: "Âm thanh" },
   { icon: Video, label: "Gọi video" },
   { icon: Search, label: "Tìm kiếm" },
   { icon: MoreHorizontal, label: "Thêm" },
@@ -125,7 +123,7 @@ export function MessageInfoPanel({
       </div>
 
       {/* 4 nut hanh dong */}
-      <div className="mt-4 grid grid-cols-4 gap-2">
+      <div className="mt-4 grid grid-cols-3 gap-2">
         {QUICK_ACTIONS.map((a) => (
           <button
             key={a.label}

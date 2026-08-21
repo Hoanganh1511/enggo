@@ -3,6 +3,7 @@ import type {
   ApiChatMessage,
   ApiChatMessagePage,
   ApiConversationSummary,
+  ApiMessageReaction,
   ApiMessageType,
   ApiPoll,
 } from "./types";
@@ -45,6 +46,7 @@ export type SendMessageInput = {
   attachmentSize?: number;
   durationSeconds?: number;
   poll?: { question: string; options: { text: string }[] };
+  replyToId?: string;
 };
 
 export function sendMessage(
@@ -84,4 +86,54 @@ export function searchMessages(
   return apiFetch<ApiChatMessage[]>(
     `/conversations/${conversationId}/messages/search?${params.toString()}`,
   );
+}
+
+export function recallMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<ApiChatMessage> {
+  return apiFetch<ApiChatMessage>(
+    `/conversations/${conversationId}/messages/${messageId}/recall`,
+    { method: "POST" },
+  );
+}
+
+export function reactToMessage(
+  messageId: string,
+  emoji: string,
+): Promise<{ messageId: string; reactions: ApiMessageReaction[] }> {
+  return apiFetch(`/messages/${messageId}/reactions`, {
+    method: "PUT",
+    body: JSON.stringify({ emoji }),
+  });
+}
+
+export function removeReaction(
+  messageId: string,
+): Promise<{ messageId: string; reactions: ApiMessageReaction[] }> {
+  return apiFetch(`/messages/${messageId}/reactions`, { method: "DELETE" });
+}
+
+export type ConversationSettingsInput = {
+  isFavorite?: boolean;
+  isMuted?: boolean;
+  isRestricted?: boolean;
+};
+
+export function updateConversationSettings(
+  conversationId: string,
+  input: ConversationSettingsInput,
+): Promise<ConversationSettingsInput> {
+  return apiFetch(`/conversations/${conversationId}/settings`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function markConversationUnread(
+  conversationId: string,
+): Promise<{ unreadCount: number }> {
+  return apiFetch(`/conversations/${conversationId}/mark-unread`, {
+    method: "POST",
+  });
 }

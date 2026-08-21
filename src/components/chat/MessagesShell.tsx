@@ -6,6 +6,9 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import {
   BarChart3,
+  BellOff,
+  Check,
+  CheckCheck,
   File as FileIcon,
   FunnelIcon,
   ImagePlus,
@@ -13,12 +16,16 @@ import {
   MessageCircle,
   Mic,
   MoreHorizontal,
+  MoreVertical,
   Paperclip,
   Plus,
+  Reply as ReplyIcon,
   Search,
   Send,
+  ShieldAlert,
   Smile,
   SquarePenIcon,
+  Star,
   X,
 } from "lucide-react";
 import type {
@@ -27,6 +34,7 @@ import type {
   ApiMessageType,
   ApiPoll,
   ApiPresenceUpdate,
+  ApiReactionUpdate,
   ApiReadEvent,
   ApiTypingEvent,
 } from "@/lib/api/types";
@@ -40,6 +48,15 @@ import { sendMessageAction } from "@/actions/chat/send-message";
 import { markConversationReadAction } from "@/actions/chat/mark-conversation-read";
 import { uploadChatAttachmentAction } from "@/actions/chat/upload-attachment";
 import { votePollAction } from "@/actions/chat/vote-poll";
+import { recallMessageAction } from "@/actions/chat/recall-message";
+import {
+  reactToMessageAction,
+  removeReactionAction,
+} from "@/actions/chat/react-message";
+import {
+  markConversationUnreadAction,
+  updateConversationSettingsAction,
+} from "@/actions/chat/conversation-settings";
 import { useChatSocket } from "@/lib/use-chat-socket";
 import { formatRelativeTime } from "@/lib/format-time";
 import { formatMessagePreview } from "@/lib/chat-message-preview";
@@ -121,6 +138,8 @@ export function MessagesShell() {
   const [otherReadEvent, setOtherReadEvent] = useState<ApiReadEvent | null>(
     null,
   );
+  const [replyTarget, setReplyTarget] = useState<ApiChatMessage | null>(null);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const lastTypingEmitRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Gan trong effect KHONG deps (chay sau MOI render) thay vi truc tiep trong
@@ -271,6 +290,21 @@ export function MessagesShell() {
   const handleRead = useCallback((p: ApiReadEvent) => {
     setOtherReadEvent(p);
   }, []);
+  // Tin nhan bi thu hoi - cap nhat lai dung message do trong danh sach (server
+  // da xoa sach content/attachment, chi con isRecalled=true).
+  const handleMessageUpdated = useCallback((updated: ApiChatMessage) => {
+    setMessages(
+      (prev) => prev?.map((m) => (m.id === updated.id ? updated : m)) ?? prev,
+    );
+  }, []);
+  const handleReactionUpdate = useCallback((p: ApiReactionUpdate) => {
+    setMessages(
+      (prev) =>
+        prev?.map((m) =>
+          m.id === p.messageId ? { ...m, reactions: p.reactions } : m,
+        ) ?? prev,
+    );
+  }, []);
   // Dep tat ca timeout dang cho khi unmount - tranh setState sau khi component
   // da roi trang.
   useEffect(() => {
@@ -281,14 +315,14 @@ export function MessagesShell() {
     };
   }, []);
 
-  const { emitTyping } = useChatSocket(
-    Boolean(myId),
-    handleIncoming,
-    handlePollUpdate,
-    handlePresenceUpdate,
-    handleTyping,
-    handleRead,
-  );
+  const { emitTyping } = useChatSocket(Boolean(myId), handleIncoming, {
+    onPollUpdate: handlePollUpdate,
+    onPresenceUpdate: handlePresenceUpdate,
+    onTyping: handleTyping,
+    onRead: handleRead,
+    onMessageUpdated: handleMessageUpdated,
+    onReactionUpdate: handleReactionUpdate,
+  });
 
   async function handleLoadOlder() {
     if (!activeId || !nextCursor || loadingOlder) return;
@@ -440,9 +474,11 @@ export function MessagesShell() {
           attachmentMimeType: pendingAttachment.uploaded.mimeType,
           attachmentSize: pendingAttachment.uploaded.size,
           durationSeconds: pendingAttachment.durationSeconds,
+          replyToId: replyTarget?.id,
         });
         appendSentMessage(msg);
         setDraft("");
+        setReplyTarget(null);
         cancelPendingAttachment();
       } finally {
         setSending(false);
@@ -454,8 +490,12 @@ export function MessagesShell() {
     setDraft("");
     setSending(true);
     try {
-      const msg = await sendMessageAction(activeId, { content: text });
+      const msg = await sendMessageAction(activeId, {
+        content: text,
+        replyToId: replyTarget?.id,
+      });
       appendSentMessage(msg);
+      setReplyTarget(null);
     } finally {
       setSending(false);
     }
@@ -499,6 +539,86 @@ export function MessagesShell() {
       })
       .catch(() => toast.danger("Không thể bình chọn, thử lại sau."));
   }, []);
+
+  const handleReact = useCallback((messageId: string, emoji: string) => {
+    reactToMessageAction(messageId, emoji)
+      .then(({ reactions }) => {
+        setMessages(
+          (prev) =>
+            prev?.map((m) => (m.id === messageId ? { ...m, reactions } : m)) ??
+            prev,
+        );
+      })
+      .catch(() => toast.danger("Không thể thả cảm xúc, thử lại sau."));
+  }, []);
+
+  const handleRemoveReaction = useCallback((messageId: string) => {
+    removeReactionAction(messageId)
+      .then(({ reactions }) => {
+        setMessages(
+          (prev) =>
+            prev?.map((m) => (m.id === messageId ? { ...m, reactions } : m)) ??
+            prev,
+        );
+      })
+      .catch(() => toast.danger("Không thể bỏ cảm xúc, thử lại sau."));
+  }, []);
+
+  const handleReply = useCallback((message: ApiChatMessage) => {
+    setReplyTarget(message);
+  }, []);
+
+  const handleRecall = useCallback(
+    async (messageId: string) => {
+      if (!activeId) return;
+      const updated = await recallMessageAction(activeId, messageId);
+      setMessages(
+        (prev) => prev?.map((m) => (m.id === messageId ? updated : m)) ?? prev,
+      );
+    },
+    [activeId],
+  );
+
+  async function handleToggleConversationSetting(
+    conversationId: string,
+    key: "isFavorite" | "isMuted" | "isRestricted",
+  ) {
+    const current = conversations?.find((c) => c.id === conversationId);
+    if (!current) return;
+    const nextValue = !current[key];
+    setConversations(
+      (prev) =>
+        prev?.map((c) =>
+          c.id === conversationId ? { ...c, [key]: nextValue } : c,
+        ) ?? prev,
+    );
+    try {
+      await updateConversationSettingsAction(conversationId, {
+        [key]: nextValue,
+      });
+    } catch {
+      toast.danger("Không thể cập nhật, thử lại sau.");
+      setConversations(
+        (prev) =>
+          prev?.map((c) =>
+            c.id === conversationId ? { ...c, [key]: current[key] } : c,
+          ) ?? prev,
+      );
+    }
+  }
+
+  async function handleMarkUnread(conversationId: string) {
+    try {
+      const { unreadCount } = await markConversationUnreadAction(conversationId);
+      setConversations(
+        (prev) =>
+          prev?.map((c) => (c.id === conversationId ? { ...c, unreadCount } : c)) ??
+          prev,
+      );
+    } catch {
+      toast.danger("Không thể đánh dấu chưa đọc, thử lại sau.");
+    }
+  }
 
   const filtered =
     conversations?.filter((c) => {
@@ -617,56 +737,100 @@ export function MessagesShell() {
             </div>
           ) : (
             filtered.map((c) => (
-              <button
+              <div
                 key={c.id}
-                type="button"
-                onClick={() => setActiveId(c.id)}
-                className={`flex w-full gap-3.5 rounded-lg p-4 text-left transition ${
-                  activeId === c.id ? "bg-[#f3f3fc]" : "hover:bg-slate-50"
-                }`}
+                className={cn(
+                  "group relative flex w-full gap-3.5 rounded-lg p-4 transition",
+                  activeId === c.id ? "bg-[#f3f3fc]" : "hover:bg-slate-50",
+                  c.isRestricted && "opacity-60",
+                )}
               >
-                <ConversationAvatar
-                  name={c.otherUser?.name}
-                  avatarUrl={c.otherUser?.avatarUrl}
-                  online={c.otherUser?.online}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex justify-between gap-2">
-                    <b className="truncate text-[15px] text-[#182338]">
-                      {c.otherUser?.name ?? "Người dùng"}
-                    </b>
-                    <span className="shrink-0 text-[11px] text-slate-500">
-                      {formatRelativeTime(c.updatedAt)}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex justify-between gap-2">
-                    <p
-                      className={cn(
-                        "truncate text-[13px]",
-                        typingConversationIds.has(c.id)
-                          ? "font-medium italic"
-                          : "text-slate-600",
-                      )}
-                      style={
-                        typingConversationIds.has(c.id)
-                          ? { color: "var(--primary)" }
-                          : undefined
-                      }
-                    >
-                      {typingConversationIds.has(c.id)
-                        ? "Đang nhập..."
-                        : c.lastMessage
-                          ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${formatMessagePreview(c.lastMessage)}`
-                          : "Chưa có tin nhắn"}
-                    </p>
-                    {c.unreadCount > 0 && (
-                      <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#ee7068] px-1.5 text-[10px] font-semibold text-white">
-                        {c.unreadCount}
+                <button
+                  type="button"
+                  onClick={() => setActiveId(c.id)}
+                  className="flex flex-1 cursor-pointer gap-3.5 text-left"
+                >
+                  <ConversationAvatar
+                    name={c.otherUser?.name}
+                    avatarUrl={c.otherUser?.avatarUrl}
+                    online={c.otherUser?.online}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-1">
+                        {c.isFavorite && (
+                          <Star
+                            size={12}
+                            className="shrink-0"
+                            style={{ color: "var(--primary)" }}
+                            fill="currentColor"
+                          />
+                        )}
+                        <b className="truncate text-[15px] text-[#182338]">
+                          {c.otherUser?.name ?? "Người dùng"}
+                        </b>
+                        {c.isMuted && (
+                          <BellOff size={12} className="shrink-0 text-slate-400" />
+                        )}
+                      </div>
+                      <span className="shrink-0 text-[11px] text-slate-500 transition-opacity duration-150 ease-out group-hover:opacity-0">
+                        {formatRelativeTime(c.updatedAt)}
                       </span>
-                    )}
+                    </div>
+                    <div className="mt-1 flex justify-between gap-2">
+                      <p
+                        className={cn(
+                          "truncate text-[13px]",
+                          typingConversationIds.has(c.id)
+                            ? "font-medium italic"
+                            : "text-slate-600",
+                        )}
+                        style={
+                          typingConversationIds.has(c.id)
+                            ? { color: "var(--primary)" }
+                            : undefined
+                        }
+                      >
+                        {typingConversationIds.has(c.id)
+                          ? "Đang nhập..."
+                          : c.lastMessage
+                            ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${formatMessagePreview(c.lastMessage)}`
+                            : "Chưa có tin nhắn"}
+                      </p>
+                      {c.unreadCount > 0 && (
+                        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#ee7068] px-1.5 text-[10px] font-semibold text-white">
+                          {c.unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                </button>
+
+                <div className="absolute top-4 right-4 opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
+                  <PopoverRoot
+                    open={openRowMenuId === c.id}
+                    onOpenChange={(open) => setOpenRowMenuId(open ? c.id : null)}
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        title="Tuỳ chọn"
+                        className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-full bg-white text-slate-500 shadow-[0_1px_4px_rgba(15,23,42,.15)] hover:bg-slate-100"
+                      >
+                        <MoreVertical size={14} />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent open={openRowMenuId === c.id} align="end" sideOffset={6}>
+                      <ConversationRowMenu
+                        conversation={c}
+                        onToggle={(key) => handleToggleConversationSetting(c.id, key)}
+                        onMarkUnread={() => handleMarkUnread(c.id)}
+                        onClose={() => setOpenRowMenuId(null)}
+                      />
+                    </PopoverContent>
+                  </PopoverRoot>
                 </div>
-              </button>
+              </div>
             ))
           )}
         </div>
@@ -772,13 +936,25 @@ export function MessagesShell() {
                         message={m}
                         isMine={m.senderId === myId}
                         onVote={handleVote}
+                        onReact={handleReact}
+                        onRemoveReaction={handleRemoveReaction}
+                        onReply={handleReply}
+                        onRecall={handleRecall}
                       />
                     ))}
-                    {showSeen && (
-                      <div className="mb-2 flex justify-end pr-1">
-                        <span className="text-[11px] text-slate-400">
-                          Đã xem
-                        </span>
+                    {lastOwnMessage && !lastOwnMessage.isRecalled && (
+                      <div className="mb-2 flex items-center justify-end gap-1 pr-1 text-[11px] text-slate-400">
+                        {showSeen ? (
+                          <>
+                            <CheckCheck size={13} style={{ color: "var(--primary)" }} />
+                            <span style={{ color: "var(--primary)" }}>Đã xem</span>
+                          </>
+                        ) : (
+                          <>
+                            <Check size={13} />
+                            <span>Đã gửi</span>
+                          </>
+                        )}
                       </div>
                     )}
                     {isActiveTyping && (
@@ -806,6 +982,26 @@ export function MessagesShell() {
 
             <div className="border-t border-slate-100 p-5">
               <div className="mx-auto flex max-w-[820px] flex-col gap-2.5 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
+                {replyTarget && (
+                  <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3 py-2">
+                    <ReplyIcon size={15} className="shrink-0 text-slate-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-medium text-slate-500">
+                        Trả lời {replyTarget.senderId === myId ? "chính mình" : (activeConversation?.otherUser?.name ?? "")}
+                      </p>
+                      <p className="truncate text-[12px] text-slate-600">
+                        {formatMessagePreview(replyTarget)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReplyTarget(null)}
+                      className="shrink-0 cursor-pointer rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
                 {pendingAttachment && (
                   <AttachmentPreviewStrip
                     attachment={pendingAttachment}
@@ -1034,6 +1230,78 @@ export function MessagesShell() {
         onOpenChange={setPollModalOpen}
         onSubmit={handleCreatePoll}
       />
+    </div>
+  );
+}
+
+function ConversationRowMenu({
+  conversation,
+  onToggle,
+  onMarkUnread,
+  onClose,
+}: {
+  conversation: ApiConversationSummary;
+  onToggle: (key: "isFavorite" | "isMuted" | "isRestricted") => void;
+  onMarkUnread: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="w-56 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)]">
+      <button
+        type="button"
+        onClick={() => {
+          onToggle("isFavorite");
+          onClose();
+        }}
+        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+      >
+        <Star
+          size={15}
+          className={conversation.isFavorite ? undefined : "text-slate-500"}
+          style={conversation.isFavorite ? { color: "var(--primary)" } : undefined}
+          fill={conversation.isFavorite ? "currentColor" : "none"}
+        />
+        {conversation.isFavorite ? "Bỏ đánh dấu Yêu thích" : "Đánh dấu Yêu thích"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onMarkUnread();
+          onClose();
+        }}
+        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+      >
+        <MessageCircle size={15} className="text-slate-500" />
+        Chưa đọc
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onToggle("isRestricted");
+          onClose();
+        }}
+        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+      >
+        <ShieldAlert
+          size={15}
+          className={conversation.isRestricted ? "text-amber-600" : "text-slate-500"}
+        />
+        {conversation.isRestricted ? "Bỏ hạn chế" : "Hạn chế"}
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onToggle("isMuted");
+          onClose();
+        }}
+        className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+      >
+        <BellOff
+          size={15}
+          className={conversation.isMuted ? "text-[#182338]" : "text-slate-500"}
+        />
+        {conversation.isMuted ? "Bật lại thông báo" : "Tắt thông báo"}
+      </button>
     </div>
   );
 }

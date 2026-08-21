@@ -424,6 +424,19 @@ export type ApiPoll = {
   totalVotes: number;
 };
 
+export type ApiMessageReaction = {
+  emoji: string;
+  count: number;
+  reactedByMe: boolean;
+};
+
+export type ApiReplyPreview = {
+  id: string;
+  senderId: string;
+  type: ApiMessageType;
+  preview: string;
+};
+
 export type ApiChatMessage = {
   id: string;
   conversationId: string;
@@ -436,6 +449,9 @@ export type ApiChatMessage = {
   attachmentSize: number | null;
   durationSeconds: number | null;
   poll: ApiPoll | null;
+  isRecalled: boolean;
+  replyTo: ApiReplyPreview | null;
+  reactions: ApiMessageReaction[];
   createdAt: string;
   // Chi co gia tri tren su kien socket "chat:message" (xem ChatService.sendMessage
   // o backend) - REST (listMessages) khong tra ve 2 field nay. Dung de hien
@@ -453,6 +469,10 @@ export type ApiConversationSummary = {
   // Snapshot tai thoi diem fetch - cap nhat real-time qua socket event
   // "chat:read" (xem use-chat-socket.ts).
   otherLastReadAt: string | null;
+  // Cai dat RIENG cua nguoi xem (khong doi xung) - xem updateConversationSettings.
+  isFavorite: boolean;
+  isMuted: boolean;
+  isRestricted: boolean;
 };
 
 export type ApiChatMessagePage = {
@@ -476,4 +496,10 @@ export type ApiTypingEvent = {
 export type ApiReadEvent = {
   conversationId: string;
   readAt: string;
+};
+
+// Payload cua socket event "chat:reaction-update".
+export type ApiReactionUpdate = {
+  messageId: string;
+  reactions: ApiMessageReaction[];
 };
