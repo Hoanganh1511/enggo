@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Settings, SunMoon, User, Users, LogOut } from "lucide-react";
+import {
+  BookText,
+  ChevronDown,
+  Settings,
+  SunMoon,
+  User,
+  Users,
+  LogOut,
+} from "lucide-react";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -69,11 +77,17 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
         <button
           type="button"
           title="Tài khoản"
-          className={`flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out ${
-            open ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-border"
-          }`}
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full py-1 pr-2 pl-1 transition-colors duration-150 ease-out hover:bg-hover-bg"
         >
-          <Avatar user={user} size={34} />
+          <Avatar user={user} size={30} />
+          <span className="max-w-32 truncate text-sm font-medium text-ink">
+            {user.name ?? "Người dùng"}
+          </span>
+          <ChevronDown
+            size={14}
+            strokeWidth={2}
+            className={`shrink-0 text-ink-faint transition-transform duration-150 ease-out ${open ? "rotate-180" : ""}`}
+          />
         </button>
       </PopoverTrigger>
 
@@ -97,6 +111,12 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
             icon={User}
             label="Profile"
             href={username ? `/u/${username}` : undefined}
+            onNavigate={() => setOpen(false)}
+          />
+          <MenuRow
+            icon={BookText}
+            label="Workspace"
+            href={username ? `/workspace/${username}` : undefined}
             onNavigate={() => setOpen(false)}
           />
           <MenuRow

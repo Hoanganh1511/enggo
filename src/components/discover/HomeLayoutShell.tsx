@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { HomeSidebar } from "./HomeSidebar";
@@ -112,6 +112,20 @@ const HomeLayoutShell = ({
       ?.scrollIntoView({ behavior: "smooth", block: "center" });
     document.getElementById("post-composer-input")?.focus();
   };
+
+  // Nut "Viết bài" tren header (TopHeaderBar.tsx) dieu huong ve
+  // /home?compose=1 khi dang o trang KHAC /home - tu cuon+focus composer
+  // ngay khi shell nay mount voi param do, roi don param di (khong giu URL
+  // ?compose=1 mai, tranh cuon lai moi lan back/forward).
+  useEffect(() => {
+    if (searchParams.get("compose") !== "1") return;
+    handleComposeClick();
+    const qs = new URLSearchParams(searchParams.toString());
+    qs.delete("compose");
+    const query = qs.toString();
+    router.replace(`/home${query ? `?${query}` : ""}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // KHONG con overflow-hidden/overflow-y-auto o day - de sidebar va feed
   // CUNG cuon trong 1 vung cuon DUY NHAT la MainContentArea (ancestor, xem
