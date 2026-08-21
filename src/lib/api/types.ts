@@ -480,6 +480,33 @@ export type ApiChatMessagePage = {
   nextCursor: string | null;
 };
 
+// Ket qua full-text search (xem ChatSearchService o backend) - KHONG dung
+// chung shape voi ApiChatMessage vi khong co poll/reactions/replyTo (chi
+// dung de hien danh sach ket qua, chua ho tro nhay-toi-tin-nhan).
+export type ApiMessageSearchResult = {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  type: ApiMessageType;
+  attachmentName: string | null;
+  attachmentMimeType: string | null;
+  attachmentUrl: string | null;
+  // Chua marker dieu khien U+0001 (bat dau khop) / U+0002 (ket thuc khop) -
+  // xem renderHighlightedSnippet() trong lib/chat-search-highlight.tsx. KHONG
+  // phai the HTML - khong duoc dangerouslySetInnerHTML truc tiep.
+  snippet: string;
+  rank: number;
+  createdAt: string;
+};
+
+export type ApiMessageSearchPage = {
+  items: ApiMessageSearchResult[];
+  nextCursor: string | null;
+  // Chi co gia tri o trang dau (khong truyen cursor) - xem
+  // docs/chat-search-architecture.md (career-tree-api) muc 3.3.
+  total?: number;
+};
+
 // Payload cua socket event "presence:update" - xem NotificationGateway.
 export type ApiPresenceUpdate = {
   userId: string;

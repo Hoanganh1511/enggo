@@ -6,12 +6,16 @@ import {
   BadgeCheck,
   Bell,
   CalendarDays,
+  FileIcon,
   FileText,
+  FoldersIcon,
   Image as ImageIcon,
+  Info,
   MapPin,
   MoreHorizontal,
   Search,
   ShieldOff,
+  User2Icon,
   Video,
   type LucideIcon,
 } from "lucide-react";
@@ -130,16 +134,16 @@ export function MessageInfoPanel({
             type="button"
             disabled
             title="Sắp có"
-            className="flex cursor-not-allowed flex-col items-center gap-1.5 rounded-xl border-2 border-slate-200 py-3 text-[11px] font-semibold text-slate-400"
+            className="flex cursor-not-allowed flex-col items-center gap-1.5 rounded-xl border-2 border-slate-200 py-3 text-[11px] font-semibold "
           >
-            <a.icon size={19} strokeWidth={2.25} />
+            <a.icon size={19} strokeWidth={2.25} className="text-primary" />
             {a.label}
           </button>
         ))}
       </div>
 
       {/* Gioi thieu */}
-      <InfoSection title="Giới thiệu">
+      <InfoSection title="Giới thiệu" icon={User2Icon}>
         {!profile ? (
           <div className="space-y-2">
             <div className="h-3.5 w-32 animate-pulse rounded bg-slate-100" />
@@ -158,15 +162,12 @@ export function MessageInfoPanel({
       </InfoSection>
 
       {/* File & Media */}
-      <InfoSection title="File & Media" action="Xem tất cả">
-        <EmptyRow
-          icon={ImageIcon}
-          text="Chưa có ảnh/video nào được chia sẻ."
-        />
+      <InfoSection title="File & Media" action="Xem tất cả" icon={FoldersIcon}>
+        <EmptyRow icon={ImageIcon} text="Chưa có ảnh/video nào được chia sẻ." />
       </InfoSection>
 
       {/* Tai lieu */}
-      <InfoSection title="Tài liệu">
+      <InfoSection title="Tài liệu" icon={FileIcon}>
         <EmptyRow icon={FileText} text="Chưa có tài liệu nào được chia sẻ." />
       </InfoSection>
 
@@ -210,17 +211,24 @@ export function MessageInfoPanel({
 
 function InfoSection({
   title,
+  icon: Icon,
   action,
   children,
 }: {
   title: string;
+  icon?: LucideIcon;
   action?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="mt-5 border-t border-slate-200 pt-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-[13px] font-bold text-[#182338]">{title}</h3>
+        <h3 className="flex items-center gap-1.5 text-[13px] font-bold text-[#182338]">
+          {Icon && (
+            <Icon size={16} strokeWidth={2} className="shrink-0 text-primary" />
+          )}
+          {title}
+        </h3>
         {action && (
           <button
             type="button"
@@ -232,7 +240,7 @@ function InfoSection({
           </button>
         )}
       </div>
-      {children}
+      <div className="p-2">{children}</div>
     </section>
   );
 }

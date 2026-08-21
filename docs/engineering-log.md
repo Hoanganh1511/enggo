@@ -8,6 +8,48 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-08-22 — Tin nhắn tự gửi bị lệch vị trí: UUID cũ lẫn ULID mới sort sai thứ tự
+
+**Triệu chứng người dùng báo:** "tin tôi gửi lại ở tít cuối cùng phải lăn
+chuột lên mới thấy" — ban đầu nghi ngờ auto-scroll-to-bottom
+(`pendingScrollActionRef`/`useLayoutEffect` trong `MessagesShell.tsx`, xây ở
+tính năng Load More Messages) không kích hoạt đúng khi gửi tin.
+
+**Đọc lại code không ra bug** — mọi nhánh gửi tin (`handleSend`,
+`handleSelectGif`) đều set `pendingScrollActionRef.current = "bottom"`
+TRƯỚC `setMessages`, layout effect tiêu thụ đúng. Nghi ngờ chuyển hướng:
+"kiểm tra lại thời gian gửi tin nhắn" (gợi ý của người dùng) khiến nghĩ tới
+tầng **sắp xếp dữ liệu** thay vì tầng UI.
+
+**Root cause thật (ở phía `career-tree-api`, backend):** `Message.id` được
+đổi từ `uuid()` sang ULID (sortable theo thời gian) ở lần sửa cursor
+pagination trước đó — nhưng migration chỉ đổi DEFAULT cho hàng MỚI, không
+backfill lại id của hàng CŨ đã tồn tại. Kết quả: 1 conversation có 26 tin id
+kiểu UUID cũ (random) lẫn 9 tin id kiểu ULID mới trong CÙNG bảng. Mọi chỗ
+`ORDER BY id DESC` (listMessages, cursor phân trang, search) đều dùng so
+sánh CHUỖI — UUID cũ và ULID mới dùng 2 bảng ký tự khác nhau nên thứ tự
+lexicographic giữa chúng gần như ngẫu nhiên so với thời gian thật. Verify
+trực tiếp bằng script tsx: so `ORDER BY id DESC` với thứ tự `createdAt` thật
+→ **không khớp** cho conversation có dữ liệu trộn 2 định dạng.
+
+**Fix:** backfill lại `id` cho TOÀN BỘ `Message` hiện có, sinh ULID mới theo
+đúng thứ tự `createdAt` (1 `monotonicFactory()` chạy xuyên suốt danh sách đã
+sort theo `createdAt asc`), update trong 1 transaction. An toàn vì đã verify
+trước cả 3 FK tham chiếu `Message.id` (`Poll.messageId`,
+`MessageReaction.messageId`, `Message.replyToId` tự tham chiếu) đều có
+`ON UPDATE CASCADE` sẵn trong DB (`pg_constraint.confupdtype = 'c'`) — chỉ
+cần update cột `id`, Postgres tự cascade các bảng phụ thuộc, không cần đụng
+tay từng bảng. Verify lại sau fix: `ORDER BY id DESC` khớp `createdAt`, 0
+`replyToId`/reaction/poll mồ côi.
+
+**Bài học:** đổi kiểu PK sortable (uuid → ulid/snowflake) trên bảng ĐANG CÓ
+DỮ LIỆU luôn cần kèm theo backfill dữ liệu cũ trong CÙNG lần đổi, không chỉ
+đổi default cho hàng mới — nếu không, bug chỉ lộ ra khi dữ liệu đủ "già" để
+có cả 2 định dạng trộn lẫn (ở đây là ~2 ngày sau migration), khó liên hệ
+ngược lại nguyên nhân nếu không nghĩ tới tầng dữ liệu.
+
+---
+
 ## 2026-08-19 — Sửa nền/toolbar/banner "vũ trụ" bị lộ sang màn chi tiết workspace
 
 **Bug:** `WorkspaceHubChrome` (nền ảnh bầu trời + `WorkspaceQuickToolbar` +

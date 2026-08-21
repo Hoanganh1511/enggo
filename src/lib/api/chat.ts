@@ -4,6 +4,7 @@ import type {
   ApiChatMessagePage,
   ApiConversationSummary,
   ApiMessageReaction,
+  ApiMessageSearchPage,
   ApiMessageType,
   ApiPoll,
 } from "./types";
@@ -76,15 +77,23 @@ export function votePoll(pollId: string, optionId: string): Promise<ApiPoll> {
   });
 }
 
-// Tim tin nhan cu trong 1 hoi thoai theo tu khoa (chi khop `content`) - xem
-// ChatService.searchMessages o backend.
-export function searchMessages(
-  conversationId: string,
-  query: string,
-): Promise<ApiChatMessage[]> {
-  const params = new URLSearchParams({ q: query });
-  return apiFetch<ApiChatMessage[]>(
-    `/conversations/${conversationId}/messages/search?${params.toString()}`,
+// Full-text search tin nhan (rank/snippet/phan trang) - dung chung cho ca
+// popup search trong 1 hoi thoai (truyen conversationId) lan drawer "Xem tat
+// ca ket qua" - xem ChatSearchService.search() o backend.
+export function searchMessages(params: {
+  q: string;
+  conversationId?: string;
+  sort?: "relevance" | "recent";
+  cursor?: string;
+  limit?: number;
+}): Promise<ApiMessageSearchPage> {
+  const usp = new URLSearchParams({ q: params.q });
+  if (params.conversationId) usp.set("conversationId", params.conversationId);
+  if (params.sort) usp.set("sort", params.sort);
+  if (params.cursor) usp.set("cursor", params.cursor);
+  if (params.limit) usp.set("limit", String(params.limit));
+  return apiFetch<ApiMessageSearchPage>(
+    `/conversations/messages/search?${usp.toString()}`,
   );
 }
 

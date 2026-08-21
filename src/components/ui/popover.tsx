@@ -31,6 +31,12 @@ export function PopoverContent({
         <RadixPopover.Portal forceMount>
           <RadixPopover.Content forceMount sideOffset={sideOffset} asChild {...props}>
             <motion.div
+              // z-50 - Portal day ra document.body nhung KHONG tu dong noi
+              // len tren cac phan tu `position: relative/fixed` co z-index
+              // rieng trong luong trang thuong (vd header chat dung z-10 de
+              // shadow khong bi che, xem MessagesShell.tsx) - thieu z-index
+              // o day khien popover bi header do "de" mat phan dau.
+              className="z-50"
               initial={{ opacity: 0, scale: 0.95, y: -4 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -4 }}
