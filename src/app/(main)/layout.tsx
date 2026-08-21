@@ -1,5 +1,6 @@
 import MainContentArea from "@/components/shell/main-content-area";
 import TopHeaderBar from "@/components/shell/TopHeaderBar";
+import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 
 // Layout 1 cot: header ngang CO DINH tren cung (TopHeaderBar.tsx, port layout
@@ -13,6 +14,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     <>
       <FeedBootstrap />
       <TopHeaderBar />
+      <ChatMessageToastStack />
       <MainContentArea>{children}</MainContentArea>
     </>
   );

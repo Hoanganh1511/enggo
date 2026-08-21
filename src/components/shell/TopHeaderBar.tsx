@@ -23,6 +23,7 @@ import {
   requestNotificationPermission,
 } from "@/lib/browser-notifications";
 import { formatMessagePreview } from "@/lib/chat-message-preview";
+import { pushChatToast } from "@/lib/chat-toast/chat-toast-store";
 import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 
 // Header ngang - thay AppSidebar.tsx (sidebar trai) theo yeu cau nguoi dung,
@@ -85,9 +86,21 @@ const TopHeaderBar = () => {
             avatarUrl: m.senderAvatarUrl,
             conversationId: m.conversationId,
           });
+          // Dang o /messages roi thi tin nhan da song trong khung chat -
+          // khong can chong toast trung lap (xem ChatMessageToastStack.tsx).
+          if (!pathname.startsWith("/messages")) {
+            pushChatToast({
+              id: m.id,
+              conversationId: m.conversationId,
+              senderName: m.senderName ?? "Người dùng",
+              senderAvatarUrl: m.senderAvatarUrl ?? null,
+              preview: formatMessagePreview(m),
+              createdAt: m.createdAt,
+            });
+          }
         }
       },
-      [session?.userId],
+      [session?.userId, pathname],
     ),
   );
 
