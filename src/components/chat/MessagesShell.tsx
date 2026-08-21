@@ -83,14 +83,14 @@ type PendingAttachment = {
   durationSeconds?: number;
 };
 
-// "Yêu thích"/"Nhóm" CHUA CO du lieu that dang sau (ApiConversationSummary
-// chi co `otherUser` SO (1-1), khong co khai niem group/gan sao - xem
-// Conversation model o backend, khong co field nao cho 2 thu nay) - disable
-// 2 tab do (nhan "Sắp có") thay vi loc ra 1 danh sach rong gia vo la du lieu
-// that. "Tất cả"/"Chưa đọc" loc that tren unreadCount da co san.
+// "Nhóm" CHUA CO du lieu that dang sau (Conversation hien chi ho tro 1-1,
+// khong co khai niem nhom - xem model Conversation o backend) - disable tab
+// do (nhan "Sắp có") thay vi loc ra 1 danh sach rong gia vo la du lieu that.
+// "Yêu thích" da co that (ConversationParticipant.isFavorite, dat qua menu
+// 3 cham tren tung dong - xem ConversationRowMenu).
 const CHAT_TABS: { key: ChatTab; label: string; disabled?: boolean }[] = [
   { key: "all", label: "Tất cả" },
-  { key: "favorites", label: "Yêu thích", disabled: true },
+  { key: "favorites", label: "Yêu thích" },
   { key: "groups", label: "Nhóm", disabled: true },
   { key: "unread", label: "Chưa đọc" },
 ];
@@ -625,7 +625,12 @@ export function MessagesShell() {
       const matchesQuery = (c.otherUser?.name ?? "")
         .toLowerCase()
         .includes(query.toLowerCase());
-      const matchesTab = tab === "unread" ? c.unreadCount > 0 : true;
+      const matchesTab =
+        tab === "unread"
+          ? c.unreadCount > 0
+          : tab === "favorites"
+            ? c.isFavorite
+            : true;
       return matchesQuery && matchesTab;
     }) ?? [];
   const unreadTotal =
@@ -671,7 +676,9 @@ export function MessagesShell() {
                   ? (conversations?.length ?? 0)
                   : t.key === "unread"
                     ? unreadTotal
-                    : 0;
+                    : t.key === "favorites"
+                      ? (conversations?.filter((c) => c.isFavorite).length ?? 0)
+                      : 0;
               return (
                 <button
                   key={t.key}
