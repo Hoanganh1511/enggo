@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { io, type Socket } from "socket.io-client";
 import { getSocketTokenAction } from "@/actions/notifications/get-socket-token";
-import type { ApiChatMessage, ApiPoll, ApiPresenceUpdate } from "./api/types";
+import type {
+  ApiChatMessage,
+  ApiPoll,
+  ApiPresenceUpdate,
+  ApiReadEvent,
+  ApiTypingEvent,
+} from "./api/types";
 
 const SOCKET_URL =
   process.env.NEXT_PUBLIC_CAREER_TREE_API_URL ?? "http://localhost:3001";
@@ -22,6 +28,10 @@ export function useChatSocket(
   onPollUpdate?: (p: ApiPoll) => void,
   // Tuy chon - badge online/offline tren header hoi thoai (xem MessagesShell.tsx).
   onPresenceUpdate?: (p: ApiPresenceUpdate) => void,
+  // Tuy chon - "... dang nhap" (xem MessagesShell.tsx).
+  onTyping?: (p: ApiTypingEvent) => void,
+  // Tuy chon - "Da xem" (xem MessagesShell.tsx).
+  onRead?: (p: ApiReadEvent) => void,
 ) {
   const callbackRef = useRef(onMessage);
   useEffect(() => {
@@ -35,6 +45,16 @@ export function useChatSocket(
   useEffect(() => {
     presenceCallbackRef.current = onPresenceUpdate;
   });
+  const typingCallbackRef = useRef(onTyping);
+  useEffect(() => {
+    typingCallbackRef.current = onTyping;
+  });
+  const readCallbackRef = useRef(onRead);
+  useEffect(() => {
+    readCallbackRef.current = onRead;
+  });
+
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -46,6 +66,7 @@ export function useChatSocket(
           .catch(() => cb({}));
       },
     });
+    socketRef.current = socket;
 
     socket.on("chat:message", (m: ApiChatMessage) => {
       callbackRef.current(m);
@@ -56,9 +77,24 @@ export function useChatSocket(
     socket.on("presence:update", (p: ApiPresenceUpdate) => {
       presenceCallbackRef.current?.(p);
     });
+    socket.on("chat:typing", (p: ApiTypingEvent) => {
+      typingCallbackRef.current?.(p);
+    });
+    socket.on("chat:read", (p: ApiReadEvent) => {
+      readCallbackRef.current?.(p);
+    });
 
     return () => {
+      socketRef.current = null;
       socket.disconnect();
     };
   }, [enabled]);
+
+  // Bao cho nguoi con lai trong hoi thoai biet minh dang go - xem
+  // MessagesShell.tsx (throttle o phia goi, khong emit moi keystroke).
+  const emitTyping = useCallback((conversationId: string) => {
+    socketRef.current?.emit("chat:typing", { conversationId });
+  }, []);
+
+  return { emitTyping };
 }

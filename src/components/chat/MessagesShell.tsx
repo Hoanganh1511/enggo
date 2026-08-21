@@ -27,6 +27,8 @@ import type {
   ApiMessageType,
   ApiPoll,
   ApiPresenceUpdate,
+  ApiReadEvent,
+  ApiTypingEvent,
 } from "@/lib/api/types";
 import type { ApiGif } from "@/lib/api/gif";
 import type { ApiUploadResult } from "@/lib/api/upload";
@@ -105,6 +107,21 @@ export function MessagesShell() {
   const [tab, setTab] = useState<ChatTab>("all");
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  // "... dang nhap" theo tung conversationId (Set de ho tro nhieu hoi thoai
+  // dang typing cung luc, du hiem) - tu het han sau 3s neu khong co event
+  // "chat:typing" moi (khong co event "stop typing" rieng, don gian hoa).
+  const [typingConversationIds, setTypingConversationIds] = useState<
+    Set<string>
+  >(new Set());
+  const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+  // "Da xem" - chi giu event MOI NHAT (conversationId + readAt), so voi tin
+  // nhan cuoi cung cua CHINH minh trong hoi thoai dang mo de quyet dinh hien.
+  const [otherReadEvent, setOtherReadEvent] = useState<ApiReadEvent | null>(
+    null,
+  );
+  const lastTypingEmitRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   // Gan trong effect KHONG deps (chay sau MOI render) thay vi truc tiep trong
   // than ham - mutate ref luc render bi React coi la khong an toan (cung ly
@@ -193,7 +210,7 @@ export function MessagesShell() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages]);
+  }, [messages, typingConversationIds]);
 
   const handleIncoming = useCallback((m: ApiChatMessage) => {
     setConversations((prev) => {
@@ -231,7 +248,47 @@ export function MessagesShell() {
         ) ?? prev,
     );
   }, []);
-  useChatSocket(Boolean(myId), handleIncoming, handlePollUpdate, handlePresenceUpdate);
+  const handleTyping = useCallback((p: ApiTypingEvent) => {
+    setTypingConversationIds((prev) => {
+      if (prev.has(p.conversationId)) return prev;
+      const next = new Set(prev);
+      next.add(p.conversationId);
+      return next;
+    });
+    const existing = typingTimeoutsRef.current.get(p.conversationId);
+    if (existing) clearTimeout(existing);
+    const timeout = setTimeout(() => {
+      setTypingConversationIds((prev) => {
+        if (!prev.has(p.conversationId)) return prev;
+        const next = new Set(prev);
+        next.delete(p.conversationId);
+        return next;
+      });
+      typingTimeoutsRef.current.delete(p.conversationId);
+    }, 3000);
+    typingTimeoutsRef.current.set(p.conversationId, timeout);
+  }, []);
+  const handleRead = useCallback((p: ApiReadEvent) => {
+    setOtherReadEvent(p);
+  }, []);
+  // Dep tat ca timeout dang cho khi unmount - tranh setState sau khi component
+  // da roi trang.
+  useEffect(() => {
+    const timeouts = typingTimeoutsRef.current;
+    return () => {
+      timeouts.forEach((t) => clearTimeout(t));
+      timeouts.clear();
+    };
+  }, []);
+
+  const { emitTyping } = useChatSocket(
+    Boolean(myId),
+    handleIncoming,
+    handlePollUpdate,
+    handlePresenceUpdate,
+    handleTyping,
+    handleRead,
+  );
 
   async function handleLoadOlder() {
     if (!activeId || !nextCursor || loadingOlder) return;
@@ -455,6 +512,23 @@ export function MessagesShell() {
     conversations?.reduce((sum, c) => sum + (c.unreadCount > 0 ? 1 : 0), 0) ??
     0;
   const activeConversation = conversations?.find((c) => c.id === activeId);
+  const isActiveTyping = activeId ? typingConversationIds.has(activeId) : false;
+
+  // "Da xem" - uu tien gia tri real-time (chat:read) neu la CHINH hoi thoai
+  // dang mo, khong thi dung snapshot REST tu luc fetch conversation.
+  const effectiveOtherLastReadAt =
+    otherReadEvent?.conversationId === activeId
+      ? otherReadEvent.readAt
+      : (activeConversation?.otherLastReadAt ?? null);
+  const lastOwnMessage =
+    messages && messages.length > 0 && messages[messages.length - 1].senderId === myId
+      ? messages[messages.length - 1]
+      : null;
+  const showSeen = Boolean(
+    lastOwnMessage &&
+      effectiveOtherLastReadAt &&
+      new Date(lastOwnMessage.createdAt) <= new Date(effectiveOtherLastReadAt),
+  );
 
   return (
     <div className="flex h-[calc(100vh-var(--header-height)-2rem)] min-h-[680px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
@@ -566,10 +640,24 @@ export function MessagesShell() {
                     </span>
                   </div>
                   <div className="mt-1 flex justify-between gap-2">
-                    <p className="truncate text-[13px] text-slate-600">
-                      {c.lastMessage
-                        ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${formatMessagePreview(c.lastMessage)}`
-                        : "Chưa có tin nhắn"}
+                    <p
+                      className={cn(
+                        "truncate text-[13px]",
+                        typingConversationIds.has(c.id)
+                          ? "font-medium italic"
+                          : "text-slate-600",
+                      )}
+                      style={
+                        typingConversationIds.has(c.id)
+                          ? { color: "var(--primary)" }
+                          : undefined
+                      }
+                    >
+                      {typingConversationIds.has(c.id)
+                        ? "Đang nhập..."
+                        : c.lastMessage
+                          ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${formatMessagePreview(c.lastMessage)}`
+                          : "Chưa có tin nhắn"}
                     </p>
                     {c.unreadCount > 0 && (
                       <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#ee7068] px-1.5 text-[10px] font-semibold text-white">
@@ -632,13 +720,17 @@ export function MessagesShell() {
                     </button>
                   </PopoverTrigger>
                   <PopoverContent open={searchOpen} align="end" sideOffset={10}>
-                    <MessageSearchPopover conversationId={activeConversation.id} />
+                    <MessageSearchPopover
+                      conversationId={activeConversation.id}
+                    />
                   </PopoverContent>
                 </PopoverRoot>
 
                 <button
                   type="button"
-                  title={rightPanelOpen ? "Ẩn bảng thông tin" : "Hiện bảng thông tin"}
+                  title={
+                    rightPanelOpen ? "Ẩn bảng thông tin" : "Hiện bảng thông tin"
+                  }
                   onClick={() => setRightPanelOpen((v) => !v)}
                   className={cn(
                     "grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors duration-150 ease-out hover:bg-slate-100",
@@ -651,7 +743,7 @@ export function MessagesShell() {
             </div>
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 py-6">
-              <div className="mx-auto max-w-[820px]">
+              <div className="mx-auto">
                 {nextCursor && (
                   <div className="mb-4 flex justify-center">
                     <button
@@ -673,14 +765,41 @@ export function MessagesShell() {
                     />
                   </div>
                 ) : (
-                  messages.map((m) => (
-                    <MessageBubble
-                      key={m.id}
-                      message={m}
-                      isMine={m.senderId === myId}
-                      onVote={handleVote}
-                    />
-                  ))
+                  <>
+                    {messages.map((m) => (
+                      <MessageBubble
+                        key={m.id}
+                        message={m}
+                        isMine={m.senderId === myId}
+                        onVote={handleVote}
+                      />
+                    ))}
+                    {showSeen && (
+                      <div className="mb-2 flex justify-end pr-1">
+                        <span className="text-[11px] text-slate-400">
+                          Đã xem
+                        </span>
+                      </div>
+                    )}
+                    {isActiveTyping && (
+                      <div className="mb-4 flex justify-start">
+                        <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-[#f0f1f3] px-4 py-3.5">
+                          <span
+                            className="size-1.5 animate-bounce rounded-full bg-slate-400"
+                            style={{ animationDelay: "0ms" }}
+                          />
+                          <span
+                            className="size-1.5 animate-bounce rounded-full bg-slate-400"
+                            style={{ animationDelay: "150ms" }}
+                          />
+                          <span
+                            className="size-1.5 animate-bounce rounded-full bg-slate-400"
+                            style={{ animationDelay: "300ms" }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -838,7 +957,18 @@ export function MessagesShell() {
 
                   <textarea
                     value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
+                    onChange={(e) => {
+                      setDraft(e.target.value);
+                      if (activeId) {
+                        const now = Date.now();
+                        // Throttle 1.2s - khong emit moi keystroke, nguoi
+                        // nhan tu het "dang nhap" sau 3s neu khong co event moi.
+                        if (now - lastTypingEmitRef.current > 1200) {
+                          lastTypingEmitRef.current = now;
+                          emitTyping(activeId);
+                        }
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();

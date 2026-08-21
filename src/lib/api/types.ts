@@ -450,6 +450,9 @@ export type ApiConversationSummary = {
   lastMessage: ApiChatMessage | null;
   unreadCount: number;
   updatedAt: string;
+  // Snapshot tai thoi diem fetch - cap nhat real-time qua socket event
+  // "chat:read" (xem use-chat-socket.ts).
+  otherLastReadAt: string | null;
 };
 
 export type ApiChatMessagePage = {
@@ -461,4 +464,16 @@ export type ApiChatMessagePage = {
 export type ApiPresenceUpdate = {
   userId: string;
   online: boolean;
+};
+
+// Payload cua socket event "chat:typing" - trang thai tam thoi, khong luu DB.
+export type ApiTypingEvent = {
+  conversationId: string;
+  userId: string;
+};
+
+// Payload cua socket event "chat:read".
+export type ApiReadEvent = {
+  conversationId: string;
+  readAt: string;
 };
