@@ -39,7 +39,8 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex h-dvh flex-col overflow-hidden ">
+      <body className="relative flex h-dvh flex-col overflow-hidden">
+        <div className="absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(125%_125%_at_50%_10%,_#fff_40%,_#475569_100%)]" />
         <AuthSessionProvider>{children}</AuthSessionProvider>
         <Toaster />
       </body>
