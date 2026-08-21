@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { signInternalToken } from "./sign-internal-token";
 
-const API_BASE_URL = process.env.CAREER_TREE_API_URL ?? "http://localhost:3001";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_CAREER_TREE_API_URL ?? "http://localhost:3001";
 
 export class ApiError extends Error {
   constructor(

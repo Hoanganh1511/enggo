@@ -5,7 +5,8 @@ import { io, type Socket } from "socket.io-client";
 import { getSocketTokenAction } from "@/actions/notifications/get-socket-token";
 import type { ApiChatMessage, ApiPoll } from "./api/types";
 
-const SOCKET_URL = process.env.CAREER_TREE_API_URL ?? "http://localhost:3001";
+const SOCKET_URL =
+  process.env.NEXT_PUBLIC_CAREER_TREE_API_URL ?? "http://localhost:3001";
 
 // Ket noi WebSocket RIENG cho trang /messages (chi song trong luc trang nay
 // dang mount, khac useNotificationSocket dung xuyen suot app o top-header-bar.tsx)
