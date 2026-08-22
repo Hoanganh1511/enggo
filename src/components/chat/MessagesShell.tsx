@@ -675,6 +675,24 @@ export function MessagesShell() {
     onResync: handleResync,
   });
 
+  // Lop bao ve THEM - tab bi trinh duyet "dong bang" ngam (chuyen tab lau,
+  // may ngu ngan) co the khien goi tin WebSocket bi rot ma Socket.io CHUA
+  // kip nhan ra mat ket noi (chua fire "disconnect"/"connect" lai), nen
+  // onResync o tren khong du. Dong bo THEM moi lan tab duoc focus/hien lai -
+  // khong ton kem (chi 1 fetch nhe), dam bao danh sach hoi thoai luon dung
+  // du lieu server ngay khi nguoi dung quay lai xem.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") handleResync();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", handleResync);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", handleResync);
+    };
+  }, [handleResync]);
+
   async function handleLoadOlder() {
     if (!activeId || !nextCursor || loadingOlder) return;
     setLoadingOlder(true);
