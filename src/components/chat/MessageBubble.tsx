@@ -29,7 +29,12 @@ type MessageBubbleProps = {
   message: ApiChatMessage;
   isMine: boolean;
   myId: string | undefined;
-  otherUser: ApiConversationUser | null | undefined;
+  // TAT CA thanh vien KHAC minh trong hoi thoai - 1-1 co 1 phan tu (tuong
+  // duong otherUser cu), nhom co N phan tu. Nguoi gui THAT cua tung tin nhan
+  // duoc tra cuu rieng theo senderId (xem `sender`/`replySenderName` ben
+  // duoi) - KHONG dung 1 nguoi co dinh cho ca hoi thoai (sai voi nhom nhieu
+  // nguoi, tin cua ai cung bi gan nham thanh 1 nguoi).
+  participants: ApiConversationUser[];
   // Nhom tin nhan lien tiep CUNG nguoi gui (xem groupMessages() trong
   // MessagesShell.tsx) - isLastInGroup quyet dinh co hien avatar/bo goc bubble
   // "duoi" hay khong, isFirstInGroup CHI dung de giam khoang cach voi tin
@@ -59,7 +64,7 @@ export function MessageBubble({
   message,
   isMine,
   myId,
-  otherUser,
+  participants,
   isFirstInGroup,
   isLastInGroup,
   highlighted,
@@ -72,6 +77,13 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
   const align = isMine ? "justify-end" : "justify-start";
+  // Nguoi gui THAT cua tin nhan nay (chi can khi !isMine - dung de hien
+  // avatar/ten/popover). Nguoi gui cua tin DUOC REPLY co the la NGUOI KHAC
+  // (vd A reply tin cua B trong 1 nhom 3 nguoi) nen tra cuu rieng.
+  const sender = participants.find((p) => p.id === message.senderId);
+  const replySenderName = message.replyTo
+    ? participants.find((p) => p.id === message.replyTo!.senderId)?.name
+    : undefined;
   // Chi bo goc "duoi" (rounded-*-md) o bubble CUOI CUNG cua 1 nhom - cac tin
   // giua nhom giu goc tron deu ca 4 canh, doc thanh 1 khoi lien mach hon
   // (kieu grouping pho bien cua chat app hien dai) thay vi moi tin deu co
@@ -117,7 +129,7 @@ export function MessageBubble({
             <MessageReplyPreview
               replyTo={message.replyTo}
               myId={myId}
-              otherUserName={otherUser?.name}
+              senderName={replySenderName}
               tone="light"
               onJump={() => onJumpToMessage(message.replyTo!.id)}
             />
@@ -152,7 +164,7 @@ export function MessageBubble({
             <MessageReplyPreview
               replyTo={message.replyTo}
               myId={myId}
-              otherUserName={otherUser?.name}
+              senderName={replySenderName}
               tone="light"
               onJump={() => onJumpToMessage(message.replyTo!.id)}
             />
@@ -187,7 +199,7 @@ export function MessageBubble({
             <MessageReplyPreview
               replyTo={message.replyTo}
               myId={myId}
-              otherUserName={otherUser?.name}
+              senderName={replySenderName}
               tone="light"
               onJump={() => onJumpToMessage(message.replyTo!.id)}
             />
@@ -212,7 +224,7 @@ export function MessageBubble({
             <MessageReplyPreview
               replyTo={message.replyTo}
               myId={myId}
-              otherUserName={otherUser?.name}
+              senderName={replySenderName}
               tone="light"
               onJump={() => onJumpToMessage(message.replyTo!.id)}
             />
@@ -264,7 +276,7 @@ export function MessageBubble({
           <MessageReplyPreview
             replyTo={message.replyTo}
             myId={myId}
-            otherUserName={otherUser?.name}
+            senderName={replySenderName}
             tone={isMine ? "colored" : "light"}
             onJump={() => onJumpToMessage(message.replyTo!.id)}
           />
@@ -298,26 +310,26 @@ export function MessageBubble({
                   <button
                     type="button"
                     className="cursor-pointer rounded-full"
-                    title={otherUser?.name}
+                    title={sender?.name}
                   >
                     <ConversationAvatar
-                      name={otherUser?.name}
-                      avatarUrl={otherUser?.avatarUrl}
-                      online={otherUser?.online}
+                      name={sender?.name}
+                      avatarUrl={sender?.avatarUrl}
+                      online={sender?.online}
                       size={34}
                     />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent open={avatarPopoverOpen} align="start" sideOffset={8}>
                   <div className="w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_8px_28px_rgba(15,23,42,.12)]">
-                    {otherUser?.username && (
+                    {sender?.username && (
                       <Link
-                        href={`/u/${otherUser.username}`}
+                        href={`/u/${sender.username}`}
                         onClick={() => setAvatarPopoverOpen(false)}
                         className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
                       >
                         <User size={14} className="shrink-0 text-slate-500" />
-                        Trang cá nhân của {otherUser.name}
+                        Trang cá nhân của {sender.name}
                       </Link>
                     )}
                     <button

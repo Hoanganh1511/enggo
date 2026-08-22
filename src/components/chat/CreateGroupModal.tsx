@@ -260,7 +260,7 @@ export function CreateGroupModal({
             {Array.from(selected.values()).map((u) => (
               <span
                 key={u.id}
-                className="flex items-center gap-1.5 rounded-full bg-hover-bg py-1 pr-1 pl-2 text-xs font-medium text-ink"
+                className="flex items-center gap-1.5 rounded-full bg-hover-bg py-1 pr-1 pl-2 text-xs font-medium text-[#182338]"
               >
                 {u.name}
                 <button

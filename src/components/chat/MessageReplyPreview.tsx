@@ -8,21 +8,23 @@ import { cn } from "@/lib/utils";
 // (onJump, chi hoat dong neu tin do CON dang nam trong `messages` da tai -
 // khong fetch bu qua trang cu, xem MessagesShell.tsx). replyTo chi co
 // senderId (khong co ten san - xem ApiReplyPreview), nen phai tu suy ra ten
-// tu myId/otherUserName (giong cach composer dang lam voi replyTarget).
+// tu myId/senderName - senderName la ten NGUOI DA GUI TIN DUOC REPLY (caller
+// tu tra cuu theo replyTo.senderId trong participants, KHONG phai 1 "nguoi
+// kia" co dinh - nhom co nhieu nguoi, xem MessageBubble.tsx).
 export function MessageReplyPreview({
   replyTo,
   myId,
-  otherUserName,
+  senderName,
   tone,
   onJump,
 }: {
   replyTo: NonNullable<ApiChatMessage["replyTo"]>;
   myId: string | undefined;
-  otherUserName: string | undefined;
+  senderName: string | undefined;
   tone: "colored" | "light";
   onJump?: () => void;
 }) {
-  const senderLabel = replyTo.senderId === myId ? "Bạn" : (otherUserName ?? "Người dùng");
+  const senderLabel = replyTo.senderId === myId ? "Bạn" : (senderName ?? "Người dùng");
 
   return (
     <button

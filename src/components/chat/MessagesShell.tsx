@@ -1395,7 +1395,7 @@ export function MessagesShell() {
                           message={m}
                           isMine={m.senderId === myId}
                           myId={myId}
-                          otherUser={activeConversation.otherUser}
+                          participants={activeConversation.participants}
                           isFirstInGroup={!prev || !sameGroup(prev, m)}
                           isLastInGroup={!next || !sameGroup(next, m)}
                           highlighted={highlightedMessageId === m.id}
