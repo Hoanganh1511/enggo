@@ -177,9 +177,15 @@ export function WelcomeOnboardingModal({
                 className="flex items-center gap-2.5 text-[9px] font-extrabold"
                 style={{ color: ORANGE, letterSpacing: "0.2em" }}
               >
-                <i className="block h-px w-7.5" style={{ background: "#e5a276" }} />
+                <i
+                  className="block h-px w-7.5"
+                  style={{ background: "#e5a276" }}
+                />
                 <span>WELCOME TO TREE CAREER</span>
-                <i className="block h-px w-7.5" style={{ background: "#e5a276" }} />
+                <i
+                  className="block h-px w-7.5"
+                  style={{ background: "#e5a276" }}
+                />
               </div>
 
               <AnimatePresence mode="wait">
@@ -195,7 +201,7 @@ export function WelcomeOnboardingModal({
                     <h1
                       className="mt-3 text-[38px] leading-[1] sm:text-[43px]"
                       style={{
-                        fontFamily: "Georgia, serif",
+                        fontFamily: "var(--font-serif-book)",
                         fontWeight: 500,
                         letterSpacing: "-0.035em",
                         color: "#342b23",
@@ -225,7 +231,10 @@ export function WelcomeOnboardingModal({
                     >
                       Mở trang đầu tiên <ArrowRight size={17} />
                     </button>
-                    <small className="mt-3 text-[10px]" style={{ color: "#aa9989" }}>
+                    <small
+                      className="mt-3 text-[10px]"
+                      style={{ color: "#aa9989" }}
+                    >
                       Bạn có thể thay đổi mọi thứ sau này.
                     </small>
                   </motion.section>
@@ -248,7 +257,7 @@ export function WelcomeOnboardingModal({
                     <h2
                       className="mt-3 text-[32px] leading-[1] sm:text-[38px]"
                       style={{
-                        fontFamily: "Georgia, serif",
+                        fontFamily: "var(--font-serif-book)",
                         fontWeight: 500,
                         letterSpacing: "-0.03em",
                         color: "#342b23",
@@ -264,53 +273,58 @@ export function WelcomeOnboardingModal({
                     </p>
 
                     <div className="mt-6 grid w-full max-w-140 grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      {GOAL_CHOICES.map(({ value, title, text, icon: Icon }) => {
-                        const selected = goal === value;
-                        return (
-                          <motion.button
-                            key={value}
-                            type="button"
-                            whileHover={{ y: -2 }}
-                            onClick={() => setGoal(value)}
-                            className="relative flex min-h-24 items-center gap-2.75 rounded-[13px] border p-3.25 text-left transition-colors duration-200 ease-out"
-                            style={{
-                              borderColor: selected ? ORANGE : "#e7dbce",
-                              background: selected ? "#fff7ee" : "#fffaf4",
-                              boxShadow: selected
-                                ? "0 0 0 2px rgba(217,91,22,.09)"
-                                : undefined,
-                            }}
-                          >
-                            <span
-                              className="grid size-9.5 shrink-0 place-items-center rounded-[10px]"
-                              style={{ background: "#fff0e4", color: ORANGE }}
-                            >
-                              <Icon size={18} />
-                            </span>
-                            <span>
-                              <b className="block text-[12px]" style={{ color: "#342b23" }}>
-                                {title}
-                              </b>
-                              <small
-                                className="mt-0.75 block pr-3 text-[10px] leading-relaxed"
-                                style={{ color: "#9b8a7b" }}
-                              >
-                                {text}
-                              </small>
-                            </span>
-                            <em
-                              className="absolute top-2.5 right-2.5 grid size-4.25 place-items-center rounded-full border text-[10px] not-italic"
+                      {GOAL_CHOICES.map(
+                        ({ value, title, text, icon: Icon }) => {
+                          const selected = goal === value;
+                          return (
+                            <motion.button
+                              key={value}
+                              type="button"
+                              whileHover={{ y: -2 }}
+                              onClick={() => setGoal(value)}
+                              className="relative flex min-h-24 items-center gap-2.75 rounded-[13px] border p-3.25 text-left transition-colors duration-200 ease-out"
                               style={{
-                                borderColor: selected ? ORANGE : "#d9cabc",
-                                background: selected ? ORANGE : "transparent",
-                                color: "#fff",
+                                borderColor: selected ? ORANGE : "#e7dbce",
+                                background: selected ? "#fff7ee" : "#fffaf4",
+                                boxShadow: selected
+                                  ? "0 0 0 2px rgba(217,91,22,.09)"
+                                  : undefined,
                               }}
                             >
-                              {selected ? "✓" : ""}
-                            </em>
-                          </motion.button>
-                        );
-                      })}
+                              <span
+                                className="grid size-9.5 shrink-0 place-items-center rounded-[10px]"
+                                style={{ background: "#fff0e4", color: ORANGE }}
+                              >
+                                <Icon size={18} />
+                              </span>
+                              <span>
+                                <b
+                                  className="block text-[12px]"
+                                  style={{ color: "#342b23" }}
+                                >
+                                  {title}
+                                </b>
+                                <small
+                                  className="mt-0.75 block pr-3 text-[10px] leading-relaxed"
+                                  style={{ color: "#9b8a7b" }}
+                                >
+                                  {text}
+                                </small>
+                              </span>
+                              <em
+                                className="absolute top-2.5 right-2.5 grid size-4.25 place-items-center rounded-full border text-[10px] not-italic"
+                                style={{
+                                  borderColor: selected ? ORANGE : "#d9cabc",
+                                  background: selected ? ORANGE : "transparent",
+                                  color: "#fff",
+                                }}
+                              >
+                                {selected ? "✓" : ""}
+                              </em>
+                            </motion.button>
+                          );
+                        },
+                      )}
                     </div>
 
                     <div className="mt-5 flex w-full max-w-140 items-center justify-between">
@@ -354,14 +368,18 @@ export function WelcomeOnboardingModal({
                     </small>
                     <div
                       className="my-3 grid size-15.5 place-items-center rounded-full border"
-                      style={{ background: "#fff0e3", borderColor: "#f1c9ab", color: ORANGE }}
+                      style={{
+                        background: "#fff0e3",
+                        borderColor: "#f1c9ab",
+                        color: ORANGE,
+                      }}
                     >
                       <Feather size={25} />
                     </div>
                     <h2
                       className="text-[32px] leading-[1]"
                       style={{
-                        fontFamily: "Georgia, serif",
+                        fontFamily: "var(--font-serif-book)",
                         fontWeight: 500,
                         letterSpacing: "-0.03em",
                         color: "#342b23",
@@ -371,7 +389,10 @@ export function WelcomeOnboardingModal({
                       <br />
                       <span style={{ color: ORANGE }}>chương đầu tiên.</span>
                     </h2>
-                    <p className="mt-3 text-[13px]" style={{ color: "#8d7968" }}>
+                    <p
+                      className="mt-3 text-[13px]"
+                      style={{ color: "#8d7968" }}
+                    >
                       Không cần hoàn hảo. Chỉ cần là điều bạn muốn bắt đầu.
                     </p>
                     <textarea
@@ -381,7 +402,11 @@ export function WelcomeOnboardingModal({
                       placeholder="Ví dụ: Một khởi đầu mới..."
                       rows={2}
                       className="mt-6 w-full max-w-130 resize-none rounded-xl border px-4 py-3.5 text-[13px] outline-none transition-shadow duration-200 ease-out"
-                      style={{ borderColor: "#dfd2c5", background: "#fffdf9", color: "#342b23" }}
+                      style={{
+                        borderColor: "#dfd2c5",
+                        background: "#fffdf9",
+                        color: "#342b23",
+                      }}
                     />
                     <div className="mt-5 flex w-full max-w-130 items-center justify-between">
                       <button
@@ -495,33 +520,74 @@ function BookArt({ name }: { name: string }) {
             zIndex: 3,
           }}
         />
+        {/* Nen "chip" mo phia sau chu - khong co lop nay chu de bi chim mau
+            vao gay so (spine mau nau #ae8552 chay ngang giua) khi ten dai
+            phai xuong dong. */}
         <div
-          className="absolute z-10 text-center"
-          style={{ left: "50%", top: 48, transform: "translateX(-50%)", width: 130, color: "#765a3e" }}
+          className="absolute z-10 rounded-lg text-center"
+          style={{
+            left: "50%",
+            top: 42,
+            transform: "translateX(-50%)",
+            width: 148,
+            padding: "8px 6px",
+            color: "#765a3e",
+            background: "rgba(255,250,240,.82)",
+            boxShadow: "0 1px 4px rgba(80,48,22,.1)",
+          }}
         >
-          <small className="block" style={{ fontFamily: "Georgia,serif", fontSize: 8, letterSpacing: "0.14em" }}>
+          <small
+            className="block"
+            style={{
+              fontFamily: "var(--font-serif-book)",
+              fontSize: 8,
+              letterSpacing: "0.14em",
+            }}
+          >
             THE STORY OF
           </small>
           <b
-            className="mt-1 block truncate"
-            style={{ fontFamily: "Georgia,serif", fontSize: 18 }}
+            className="mt-1 block leading-tight wrap-break-word"
+            style={{
+              fontFamily: "var(--font-serif-book)",
+              fontSize: 15,
+            }}
           >
             {name.toUpperCase()}
           </b>
-          <em className="mt-1 block not-italic" style={{ fontFamily: "Georgia,serif", fontSize: 10, color: "#b87b40" }}>
+          <em
+            className="mt-1 block not-italic"
+            style={{
+              fontFamily: "var(--font-serif-book)",
+              fontSize: 10,
+              color: "#b87b40",
+            }}
+          >
             Chapter I
           </em>
         </div>
       </div>
       <div
         className="absolute"
-        style={{ left: 32, top: 38, fontSize: 74, color: "#d67b3d", transform: "rotate(-27deg)" }}
+        style={{
+          left: 32,
+          top: 38,
+          fontSize: 74,
+          color: "#d67b3d",
+          transform: "rotate(-27deg)",
+        }}
       >
         ⌁
       </div>
       <div
         className="absolute"
-        style={{ right: 43, bottom: 5, fontSize: 64, color: "#60452e", transform: "rotate(12deg)" }}
+        style={{
+          right: 43,
+          bottom: 5,
+          fontSize: 64,
+          color: "#60452e",
+          transform: "rotate(12deg)",
+        }}
       >
         ✒
       </div>

@@ -40,7 +40,7 @@ export function JourneyAchievements({ journey }: { journey: ApiJourney }) {
     >
       <h3
         className="mb-1 text-[15px]"
-        style={{ fontFamily: "Georgia, serif", color: "#2b2117" }}
+        style={{ fontFamily: "var(--font-serif-book)", color: "#2b2117" }}
       >
         🏆 Thành tựu gần đây
       </h3>

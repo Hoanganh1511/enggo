@@ -23,13 +23,16 @@ function dayOfYear() {
   return Math.floor(diff / 86400000);
 }
 
-// Bang mau/font rieng cho GOC widget "hanh trinh" (tone dat kem + serif
-// Georgia) - THEO YEU CAU MOI NHAT cua nguoi dung ("Lấy đúng UI như này"),
-// PHU DINH lua chon truoc do ("giu token app"). Chi khoanh vung trong file
-// nay + ChapterCard/ChapterShelf/JourneyAchievements (cung 1 widget), KHONG
-// dung sang phan con lai cua /home (EditorialFeed... van giu token app binh
-// thuong) - tranh lam 2 tong mau/font lan nhau trong 1 lan quet mat.
-const SERIF = { fontFamily: "Georgia, serif" } as const;
+// Bang mau/font rieng cho GOC widget "hanh trinh" (tone dat kem + serif) -
+// THEO YEU CAU MOI NHAT cua nguoi dung ("Lấy đúng UI như này"), PHU DINH lua
+// chon truoc do ("giu token app"). Chi khoanh vung trong file nay +
+// ChapterCard/ChapterShelf/JourneyAchievements/WelcomeOnboardingModal (cung
+// 1 tong), KHONG dung sang phan con lai cua /home (EditorialFeed... van giu
+// token app binh thuong). Dung "var(--font-serif-book)" (Noto Serif qua
+// next/font trong layout.tsx, subset "vietnamese") thay vi raw "Georgia,
+// serif" - Georgia thieu glyph ghep san cho dau thanh tieng Viet to hop (vd
+// "đầu" bi tach dau, hien loi).
+const SERIF = { fontFamily: "var(--font-serif-book)" } as const;
 
 export function JourneyHero({
   journey,

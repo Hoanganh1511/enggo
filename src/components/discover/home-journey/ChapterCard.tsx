@@ -51,7 +51,7 @@ export function ChapterCard({
       </span>
       <h3
         className="mt-1.5 line-clamp-1 text-[19px]"
-        style={{ fontFamily: "Georgia, serif", color: "#2b2117" }}
+        style={{ fontFamily: "var(--font-serif-book)", color: "#2b2117" }}
       >
         {group.name}
       </h3>

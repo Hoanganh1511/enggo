@@ -21,7 +21,7 @@ export function ChapterShelf({
       <div className="mb-3 flex items-center gap-2.5">
         <h2
           className="text-[19px]"
-          style={{ fontFamily: "Georgia, serif", fontWeight: 650, color: "#2b2117" }}
+          style={{ fontFamily: "var(--font-serif-book)", fontWeight: 650, color: "#2b2117" }}
         >
           📖 Cuốn sách của tôi
         </h2>
