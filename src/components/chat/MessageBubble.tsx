@@ -477,7 +477,15 @@ export function MessageBubble({
             avatar (gio la nut mo popover rieng) KHONG lam toolbar hien theo. */}
         <div
           className={cn(
-            "group relative max-w-[85%] transition-shadow duration-300 sm:max-w-120",
+            // w-fit BAT BUOC - thieu no, bubble la 1 flex item khong co
+            // flex-basis/width tuong minh nen tuy tung truong hop (nhat la
+            // tin cuoi trong 1 nhom co them dong gio ben duoi) trinh duyet co
+            // the tinh sai kich thuoc "auto" cua no, khien bubble bi ep hep
+            // lai va xuong dong so voi that su can (trieu chung "tin ngan
+            // van bi cut xuong dong" da gap). w-fit ep ro rang "rong bang
+            // dung noi dung, toi da max-w-[85%]/sm:max-w-120" - khong con mo
+            // ho de trinh duyet tu doan.
+            "group relative w-fit max-w-[85%] transition-shadow duration-300 sm:max-w-120",
             highlighted && "rounded-2xl ring-2 ring-offset-2",
           )}
           style={

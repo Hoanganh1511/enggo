@@ -17,6 +17,7 @@ import {
   ShieldOff,
   User2Icon,
   Video,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import type { ApiConversationUser } from "@/lib/api/types";
@@ -53,8 +54,10 @@ const QUICK_ACTIONS: { icon: LucideIcon; label: string }[] = [
 // ConversationParticipant nen van la toggle trang tri.
 export function MessageInfoPanel({
   otherUser,
+  onClose,
 }: {
   otherUser: ApiConversationUser;
+  onClose: () => void;
 }) {
   const [profile, setProfile] = useState<UserProfileApiShape | null>(null);
   const [confirmBlockOpen, setConfirmBlockOpen] = useState(false);
@@ -88,7 +91,22 @@ export function MessageInfoPanel({
   }
 
   return (
-    <aside className="hidden w-[320px] shrink-0 flex-col overflow-y-auto border-l border-slate-200 bg-[#fbfbfc] p-5 xl:flex">
+    <aside className="flex h-full w-full flex-col overflow-y-auto bg-[#fbfbfc]">
+      {/* Header - dong 1 chuan voi GroupInfoPanel.tsx (title + X dong,
+          onClose) de 2 panel nhat quan, va de co nut dong khi hien duoi
+          dang drawer full-man-hinh tren mobile (xem MessagesShell.tsx). */}
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+        <h2 className="text-[15px] font-bold text-[#172033]">Thông tin</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-primary-soft hover:text-primary"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="flex flex-col p-5">
       {/* Card danh thiep */}
       <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-white px-5 py-7 text-center">
         {otherUser.avatarUrl ? (
@@ -195,6 +213,7 @@ export function MessageInfoPanel({
           {blocked ? "Đã chặn" : `Chặn ${otherUser.name}`}
         </button>
       </InfoSection>
+      </div>
 
       <ConfirmModal
         open={confirmBlockOpen}

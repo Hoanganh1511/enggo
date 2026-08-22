@@ -202,7 +202,7 @@ export function GroupInfoPanel({
   const latestPin = pinned?.[0] ?? null;
 
   return (
-    <aside className="hidden w-[380px] shrink-0 flex-col overflow-y-auto border-l border-[#E7E9EF] bg-white xl:flex">
+    <aside className="flex h-full w-full flex-col overflow-y-auto bg-white">
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-[#E7E9EF] px-5 py-4">
         <h2 className="text-[15px] font-bold text-[#172033]">Thông tin nhóm</h2>

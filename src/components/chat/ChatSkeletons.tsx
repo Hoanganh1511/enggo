@@ -70,11 +70,12 @@ export function ChatWindowSkeleton() {
   );
 }
 
-// Cot phai (thong tin nguoi dung) - khop w-[320px]/border-l/bg/p-5 cua
-// MessageInfoPanel.tsx that, chi hien tu breakpoint xl giong panel that.
+// Cot phai (thong tin nguoi dung) - khop bg/p-5 cua MessageInfoPanel.tsx
+// that. Rong/cao 100% khung cha (khong tu dinh w-[320px]/hidden xl:flex nua)
+// - wrapper responsive (mobile drawer/desktop cot tinh) nam o MessagesShell.tsx.
 export function InfoPanelSkeleton() {
   return (
-    <aside className="hidden w-[320px] shrink-0 flex-col items-center overflow-hidden border-l border-slate-200 bg-[#fbfbfc] p-5 xl:flex">
+    <aside className="flex h-full w-full flex-col items-center overflow-hidden bg-[#fbfbfc] p-5">
       <div className="size-20 animate-pulse rounded-full bg-slate-200" />
       <Bar className="mt-4 h-4 w-28" />
       <Bar className="mt-2 h-3 w-20" />

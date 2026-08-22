@@ -29,7 +29,6 @@ import {
   MoreHorizontal,
   MoreVertical,
   Paperclip,
-  Palette,
   Plus,
   Reply as ReplyIcon,
   Search,
@@ -93,7 +92,6 @@ import { PollComposerModal } from "./PollComposerModal";
 import { CreateGroupModal } from "./CreateGroupModal";
 import { MessageSearchPopover } from "./MessageSearchPopover";
 import { MessageSearchDrawer } from "./MessageSearchDrawer";
-import { ChatBackgroundModal } from "./ChatBackgroundModal";
 import { getChatBackground } from "./chat-backgrounds";
 import { ImmersiveThemeModal } from "./ImmersiveThemeModal";
 import {
@@ -247,7 +245,6 @@ export function MessagesShell() {
   // luc khoi tao de tranh lech giao dien server/client render lan dau (SSR
   // khong co localStorage) - doc gia tri that trong effect [] o duoi.
   const [chatBgId, setChatBgId] = useState("none");
-  const [bgModalOpen, setBgModalOpen] = useState(false);
   useEffect(() => {
     // queueMicrotask: doc localStorage CHI co tren client (SSR khong co
     // window), nen phai doc SAU lan render dau (khong the dua vao useState
@@ -261,10 +258,6 @@ export function MessagesShell() {
       if (saved) setChatBgId(saved);
     });
   }, []);
-  function handleChangeChatBg(id: string) {
-    setChatBgId(id);
-    window.localStorage.setItem("chat-background", id);
-  }
   // Khung canh + mau bubble - cung pattern voi chatBgId o tren (CHUNG ca app,
   // localStorage, chi tren thiet bi nay - xem chat-immersive-themes.ts).
   const [immersiveThemeId, setImmersiveThemeId] =
@@ -1634,18 +1627,48 @@ export function MessagesShell() {
                   type="button"
                   title="Quay lại danh sách"
                   onClick={handleBackToList}
-                  className="-ml-1.5 grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] md:hidden"
+                  className="-ml-1.5 grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] md:hidden"
                 >
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={16} />
                 </button>
+                {/* Avatar giam con nua kich thuoc (60 -> 30) tren mobile de
+                    header khong choan het cho ten/icon - 2 component nay
+                    nhan "size" qua JS prop (khong phai class), nen render
+                    2 ban rieng + an/hien qua Tailwind (md:hidden / hidden
+                    md:inline-flex) thay vi 1 media-query hook, giu dung quy
+                    uoc responsive-thuan-CSS da dung xuyen suot session nay. */}
                 {activeConversation.isGroup ? (
-                  <GroupAvatar color={activeConversation.groupAvatarColor} />
+                  <>
+                    <span className="md:hidden">
+                      <GroupAvatar
+                        color={activeConversation.groupAvatarColor}
+                        size={30}
+                      />
+                    </span>
+                    <span className="hidden md:inline-flex">
+                      <GroupAvatar
+                        color={activeConversation.groupAvatarColor}
+                      />
+                    </span>
+                  </>
                 ) : (
-                  <ConversationAvatar
-                    name={activeConversation.otherUser?.name}
-                    avatarUrl={activeConversation.otherUser?.avatarUrl}
-                    online={activeConversation.otherUser?.online}
-                  />
+                  <>
+                    <span className="md:hidden">
+                      <ConversationAvatar
+                        name={activeConversation.otherUser?.name}
+                        avatarUrl={activeConversation.otherUser?.avatarUrl}
+                        online={activeConversation.otherUser?.online}
+                        size={30}
+                      />
+                    </span>
+                    <span className="hidden md:inline-flex">
+                      <ConversationAvatar
+                        name={activeConversation.otherUser?.name}
+                        avatarUrl={activeConversation.otherUser?.avatarUrl}
+                        online={activeConversation.otherUser?.online}
+                      />
+                    </span>
+                  </>
                 )}
                 <div className="min-w-0">
                   <b className="truncate text-[17px] text-[#182338]">
@@ -1691,24 +1714,6 @@ export function MessagesShell() {
                     />
                   </PopoverContent>
                 </PopoverRoot>
-
-                <button
-                  type="button"
-                  title="Đổi nền đoạn chat"
-                  onClick={() => setBgModalOpen(true)}
-                  className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338]"
-                >
-                  <Palette size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  title="Khung cảnh trò chuyện"
-                  onClick={() => setThemeModalOpen(true)}
-                  className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338]"
-                >
-                  <BubblesIcon size={18} />
-                </button>
 
                 <button
                   type="button"
@@ -2227,35 +2232,80 @@ export function MessagesShell() {
         )}
       </main>
 
-      {rightPanelOpen &&
-        (conversations === null ? (
-          <InfoPanelSkeleton />
-        ) : activeConversation?.isGroup ? (
-          <GroupInfoPanel
-            key={activeConversation.id}
-            conversation={activeConversation}
-            myName={session?.user?.name ?? "Bạn"}
-            myAvatarUrl={session?.user?.image}
-            onClose={() => setRightPanelOpen(false)}
-            onUpdated={handleGroupUpdated}
-            onToggleMute={() =>
-              void handleToggleConversationSetting(
-                activeConversation.id,
-                "isMuted",
-              )
-            }
-            onOpenSearch={() => {
-              setSearchDrawerQuery("");
-              setSearchDrawerOpen(true);
-            }}
-            onJumpToMessage={handleJumpToMessage}
-            onLeft={() => handleGroupLeft(activeConversation.id)}
-          />
-        ) : (
-          activeConversation?.otherUser && (
-            <MessageInfoPanel otherUser={activeConversation.otherUser} />
-          )
-        ))}
+      {/* Bang thong tin (nut 3 cham o header) - RESPONSIVE: desktop (md+) la
+          cot tinh nhu truoc (khong hieu ung, khong backdrop); mobile la 1
+          drawer that su (fixed toan man hinh, backdrop bam-ra-ngoai-de-dong,
+          truot vao tu phai) - dung CHUNG 1 instance panel (khong render 2
+          lan) qua className responsive tren chinh motion.div, tranh fetch
+          trung lap du lieu cua GroupInfoPanel/MessageInfoPanel. "Khung cảnh
+          trò chuyện" (truoc la nut rieng tren header, gio bo nut "Đổi nền
+          đoạn chat" theo yeu cau nguoi dung) chuyen thanh 1 dong dau tien
+          trong chinh panel nay - ap dung ca 2 che do. */}
+      <AnimatePresence>
+        {rightPanelOpen && (
+          <>
+            <motion.div
+              key="right-panel-backdrop"
+              className="fixed inset-0 z-40 bg-black/30 md:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              onClick={() => setRightPanelOpen(false)}
+            />
+            <motion.div
+              key="right-panel"
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col overflow-hidden bg-white shadow-xl md:static md:z-auto md:w-95 md:max-w-none md:shrink-0 md:border-l md:border-[#E7E9EF] md:shadow-none"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 24 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <button
+                type="button"
+                onClick={() => setThemeModalOpen(true)}
+                className="flex shrink-0 items-center gap-2.5 border-b border-slate-100 px-5 py-3.5 text-left text-[13px] font-medium text-[#182338] transition-colors duration-150 ease-out hover:bg-slate-50"
+              >
+                <BubblesIcon size={17} className="shrink-0 text-slate-500" />
+                Khung cảnh trò chuyện
+              </button>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {conversations === null ? (
+                  <InfoPanelSkeleton />
+                ) : activeConversation?.isGroup ? (
+                  <GroupInfoPanel
+                    key={activeConversation.id}
+                    conversation={activeConversation}
+                    myName={session?.user?.name ?? "Bạn"}
+                    myAvatarUrl={session?.user?.image}
+                    onClose={() => setRightPanelOpen(false)}
+                    onUpdated={handleGroupUpdated}
+                    onToggleMute={() =>
+                      void handleToggleConversationSetting(
+                        activeConversation.id,
+                        "isMuted",
+                      )
+                    }
+                    onOpenSearch={() => {
+                      setSearchDrawerQuery("");
+                      setSearchDrawerOpen(true);
+                    }}
+                    onJumpToMessage={handleJumpToMessage}
+                    onLeft={() => handleGroupLeft(activeConversation.id)}
+                  />
+                ) : (
+                  activeConversation?.otherUser && (
+                    <MessageInfoPanel
+                      otherUser={activeConversation.otherUser}
+                      onClose={() => setRightPanelOpen(false)}
+                    />
+                  )
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <PollComposerModal
         open={pollModalOpen}
@@ -2267,13 +2317,6 @@ export function MessagesShell() {
         open={createGroupOpen}
         onOpenChange={setCreateGroupOpen}
         onCreated={handleGroupCreated}
-      />
-
-      <ChatBackgroundModal
-        open={bgModalOpen}
-        onOpenChange={setBgModalOpen}
-        value={chatBgId}
-        onChange={handleChangeChatBg}
       />
 
       <ImmersiveThemeModal
