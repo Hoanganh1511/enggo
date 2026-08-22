@@ -60,3 +60,21 @@ export function searchUsers(
   if (limit) params.set("limit", String(limit));
   return apiFetch<UserSearchPage>(`/users/search?${params.toString()}`);
 }
+
+// Gate cho WelcomeOnboardingModal.tsx tren /home - xem UserService.getSelf
+// o backend.
+export function getSelfStatus(): Promise<{ onboardedAt: string | null }> {
+  return apiFetch<{ onboardedAt: string | null }>("/users/me");
+}
+
+// Hoan tat/bo qua modal chao mung - CO firstChapterTitle se tao that 1
+// Workspace + 1 KnowledgeGroup dau tien, xem UserService.completeOnboarding.
+export function completeOnboarding(dto: {
+  goal?: string;
+  firstChapterTitle?: string;
+}): Promise<{ workspaceId: string | null; groupId: string | null }> {
+  return apiFetch<{ workspaceId: string | null; groupId: string | null }>(
+    "/users/me/onboarding",
+    { method: "POST", body: JSON.stringify(dto) },
+  );
+}

@@ -1289,9 +1289,19 @@ export function MessagesShell() {
             : true;
       return matchesQuery && matchesTab;
     }) ?? [];
+  // Tong SO TIN NHAN moi chua doc (cong don unreadCount tung hoi thoai) -
+  // KHONG phai so hoi thoai co tin chua doc, dung cho badge tab "Chưa đọc".
   const unreadTotal =
-    conversations?.reduce((sum, c) => sum + (c.unreadCount > 0 ? 1 : 0), 0) ??
-    0;
+    conversations?.reduce((sum, c) => sum + c.unreadCount, 0) ?? 0;
+  // Badge tab CHUNG (Tất cả/Yêu thích) cung phai la SO TIN NHAN moi trong
+  // pham vi tab do, KHONG phai so cuoc hoi thoai (vd "Tất cả (7)" tung bi
+  // hieu nham la 7 cuoc hoi thoai - dung ra phai la tong tin nhan chua doc
+  // trong ca 7 cuoc do).
+  const favoritesUnreadTotal =
+    conversations?.reduce(
+      (sum, c) => sum + (c.isFavorite ? c.unreadCount : 0),
+      0,
+    ) ?? 0;
   const activeConversation = conversations?.find((c) => c.id === activeId);
   const isActiveTyping = activeId ? typingConversationIds.has(activeId) : false;
 
@@ -1366,11 +1376,11 @@ export function MessagesShell() {
               const active = !t.disabled && tab === t.key;
               const badgeCount =
                 t.key === "all"
-                  ? (conversations?.length ?? 0)
+                  ? unreadTotal
                   : t.key === "unread"
                     ? unreadTotal
                     : t.key === "favorites"
-                      ? (conversations?.filter((c) => c.isFavorite).length ?? 0)
+                      ? favoritesUnreadTotal
                       : 0;
               return (
                 <button

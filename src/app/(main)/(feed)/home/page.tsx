@@ -3,8 +3,10 @@ import { SingleTypeFeedList } from "@/components/discover/home-feed/SingleTypeFe
 import { JourneyHero } from "@/components/discover/home-journey/JourneyHero";
 import { ChapterShelf } from "@/components/discover/home-journey/ChapterShelf";
 import { JourneyAchievements } from "@/components/discover/home-journey/JourneyAchievements";
+import { WelcomeOnboardingModal } from "@/components/discover/onboarding/WelcomeOnboardingModal";
 import { listPostsAction } from "@/actions/discover/list-posts";
 import { getMyJourneyAction } from "@/actions/knowledge-groups/get-my-journey";
+import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { auth } from "@/auth";
 import {
   getKindsByContentType,
@@ -123,8 +125,16 @@ export default async function HomeFeedPage({
   // 70 bai roi cat lat client-side nhu ban cu - dam bao vd "Bai viet moi
   // nhat" la 10 bai post-kind moi nhat THAT SU, khong phai "10 bai post-kind
   // tinh co roi vao trong 1 lan fetch 70 khong uu tien kind nao".
-  const [general, latest, resources, projects, questions, achievements, journey] =
-    await Promise.all([
+  const [
+    general,
+    latest,
+    resources,
+    projects,
+    questions,
+    achievements,
+    journey,
+    selfStatus,
+  ] = await Promise.all([
       listPostsAction({ ...baseFilters, limit: GENERAL_SAMPLE_LIMIT }),
       listPostsAction({
         ...baseFilters,
@@ -155,6 +165,9 @@ export default async function HomeFeedPage({
       // (luon co trong thuc te, /home da bi middleware chan neu chua dang
       // nhap - null fallback chi de an toan kieu).
       username ? getMyJourneyAction() : Promise.resolve(null),
+      // Gate cho WelcomeOnboardingModal (modal chao mung 3 buoc) - chi hien
+      // khi onboardedAt con null.
+      username ? getSelfStatusAction() : Promise.resolve(null),
     ]);
 
   // "Noi bat hom nay" va "Trending Topics" khong tuong ung 1-1 voi 1 kind cu
@@ -187,6 +200,12 @@ export default async function HomeFeedPage({
 
   return (
     <div className="items-start gap-6">
+      {username && selfStatus && !selfStatus.onboardedAt && (
+        <WelcomeOnboardingModal
+          username={username}
+          name={session?.user?.name ?? username}
+        />
+      )}
       <div className="min-w-0">
         {journey && username && (
           <div className="mb-10 flex flex-col gap-6">
