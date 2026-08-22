@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Image from "next/image";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ChevronDown, FileIcon, FolderOpen, LoaderCircle, X } from "lucide-react";
 import type { ApiChatMessage } from "@/lib/api/types";
@@ -105,11 +104,10 @@ export function GroupMediaModal({
                         rel="noreferrer"
                         className="aspect-square overflow-hidden rounded-xl bg-[#F7F8FC]"
                       >
-                        <Image
+                        {/* eslint-disable-next-line @next/next/no-img-element -- host dong (S3 bucket cua user / CDN Giphy), khong allowlist tinh duoc, xem MessageBubble.tsx */}
+                        <img
                           src={m.attachmentUrl}
                           alt=""
-                          width={120}
-                          height={120}
                           className="size-full object-cover"
                         />
                       </a>

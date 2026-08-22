@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Image from "next/image";
 import {
   Bell,
   BellOff,
@@ -418,11 +417,10 @@ export function GroupInfoPanel({
                   className="aspect-square cursor-pointer overflow-hidden rounded-lg bg-[#F7F8FC]"
                 >
                   {(m.type === "IMAGE" || m.type === "GIF") && m.attachmentUrl ? (
-                    <Image
+                    // eslint-disable-next-line @next/next/no-img-element -- host dong (S3 bucket cua user / CDN Giphy), khong allowlist tinh duoc, xem MessageBubble.tsx
+                    <img
                       src={m.attachmentUrl}
                       alt=""
-                      width={80}
-                      height={80}
                       className="size-full object-cover"
                     />
                   ) : (
