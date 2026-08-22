@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ConversationAvatar } from "./ConversationAvatar";
+import { GroupAvatar } from "./GroupAvatar";
 import {
   ArrowLeft,
   BarChart3,
@@ -20,6 +21,7 @@ import {
   CheckCheck,
   File as FileIcon,
   FunnelIcon,
+  UserRoundPlus,
   ImagePlus,
   LoaderCircle,
   MessageCircle,
@@ -75,6 +77,7 @@ import { MessageBubble } from "./MessageBubble";
 import { EmojiPickerPopover } from "./EmojiPickerPopover";
 import { GifPickerPopover } from "./GifPickerPopover";
 import { PollComposerModal } from "./PollComposerModal";
+import { CreateGroupModal } from "./CreateGroupModal";
 import { MessageSearchPopover } from "./MessageSearchPopover";
 import { MessageSearchDrawer } from "./MessageSearchDrawer";
 import { ChatBackgroundModal } from "./ChatBackgroundModal";
@@ -245,6 +248,7 @@ export function MessagesShell() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [gifOpen, setGifOpen] = useState(false);
   const [pollModalOpen, setPollModalOpen] = useState(false);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -845,6 +849,13 @@ export function MessagesShell() {
     appendSentMessage(msg);
   }
 
+  function handleGroupCreated(conversation: ApiConversationSummary) {
+    setConversations((prev) =>
+      prev ? [conversation, ...prev] : [conversation],
+    );
+    setActiveId(conversation.id);
+  }
+
   const handleVote = useCallback((pollId: string, optionId: string) => {
     votePollAction(pollId, optionId)
       .then((tally) => {
@@ -942,7 +953,7 @@ export function MessagesShell() {
 
   const filtered =
     conversations?.filter((c) => {
-      const matchesQuery = (c.otherUser?.name ?? "")
+      const matchesQuery = (c.isGroup ? (c.groupName ?? "") : (c.otherUser?.name ?? ""))
         .toLowerCase()
         .includes(query.toLowerCase());
       const matchesTab =
@@ -959,10 +970,13 @@ export function MessagesShell() {
   const activeConversation = conversations?.find((c) => c.id === activeId);
   const isActiveTyping = activeId ? typingConversationIds.has(activeId) : false;
 
-  // "Da xem" - uu tien gia tri real-time (chat:read) neu la CHINH hoi thoai
-  // dang mo, khong thi dung snapshot REST tu luc fetch conversation.
-  const effectiveOtherLastReadAt =
-    otherReadEvent?.conversationId === activeId
+  // "Da xem" - CHI ap dung cho 1-1 (nhom co nhieu nguoi doc, backend khong
+  // emit "chat:read" cho nhom - xem ChatService.markRead - guard lai o day
+  // cho ro rang). Uu tien gia tri real-time (chat:read) neu la CHINH hoi
+  // thoai dang mo, khong thi dung snapshot REST tu luc fetch conversation.
+  const effectiveOtherLastReadAt = activeConversation?.isGroup
+    ? null
+    : otherReadEvent?.conversationId === activeId
       ? otherReadEvent.readAt
       : (activeConversation?.otherLastReadAt ?? null);
   const lastOwnMessage =
@@ -995,6 +1009,14 @@ export function MessagesShell() {
             <h1 className="text-[28px] font-bold text-[#182338]">Tin nhắn</h1>
             <div className="flex items-center gap-x-3 text-slate-500">
               <FunnelIcon className="size-5.5" strokeWidth={2} />
+              <button
+                type="button"
+                title="Tạo nhóm chat"
+                onClick={() => setCreateGroupOpen(true)}
+                className="cursor-pointer"
+              >
+                <UserRoundPlus className="size-5.5" strokeWidth={2} />
+              </button>
               <SquarePenIcon className="size-5.5" strokeWidth={2} />
             </div>
           </div>
@@ -1092,11 +1114,15 @@ export function MessagesShell() {
                   onClick={() => setActiveId(c.id)}
                   className="flex flex-1 cursor-pointer gap-3.5 text-left"
                 >
-                  <ConversationAvatar
-                    name={c.otherUser?.name}
-                    avatarUrl={c.otherUser?.avatarUrl}
-                    online={c.otherUser?.online}
-                  />
+                  {c.isGroup ? (
+                    <GroupAvatar color={c.groupAvatarColor} />
+                  ) : (
+                    <ConversationAvatar
+                      name={c.otherUser?.name}
+                      avatarUrl={c.otherUser?.avatarUrl}
+                      online={c.otherUser?.online}
+                    />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-1">
@@ -1109,7 +1135,9 @@ export function MessagesShell() {
                           />
                         )}
                         <b className="truncate text-[15px] text-[#10213A]">
-                          {c.otherUser?.name ?? "Người dùng"}
+                          {c.isGroup
+                            ? (c.groupName ?? "Nhóm")
+                            : (c.otherUser?.name ?? "Người dùng")}
                         </b>
                         {c.isMuted && (
                           <BellOff
@@ -1220,17 +1248,25 @@ export function MessagesShell() {
                 >
                   <ArrowLeft size={20} />
                 </button>
-                <ConversationAvatar
-                  name={activeConversation.otherUser?.name}
-                  avatarUrl={activeConversation.otherUser?.avatarUrl}
-                  online={activeConversation.otherUser?.online}
-                />
+                {activeConversation.isGroup ? (
+                  <GroupAvatar color={activeConversation.groupAvatarColor} />
+                ) : (
+                  <ConversationAvatar
+                    name={activeConversation.otherUser?.name}
+                    avatarUrl={activeConversation.otherUser?.avatarUrl}
+                    online={activeConversation.otherUser?.online}
+                  />
+                )}
                 <div className="min-w-0">
                   <b className="truncate text-[17px] text-[#182338]">
-                    {activeConversation.otherUser?.name ?? "Người dùng"}
+                    {activeConversation.isGroup
+                      ? (activeConversation.groupName ?? "Nhóm")
+                      : (activeConversation.otherUser?.name ?? "Người dùng")}
                   </b>
                   <p className="text-[13px] text-slate-500">
-                    {activeConversation.otherUser?.online ? (
+                    {activeConversation.isGroup ? (
+                      `${activeConversation.participants.length + 1} thành viên`
+                    ) : activeConversation.otherUser?.online ? (
                       <span className="font-medium text-emerald-600">
                         Đang hoạt động
                       </span>
@@ -1460,7 +1496,9 @@ export function MessagesShell() {
                             Trả lời{" "}
                             {replyTarget.senderId === myId
                               ? "chính mình"
-                              : (activeConversation?.otherUser?.name ?? "")}
+                              : (activeConversation?.participants.find(
+                                  (p) => p.id === replyTarget.senderId,
+                                )?.name ?? "")}
                           </p>
                           <p className="truncate text-[12px] text-slate-600">
                             {formatMessagePreview(replyTarget)}
@@ -1707,6 +1745,10 @@ export function MessagesShell() {
         (conversations === null ? (
           <InfoPanelSkeleton />
         ) : (
+          // Nhom CHUA co panel thong tin rieng (danh sach thanh vien, doi
+          // ten...) - an han thay vi hien nham thong tin ca nhan cua 1 nguoi
+          // BAT KY trong nhom (otherUser luc nay chi la participants[0]).
+          !activeConversation?.isGroup &&
           activeConversation?.otherUser && (
             <MessageInfoPanel otherUser={activeConversation.otherUser} />
           )
@@ -1716,6 +1758,12 @@ export function MessagesShell() {
         open={pollModalOpen}
         onOpenChange={setPollModalOpen}
         onSubmit={handleCreatePoll}
+      />
+
+      <CreateGroupModal
+        open={createGroupOpen}
+        onOpenChange={setCreateGroupOpen}
+        onCreated={handleGroupCreated}
       />
 
       <ChatBackgroundModal

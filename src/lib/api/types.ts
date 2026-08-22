@@ -460,14 +460,34 @@ export type ApiChatMessage = {
   senderAvatarUrl?: string | null;
 };
 
+// 6 mau nen co dinh cho avatar nhom - CHUA co upload anh that (xem
+// CreateGroupModal.tsx), value nay la 1 KEY (khong phai CSS), map sang
+// gradient that o GroupAvatar.tsx. Phai khop voi GROUP_AVATAR_COLORS o backend.
+export const GROUP_AVATAR_COLORS = [
+  "violet",
+  "blue",
+  "emerald",
+  "amber",
+  "rose",
+  "slate",
+] as const;
+export type GroupAvatarColor = (typeof GROUP_AVATAR_COLORS)[number];
+
 export type ApiConversationSummary = {
   id: string;
+  isGroup: boolean;
+  groupName: string | null;
+  groupAvatarColor: GroupAvatarColor | null;
+  // 1-1: 1 phan tu (giong het otherUser). Nhom: N phan tu (tat ca thanh vien
+  // TRU minh).
+  participants: ApiConversationUser[];
   otherUser: ApiConversationUser | null;
   lastMessage: ApiChatMessage | null;
   unreadCount: number;
   updatedAt: string;
   // Snapshot tai thoi diem fetch - cap nhat real-time qua socket event
-  // "chat:read" (xem use-chat-socket.ts).
+  // "chat:read" (xem use-chat-socket.ts). CHI co gia tri voi hoi thoai 1-1 -
+  // nhom co nhieu nguoi doc, luon null (xem ChatService.toSummary o backend).
   otherLastReadAt: string | null;
   // Cai dat RIENG cua nguoi xem (khong doi xung) - xem updateConversationSettings.
   isFavorite: boolean;

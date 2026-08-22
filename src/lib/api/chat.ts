@@ -7,6 +7,7 @@ import type {
   ApiMessageSearchPage,
   ApiMessageType,
   ApiPoll,
+  GroupAvatarColor,
 } from "./types";
 
 export function listConversations(): Promise<ApiConversationSummary[]> {
@@ -21,6 +22,17 @@ export function createOrGetConversation(
   return apiFetch<ApiConversationSummary>("/conversations", {
     method: "POST",
     body: JSON.stringify({ username }),
+  });
+}
+
+export function createGroupConversation(
+  name: string,
+  memberIds: string[],
+  avatarColor: GroupAvatarColor,
+): Promise<ApiConversationSummary> {
+  return apiFetch<ApiConversationSummary>("/conversations/group", {
+    method: "POST",
+    body: JSON.stringify({ name, memberIds, avatarColor }),
   });
 }
 
