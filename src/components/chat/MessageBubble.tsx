@@ -109,17 +109,9 @@ export function MessageBubble({
   isVoting,
 }: MessageBubbleProps) {
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
-  // Option VUA bam vote - thanh mau cua RIENG option nay chay 2 doan: cho
-  // toi 80% muc tieu trong luc cho server (isVoting=true, xem
-  // MessagesShell.tsx), roi chay not 20% con lai khi co phan hoi that (het
-  // isVoting) - tranh cam giac "da xong" trong khi thuc ra van dang cho. Gia
-  // tri cu KHONG can don dep (khong dung effect) - chi doc khi isVoting con
-  // true, sau do bi bo qua tu nhien.
+
   const [pendingOptionId, setPendingOptionId] = useState<string | null>(null);
 
-  // Tin he thong ("X đã thêm Y vào nhóm") - render RIENG, khong co avatar/
-  // bubble/toolbar hover/reaction/ghim (khong phai 1 tin nhan that su cua ai
-  // ca, chi la thong bao 1 dong giua man hinh, kieu Discord/Telegram).
   if (message.type === "SYSTEM") {
     return (
       <div className="my-3 flex justify-center">
@@ -131,9 +123,7 @@ export function MessageBubble({
   }
 
   const align = isMine ? "justify-end" : "justify-start";
-  // Nguoi gui THAT cua tin nhan nay (chi can khi !isMine - dung de hien
-  // avatar/ten/popover). Nguoi gui cua tin DUOC REPLY co the la NGUOI KHAC
-  // (vd A reply tin cua B trong 1 nhom 3 nguoi) nen tra cuu rieng.
+
   const sender = participants.find((p) => p.id === message.senderId);
   const replySenderName = message.replyTo
     ? participants.find((p) => p.id === message.replyTo!.senderId)?.name
