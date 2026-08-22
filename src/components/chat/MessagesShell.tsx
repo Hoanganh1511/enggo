@@ -231,7 +231,13 @@ export function MessagesShell() {
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<ChatTab>("all");
-  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  // Mac dinh DONG - chi bat khi bam nut 3 cham (xem className md:hidden/
+  // fixed cua panel o duoi). Truoc day mac dinh true khien panel tu mo
+  // NGAY luc vao 1 hoi thoai; tren desktop thi vo hai (1 cot tinh, khong
+  // choan gi), nhung tren mobile panel gio la drawer PHU KIN CA MAN HINH
+  // nen mac dinh true = vua mo hoi thoai la bi che het, phai bam 3 cham
+  // moi thay lai duoc noi dung chat.
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   // "Xem tất cả kết quả" tu MessageSearchPopover.tsx mo drawer nay - dong
   // popover + luu lai tu khoa dang tim de seed vao drawer (xem
@@ -2035,8 +2041,14 @@ export function MessagesShell() {
                   </div>
                 )}
 
-                <div className="flex items-end gap-1.5">
-                  <div className="flex shrink-0 items-center gap-0.5 pb-1.5">
+                {/* Mobile: cum icon "tuy chon" (Plus/Anh/Emoji/GIF/Mic) len
+                    HANG RIENG phia tren, input xuong hang rieng ben duoi
+                    (flex-col) - nhuong het chieu rong cho input tren man
+                    hinh hep thay vi chen 5 icon + input + nut gui cung 1
+                    hang. Tu md: tro len giu nguyen 1 hang ngang nhu truoc
+                    (md:flex-row). */}
+                <div className="flex flex-col gap-1.5 md:flex-row md:items-end">
+                  <div className="flex shrink-0 items-center gap-0.5 md:pb-1.5">
                     <PopoverRoot open={plusOpen} onOpenChange={setPlusOpen}>
                       <PopoverTrigger asChild>
                         <button
@@ -2155,6 +2167,7 @@ export function MessagesShell() {
                     </button>
                   </div>
 
+                  <div className="flex items-end gap-1.5">
                   <textarea
                     value={draft}
                     onChange={(e) => {
@@ -2209,6 +2222,7 @@ export function MessagesShell() {
                   >
                     <Send size={19} />
                   </button>
+                  </div>
                 </div>
               </div>
 
