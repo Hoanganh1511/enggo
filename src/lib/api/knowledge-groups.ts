@@ -1,6 +1,7 @@
 import { apiFetch } from "./client";
 import type {
   ApiGroupProgress,
+  ApiJourney,
   ApiKnowledgeGroup,
   ApiKnowledgeGroupCollabRequest,
   ApiKnowledgeGroupVisibility,
@@ -53,6 +54,12 @@ export function deleteKnowledgeGroup(id: string): Promise<void> {
 
 export function getGroupProgress(groupId: string): Promise<ApiGroupProgress> {
   return apiFetch<ApiGroupProgress>(`/knowledge-groups/${groupId}/progress`);
+}
+
+// Danh sach phang tat ca nhom kien thuc CUA VIEWER (moi Workspace ho co) kem
+// % tien do - xem KnowledgeGroupService.getJourney o backend.
+export function getMyJourney(): Promise<ApiJourney> {
+  return apiFetch<ApiJourney>(`/knowledge-groups/journey`);
 }
 
 export function requestCollab(

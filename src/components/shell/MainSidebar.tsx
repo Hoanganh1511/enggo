@@ -7,6 +7,7 @@ import {
   BookText,
   Home,
   Mail,
+  MessageCircle,
   Settings,
   Trophy,
   Users,
@@ -47,7 +48,7 @@ function useSidebarItems(): SidebarItem[] {
     {
       key: "messages",
       label: "Tin nhắn",
-      icon: Mail,
+      icon: MessageCircle,
       href: "/messages",
       match: "startsWith",
     },

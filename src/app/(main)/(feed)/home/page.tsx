@@ -1,6 +1,11 @@
 import { EditorialFeed } from "@/components/discover/home-feed/EditorialFeed";
 import { SingleTypeFeedList } from "@/components/discover/home-feed/SingleTypeFeedList";
+import { JourneyHero } from "@/components/discover/home-journey/JourneyHero";
+import { ChapterShelf } from "@/components/discover/home-journey/ChapterShelf";
+import { JourneyAchievements } from "@/components/discover/home-journey/JourneyAchievements";
 import { listPostsAction } from "@/actions/discover/list-posts";
+import { getMyJourneyAction } from "@/actions/knowledge-groups/get-my-journey";
+import { auth } from "@/auth";
 import {
   getKindsByContentType,
   CONTENT_TYPES,
@@ -59,6 +64,8 @@ export default async function HomeFeedPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const sp = await searchParams;
+  const session = await auth();
+  const username = session?.username;
   const worldSlug = typeof sp.world === "string" ? sp.world : undefined;
   const topicSlug = typeof sp.topic === "string" ? sp.topic : undefined;
   const typeParam = typeof sp.type === "string" ? sp.type : undefined;
@@ -116,7 +123,7 @@ export default async function HomeFeedPage({
   // 70 bai roi cat lat client-side nhu ban cu - dam bao vd "Bai viet moi
   // nhat" la 10 bai post-kind moi nhat THAT SU, khong phai "10 bai post-kind
   // tinh co roi vao trong 1 lan fetch 70 khong uu tien kind nao".
-  const [general, latest, resources, projects, questions, achievements] =
+  const [general, latest, resources, projects, questions, achievements, journey] =
     await Promise.all([
       listPostsAction({ ...baseFilters, limit: GENERAL_SAMPLE_LIMIT }),
       listPostsAction({
@@ -144,6 +151,10 @@ export default async function HomeFeedPage({
         kind: ACHIEVEMENT_KINDS,
         limit: SECTION_LIMIT,
       }),
+      // Widget "hanh trinh" (hero + ke sach) - chi fetch khi biet username
+      // (luon co trong thuc te, /home da bi middleware chan neu chua dang
+      // nhap - null fallback chi de an toan kieu).
+      username ? getMyJourneyAction() : Promise.resolve(null),
     ]);
 
   // "Noi bat hom nay" va "Trending Topics" khong tuong ung 1-1 voi 1 kind cu
@@ -177,6 +188,13 @@ export default async function HomeFeedPage({
   return (
     <div className="items-start gap-6">
       <div className="min-w-0">
+        {journey && username && (
+          <div className="mb-10 flex flex-col gap-6">
+            <JourneyHero journey={journey} username={username} />
+            <ChapterShelf groups={journey.groups} username={username} />
+            <JourneyAchievements journey={journey} />
+          </div>
+        )}
         <EditorialFeed
           featured={featured}
           latest={latest}

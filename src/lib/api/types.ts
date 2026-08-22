@@ -219,6 +219,26 @@ export type ApiWorkspaceWithGroups = ApiWorkspace & {
   groups: ApiKnowledgeGroup[];
 };
 
+// Danh sach PHANG tat ca nhom kien thuc viewer so huu (qua moi Workspace cua
+// ho), kem % tien do - dung cho widget "hanh trinh" tren /home
+// (JourneyHero/ChapterShelf). Xem KnowledgeGroupService.getJourney o backend.
+export type ApiJourneyGroup = {
+  id: string;
+  workspaceId: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  postCount: number;
+  progressPercent: number;
+  totalStudyDays: number;
+  currentStreak: number;
+};
+export type ApiJourney = {
+  groups: ApiJourneyGroup[];
+  currentGroupId: string | null;
+  totalUnderstood: number;
+};
+
 // Dung cho strip "Gợi ý từ người bạn theo dõi" o man chon workspace
 // (WorkspaceSwitcher.tsx) - xem WorkspaceService.listSuggested o backend.
 // KHAC ApiWorkspaceWithGroups: khong keo `groups` day du (chi can 1 con so
