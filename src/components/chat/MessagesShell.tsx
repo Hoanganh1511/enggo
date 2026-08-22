@@ -279,6 +279,48 @@ export function MessagesShell() {
     setImmersiveThemeId(id as ImmersiveThemeId);
     window.localStorage.setItem("chat-immersive-theme", id);
   }
+
+  // Sua bug rieng cua MOBILE SAFARI: focus vao textarea soan tin -> ban phim
+  // mo -> Safari tu cuon trang de giu textarea hien tren ban phim -> bam
+  // "OK"/an ban phim di, NHUNG scroll khong duoc tra ve dung vi tri, de lai
+  // 1 khoang trong o duoi bang chieu cao ban phim vua dong (bug nay CHI xay
+  // ra tren iOS Safari, khong co tren Android/desktop - lien quan cach iOS
+  // xu ly resize layout viewport khi input focus/blur, KHONG lien quan
+  // 100dvh o app/layout.tsx). Dung o CA 2 noi (xem handleTextareaBlur o duoi):
+  // window.scrollTo thuong khong co tac dung vi <body> da overflow-hidden,
+  // day chi la lop phong thu them - [data-scroll-root] (main-content-area.tsx)
+  // moi la vung cuon THAT can reset.
+  function resetScrollAfterKeyboardClose() {
+    window.scrollTo(0, 0);
+    document.querySelector<HTMLElement>("[data-scroll-root]")?.scrollTo(0, 0);
+  }
+
+  // Co che 1: window.visualViewport phan anh dung kich thuoc man hinh THAT
+  // con lai sau ban phim (khac window.innerHeight/CSS dvh - 2 cai nay KHONG
+  // cap nhat theo ban phim tren iOS) - theo doi su kien resize cua no, khi
+  // chieu cao TRO VE gan bang layout viewport (ban phim dong that su) thi
+  // chu dong reset scroll.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    function handleViewportResize() {
+      const keyboardLikelyClosed = window.innerHeight - vv!.height < 60;
+      if (keyboardLikelyClosed) resetScrollAfterKeyboardClose();
+    }
+
+    vv.addEventListener("resize", handleViewportResize);
+    return () => vv.removeEventListener("resize", handleViewportResize);
+  }, []);
+
+  // Co che 2 (fallback, xem onBlur cua textarea soan tin): phong truong hop
+  // su kien "resize" cua visualViewport ban lo/den tre - goi lai cung ham
+  // reset ngay khi textarea mat focus (delay ngan de doi animation dong ban
+  // phim cua iOS chay xong truoc, goi qua som se bi ban phim "de" lai vi tri
+  // cu ngay sau do).
+  function handleTextareaBlur() {
+    setTimeout(resetScrollAfterKeyboardClose, 100);
+  }
   // "... dang nhap" theo tung conversationId (Set de ho tro nhieu hoi thoai
   // dang typing cung luc, du hiem) - tu het han sau 3s neu khong co event
   // "chat:typing" moi (khong co event "stop typing" rieng, don gian hoa).
@@ -2196,6 +2238,7 @@ export function MessagesShell() {
                     }}
                     rows={1}
                     disabled={recording}
+                    onBlur={handleTextareaBlur}
                     // text-base (16px) BAT BUOC, khong duoc nho hon - iOS
                     // Safari tu dong ZOOM CA TRANG khi focus vao 1 input/
                     // textarea co font-size < 16px (co che "tranh nguoi dung

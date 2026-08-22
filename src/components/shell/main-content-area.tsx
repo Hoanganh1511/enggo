@@ -25,6 +25,12 @@ const MainContentArea = ({ children }: { children: React.ReactNode }) => {
   return (
     <div
       ref={ref}
+      // data-scroll-root: neo de cac trang con (vd MessagesShell.tsx) query
+      // toi DUNG vung cuon nay tu ben ngoai khi can ep reset scrollTop (vd
+      // sua bug ban phim iOS Safari khong tra lai dung khoang trong sau khi
+      // dong - xem comment o MessagesShell.tsx) - khong dung className/id lam
+      // moc vi de vo tinh trung/doi khi sua style.
+      data-scroll-root
       className="min-h-0 min-w-0 flex-1 scroll-smooth overflow-auto"
     >
       {children}
