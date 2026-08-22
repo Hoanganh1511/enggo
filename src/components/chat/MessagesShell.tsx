@@ -142,6 +142,10 @@ function formatDuration(seconds: number): string {
 // nguoi gui va cach nhau duoi 5 phut - nguong pho bien cua cac chat app.
 const GROUP_GAP_MS = 5 * 60 * 1000;
 function sameGroup(a: ApiChatMessage, b: ApiChatMessage): boolean {
+  // Tin he thong (SYSTEM) khong bao gio "noi" nhom voi bubble that ke ben -
+  // no khong co avatar/bo goc rieng (xem MessageBubble.tsx), du senderId
+  // trung actor cua 1 tin nhan gan do.
+  if (a.type === "SYSTEM" || b.type === "SYSTEM") return false;
   return (
     a.senderId === b.senderId &&
     Math.abs(
@@ -1262,7 +1266,8 @@ export function MessagesShell() {
   const lastOwnMessage =
     messages &&
     messages.length > 0 &&
-    messages[messages.length - 1].senderId === myId
+    messages[messages.length - 1].senderId === myId &&
+    messages[messages.length - 1].type !== "SYSTEM"
       ? messages[messages.length - 1]
       : null;
   const showSeen = Boolean(

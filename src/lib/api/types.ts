@@ -407,7 +407,14 @@ export type ApiConversationUser = {
   online: boolean;
 };
 
-export type ApiMessageType = "TEXT" | "IMAGE" | "FILE" | "VOICE" | "GIF" | "POLL";
+export type ApiMessageType =
+  | "TEXT"
+  | "IMAGE"
+  | "FILE"
+  | "VOICE"
+  | "GIF"
+  | "POLL"
+  | "SYSTEM";
 
 export type ApiPollOption = {
   id: string;

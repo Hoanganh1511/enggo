@@ -116,6 +116,20 @@ export function MessageBubble({
   // tri cu KHONG can don dep (khong dung effect) - chi doc khi isVoting con
   // true, sau do bi bo qua tu nhien.
   const [pendingOptionId, setPendingOptionId] = useState<string | null>(null);
+
+  // Tin he thong ("X đã thêm Y vào nhóm") - render RIENG, khong co avatar/
+  // bubble/toolbar hover/reaction/ghim (khong phai 1 tin nhan that su cua ai
+  // ca, chi la thong bao 1 dong giua man hinh, kieu Discord/Telegram).
+  if (message.type === "SYSTEM") {
+    return (
+      <div className="my-3 flex justify-center">
+        <span className="rounded-full bg-slate-100 px-3.5 py-1.5 text-[12px] text-slate-500">
+          {message.content}
+        </span>
+      </div>
+    );
+  }
+
   const align = isMine ? "justify-end" : "justify-start";
   // Nguoi gui THAT cua tin nhan nay (chi can khi !isMine - dung de hien
   // avatar/ten/popover). Nguoi gui cua tin DUOC REPLY co the la NGUOI KHAC
