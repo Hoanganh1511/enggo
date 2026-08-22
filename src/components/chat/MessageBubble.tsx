@@ -303,8 +303,8 @@ export function MessageBubble({
     >
       <div className={cn("flex items-end gap-2", align)}>
         {!isMine && (
-          <div className="w-8.5 shrink-0 self-end">
-            {isLastInGroup && (
+          <div className="w-8.5 shrink-0 self-start">
+            {isFirstInGroup && (
               <PopoverRoot open={avatarPopoverOpen} onOpenChange={setAvatarPopoverOpen}>
                 <PopoverTrigger asChild>
                   <button
