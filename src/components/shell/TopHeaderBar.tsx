@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Mail, Sparkles, SquarePen } from "lucide-react";
+import { Bell, MessageCircle, Sparkles, SquarePen } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -143,7 +144,7 @@ const TopHeaderBar = () => {
         <HeaderSearch />
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+      <div className="ml-auto flex shrink-0 items-center gap-2">
         <PopoverRoot
           open={updatesOpen}
           onOpenChange={(next) => {
@@ -152,13 +153,8 @@ const TopHeaderBar = () => {
           }}
         >
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              title="Có gì mới"
-              className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
-            >
-              <Sparkles size={19} strokeWidth={1.85} />
-              {hasUnseenUpdates && <HeaderBadgeDot />}
+            <button type="button" title="Có gì mới">
+              <HeaderIconChip icon={Sparkles} dot={hasUnseenUpdates} />
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -171,24 +167,14 @@ const TopHeaderBar = () => {
           </PopoverContent>
         </PopoverRoot>
 
-        <Link
-          href="/messages"
-          title="Tin nhắn"
-          className="relative flex size-9 shrink-0 items-center justify-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
-        >
-          <Mail size={19} strokeWidth={1.85} />
-          {chatBadge && <HeaderBadgeDot />}
+        <Link href="/messages" title="Tin nhắn">
+          <HeaderIconChip icon={MessageCircle} badge={chatBadge} />
         </Link>
 
         <PopoverRoot open={notifOpen} onOpenChange={setNotifOpen}>
           <PopoverTrigger asChild>
-            <button
-              type="button"
-              title="Thông báo"
-              className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
-            >
-              <Bell size={19} strokeWidth={1.85} />
-              {notifBadge && <HeaderBadgeDot />}
+            <button type="button" title="Thông báo">
+              <HeaderIconChip icon={Bell} badge={notifBadge} />
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -204,7 +190,11 @@ const TopHeaderBar = () => {
           </PopoverContent>
         </PopoverRoot>
 
-        {session?.user && <AccountMenu user={session.user} />}
+        {session?.user && (
+          <div className="ml-1 overflow-hidden rounded-full bg-surface-muted">
+            <AccountMenu user={session.user} />
+          </div>
+        )}
 
         <button
           type="button"
@@ -218,6 +208,38 @@ const TopHeaderBar = () => {
     </header>
   );
 };
+
+// Icon "chip" nen mau nhat (primary-soft) + badge so/cham tron o goc, port
+// tu 1 bo cuc tham khao nguoi dung dua (icon vuong bo tron + badge tron chong
+// goc) - dung dung token cam --primary cua app thay vi mau teal trong anh mau.
+function HeaderIconChip({
+  icon: Icon,
+  badge,
+  dot,
+}: {
+  icon: typeof Bell;
+  badge?: string;
+  dot?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "relative flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-primary-soft text-primary transition-colors duration-150 ease-out hover:bg-primary/20",
+      )}
+    >
+      <Icon size={18} strokeWidth={2} />
+      {badge && (
+        <span
+          className="absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-surface"
+          style={{ background: "var(--primary)" }}
+        >
+          {badge}
+        </span>
+      )}
+      {dot && <HeaderBadgeDot />}
+    </span>
+  );
+}
 
 // Cham do gon o goc icon - dung khi CO tin chua doc nhung khong can hien so
 // (chi 1 tin hieu "co gi moi"), khac han badge so cua notification/chat cu
