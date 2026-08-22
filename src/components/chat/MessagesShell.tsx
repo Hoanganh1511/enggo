@@ -283,41 +283,24 @@ export function MessagesShell() {
   // Sua bug rieng cua MOBILE SAFARI: focus vao textarea soan tin -> ban phim
   // mo -> Safari tu cuon trang de giu textarea hien tren ban phim -> bam
   // "OK"/an ban phim di, NHUNG scroll khong duoc tra ve dung vi tri, de lai
-  // 1 khoang trong o duoi bang chieu cao ban phim vua dong (bug nay CHI xay
-  // ra tren iOS Safari, khong co tren Android/desktop - lien quan cach iOS
-  // xu ly resize layout viewport khi input focus/blur, KHONG lien quan
-  // 100dvh o app/layout.tsx). Dung o CA 2 noi (xem handleTextareaBlur o duoi):
-  // window.scrollTo thuong khong co tac dung vi <body> da overflow-hidden,
-  // day chi la lop phong thu them - [data-scroll-root] (main-content-area.tsx)
-  // moi la vung cuon THAT can reset.
+  // 1 khoang trong o duoi bang chieu cao ban phim vua dong. window.scrollTo
+  // thuong khong co tac dung vi <body> da overflow-hidden, day chi la lop
+  // phong thu them - [data-scroll-root] (main-content-area.tsx) moi la vung
+  // cuon THAT can reset.
+  //
+  // LUU Y: ban dau con theo doi them window.visualViewport.resize de tu phat
+  // hien "ban phim vua dong that su" - BO ROI vi qua nhay: tren dien thoai,
+  // thanh goi y/tien doan tu cua ban phim ao co giai nhe theo TUNG KY TU go,
+  // khien visualViewport doi lien tuc va bi DOAN NHAM la "ban phim dong" ->
+  // ep cuon ve 0 lien tuc ngay ca khi dang go binh thuong (man hinh
+  // "tut len tut xuong" lien tuc, nguoi dung phan anh). Gio CHI con 1 co che
+  // duy nhat, don gian va an toan: reset dung 1 LAN khi thuc su ROI khoi o
+  // nhap (blur), khong doan mo theo su kien resize nua.
   function resetScrollAfterKeyboardClose() {
     window.scrollTo(0, 0);
     document.querySelector<HTMLElement>("[data-scroll-root]")?.scrollTo(0, 0);
   }
 
-  // Co che 1: window.visualViewport phan anh dung kich thuoc man hinh THAT
-  // con lai sau ban phim (khac window.innerHeight/CSS dvh - 2 cai nay KHONG
-  // cap nhat theo ban phim tren iOS) - theo doi su kien resize cua no, khi
-  // chieu cao TRO VE gan bang layout viewport (ban phim dong that su) thi
-  // chu dong reset scroll.
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-
-    function handleViewportResize() {
-      const keyboardLikelyClosed = window.innerHeight - vv!.height < 60;
-      if (keyboardLikelyClosed) resetScrollAfterKeyboardClose();
-    }
-
-    vv.addEventListener("resize", handleViewportResize);
-    return () => vv.removeEventListener("resize", handleViewportResize);
-  }, []);
-
-  // Co che 2 (fallback, xem onBlur cua textarea soan tin): phong truong hop
-  // su kien "resize" cua visualViewport ban lo/den tre - goi lai cung ham
-  // reset ngay khi textarea mat focus (delay ngan de doi animation dong ban
-  // phim cua iOS chay xong truoc, goi qua som se bi ban phim "de" lai vi tri
-  // cu ngay sau do).
   function handleTextareaBlur() {
     setTimeout(resetScrollAfterKeyboardClose, 100);
   }
