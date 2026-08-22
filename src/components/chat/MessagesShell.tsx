@@ -1968,10 +1968,16 @@ export function MessagesShell() {
             <div className="absolute bottom-0 left-0 z-20 w-full p-3 md:p-5">
               <div
                 className={cn(
-                  "flex flex-col gap-2.5 border-2 border-slate-300 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.06)] transition-[border-radius] duration-200 ease-out",
-                  replyTarget || pendingAttachment || recording
-                    ? "rounded-2xl"
-                    : "rounded-full",
+                  // Mobile LUON rounded-2xl (khong con rounded-full) - cum
+                  // icon + input gio la 2 hang xep chong tren mobile (xem
+                  // JSX ben duoi), rounded-full voi 1 khoi 2 hang cao se ra
+                  // hinh dang be beo/cat cut o hang tren (ban kinh bo goc =
+                  // nua chieu cao CA KHOI, qua lon so voi 1 hang rieng le) -
+                  // dung hinh "vien thuoc" chi con hop ly khi THAT SU 1 hang
+                  // (desktop tro len, md:).
+                  "flex flex-col gap-2.5 rounded-2xl border-2 border-slate-300 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.06)] transition-[border-radius] duration-200 ease-out",
+                  !(replyTarget || pendingAttachment || recording) &&
+                    "md:rounded-full",
                 )}
               >
                 <AnimatePresence initial={false}>
