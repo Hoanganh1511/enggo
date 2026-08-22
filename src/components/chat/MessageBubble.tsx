@@ -508,10 +508,7 @@ export function MessageBubble({
 
       {message.type === "TEXT" && !message.isRecalled && isLastInGroup && (
         <p
-          className={cn(
-            "mt-1 text-[11px] text-slate-400",
-            !isMine && "pl-10.5",
-          )}
+          className={cn("mt-1 text-[12px] text-black/80", !isMine && "pl-10.5")}
         >
           {formatTimeOnly(message.createdAt)}
         </p>

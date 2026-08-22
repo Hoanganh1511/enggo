@@ -1355,10 +1355,8 @@ export function MessagesShell() {
               <div
                 key={c.id}
                 className={cn(
-                  "group relative flex w-full gap-3.5 rounded-lg p-4 transition",
-                  activeId === c.id
-                    ? "bg-[#F3F2FA] border-l-[3px] border-[#D97706]"
-                    : "hover:bg-slate-50",
+                  "group relative flex w-full gap-3.5 px-6 py-4 transition",
+                  activeId === c.id ? "bg-[#EEF5F7] " : "hover:bg-slate-50",
                   c.isRestricted && "opacity-60",
                 )}
               >
@@ -1370,7 +1368,7 @@ export function MessagesShell() {
                   <div className="relative shrink-0">
                     <div
                       className={cn(
-                        "rounded-full",
+                        "flex rounded-full",
                         activeId === c.id && "ring-2 ring-white",
                       )}
                     >
