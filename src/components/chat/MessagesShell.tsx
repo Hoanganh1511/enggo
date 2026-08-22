@@ -39,6 +39,7 @@ import {
   SquarePenIcon,
   Star,
   X,
+  BubblesIcon,
 } from "lucide-react";
 import type {
   ApiChatMessage,
@@ -59,12 +60,14 @@ import { listConversationsAction } from "@/actions/chat/list-conversations";
 import { listMessagesAction } from "@/actions/chat/list-messages";
 import { sendMessageAction } from "@/actions/chat/send-message";
 import { markConversationReadAction } from "@/actions/chat/mark-conversation-read";
+import { listReadReceiptsAction } from "@/actions/chat/list-read-receipts";
 import { uploadChatAttachmentAction } from "@/actions/chat/upload-attachment";
 import { votePollAction } from "@/actions/chat/vote-poll";
 import { recallMessageAction } from "@/actions/chat/recall-message";
 import {
   pinMessageAction,
   unpinMessageAction,
+  listPinnedMessagesAction,
 } from "@/actions/chat/group-info";
 import {
   reactToMessageAction,
@@ -88,6 +91,10 @@ import { MessageSearchPopover } from "./MessageSearchPopover";
 import { MessageSearchDrawer } from "./MessageSearchDrawer";
 import { ChatBackgroundModal } from "./ChatBackgroundModal";
 import { getChatBackground } from "./chat-backgrounds";
+import { ImmersiveThemeModal } from "./ImmersiveThemeModal";
+import { getImmersiveTheme, type ImmersiveThemeId } from "./chat-immersive-themes";
+import { ImmersiveChatScene } from "./ImmersiveChatScene";
+import { PinnedMessagesBar } from "./PinnedMessagesBar";
 import {
   ChatWindowSkeleton,
   ConversationRowSkeleton,
@@ -138,6 +145,53 @@ function sameGroup(a: ApiChatMessage, b: ApiChatMessage): boolean {
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     ) < GROUP_GAP_MS
   );
+}
+
+// Cap nhat danh sach pinnedMessages (PinnedMessagesBar.tsx) tu 1 tin nhan vua
+// doi (ghim/bo ghim CHINH minh hoac nguoi khac qua "chat:message-updated") -
+// bo neu het ghim, them/cap nhat + sap lai theo pinnedAt moi nhat truoc neu
+// con ghim. Goi cho MOI message-updated (ke ca recall) - vo hai, tin khong
+// dinh gi den isPinned thi chi ghi de dung phan tu do (thuong khong doi gi).
+function syncPinnedMessages(
+  prev: ApiChatMessage[] | null,
+  updated: ApiChatMessage,
+): ApiChatMessage[] | null {
+  if (!prev) return prev;
+  const rest = prev.filter((m) => m.id !== updated.id);
+  if (!updated.isPinned) return rest;
+  return [updated, ...rest].sort((a, b) => {
+    const at = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+    const bt = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+    return bt - at;
+  });
+}
+
+// Tinh truoc tally poll SAU khi bam vote, hien NGAY (optimistic) truoc khi
+// server phan hoi - khop dung logic single-choice o backend
+// (ChatService.votePoll): bam lai DUNG option da chon -> bo vote (toggle
+// off), bam option KHAC -> chuyen vote sang option do (tru option cu, cong
+// option moi). Ket qua CHI la du doan hien thi tam - se bi ghi de boi tally
+// THAT tu response/socket ngay sau do, hoac rollback ve `poll` goc neu
+// request that bai (xem handleVote).
+function buildOptimisticPollTally(poll: ApiPoll, optionId: string): ApiPoll {
+  const previouslyVotedOptionId = poll.options.find((o) => o.votedByMe)?.id;
+  const clickedSameOption = previouslyVotedOptionId === optionId;
+  const options = poll.options.map((o) => {
+    if (o.id === optionId) {
+      return clickedSameOption
+        ? { ...o, voteCount: Math.max(0, o.voteCount - 1), votedByMe: false }
+        : { ...o, voteCount: o.voteCount + 1, votedByMe: true };
+    }
+    if (o.id === previouslyVotedOptionId) {
+      return { ...o, voteCount: Math.max(0, o.voteCount - 1), votedByMe: false };
+    }
+    return o;
+  });
+  return {
+    ...poll,
+    options,
+    totalVotes: options.reduce((sum, o) => sum + o.voteCount, 0),
+  };
 }
 
 // Khung chinh trang /messages (port tu source treecareer-profile-universe-v2,
@@ -196,6 +250,20 @@ export function MessagesShell() {
     setChatBgId(id);
     window.localStorage.setItem("chat-background", id);
   }
+  // Khung canh + mau bubble - cung pattern voi chatBgId o tren (CHUNG ca app,
+  // localStorage, chi tren thiet bi nay - xem chat-immersive-themes.ts).
+  const [immersiveThemeId, setImmersiveThemeId] = useState<ImmersiveThemeId>("none");
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
+  useEffect(() => {
+    queueMicrotask(() => {
+      const saved = window.localStorage.getItem("chat-immersive-theme");
+      if (saved) setImmersiveThemeId(saved as ImmersiveThemeId);
+    });
+  }, []);
+  function handleChangeImmersiveTheme(id: string) {
+    setImmersiveThemeId(id as ImmersiveThemeId);
+    window.localStorage.setItem("chat-immersive-theme", id);
+  }
   // "... dang nhap" theo tung conversationId (Set de ho tro nhieu hoi thoai
   // dang typing cung luc, du hiem) - tu het han sau 3s neu khong co event
   // "chat:typing" moi (khong co event "stop typing" rieng, don gian hoa).
@@ -205,9 +273,24 @@ export function MessagesShell() {
   const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
-  // "Da xem" - chi giu event MOI NHAT (conversationId + readAt), so voi tin
-  // nhan cuoi cung cua CHINH minh trong hoi thoai dang mo de quyet dinh hien.
+  // "Da xem" (1-1) - chi giu event MOI NHAT (conversationId + readAt), so voi
+  // tin nhan cuoi cung cua CHINH minh trong hoi thoai dang mo de quyet dinh hien.
   const [otherReadEvent, setOtherReadEvent] = useState<ApiReadEvent | null>(
+    null,
+  );
+  // "Da xem" (NHOM) - moc doc CUA TUNG thanh vien (userId -> lastReadAt),
+  // fetch luc mo 1 hoi thoai nhom (xem effect [activeId] o duoi) + cap nhat
+  // real-time tung phan tu qua "chat:read" (khong fetch lai ca danh sach moi
+  // lan co nguoi doc them - xem handleRead).
+  const [groupReadReceipts, setGroupReadReceipts] = useState<
+    Record<string, string | null>
+  >({});
+  // Danh sach tin da ghim cua hoi thoai dang mo (xem PinnedMessagesBar.tsx) -
+  // fetch luc mo hoi thoai (effect [activeId] o duoi), cap nhat real-time qua
+  // handleTogglePin (chinh minh ghim) va handleMessageUpdated (nguoi khac
+  // ghim/bo ghim, phat qua socket "chat:message-updated" - xem
+  // syncPinnedMessages). null = chua fetch xong.
+  const [pinnedMessages, setPinnedMessages] = useState<ApiChatMessage[] | null>(
     null,
   );
   const [replyTarget, setReplyTarget] = useState<ApiChatMessage | null>(null);
@@ -348,9 +431,27 @@ export function MessagesShell() {
           ) ?? prev,
       );
     });
+    // Snapshot moc doc cua TUNG thanh vien (chi thuc su can cho nhom - xem
+    // groupReadReceipts o tren) - fetch 1 lan luc mo, sau do chi cap nhat
+    // real-time qua socket "chat:read" (handleRead), khong fetch lai.
+    startFetchTransition(() => setGroupReadReceipts({}));
+    if (conversations?.find((c) => c.id === activeId)?.isGroup) {
+      listReadReceiptsAction(activeId).then((receipts) => {
+        if (cancelled) return;
+        const next: Record<string, string | null> = {};
+        for (const r of receipts) next[r.userId] = r.lastReadAt;
+        setGroupReadReceipts(next);
+      });
+    }
+    startFetchTransition(() => setPinnedMessages(null));
+    listPinnedMessagesAction(activeId).then((items) => {
+      if (cancelled) return;
+      setPinnedMessages(items);
+    });
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
 
   // `messages` duoc ghi tu 3 nguon doc lap (REST gui tin, socket realtime,
@@ -466,6 +567,9 @@ export function MessagesShell() {
   }, []);
   const handleRead = useCallback((p: ApiReadEvent) => {
     setOtherReadEvent(p);
+    if (p.conversationId === activeIdRef.current) {
+      setGroupReadReceipts((prev) => ({ ...prev, [p.userId]: p.readAt }));
+    }
   }, []);
   // Tin nhan bi thu hoi - cap nhat lai dung message do trong danh sach (server
   // da xoa sach content/attachment, chi con isRecalled=true).
@@ -473,6 +577,7 @@ export function MessagesShell() {
     setMessages(
       (prev) => prev?.map((m) => (m.id === updated.id ? updated : m)) ?? prev,
     );
+    setPinnedMessages((prev) => syncPinnedMessages(prev, updated));
   }, []);
   const handleReactionUpdate = useCallback((p: ApiReactionUpdate) => {
     setMessages(
@@ -507,7 +612,9 @@ export function MessagesShell() {
   // Chinh minh vua roi 1 nhom (GroupInfoPanel.tsx) - bo hoi thoai do khoi
   // danh sach, dong khung chat neu dang mo dung hoi thoai vua roi.
   function handleGroupLeft(conversationId: string) {
-    setConversations((prev) => prev?.filter((c) => c.id !== conversationId) ?? prev);
+    setConversations(
+      (prev) => prev?.filter((c) => c.id !== conversationId) ?? prev,
+    );
     if (activeId === conversationId) {
       setActiveIdState(null);
       setMessages(null);
@@ -646,6 +753,7 @@ export function MessagesShell() {
       poll: null,
       isRecalled: false,
       isPinned: false,
+      pinnedAt: null,
       replyTo: replyTarget
         ? {
             id: replyTarget.id,
@@ -897,7 +1005,22 @@ export function MessagesShell() {
     setActiveId(conversation.id);
   }
 
+  // Poll dang cho phan hoi optimistic (xem isVoting o MessageBubble.tsx) -
+  // disable nut vote them trong luc cho, tranh bam lien tuc lam optimistic
+  // state (tinh cuc bo) lech voi server.
+  const [votingPollIds, setVotingPollIds] = useState<Set<string>>(new Set());
+
   const handleVote = useCallback((pollId: string, optionId: string) => {
+    let previousPoll: ApiPoll | null = null;
+    setMessages((prev) => {
+      if (!prev) return prev;
+      return prev.map((m) => {
+        if (m.poll?.id !== pollId) return m;
+        previousPoll = m.poll;
+        return { ...m, poll: buildOptimisticPollTally(m.poll, optionId) };
+      });
+    });
+    setVotingPollIds((prev) => new Set(prev).add(pollId));
     votePollAction(pollId, optionId)
       .then((tally) => {
         setMessages(
@@ -907,7 +1030,27 @@ export function MessagesShell() {
             ) ?? prev,
         );
       })
-      .catch(() => toast.danger("Không thể bình chọn, thử lại sau."));
+      .catch(() => {
+        // Rollback ve tally TRUOC khi bam (khong phai xoa poll) - server
+        // chua ghi nhan gi ca vi request that bai.
+        if (previousPoll) {
+          const rollback = previousPoll;
+          setMessages(
+            (prev) =>
+              prev?.map((m) =>
+                m.poll?.id === pollId ? { ...m, poll: rollback } : m,
+              ) ?? prev,
+          );
+        }
+        toast.danger("Không thể bình chọn, thử lại sau.");
+      })
+      .finally(() => {
+        setVotingPollIds((prev) => {
+          const next = new Set(prev);
+          next.delete(pollId);
+          return next;
+        });
+      });
   }, []);
 
   const handleReact = useCallback((messageId: string, emoji: string) => {
@@ -962,6 +1105,7 @@ export function MessagesShell() {
             (prev) =>
               prev?.map((m) => (m.id === messageId ? updated : m)) ?? prev,
           );
+          setPinnedMessages((prev) => syncPinnedMessages(prev, updated));
         })
         .catch(() => toast.danger("Không thể ghim tin nhắn, thử lại sau."));
     },
@@ -1013,7 +1157,9 @@ export function MessagesShell() {
 
   const filtered =
     conversations?.filter((c) => {
-      const matchesQuery = (c.isGroup ? (c.groupName ?? "") : (c.otherUser?.name ?? ""))
+      const matchesQuery = (
+        c.isGroup ? (c.groupName ?? "") : (c.otherUser?.name ?? "")
+      )
         .toLowerCase()
         .includes(query.toLowerCase());
       const matchesTab =
@@ -1030,10 +1176,11 @@ export function MessagesShell() {
   const activeConversation = conversations?.find((c) => c.id === activeId);
   const isActiveTyping = activeId ? typingConversationIds.has(activeId) : false;
 
-  // "Da xem" - CHI ap dung cho 1-1 (nhom co nhieu nguoi doc, backend khong
-  // emit "chat:read" cho nhom - xem ChatService.markRead - guard lai o day
-  // cho ro rang). Uu tien gia tri real-time (chat:read) neu la CHINH hoi
-  // thoai dang mo, khong thi dung snapshot REST tu luc fetch conversation.
+  // "Da xem" dang "1 dong tick" - CHI dung cho 1-1 (nhom dung avatar-stack
+  // rieng, xem groupSeenByUsers duoi day, vi nhieu nguoi doc nen 1 dong tick
+  // chung khong the hien AI da xem). Uu tien gia tri real-time (chat:read)
+  // neu la CHINH hoi thoai dang mo, khong thi dung snapshot REST tu luc fetch
+  // conversation.
   const effectiveOtherLastReadAt = activeConversation?.isGroup
     ? null
     : otherReadEvent?.conversationId === activeId
@@ -1050,6 +1197,17 @@ export function MessagesShell() {
     effectiveOtherLastReadAt &&
     new Date(lastOwnMessage.createdAt) <= new Date(effectiveOtherLastReadAt),
   );
+  // "Da xem" (NHOM) - avatar cua tung thanh vien DA doc den/qua tin cuoi
+  // cung cua CHINH minh, dua theo groupReadReceipts (fetch luc mo hoi thoai +
+  // cap nhat real-time tung phan tu qua "chat:read" - xem effect [activeId]/
+  // handleRead o tren).
+  const groupSeenByUsers =
+    activeConversation?.isGroup && lastOwnMessage
+      ? activeConversation.participants.filter((p) => {
+          const readAt = groupReadReceipts[p.id];
+          return readAt && new Date(lastOwnMessage.createdAt) <= new Date(readAt);
+        })
+      : [];
 
   return (
     <div className="flex h-full overflow-hidden border border-slate-200 bg-white shadow-[0_2px_12px_rgba(15,23,42,.04)]">
@@ -1081,7 +1239,7 @@ export function MessagesShell() {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-5 border-b border-slate-100">
+          <div className="scrollbar-none mt-4 flex items-center gap-4 overflow-x-auto border-b border-slate-100 sm:gap-5">
             {CHAT_TABS.map((t) => {
               const active = !t.disabled && tab === t.key;
               const badgeCount =
@@ -1100,7 +1258,7 @@ export function MessagesShell() {
                   title={t.disabled ? "Sắp có" : undefined}
                   onClick={() => setTab(t.key)}
                   className={cn(
-                    "relative flex items-center gap-1.5 pb-3 text-[14px] transition-colors duration-150 ease-out",
+                    "relative flex shrink-0 items-center gap-1.5 pb-3 text-[14px] whitespace-nowrap transition-colors duration-150 ease-out",
                     t.disabled
                       ? "cursor-not-allowed text-slate-300"
                       : active
@@ -1143,7 +1301,7 @@ export function MessagesShell() {
             />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto p-3">
           {conversations === null ? (
             <div className="flex flex-col">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -1172,7 +1330,7 @@ export function MessagesShell() {
                 <button
                   type="button"
                   onClick={() => setActiveId(c.id)}
-                  className="flex flex-1 cursor-pointer gap-3.5 text-left"
+                  className="flex min-w-0 flex-1 cursor-pointer gap-3.5 text-left"
                 >
                   {c.isGroup ? (
                     <GroupAvatar color={c.groupAvatarColor} />
@@ -1213,7 +1371,7 @@ export function MessagesShell() {
                     <div className="mt-1 flex justify-between gap-2">
                       <p
                         className={cn(
-                          "truncate text-[13px]",
+                          "min-w-0 flex-1 truncate text-[13px]",
                           typingConversationIds.has(c.id)
                             ? "font-medium italic"
                             : "text-[#64748B]",
@@ -1281,9 +1439,14 @@ export function MessagesShell() {
           comment o <section> danh sach hoi thoai o tren). */}
       <main
         className={cn(
-          "relative flex min-w-0 flex-1 flex-col bg-white",
+          "relative flex min-w-0 flex-1 flex-col bg-white transition-colors duration-300",
           !activeId && "hidden md:flex",
         )}
+        style={
+          immersiveThemeId !== "none"
+            ? { background: getImmersiveTheme(immersiveThemeId).bg }
+            : undefined
+        }
       >
         {conversations === null ? (
           <ChatWindowSkeleton />
@@ -1298,6 +1461,7 @@ export function MessagesShell() {
           </div>
         ) : (
           <>
+            <ImmersiveChatScene themeId={immersiveThemeId} />
             <div className="relative z-10 flex h-21 shrink-0 items-center justify-between gap-3.5 border-b border-slate-100 bg-white px-5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
               <div className="flex min-w-0 items-center gap-3.5">
                 <button
@@ -1373,6 +1537,15 @@ export function MessagesShell() {
 
                 <button
                   type="button"
+                  title="Khung cảnh trò chuyện"
+                  onClick={() => setThemeModalOpen(true)}
+                  className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338]"
+                >
+                  <BubblesIcon size={18} />
+                </button>
+
+                <button
+                  type="button"
                   title={
                     rightPanelOpen ? "Ẩn bảng thông tin" : "Hiện bảng thông tin"
                   }
@@ -1387,6 +1560,15 @@ export function MessagesShell() {
               </div>
             </div>
 
+            {pinnedMessages && pinnedMessages.length > 0 && (
+              <PinnedMessagesBar
+                pinnedMessages={pinnedMessages}
+                participants={activeConversation.participants}
+                myId={myId}
+                onJumpToMessage={handleJumpToMessage}
+              />
+            )}
+
             <div
               ref={scrollRef}
               onScroll={() => {
@@ -1395,10 +1577,13 @@ export function MessagesShell() {
                 }
               }}
               className={cn(
-                "flex-1 overflow-y-auto px-4 pt-6 pb-30 md:px-8",
-                getChatBackground(chatBgId).base,
+                "relative z-10 flex-1 overflow-y-auto px-4 pt-6 pb-30 md:px-8",
+                // Khung canh dong (immersiveThemeId != "none") thay the han
+                // nen tinh cu - de trong suot cho canh phia sau lo ra, thay
+                // vi ca 2 he thong nen chong nhau.
+                immersiveThemeId === "none" && getChatBackground(chatBgId).base,
               )}
-              style={getChatBackground(chatBgId).patternStyle}
+              style={immersiveThemeId === "none" ? getChatBackground(chatBgId).patternStyle : undefined}
             >
               <div className="mx-auto">
                 {/* Marker cho IntersectionObserver - vao vung nhin cua khung
@@ -1430,11 +1615,33 @@ export function MessagesShell() {
                   !loadOlderError &&
                   !nextCursor &&
                   messages !== null &&
-                  messages.length > 0 && (
-                    <div className="mb-4 flex justify-center">
-                      <span className="text-[12px] text-slate-400">
-                        Đã đến tin nhắn đầu tiên
-                      </span>
+                  messages.length > 0 &&
+                  activeConversation && (
+                    <div className="mb-8 flex flex-col items-center gap-3 pt-4 text-center">
+                      {activeConversation.isGroup ? (
+                        <GroupAvatar
+                          color={activeConversation.groupAvatarColor}
+                          size={72}
+                        />
+                      ) : (
+                        <ConversationAvatar
+                          name={activeConversation.otherUser?.name}
+                          avatarUrl={activeConversation.otherUser?.avatarUrl}
+                          size={72}
+                        />
+                      )}
+                      <div>
+                        <p className="text-[16px] font-bold text-[#182338]">
+                          {activeConversation.isGroup
+                            ? (activeConversation.groupName ?? "Nhóm")
+                            : (activeConversation.otherUser?.name ?? "Người dùng")}
+                        </p>
+                        <p className="mt-1 text-[13px] text-slate-400">
+                          {activeConversation.isGroup
+                            ? `Đây là khởi đầu của nhóm ${activeConversation.groupName ?? ""}`
+                            : `Đây là khởi đầu cuộc trò chuyện của bạn với ${activeConversation.otherUser?.name ?? "người này"}`}
+                        </p>
+                      </div>
                     </div>
                   )}
                 {messages === null ? (
@@ -1466,20 +1673,54 @@ export function MessagesShell() {
                           onRecall={handleRecall}
                           onJumpToMessage={handleJumpToMessage}
                           onTogglePin={handleTogglePin}
+                          theme={getImmersiveTheme(immersiveThemeId)}
+                          isGroup={activeConversation.isGroup}
+                          isVoting={!!m.poll && votingPollIds.has(m.poll.id)}
                         />
                       );
                     })}
                     {lastOwnMessage && !lastOwnMessage.isRecalled && (
-                      <div className="mb-2 flex items-center justify-end gap-1 pr-1 text-[11px] text-slate-400">
+                      <div className="mb-2 flex items-center justify-end gap-1 pr-1 text-[12px] font-semibold text-slate-500">
                         {lastOwnMessage.id.startsWith("temp-") ? (
                           <>
-                            <LoaderCircle size={12} className="animate-spin" />
+                            <LoaderCircle size={13} className="animate-spin" />
                             <span>Đang gửi...</span>
                           </>
+                        ) : activeConversation?.isGroup ? (
+                          groupSeenByUsers.length > 0 ? (
+                            <div
+                              className="flex items-center -space-x-1.5"
+                              title={`Đã xem: ${groupSeenByUsers.map((u) => u.name).join(", ")}`}
+                            >
+                              {groupSeenByUsers.slice(0, 5).map((u) => (
+                                <span
+                                  key={u.id}
+                                  className="rounded-full ring-2 ring-white"
+                                >
+                                  <ConversationAvatar
+                                    name={u.name}
+                                    avatarUrl={u.avatarUrl}
+                                    size={16}
+                                  />
+                                </span>
+                              ))}
+                              {groupSeenByUsers.length > 5 && (
+                                <span className="grid size-4 shrink-0 place-items-center rounded-full bg-slate-200 text-[8px] font-bold text-slate-600 ring-2 ring-white">
+                                  +{groupSeenByUsers.length - 5}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <>
+                              <Check size={16} strokeWidth={2.75} />
+                              <span>Đã gửi</span>
+                            </>
+                          )
                         ) : showSeen ? (
                           <>
                             <CheckCheck
-                              size={13}
+                              size={16}
+                              strokeWidth={2.75}
                               style={{ color: "var(--primary)" }}
                             />
                             <span style={{ color: "var(--primary)" }}>
@@ -1488,7 +1729,7 @@ export function MessagesShell() {
                           </>
                         ) : (
                           <>
-                            <Check size={13} />
+                            <Check size={16} strokeWidth={2.75} />
                             <span>Đã gửi</span>
                           </>
                         )}
@@ -1536,7 +1777,7 @@ export function MessagesShell() {
               </div>
             )}
 
-            <div className="absolute bottom-0 left-0 w-full p-3 md:p-5">
+            <div className="absolute bottom-0 left-0 z-20 w-full p-3 md:p-5">
               <div className=" flex  flex-col gap-2.5 rounded-lg border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
                 <AnimatePresence initial={false}>
                   {replyTarget && (
@@ -1814,7 +2055,10 @@ export function MessagesShell() {
             onClose={() => setRightPanelOpen(false)}
             onUpdated={handleGroupUpdated}
             onToggleMute={() =>
-              void handleToggleConversationSetting(activeConversation.id, "isMuted")
+              void handleToggleConversationSetting(
+                activeConversation.id,
+                "isMuted",
+              )
             }
             onOpenSearch={() => {
               setSearchDrawerQuery("");
@@ -1846,6 +2090,13 @@ export function MessagesShell() {
         onOpenChange={setBgModalOpen}
         value={chatBgId}
         onChange={handleChangeChatBg}
+      />
+
+      <ImmersiveThemeModal
+        open={themeModalOpen}
+        onOpenChange={setThemeModalOpen}
+        value={immersiveThemeId}
+        onChange={handleChangeImmersiveTheme}
       />
 
       {activeConversation && (

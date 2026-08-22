@@ -8,6 +8,7 @@ import type {
   ApiMessageSearchPage,
   ApiMessageType,
   ApiPoll,
+  ApiReadReceipt,
   GroupAvatarColor,
 } from "./types";
 
@@ -77,6 +78,14 @@ export function markConversationRead(conversationId: string) {
   return apiFetch<{ readAt: string }>(`/conversations/${conversationId}/read`, {
     method: "POST",
   });
+}
+
+// Moc "da doc den dau" cua TUNG thanh vien - dung ve avatar-stack "da xem"
+// trong nhom (xem MessagesShell.tsx), fetch luc mo hoi thoai + cap nhat
+// real-time qua socket "chat:read" (khong can goi lai API moi lan co nguoi
+// doc them).
+export function listReadReceipts(conversationId: string): Promise<ApiReadReceipt[]> {
+  return apiFetch<ApiReadReceipt[]>(`/conversations/${conversationId}/read-receipts`);
 }
 
 export function getUnreadChatCount(): Promise<{ count: number }> {

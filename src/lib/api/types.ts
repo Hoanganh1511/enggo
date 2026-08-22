@@ -451,6 +451,7 @@ export type ApiChatMessage = {
   poll: ApiPoll | null;
   isRecalled: boolean;
   isPinned: boolean;
+  pinnedAt: string | null;
   replyTo: ApiReplyPreview | null;
   reactions: ApiMessageReaction[];
   createdAt: string;
@@ -546,10 +547,18 @@ export type ApiTypingEvent = {
   userId: string;
 };
 
-// Payload cua socket event "chat:read".
+// Payload cua socket event "chat:read" - userId = AI vua doc (can cho nhom
+// nhieu nguoi doc, xem ApiReadReceipt/MessagesShell.tsx).
 export type ApiReadEvent = {
   conversationId: string;
+  userId: string;
   readAt: string;
+};
+
+// Moc "da doc den dau" cua 1 thanh vien - xem ChatService.listReadReceipts.
+export type ApiReadReceipt = {
+  userId: string;
+  lastReadAt: string | null;
 };
 
 // Payload cua socket event "chat:reaction-update".

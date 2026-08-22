@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Geist_Mono } from "next/font/google";
+import { Roboto, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
@@ -8,7 +8,7 @@ import { AuthSessionProvider } from "@/components/providers/session-provider";
 // (Be Vietnam Pro cho PostCard, Work Sans cho breadcrumb Workspace, Patrick
 // Hand cho Profile/Sidebar) da BO theo yeu cau nguoi dung - toan app gio
 // dung dung 1 font Inter, khong con ngoai le.
-const inter = Montserrat({
+const inter = Roboto({
   variable: "--font-inter",
   weight: "400",
   subsets: ["latin"],

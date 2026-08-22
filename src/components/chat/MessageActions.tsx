@@ -24,7 +24,9 @@ export function MessageActions({
   isMine,
   canCopy,
   isPinned,
+  activeEmoji,
   onReact,
+  onRemoveReaction,
   onReply,
   onCopy,
   onRecall,
@@ -33,7 +35,12 @@ export function MessageActions({
   isMine: boolean;
   canCopy: boolean;
   isPinned: boolean;
+  // Emoji minh DA tha cho tin nay, neu co (xem MessageBubble.tsx) - highlight
+  // trong ReactionPicker/EmojiPickerPopover, bam lai CHINH emoji nay se bo
+  // cam xuc thay vi tha lai.
+  activeEmoji?: string;
   onReact: (emoji: string) => void;
+  onRemoveReaction: () => void;
   onReply: () => void;
   onCopy: () => void;
   onRecall: () => Promise<void>;
@@ -48,6 +55,15 @@ export function MessageActions({
     onCopy();
     setMoreOpen(false);
     toast.success("Đã sao chép");
+  }
+
+  // Bam lai CHINH emoji dang active = bo cam xuc, bam emoji khac = tha/doi
+  // sang emoji do (upsert o backend tu ghi de, khong can goi remove truoc).
+  function handleSelectReaction(emoji: string) {
+    if (emoji === activeEmoji) onRemoveReaction();
+    else onReact(emoji);
+    setReactOpen(false);
+    setShowFullPicker(false);
   }
 
   return (
@@ -71,19 +87,11 @@ export function MessageActions({
           </PopoverTrigger>
           <PopoverContent open={reactOpen} align="center" sideOffset={8}>
             {showFullPicker ? (
-              <EmojiPickerPopover
-                onSelect={(emoji) => {
-                  onReact(emoji);
-                  setReactOpen(false);
-                  setShowFullPicker(false);
-                }}
-              />
+              <EmojiPickerPopover activeEmoji={activeEmoji} onSelect={handleSelectReaction} />
             ) : (
               <ReactionPicker
-                onSelect={(emoji) => {
-                  onReact(emoji);
-                  setReactOpen(false);
-                }}
+                activeEmoji={activeEmoji}
+                onSelect={handleSelectReaction}
                 onOpenFullPicker={() => setShowFullPicker(true)}
               />
             )}

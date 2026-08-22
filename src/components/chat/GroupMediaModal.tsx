@@ -65,7 +65,7 @@ export function GroupMediaModal({
             <div className="flex items-center gap-3">
               <span
                 className="grid size-9 shrink-0 place-items-center rounded-xl text-white"
-                style={{ background: "linear-gradient(135deg,#8B5CF6,#6D4AFF)" }}
+                style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-hover))" }}
               >
                 <FolderOpen size={17} />
               </span>
@@ -77,7 +77,7 @@ export function GroupMediaModal({
               <button
                 type="button"
                 aria-label="Đóng"
-                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-[#F2F0FF] hover:text-[#6D4AFF]"
+                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-primary-soft hover:text-primary"
               >
                 <X size={16} />
               </button>
@@ -134,7 +134,7 @@ export function GroupMediaModal({
                     type="button"
                     onClick={() => void handleLoadMore()}
                     disabled={loadingMore}
-                    className="mt-4 flex w-full cursor-pointer items-center justify-center gap-1 py-2.5 text-[13px] font-semibold text-[#6D4AFF] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 flex w-full cursor-pointer items-center justify-center gap-1 py-2.5 text-[13px] font-semibold text-primary transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {loadingMore ? "Đang tải..." : "Xem thêm"}
                     {!loadingMore && <ChevronDown size={15} />}

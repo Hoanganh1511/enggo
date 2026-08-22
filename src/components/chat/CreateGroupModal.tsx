@@ -68,9 +68,10 @@ export function CreateGroupModal({
 }) {
   const { data: session } = useSession();
   const [name, setName] = useState("");
-  const [avatarColor, setAvatarColor] = useState<GroupAvatarColor>(
-    GROUP_AVATAR_COLORS[0],
-  );
+  // Mac dinh "amber" (cam) - khop voi var(--primary) cam cua toan site (xem
+  // AskUserQuestion truoc do ve doi accent tim -> cam), thay vi phan tu dau
+  // mang GROUP_AVATAR_COLORS (violet).
+  const [avatarColor, setAvatarColor] = useState<GroupAvatarColor>("amber");
   const [selected, setSelected] = useState<Map<string, PickableUser>>(
     new Map(),
   );
@@ -174,7 +175,7 @@ export function CreateGroupModal({
 
   function reset() {
     setName("");
-    setAvatarColor(GROUP_AVATAR_COLORS[0]);
+    setAvatarColor("amber");
     setSelected(new Map());
     setQuery("");
     setRecentContacts(null);
@@ -240,7 +241,7 @@ export function CreateGroupModal({
             <div className="flex items-center gap-3.5">
               <span
                 className="grid size-11 shrink-0 place-items-center rounded-2xl text-white"
-                style={{ background: "linear-gradient(135deg,#8B5CF6,#6D4AFF)" }}
+                style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-hover))" }}
               >
                 <Users size={21} />
               </span>
@@ -257,7 +258,7 @@ export function CreateGroupModal({
               <button
                 type="button"
                 aria-label="Đóng"
-                className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-[#F2F0FF] hover:text-[#6D4AFF]"
+                className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-primary-soft hover:text-primary"
               >
                 <X size={18} />
               </button>
@@ -290,7 +291,7 @@ export function CreateGroupModal({
                       onChange={(e) => setName(e.target.value)}
                       maxLength={50}
                       placeholder="Nhóm mấy anh em"
-                      className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-white px-4 pr-14 text-[15px] text-[#172033] outline-none transition-colors duration-150 ease-out placeholder:text-[#7A8496] focus:border-[#6D4AFF]"
+                      className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-white px-4 pr-14 text-[15px] text-[#172033] outline-none transition-colors duration-150 ease-out placeholder:text-[#7A8496] focus:border-primary"
                     />
                     <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[12px] text-[#7A8496]">
                       {name.length}/50
@@ -365,7 +366,7 @@ export function CreateGroupModal({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Tìm kiếm bạn bè..."
-                  className="h-13 w-full rounded-[14px] border border-[#E5E7EB] bg-white pr-4 pl-11 text-[15px] text-[#172033] outline-none transition-colors duration-150 ease-out placeholder:text-[#7A8496] focus:border-[#6D4AFF]"
+                  className="h-13 w-full rounded-[14px] border border-[#E5E7EB] bg-white pr-4 pl-11 text-[15px] text-[#172033] outline-none transition-colors duration-150 ease-out placeholder:text-[#7A8496] focus:border-primary"
                 />
               </div>
 
@@ -408,7 +409,7 @@ export function CreateGroupModal({
                             className={cn(
                               "grid size-6 shrink-0 place-items-center rounded-md border transition-colors duration-150 ease-out",
                               isSelected
-                                ? "border-[#6D4AFF] bg-[#6D4AFF] text-white"
+                                ? "border-primary bg-primary text-white"
                                 : "border-[#E5E7EB] bg-white",
                             )}
                           >
@@ -423,7 +424,7 @@ export function CreateGroupModal({
                       type="button"
                       onClick={() => void handleLoadMore()}
                       disabled={loadingMore}
-                      className="mt-1 flex cursor-pointer items-center justify-center gap-1 py-3 text-[13px] font-semibold text-[#6D4AFF] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
+                      className="mt-1 flex cursor-pointer items-center justify-center gap-1 py-3 text-[13px] font-semibold text-primary transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingMore ? "Đang tải..." : "Xem thêm"}
                       {!loadingMore && <ChevronDown size={15} />}
@@ -448,8 +449,8 @@ export function CreateGroupModal({
               type="button"
               onClick={() => void handleSubmit()}
               disabled={!canSubmit}
-              className="h-12 cursor-pointer rounded-[14px] px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_-8px_rgba(109,74,255,.55)] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-45"
-              style={{ background: "linear-gradient(135deg,#8B5CF6,#6D4AFF)" }}
+              className="h-12 cursor-pointer rounded-[14px] px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_-8px_rgba(221,112,11,.55)] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-45"
+              style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-hover))" }}
             >
               {submitting
                 ? "Đang tạo..."

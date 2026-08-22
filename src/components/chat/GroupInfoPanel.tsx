@@ -207,7 +207,7 @@ export function GroupInfoPanel({
         <button
           type="button"
           onClick={onClose}
-          className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-[#F4F1FF] hover:text-[#6D4AFF]"
+          className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-primary-soft hover:text-primary"
         >
           <X size={16} />
         </button>
@@ -223,7 +223,7 @@ export function GroupInfoPanel({
                 type="button"
                 onClick={() => setColorPickerOpen((v) => !v)}
                 disabled={savingIdentity}
-                className="absolute right-0 bottom-0 grid size-8 cursor-pointer place-items-center rounded-full border-2 border-white bg-[#F6F3FF] text-[#6D4AFF] shadow-[0_2px_6px_rgba(23,32,51,.15)] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
+                className="absolute right-0 bottom-0 grid size-8 cursor-pointer place-items-center rounded-full border-2 border-white bg-primary-soft text-primary shadow-[0_2px_6px_rgba(23,32,51,.15)] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
                 title="Đổi màu nhóm"
               >
                 <Camera size={13} />
@@ -267,7 +267,7 @@ export function GroupInfoPanel({
                     setEditingName(false);
                   }
                 }}
-                className="w-full rounded-lg border border-[#6D4AFF] bg-white px-2.5 py-1 text-center text-[17px] font-bold text-[#172033] outline-none"
+                className="w-full rounded-lg border border-primary bg-white px-2.5 py-1 text-center text-[17px] font-bold text-[#172033] outline-none"
               />
             ) : (
               <button
@@ -324,7 +324,7 @@ export function GroupInfoPanel({
               </span>
             ))}
             {memberCount > 6 && (
-              <span className="-ml-2.5 grid size-9 shrink-0 place-items-center rounded-full bg-[#F6F3FF] text-[12px] font-semibold text-[#6D4AFF] ring-2 ring-white">
+              <span className="-ml-2.5 grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-[12px] font-semibold text-primary ring-2 ring-white">
                 +{memberCount - 6}
               </span>
             )}
@@ -343,7 +343,7 @@ export function GroupInfoPanel({
                 onChange={(e) => setDescriptionDraft(e.target.value)}
                 placeholder="Thêm mô tả cho nhóm..."
                 rows={3}
-                className="w-full resize-none rounded-xl border border-[#6D4AFF] bg-white px-3 py-2 text-[13px] text-[#172033] outline-none"
+                className="w-full resize-none rounded-xl border border-primary bg-white px-3 py-2 text-[13px] text-[#172033] outline-none"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -360,7 +360,7 @@ export function GroupInfoPanel({
                   type="button"
                   onClick={() => void saveDescription()}
                   disabled={savingDescription}
-                  className="cursor-pointer rounded-lg bg-[#6D4AFF] px-3 py-1.5 text-[12px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  className="cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-[12px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Lưu
                 </button>
@@ -441,7 +441,7 @@ export function GroupInfoPanel({
             <button
               type="button"
               onClick={() => onJumpToMessage(latestPin.id)}
-              className="w-full cursor-pointer rounded-xl bg-[#F7F8FC] px-3 py-2.5 text-left transition-colors duration-150 ease-out hover:bg-[#F4F1FF]"
+              className="w-full cursor-pointer rounded-xl bg-[#F7F8FC] px-3 py-2.5 text-left transition-colors duration-150 ease-out hover:bg-primary-soft"
             >
               <p className="truncate text-[13px] text-[#172033]">
                 {formatMessagePreview(latestPin)}
@@ -494,7 +494,7 @@ export function GroupInfoPanel({
       />
       {leaving && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-white/40">
-          <LoaderCircle size={22} className="animate-spin text-[#6D4AFF]" />
+          <LoaderCircle size={22} className="animate-spin text-primary" />
         </div>
       )}
     </aside>
@@ -525,11 +525,11 @@ function QuickAction({
         disabled
           ? "cursor-not-allowed border-[#E7E9EF] text-[#7A8496]"
           : active
-            ? "cursor-pointer border-[#6D4AFF] bg-[#F6F3FF] text-[#6D4AFF]"
+            ? "cursor-pointer border-primary bg-primary-soft text-primary"
             : "cursor-pointer border-[#E7E9EF] text-[#172033] hover:bg-[#F7F8FC]",
       )}
     >
-      <Icon size={18} strokeWidth={2} className={disabled ? "text-[#7A8496]" : "text-[#6D4AFF]"} />
+      <Icon size={18} strokeWidth={2} className={disabled ? "text-[#7A8496]" : "text-primary"} />
       {label}
     </button>
   );
@@ -552,14 +552,14 @@ function Section({
     <section>
       <div className="mb-2.5 flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 text-[13px] font-bold text-[#172033]">
-          {Icon && <Icon size={15} strokeWidth={2} className="text-[#6D4AFF]" />}
+          {Icon && <Icon size={15} strokeWidth={2} className="text-primary" />}
           {title}
         </h3>
         {action && (
           <button
             type="button"
             onClick={onAction}
-            className="cursor-pointer text-[12px] font-semibold text-[#6D4AFF] hover:underline"
+            className="cursor-pointer text-[12px] font-semibold text-primary hover:underline"
           >
             {action}
           </button>

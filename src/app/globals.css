@@ -53,10 +53,10 @@
   --active-bg-strong: color-mix(in srgb, var(--active-bg), var(--primary) 18%);
   --active-border: color-mix(in srgb, var(--primary) 35%, transparent);
 
-  --ink: #7c7d75;
-  --ink-muted: #adaca7;
-  --ink-faint: color-mix(in srgb, #adaca7 65%, white);
-  --ink-disabled: color-mix(in srgb, #adaca7 35%, white);
+  --ink: #4b4c46;
+  --ink-muted: #7d7d76;
+  --ink-faint: color-mix(in srgb, #7d7d76 65%, white);
+  --ink-disabled: color-mix(in srgb, #7d7d76 35%, white);
 
   --border: #d9dadf;
   --border-subtle: color-mix(in srgb, #d9dadf 55%, white);
@@ -439,6 +439,33 @@ body {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+}
+
+/* Hieu ung "song sanh nuoc" tren thanh mau ket qua poll da chon (xem
+   MessageBubble.tsx) - 1 lop overlay hoa van song (SVG tile 40px, lap qua
+   background-position) truot ngang lien tuc TREN nen cam da chon, chi hien
+   khi thanh da o trang thai "day" (khong con trong doan cho server 80% - xem
+   isVoting/pendingOptionId), tao cam giac "song sanh" thay vi tinh mau phang. */
+.poll-wave {
+  position: relative;
+  overflow: hidden;
+}
+.poll-wave::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><path d="M0 10 Q10 2 20 10 T40 10 V20 H0 Z" fill="white" fill-opacity="0.55"/></svg>');
+  background-repeat: repeat-x;
+  background-size: 40px 100%;
+  animation: poll-wave-move 1.8s linear infinite;
+}
+@keyframes poll-wave-move {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: -40px;
+  }
 }
 
 .react-flow__controls {

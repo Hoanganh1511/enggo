@@ -34,7 +34,7 @@ export function GroupMembersModal({
             <div className="flex items-center gap-3">
               <span
                 className="grid size-9 shrink-0 place-items-center rounded-xl text-white"
-                style={{ background: "linear-gradient(135deg,#8B5CF6,#6D4AFF)" }}
+                style={{ background: "linear-gradient(135deg, var(--primary), var(--primary-hover))" }}
               >
                 <Users size={17} />
               </span>
@@ -46,7 +46,7 @@ export function GroupMembersModal({
               <button
                 type="button"
                 aria-label="Đóng"
-                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-[#F2F0FF] hover:text-[#6D4AFF]"
+                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-primary-soft hover:text-primary"
               >
                 <X size={16} />
               </button>
