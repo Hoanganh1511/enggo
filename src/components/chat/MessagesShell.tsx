@@ -510,33 +510,72 @@ export function MessagesShell() {
     }
   }, [typingConversationIds]);
 
-  const handleIncoming = useCallback((m: ApiChatMessage) => {
-    setConversations((prev) => {
-      if (!prev) return prev;
-      const idx = prev.findIndex((c) => c.id === m.conversationId);
-      if (idx === -1) return prev;
-      const isActive = activeIdRef.current === m.conversationId;
-      const updated: ApiConversationSummary = {
-        ...prev[idx],
-        lastMessage: m,
-        updatedAt: m.createdAt,
-        unreadCount: isActive ? 0 : prev[idx].unreadCount + 1,
-      };
-      return [updated, ...prev.filter((c) => c.id !== m.conversationId)];
+  // Dong bo lai danh sach hoi thoai (thu tu/unreadCount/lastMessage/gio hien
+  // thi) MOI LAN socket ket noi - bat ke lan dau hay reconnect sau mat mang
+  // tam thoi (xem onResync trong use-chat-socket.ts), VA khi handleIncoming
+  // ben duoi nhan 1 tin cho 1 conversationId CHUA co trong danh sach (hoi
+  // thoai 1-1 MOI TINH, nguoi kia nhan lan dau - xem comment o handleIncoming).
+  // Fetch lai TOAN BO thay vi vas-vas tung phan vi khong biet chinh xac da
+  // mat nhung event nao/hoi thoai nao con thieu - fetch moi la cach chac
+  // chan nhat de dam bao dung du lieu server.
+  const handleResync = useCallback(() => {
+    listConversationsAction().then((items) => {
+      setConversations((prev) => {
+        if (!prev) return items;
+        // Giu nguyen thu tu neu khong doi gi (tranh nhay/giat danh sach khi
+        // resync ma thuc ra khong co gi moi - vd lan connect dau tien, ngay
+        // sau khi effect mount da fetch xong).
+        const same =
+          prev.length === items.length &&
+          prev.every(
+            (c, i) =>
+              c.id === items[i]?.id && c.updatedAt === items[i]?.updatedAt,
+          );
+        return same ? prev : items;
+      });
     });
-
-    if (m.conversationId === activeIdRef.current) {
-      // Tin cua CHINH minh (vua gui, vong lai qua socket) hoac dang o gan
-      // day cuoi san -> tu cuon xuong; nguoc lai (dang doc lich su cu, tin
-      // tu nguoi kia toi) giu nguyen vi tri, chi hien banner "Có tin nhắn mới".
-      const mine = m.senderId === myIdRef.current;
-      const nearBottom = isNearBottom();
-      pendingScrollActionRef.current = mine || nearBottom ? "bottom" : null;
-      if (!mine && !nearBottom) setShowNewMessagesBanner(true);
-      setMessages((prev) => (prev ? appendUniqueMessage(prev, m) : prev));
-      markConversationReadAction(m.conversationId).catch(() => {});
-    }
   }, []);
+
+  const handleIncoming = useCallback(
+    (m: ApiChatMessage) => {
+      let knownConversation = true;
+      setConversations((prev) => {
+        if (!prev) return prev;
+        const idx = prev.findIndex((c) => c.id === m.conversationId);
+        if (idx === -1) {
+          knownConversation = false;
+          return prev;
+        }
+        const isActive = activeIdRef.current === m.conversationId;
+        const updated: ApiConversationSummary = {
+          ...prev[idx],
+          lastMessage: m,
+          updatedAt: m.createdAt,
+          unreadCount: isActive ? 0 : prev[idx].unreadCount + 1,
+        };
+        return [updated, ...prev.filter((c) => c.id !== m.conversationId)];
+      });
+      // Tin nhan dau tien cua 1 hoi thoai 1-1 MOI TINH (nguoi kia vua nhan
+      // "Nhắn tin" tren profile minh lan dau) - conversationId nay CHUA tung
+      // co trong danh sach cua minh, setConversations() o tren khong lam gi
+      // ca (idx=-1). Resync toan bo de lay ve hoi thoai moi nay, thay vi de
+      // nguoi dung phai F5 moi thay.
+      if (!knownConversation) handleResync();
+
+      if (m.conversationId === activeIdRef.current) {
+        // Tin cua CHINH minh (vua gui, vong lai qua socket) hoac dang o gan
+        // day cuoi san -> tu cuon xuong; nguoc lai (dang doc lich su cu, tin
+        // tu nguoi kia toi) giu nguyen vi tri, chi hien banner "Có tin nhắn mới".
+        const mine = m.senderId === myIdRef.current;
+        const nearBottom = isNearBottom();
+        pendingScrollActionRef.current = mine || nearBottom ? "bottom" : null;
+        if (!mine && !nearBottom) setShowNewMessagesBanner(true);
+        setMessages((prev) => (prev ? appendUniqueMessage(prev, m) : prev));
+        markConversationReadAction(m.conversationId).catch(() => {});
+      }
+    },
+    [handleResync],
+  );
   const handlePollUpdate = useCallback((p: ApiPoll) => {
     setMessages(
       (prev) =>
@@ -597,10 +636,17 @@ export function MessagesShell() {
   }, []);
   // Ten/mo ta/mau nhom doi (nguoi khac sua) - cap nhat lai dung hoi thoai do
   // trong danh sach ben trai + header dang mo (ca 2 deu doc tu `conversations`).
+  // Cung 1 event cho 3 truong hop: doi ten/mau/mo ta nhom, VA vua duoc them
+  // vao 1 nhom (xem ChatService.addGroupMembers) - truong hop sau, hoi thoai
+  // nay CHUA co trong danh sach cua nguoi nhan (ho moi vao lan dau), nen them
+  // moi vao DAU danh sach thay vi chi map() cap nhat cho item da ton tai.
   const handleGroupUpdated = useCallback((c: ApiConversationSummary) => {
-    setConversations(
-      (prev) => prev?.map((item) => (item.id === c.id ? c : item)) ?? prev,
-    );
+    setConversations((prev) => {
+      if (!prev) return prev;
+      const exists = prev.some((item) => item.id === c.id);
+      if (exists) return prev.map((item) => (item.id === c.id ? c : item));
+      return [c, ...prev];
+    });
   }, []);
   // 1 thanh vien vua roi nhom - go khoi participants cua dung hoi thoai do
   // (khong hien "system message" - chua co ha tang tin nhan he thong).
@@ -637,30 +683,6 @@ export function MessagesShell() {
       timeouts.forEach((t) => clearTimeout(t));
       timeouts.clear();
     };
-  }, []);
-
-  // Dong bo lai danh sach hoi thoai (thu tu/unreadCount/lastMessage/gio hien
-  // thi) MOI LAN socket ket noi - bat ke lan dau hay reconnect sau mat mang
-  // tam thoi (xem onResync trong use-chat-socket.ts). Fetch lai TOAN BO thay
-  // vi vas-vas tung phan vi khong biet chinh xac da mat nhung event nao trong
-  // luc mat ket noi - fetch moi la cach chac chan nhat de dam bao dung du
-  // lieu server, tranh hoi thoai co tin moi van "tut" xuong duoi/hien sai gio.
-  const handleResync = useCallback(() => {
-    listConversationsAction().then((items) => {
-      setConversations((prev) => {
-        if (!prev) return items;
-        // Giu nguyen thu tu neu khong doi gi (tranh nhay/giat danh sach khi
-        // resync ma thuc ra khong co gi moi - vd lan connect dau tien, ngay
-        // sau khi effect mount da fetch xong).
-        const same =
-          prev.length === items.length &&
-          prev.every(
-            (c, i) =>
-              c.id === items[i]?.id && c.updatedAt === items[i]?.updatedAt,
-          );
-        return same ? prev : items;
-      });
-    });
   }, []);
 
   const { emitTyping } = useChatSocket(Boolean(myId), handleIncoming, {

@@ -189,6 +189,19 @@ export function leaveGroup(conversationId: string): Promise<{ left: boolean }> {
   return apiFetch(`/conversations/${conversationId}/leave`, { method: "POST" });
 }
 
+export function addGroupMembers(
+  conversationId: string,
+  memberIds: string[],
+): Promise<ApiConversationSummary> {
+  return apiFetch<ApiConversationSummary>(
+    `/conversations/${conversationId}/members`,
+    {
+      method: "POST",
+      body: JSON.stringify({ memberIds }),
+    },
+  );
+}
+
 export function listMedia(
   conversationId: string,
   cursor?: string,

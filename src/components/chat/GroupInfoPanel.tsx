@@ -38,6 +38,7 @@ import { GroupAvatar } from "./GroupAvatar";
 import { ConversationAvatar } from "./ConversationAvatar";
 import { GroupMembersModal } from "./GroupMembersModal";
 import { GroupMediaModal } from "./GroupMediaModal";
+import { AddGroupMembersModal } from "./AddGroupMembersModal";
 
 // Cung 1 bo mau/style voi CreateGroupModal.tsx (xem GROUP_COLOR_SWATCHES o
 // do) - Group Info va Create Group phai nhin nhu 2 phan cua cung 1 san pham.
@@ -54,8 +55,9 @@ const GROUP_COLOR_SWATCHES: Record<GroupAvatarColor, string> = {
 // activeConversation.isGroup. Ten/mau/mo ta la cap NHOM (bat ky ai sua duoc,
 // chua co khai niem "admin" - xem UpdateGroupInfoDto o backend), khac han
 // isFavorite/isMuted/isRestricted la cai dat RIENG cua nguoi xem. Quyen rieng
-// tu/Quyen thanh vien va "Them thanh vien" de disabled + "Sắp có" vi CHUA co
-// ACL/them-thanh-vien-sau-khi-tao o backend - khong tao fake functionality.
+// tu/Quyen thanh vien van de disabled + "Sắp có" vi CHUA co ACL o backend -
+// "Them thanh vien" DA co that (xem AddGroupMembersModal.tsx), khong con la
+// placeholder nua.
 export function GroupInfoPanel({
   conversation,
   myName,
@@ -91,6 +93,7 @@ export function GroupInfoPanel({
   const [media, setMedia] = useState<ApiChatMessage[] | null>(null);
   const [pinned, setPinned] = useState<ApiChatMessage[] | null>(null);
   const [membersModalOpen, setMembersModalOpen] = useState(false);
+  const [addMembersModalOpen, setAddMembersModalOpen] = useState(false);
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -292,7 +295,11 @@ export function GroupInfoPanel({
 
         {/* Quick actions */}
         <div className="grid grid-cols-4 gap-2">
-          <QuickAction icon={UserPlus} label="Thêm" disabled />
+          <QuickAction
+            icon={UserPlus}
+            label="Thêm"
+            onClick={() => setAddMembersModalOpen(true)}
+          />
           <QuickAction icon={Search} label="Tìm kiếm" onClick={onOpenSearch} />
           <QuickAction
             icon={conversation.isMuted ? BellOff : Bell}
@@ -485,6 +492,14 @@ export function GroupInfoPanel({
         participants={conversation.participants}
         myName={myName}
         myAvatarUrl={myAvatarUrl}
+      />
+
+      <AddGroupMembersModal
+        open={addMembersModalOpen}
+        onOpenChange={setAddMembersModalOpen}
+        conversationId={conversation.id}
+        existingParticipantIds={conversation.participants.map((p) => p.id)}
+        onAdded={onUpdated}
       />
 
       <GroupMediaModal

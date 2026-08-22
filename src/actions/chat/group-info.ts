@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  addGroupMembers,
   leaveGroup,
   listMedia,
   listPinnedMessages,
@@ -19,6 +20,13 @@ export async function updateGroupInfoAction(
 
 export async function leaveGroupAction(conversationId: string) {
   return leaveGroup(conversationId);
+}
+
+export async function addGroupMembersAction(
+  conversationId: string,
+  memberIds: string[],
+) {
+  return addGroupMembers(conversationId, memberIds);
 }
 
 export async function listMediaAction(
