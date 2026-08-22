@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { completeOnboardingAction } from "@/actions/users/complete-onboarding";
+import { toast } from "@/lib/toast/toast-store";
 import type { LucideIcon } from "lucide-react";
 
 // Modal chao mung 3 buoc cho user MOI (chua co onboardedAt) tren /home - port
@@ -89,13 +90,26 @@ export function WelcomeOnboardingModal({
         goal: goal ?? undefined,
         firstChapterTitle: title,
       });
-      setOpen(false);
+      // CHI dong modal (setOpen(false)) khi da co du id de dieu huong -
+      // truoc day dong modal VO DIEU KIEN ngay sau khi request thanh cong,
+      // nen neu workspaceId/groupId vi ly do gi do rong thi modal da dong
+      // ma khong dieu huong di dau - nhin nhu "bam khong co phan hoi gi".
       if (result.workspaceId && result.groupId) {
         router.push(
           `/workspace/${username}/${result.workspaceId}/group/${result.groupId}`,
         );
+      } else {
+        // API tra ve thanh cong nhung thieu id (khong nen xay ra voi
+        // firstChapterTitle da gui) - bao loi ro thay vi im lang "khong
+        // dieu huong" nhu truoc.
+        toast.danger("Tạo chương đầu tiên thất bại, thử lại sau.");
+        setSubmitting(false);
+        return;
       }
-    } catch {
+      setOpen(false);
+    } catch (err) {
+      console.error("completeOnboarding failed", err);
+      toast.danger("Tạo chương đầu tiên thất bại, thử lại sau.");
       setSubmitting(false);
     }
   }

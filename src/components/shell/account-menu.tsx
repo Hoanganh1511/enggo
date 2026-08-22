@@ -77,16 +77,20 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
         <button
           type="button"
           title="Tài khoản"
-          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full py-1 pr-2 pl-1 transition-colors duration-150 ease-out hover:bg-hover-bg"
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full py-1 pr-2 pl-1 transition-colors duration-150 ease-out hover:bg-hover-bg sm:pr-2 sm:pl-1"
         >
           <Avatar user={user} size={30} />
-          <span className="max-w-32 truncate text-sm font-medium text-ink">
+          {/* Ten + mui ten CHI hien tu sm tro len - tren mobile chi con avatar
+              (bam vao van mo popover day du binh thuong qua PopoverTrigger,
+              khong mat chuc nang gi), tranh cum tai khoan chiem qua nhieu
+              cho tren header hep. */}
+          <span className="hidden max-w-32 truncate text-sm font-medium text-ink sm:inline">
             {user.name ?? "Người dùng"}
           </span>
           <ChevronDown
             size={14}
             strokeWidth={2}
-            className={`shrink-0 text-ink-faint transition-transform duration-150 ease-out ${open ? "rotate-180" : ""}`}
+            className={`hidden shrink-0 text-ink-faint transition-transform duration-150 ease-out sm:block ${open ? "rotate-180" : ""}`}
           />
         </button>
       </PopoverTrigger>

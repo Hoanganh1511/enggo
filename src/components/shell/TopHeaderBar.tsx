@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -27,6 +27,11 @@ import {
 } from "@/lib/browser-notifications";
 import { formatMessagePreview } from "@/lib/chat-message-preview";
 import { pushChatToast } from "@/lib/chat-toast/chat-toast-store";
+import {
+  subscribeUnreadChatTotal,
+  getUnreadChatTotalSnapshot,
+  getServerSnapshot as getUnreadChatServerSnapshot,
+} from "@/lib/chat-unread-store";
 import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 
 // Header ngang - thay AppSidebar.tsx (sidebar trai) theo yeu cau nguoi dung,
@@ -71,6 +76,18 @@ const TopHeaderBar = () => {
       .then((r) => setUnreadChatCount(r.count))
       .catch(() => {});
   }, [session?.username, pathname]);
+  // Khi MessagesShell.tsx dang mount (dang o /messages) no bao gia tri that
+  // real-time vao day - uu tien dung gia tri nay thay vi unreadChatCount tu
+  // fetch/socket o tren, vi doi hoi thoai (?c=...) khong doi pathname nen
+  // effect tren KHONG fetch lai, badge se ket o so cu neu khong co lop nay
+  // (xem chat-unread-store.ts). null = khong co MessagesShell nao dang bao
+  // cao -> quay lai dung unreadChatCount nhu binh thuong.
+  const liveUnreadChatTotal = useSyncExternalStore(
+    subscribeUnreadChatTotal,
+    getUnreadChatTotalSnapshot,
+    getUnreadChatServerSnapshot,
+  );
+  const effectiveUnreadChatCount = liveUnreadChatTotal ?? unreadChatCount;
   // Xin quyen Notification 1 lan khi da dang nhap - trinh duyet chi hoi neu
   // permission con "default" (xem browser-notifications.ts).
   useEffect(() => {
@@ -111,10 +128,10 @@ const TopHeaderBar = () => {
   );
 
   const chatBadge =
-    unreadChatCount > 0
-      ? unreadChatCount > 9
+    effectiveUnreadChatCount > 0
+      ? effectiveUnreadChatCount > 9
         ? "9+"
-        : String(unreadChatCount)
+        : String(effectiveUnreadChatCount)
       : undefined;
   const notifBadge =
     unreadCount > 0
@@ -135,16 +152,20 @@ const TopHeaderBar = () => {
   }
 
   return (
-    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-4 border-b border-border bg-surface px-5">
-      <Link href="/home" className="shrink-0">
+    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
+      {/* An tren mobile (md:hidden nguoc lai la hidden md:flex) - logo da
+          chuyen sang MainSidebar.tsx cho man hinh hep, tranh header tran
+          ngang (logo+chu "Tree Career" + o tim kiem day du + cum icon cong
+          lai qua rong so voi vien man hinh nho). */}
+      <Link href="/home" className="hidden shrink-0 md:flex">
         <Logo orientation="horizontal" size={24} />
       </Link>
 
-      <div className="max-w-sm min-w-0 flex-1">
+      <div className="min-w-0 flex-1 sm:max-w-sm">
         <HeaderSearch />
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
         <PopoverRoot
           open={updatesOpen}
           onOpenChange={(next) => {

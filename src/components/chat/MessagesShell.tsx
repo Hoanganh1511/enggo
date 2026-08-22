@@ -56,6 +56,10 @@ import type { ApiGif } from "@/lib/api/gif";
 import type { ApiUploadResult } from "@/lib/api/upload";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
+import {
+  setUnreadChatTotal,
+  clearUnreadChatTotal,
+} from "@/lib/chat-unread-store";
 import { listConversationsAction } from "@/actions/chat/list-conversations";
 import { listMessagesAction } from "@/actions/chat/list-messages";
 import { sendMessageAction } from "@/actions/chat/send-message";
@@ -1302,6 +1306,18 @@ export function MessagesShell() {
       (sum, c) => sum + (c.isFavorite ? c.unreadCount : 0),
       0,
     ) ?? 0;
+  // Bao gia tri MOI NHAT cho TopHeaderBar.tsx (qua chat-unread-store.ts) -
+  // component nay la nguon tinh CHINH XAC nhat (REST + socket dong bo real-
+  // time), trong khi header chi fetch lai khi doi pathname (bo lo truong
+  // hop doc tin nhan ma van dang o /messages, chi doi query "?c="). Xoa bao
+  // cao luc unmount (roi /messages) de header tu tiep quan lai binh thuong.
+  useEffect(() => {
+    if (conversations === null) return;
+    setUnreadChatTotal(unreadTotal);
+  }, [conversations, unreadTotal]);
+  useEffect(() => {
+    return () => clearUnreadChatTotal();
+  }, []);
   const activeConversation = conversations?.find((c) => c.id === activeId);
   const isActiveTyping = activeId ? typingConversationIds.has(activeId) : false;
 
@@ -2022,7 +2038,7 @@ export function MessagesShell() {
                           type="button"
                           disabled={composerBusy}
                           title="Thêm"
-                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40 sm:size-9"
                         >
                           <Plus size={19} />
                         </button>
@@ -2064,7 +2080,7 @@ export function MessagesShell() {
                       disabled={composerBusy}
                       title="Gửi ảnh"
                       onClick={() => imageInputRef.current?.click()}
-                      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40 sm:size-9"
                     >
                       <ImagePlus size={18} />
                     </button>
@@ -2075,7 +2091,7 @@ export function MessagesShell() {
                           type="button"
                           disabled={composerBusy}
                           title="Chọn sticker"
-                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40 sm:size-9"
                         >
                           <Smile size={18} />
                         </button>
@@ -2124,7 +2140,7 @@ export function MessagesShell() {
                         recording ? stopRecording() : void startRecording()
                       }
                       className={cn(
-                        "grid size-9 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
+                        "grid size-7 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40 sm:size-9",
                         recording
                           ? "bg-red-50 text-red-600 hover:bg-red-100"
                           : "text-slate-600 hover:bg-slate-100 hover:text-[#182338]",
@@ -2156,7 +2172,7 @@ export function MessagesShell() {
                     }}
                     rows={1}
                     disabled={recording}
-                    className="max-h-24 flex-1 resize-none bg-transparent px-2.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="max-h-24 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 sm:px-2.5"
                     placeholder="Nhập tin nhắn..."
                   />
                   <button
@@ -2169,7 +2185,7 @@ export function MessagesShell() {
                         : !draft.trim())
                     }
                     className={cn(
-                      "grid size-11 shrink-0 place-items-center rounded-full text-white shadow-sm transition-transform duration-150 ease-out",
+                      "grid size-9 shrink-0 place-items-center rounded-full text-white shadow-sm transition-transform duration-150 ease-out sm:size-11",
                       recording ||
                         (pendingAttachment
                           ? pendingAttachment.uploading

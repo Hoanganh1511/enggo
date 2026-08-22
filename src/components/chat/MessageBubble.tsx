@@ -187,7 +187,7 @@ export function MessageBubble({
             <img
               src={message.attachmentUrl}
               alt={message.attachmentName ?? "Hình ảnh"}
-              className="block max-h-90 w-full rounded-2xl object-cover"
+              className="block size-30 rounded-2xl object-cover"
             />
             {!message.content && (
               <span className="absolute right-1.5 bottom-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">

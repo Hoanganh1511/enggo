@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LogoIcon } from "@/components/ui/logo";
 
 type SidebarItem = {
   key: string;
@@ -92,6 +93,18 @@ export function MainSidebar() {
       className="flex h-full w-16 shrink-0 flex-col items-center gap-1 py-4 shadow-[2px_0_12px_rgba(0,0,0,.08)]"
       style={{ background: "#CC561E" }}
     >
+      {/* Logo chi hien tren mobile (md:hidden) - header ngang (TopHeaderBar.tsx)
+          da tu an logo cua no o do de nhuong cho o tim kiem/cum icon, tranh
+          header bi tran ngang tren man hinh hep. Desktop van chi 1 cho hien
+          logo (header), khong lap lai o day. */}
+      <Link
+        href="/home"
+        title="Trang chủ"
+        aria-label="Trang chủ"
+        className="mb-2 grid size-11 shrink-0 place-items-center rounded-xl md:hidden"
+      >
+        <LogoIcon size={22} variant="mono" className="text-white" />
+      </Link>
       {items.map((item) => {
         const active =
           item.match === "exact"
