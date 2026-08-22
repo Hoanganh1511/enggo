@@ -8,9 +8,14 @@ type LogoIconProps = {
 
 // Icon mark: cây phân nhánh (tree) + node tròn ở đầu mỗi nhánh (network/knowledge
 // graph) + ngôi sao ở đỉnh (mục tiêu sự nghiệp) — theo đúng ý nghĩa trong brand sheet.
-export function LogoIcon({ size = 32, className, variant = "gradient" }: LogoIconProps) {
+export function LogoIcon({
+  size = 32,
+  className,
+  variant = "gradient",
+}: LogoIconProps) {
   const gradientId = useId();
-  const stroke = variant === "gradient" ? `url(#${gradientId})` : "currentColor";
+  const stroke =
+    variant === "gradient" ? `url(#${gradientId})` : "currentColor";
 
   return (
     <svg
@@ -25,13 +30,25 @@ export function LogoIcon({ size = 32, className, variant = "gradient" }: LogoIco
     >
       {variant === "gradient" && (
         <defs>
-          <linearGradient id={gradientId} x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id={gradientId}
+            x1="4"
+            y1="2"
+            x2="28"
+            y2="30"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop offset="0%" stopColor="#f2a65a" />
             <stop offset="100%" stopColor="#dd700b" />
           </linearGradient>
         </defs>
       )}
-      <g stroke={stroke} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <g
+        stroke={stroke}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M16 29V22" />
         <path d="M16 22L8 18" />
         <path d="M16 22L24 18" />
@@ -78,7 +95,7 @@ const Logo = ({
       <LogoIcon size={size} variant={variant} />
       <div className={`flex flex-col ${isVertical ? "items-center" : ""}`}>
         <span className="text-xl leading-tight font-semibold tracking-tight text-ink">
-          Tree Career
+          Good Life
         </span>
         {showTagline && (
           <span className="text-xs text-ink-muted">
