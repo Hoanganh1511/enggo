@@ -2095,8 +2095,17 @@ export function MessagesShell() {
                     hinh hep thay vi chen 5 icon + input + nut gui cung 1
                     hang. Tu md: tro len giu nguyen 1 hang ngang nhu truoc
                     (md:flex-row). */}
-                <div className="flex flex-col gap-1.5 md:flex-row md:items-end">
-                  <div className="flex shrink-0 items-center gap-0.5 md:pb-1.5">
+                {/* items-center (khong phai items-end) - truoc day dung
+                    items-end + md:pb-1.5 "chinh tay" de can day cum icon
+                    (28-36px) khop voi nut gui (36-44px, cao hon han) qua 1
+                    khoang padding co dinh - sai ngay khi size 2 ben lech nhau
+                    (vd luc doi sm:size-11 cho nut gui ma khong chinh lai
+                    padding), khien nut gui trong nhu "troi" giua box thay vi
+                    bam theo baseline text. items-center khong phu thuoc kich
+                    thuoc tuyet doi, luon can giua deu nhau bat ke icon/nut
+                    to nho khac nhau. */}
+                <div className="flex flex-col gap-1.5 md:flex-row md:items-center">
+                  <div className="flex shrink-0 items-center gap-0.5">
                     <PopoverRoot open={plusOpen} onOpenChange={setPlusOpen}>
                       <PopoverTrigger asChild>
                         <button
@@ -2215,7 +2224,7 @@ export function MessagesShell() {
                     </button>
                   </div>
 
-                  <div className="flex items-end gap-1.5">
+                  <div className="flex items-center gap-1.5">
                   <textarea
                     value={draft}
                     onChange={(e) => {
