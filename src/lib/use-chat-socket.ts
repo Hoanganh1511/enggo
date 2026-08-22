@@ -35,6 +35,13 @@ type ChatSocketHandlers = {
   onGroupUpdated?: (c: ApiConversationSummary) => void;
   // Tuy chon - 1 thanh vien vua roi nhom.
   onMemberLeft?: (p: ApiMemberLeftEvent) => void;
+  // Goi MOI LAN socket ket noi thanh cong (ca lan dau lan reconnect sau mat
+  // mang/may ngu/tab bi trinh duyet throttle) - Socket.io KHONG replay lai
+  // cac event server da emit trong luc mat ket noi, nen danh sach hoi thoai/
+  // tin nhan co the "tut" sau ngoai du lieu that neu khong chu dong fetch lai
+  // o day (xem MessagesShell.tsx - trieu chung: hoi thoai co tin moi van nam
+  // duoi, gio hien sai vi updatedAt cuc bo khong duoc cap nhat).
+  onResync?: () => void;
 };
 
 // Ket noi WebSocket RIENG cho trang /messages (chi song trong luc trang nay
@@ -97,6 +104,11 @@ export function useChatSocket(
     });
     socket.on("chat:member-left", (p: ApiMemberLeftEvent) => {
       handlersRef.current?.onMemberLeft?.(p);
+    });
+    // "connect" bat lai MOI LAN (ke ca reconnect tu dong cua socket.io sau
+    // mat ket noi tam thoi), khong chi lan dau.
+    socket.on("connect", () => {
+      handlersRef.current?.onResync?.();
     });
 
     return () => {

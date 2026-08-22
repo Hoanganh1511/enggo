@@ -17,7 +17,7 @@ const GROUP_GRADIENTS: Record<GroupAvatarColor, string> = {
 
 export function GroupAvatar({
   color,
-  size = 52,
+  size = 60,
 }: {
   color: GroupAvatarColor | null;
   size?: number;

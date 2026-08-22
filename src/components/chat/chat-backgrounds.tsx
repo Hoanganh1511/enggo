@@ -29,8 +29,8 @@ export const CHAT_BACKGROUNDS: ChatBackground[] = [
   {
     id: "none",
     label: "Mặc định",
-    sub: "Nền xám nhạt hiện tại",
-    base: "bg-slate-50",
+    sub: "Nền trắng",
+    base: "bg-white",
   },
   {
     id: "dotgrid",

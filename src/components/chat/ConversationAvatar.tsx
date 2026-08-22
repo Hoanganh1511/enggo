@@ -7,7 +7,7 @@ export function ConversationAvatar({
   name,
   avatarUrl,
   online,
-  size = 52,
+  size = 60,
 }: {
   name: string | undefined;
   avatarUrl: string | null | undefined;
@@ -15,7 +15,10 @@ export function ConversationAvatar({
   size?: number;
 }) {
   return (
-    <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
+    <span
+      className="relative inline-flex shrink-0"
+      style={{ width: size, height: size }}
+    >
       {avatarUrl ? (
         <Image
           src={avatarUrl}
@@ -41,7 +44,10 @@ export function ConversationAvatar({
       {online && (
         <span
           className="absolute right-0 bottom-0 rounded-full bg-emerald-500 ring-2 ring-white"
-          style={{ width: Math.max(8, Math.round(size * 0.23)), height: Math.max(8, Math.round(size * 0.23)) }}
+          style={{
+            width: Math.max(8, Math.round(size * 0.23)),
+            height: Math.max(8, Math.round(size * 0.23)),
+          }}
         />
       )}
     </span>

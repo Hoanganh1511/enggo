@@ -92,7 +92,10 @@ import { MessageSearchDrawer } from "./MessageSearchDrawer";
 import { ChatBackgroundModal } from "./ChatBackgroundModal";
 import { getChatBackground } from "./chat-backgrounds";
 import { ImmersiveThemeModal } from "./ImmersiveThemeModal";
-import { getImmersiveTheme, type ImmersiveThemeId } from "./chat-immersive-themes";
+import {
+  getImmersiveTheme,
+  type ImmersiveThemeId,
+} from "./chat-immersive-themes";
 import { ImmersiveChatScene } from "./ImmersiveChatScene";
 import { PinnedMessagesBar } from "./PinnedMessagesBar";
 import {
@@ -183,7 +186,11 @@ function buildOptimisticPollTally(poll: ApiPoll, optionId: string): ApiPoll {
         : { ...o, voteCount: o.voteCount + 1, votedByMe: true };
     }
     if (o.id === previouslyVotedOptionId) {
-      return { ...o, voteCount: Math.max(0, o.voteCount - 1), votedByMe: false };
+      return {
+        ...o,
+        voteCount: Math.max(0, o.voteCount - 1),
+        votedByMe: false,
+      };
     }
     return o;
   });
@@ -252,7 +259,8 @@ export function MessagesShell() {
   }
   // Khung canh + mau bubble - cung pattern voi chatBgId o tren (CHUNG ca app,
   // localStorage, chi tren thiet bi nay - xem chat-immersive-themes.ts).
-  const [immersiveThemeId, setImmersiveThemeId] = useState<ImmersiveThemeId>("none");
+  const [immersiveThemeId, setImmersiveThemeId] =
+    useState<ImmersiveThemeId>("none");
   const [themeModalOpen, setThemeModalOpen] = useState(false);
   useEffect(() => {
     queueMicrotask(() => {
@@ -631,6 +639,30 @@ export function MessagesShell() {
     };
   }, []);
 
+  // Dong bo lai danh sach hoi thoai (thu tu/unreadCount/lastMessage/gio hien
+  // thi) MOI LAN socket ket noi - bat ke lan dau hay reconnect sau mat mang
+  // tam thoi (xem onResync trong use-chat-socket.ts). Fetch lai TOAN BO thay
+  // vi vas-vas tung phan vi khong biet chinh xac da mat nhung event nao trong
+  // luc mat ket noi - fetch moi la cach chac chan nhat de dam bao dung du
+  // lieu server, tranh hoi thoai co tin moi van "tut" xuong duoi/hien sai gio.
+  const handleResync = useCallback(() => {
+    listConversationsAction().then((items) => {
+      setConversations((prev) => {
+        if (!prev) return items;
+        // Giu nguyen thu tu neu khong doi gi (tranh nhay/giat danh sach khi
+        // resync ma thuc ra khong co gi moi - vd lan connect dau tien, ngay
+        // sau khi effect mount da fetch xong).
+        const same =
+          prev.length === items.length &&
+          prev.every(
+            (c, i) =>
+              c.id === items[i]?.id && c.updatedAt === items[i]?.updatedAt,
+          );
+        return same ? prev : items;
+      });
+    });
+  }, []);
+
   const { emitTyping } = useChatSocket(Boolean(myId), handleIncoming, {
     onPollUpdate: handlePollUpdate,
     onPresenceUpdate: handlePresenceUpdate,
@@ -640,6 +672,7 @@ export function MessagesShell() {
     onReactionUpdate: handleReactionUpdate,
     onGroupUpdated: handleGroupUpdated,
     onMemberLeft: handleMemberLeft,
+    onResync: handleResync,
   });
 
   async function handleLoadOlder() {
@@ -1205,7 +1238,9 @@ export function MessagesShell() {
     activeConversation?.isGroup && lastOwnMessage
       ? activeConversation.participants.filter((p) => {
           const readAt = groupReadReceipts[p.id];
-          return readAt && new Date(lastOwnMessage.createdAt) <= new Date(readAt);
+          return (
+            readAt && new Date(lastOwnMessage.createdAt) <= new Date(readAt)
+          );
         })
       : [];
 
@@ -1301,7 +1336,7 @@ export function MessagesShell() {
             />
           </div>
         </div>
-        <div className="flex-1 overflow-x-hidden overflow-y-auto p-3">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
           {conversations === null ? (
             <div className="flex flex-col">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -1332,15 +1367,29 @@ export function MessagesShell() {
                   onClick={() => setActiveId(c.id)}
                   className="flex min-w-0 flex-1 cursor-pointer gap-3.5 text-left"
                 >
-                  {c.isGroup ? (
-                    <GroupAvatar color={c.groupAvatarColor} />
-                  ) : (
-                    <ConversationAvatar
-                      name={c.otherUser?.name}
-                      avatarUrl={c.otherUser?.avatarUrl}
-                      online={c.otherUser?.online}
-                    />
-                  )}
+                  <div className="relative shrink-0">
+                    <div
+                      className={cn(
+                        "rounded-full",
+                        activeId === c.id && "ring-2 ring-white",
+                      )}
+                    >
+                      {c.isGroup ? (
+                        <GroupAvatar color={c.groupAvatarColor} />
+                      ) : (
+                        <ConversationAvatar
+                          name={c.otherUser?.name}
+                          avatarUrl={c.otherUser?.avatarUrl}
+                          online={c.otherUser?.online}
+                        />
+                      )}
+                    </div>
+                    {c.unreadCount > 0 && (
+                      <span className="absolute -top-1 -left-2 grid h-6 min-w-6 shadow-md place-items-center rounded-full border-3 border-white bg-primary px-1 text-[13px] font-bold text-white">
+                        {c.unreadCount}
+                      </span>
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-1">
@@ -1352,7 +1401,7 @@ export function MessagesShell() {
                             fill="currentColor"
                           />
                         )}
-                        <b className="truncate text-[15px] text-[#10213A]">
+                        <b className="truncate text-[16px] text-[#10213A]">
                           {c.isGroup
                             ? (c.groupName ?? "Nhóm")
                             : (c.otherUser?.name ?? "Người dùng")}
@@ -1371,10 +1420,10 @@ export function MessagesShell() {
                     <div className="mt-1 flex justify-between gap-2">
                       <p
                         className={cn(
-                          "min-w-0 flex-1 truncate text-[13px]",
+                          "flex min-w-0 flex-1 items-center gap-1 truncate font-bold text-[14.5px] ",
                           typingConversationIds.has(c.id)
-                            ? "font-medium italic"
-                            : "text-[#64748B]",
+                            ? "italic"
+                            : "text-ink/90",
                         )}
                         style={
                           typingConversationIds.has(c.id)
@@ -1382,17 +1431,23 @@ export function MessagesShell() {
                             : undefined
                         }
                       >
-                        {typingConversationIds.has(c.id)
-                          ? "Đang nhập..."
-                          : c.lastMessage
-                            ? `${c.lastMessage.senderId === myId ? "Bạn: " : ""}${formatMessagePreview(c.lastMessage)}`
-                            : "Chưa có tin nhắn"}
-                      </p>
-                      {c.unreadCount > 0 && (
-                        <span className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-[#ee7068] px-1.5 text-[10px] font-semibold text-white">
-                          {c.unreadCount}
+                        {!typingConversationIds.has(c.id) &&
+                          c.lastMessage &&
+                          c.lastMessage.senderId === myId && (
+                            <ReplyIcon
+                              size={14}
+                              strokeWidth={4}
+                              className="shrink-0 text-black/60 mb-1"
+                            />
+                          )}
+                        <span className="truncate">
+                          {typingConversationIds.has(c.id)
+                            ? "Đang nhập..."
+                            : c.lastMessage
+                              ? formatMessagePreview(c.lastMessage)
+                              : "Chưa có tin nhắn"}
                         </span>
-                      )}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -1462,7 +1517,7 @@ export function MessagesShell() {
         ) : (
           <>
             <ImmersiveChatScene themeId={immersiveThemeId} />
-            <div className="relative z-10 flex h-21 shrink-0 items-center justify-between gap-3.5 border-b border-slate-100 bg-white px-5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
+            <div className="relative z-10 flex h-21 shrink-0 items-center justify-between gap-3.5 border-b-[2px] border-gray-100 bg-white px-5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
               <div className="flex min-w-0 items-center gap-3.5">
                 <button
                   type="button"
@@ -1583,7 +1638,11 @@ export function MessagesShell() {
                 // vi ca 2 he thong nen chong nhau.
                 immersiveThemeId === "none" && getChatBackground(chatBgId).base,
               )}
-              style={immersiveThemeId === "none" ? getChatBackground(chatBgId).patternStyle : undefined}
+              style={
+                immersiveThemeId === "none"
+                  ? getChatBackground(chatBgId).patternStyle
+                  : undefined
+              }
             >
               <div className="mx-auto">
                 {/* Marker cho IntersectionObserver - vao vung nhin cua khung
@@ -1634,7 +1693,8 @@ export function MessagesShell() {
                         <p className="text-[16px] font-bold text-[#182338]">
                           {activeConversation.isGroup
                             ? (activeConversation.groupName ?? "Nhóm")
-                            : (activeConversation.otherUser?.name ?? "Người dùng")}
+                            : (activeConversation.otherUser?.name ??
+                              "Người dùng")}
                         </p>
                         <p className="mt-1 text-[13px] text-slate-400">
                           {activeConversation.isGroup
@@ -1680,7 +1740,7 @@ export function MessagesShell() {
                       );
                     })}
                     {lastOwnMessage && !lastOwnMessage.isRecalled && (
-                      <div className="mb-2 flex items-center justify-end gap-1 pr-1 text-[12px] font-semibold text-slate-500">
+                      <div className="mb-2 flex items-center justify-end gap-1 pr-1 mt-1 text-[12px] font-semibold text-slate-500">
                         {lastOwnMessage.id.startsWith("temp-") ? (
                           <>
                             <LoaderCircle size={13} className="animate-spin" />
@@ -1700,7 +1760,7 @@ export function MessagesShell() {
                                   <ConversationAvatar
                                     name={u.name}
                                     avatarUrl={u.avatarUrl}
-                                    size={16}
+                                    size={18}
                                   />
                                 </span>
                               ))}
@@ -1778,7 +1838,14 @@ export function MessagesShell() {
             )}
 
             <div className="absolute bottom-0 left-0 z-20 w-full p-3 md:p-5">
-              <div className=" flex  flex-col gap-2.5 rounded-lg border border-slate-200 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)]">
+              <div
+                className={cn(
+                  "flex flex-col gap-2.5 border-2 border-slate-300 bg-white p-2.5 shadow-[0_3px_18px_rgba(15,23,42,.06)] transition-[border-radius] duration-200 ease-out",
+                  replyTarget || pendingAttachment || recording
+                    ? "rounded-2xl"
+                    : "rounded-full",
+                )}
+              >
                 <AnimatePresence initial={false}>
                   {replyTarget && (
                     <motion.div
@@ -1854,7 +1921,7 @@ export function MessagesShell() {
                           type="button"
                           disabled={composerBusy}
                           title="Thêm"
-                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Plus size={19} />
                         </button>
@@ -1896,7 +1963,7 @@ export function MessagesShell() {
                       disabled={composerBusy}
                       title="Gửi ảnh"
                       onClick={() => imageInputRef.current?.click()}
-                      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ImagePlus size={18} />
                     </button>
@@ -1907,7 +1974,7 @@ export function MessagesShell() {
                           type="button"
                           disabled={composerBusy}
                           title="Chọn sticker"
-                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <Smile size={18} />
                         </button>
@@ -1932,7 +1999,7 @@ export function MessagesShell() {
                           type="button"
                           disabled={composerBusy}
                           title="Tìm GIF"
-                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg text-[11px] font-black tracking-tight text-slate-500 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
+                          className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[11px] font-black tracking-tight text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-100 hover:text-[#182338] disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           GIF
                         </button>
@@ -1956,10 +2023,10 @@ export function MessagesShell() {
                         recording ? stopRecording() : void startRecording()
                       }
                       className={cn(
-                        "grid size-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
+                        "grid size-9 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
                         recording
                           ? "bg-red-50 text-red-600 hover:bg-red-100"
-                          : "text-slate-500 hover:bg-slate-100 hover:text-[#182338]",
+                          : "text-slate-600 hover:bg-slate-100 hover:text-[#182338]",
                       )}
                     >
                       <Mic size={18} />
@@ -2001,12 +2068,12 @@ export function MessagesShell() {
                         : !draft.trim())
                     }
                     className={cn(
-                      "grid size-11 shrink-0 place-items-center rounded-xl text-white shadow-sm transition-transform duration-150 ease-out",
+                      "grid size-11 shrink-0 place-items-center rounded-full text-white shadow-sm transition-transform duration-150 ease-out",
                       recording ||
                         (pendingAttachment
                           ? pendingAttachment.uploading
                           : !draft.trim())
-                        ? "cursor-not-allowed opacity-60"
+                        ? "cursor-not-allowed"
                         : "cursor-pointer hover:scale-105",
                     )}
                     style={{ background: "var(--primary)" }}
