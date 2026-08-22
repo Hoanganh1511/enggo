@@ -2,8 +2,16 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
-import { Check, LoaderCircle, Search, X } from "lucide-react";
-import { SimpleModal } from "@/components/ui/simple-modal";
+import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Camera,
+  Check,
+  ChevronDown,
+  LoaderCircle,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
 import { listConversationsAction } from "@/actions/chat/list-conversations";
@@ -25,13 +33,17 @@ type PickableUser = {
   avatarUrl: string | null;
 };
 
+// Mau swatch cho tung key GroupAvatarColor - phai khop tinh chat mau voi
+// GROUP_GRADIENTS trong GroupAvatar.tsx (cung 1 bo mau, chi khac dang solid
+// vs gradient) de avatar nhom nhin GIONG HET nhau du render o modal nay hay
+// o danh sach hoi thoai/header sau khi tao xong.
 const GROUP_COLOR_SWATCHES: Record<GroupAvatarColor, string> = {
-  violet: "#7c3aed",
-  blue: "#2563eb",
-  emerald: "#059669",
-  amber: "#d97706",
-  rose: "#e11d48",
-  slate: "#475569",
+  violet: "#6D4AFF",
+  blue: "#2563EB",
+  emerald: "#0D9488",
+  amber: "#F97316",
+  rose: "#EF4444",
+  slate: "#64748B",
 };
 
 // Modal tao nhom chat - avatar CHUA co upload that (chon 1 trong 6 mau co
@@ -40,6 +52,11 @@ const GROUP_COLOR_SWATCHES: Record<GroupAvatarColor, string> = {
 // listConversationsAction, loc hoi thoai 1-1), "Xem thêm" tai dan theo
 // following (getFollowingAction, phan trang) - go vao o tim kiem thi chuyen
 // sang ket qua tim kiem nguoi dung (searchUsersAction) thay vi 2 nguon tren.
+//
+// Dialog rieng (khong dung SimpleModal dung chung) - giao dien modal nay can
+// mot bo mau/kich thuoc "premium" rieng biet (trang/purple, bo goc 22px, nen
+// mo blur...) khac han cac modal con lai cua app dang dung token theme mac
+// dinh, tranh anh huong cac modal khac neu sua chung SimpleModal.
 export function CreateGroupModal({
   open,
   onOpenChange,
@@ -205,140 +222,242 @@ export function CreateGroupModal({
   const canSubmit = name.trim().length > 0 && selected.size >= 2 && !submitting;
 
   return (
-    <SimpleModal
+    <Dialog.Root
       open={open}
       onOpenChange={(next) => {
         if (!next) reset();
         onOpenChange(next);
       }}
-      title="Tạo nhóm chat"
-      maxWidthClassName="max-w-md"
-      footer={
-        <button
-          type="button"
-          onClick={() => void handleSubmit()}
-          disabled={!canSubmit}
-          className="w-full cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ background: "var(--primary)" }}
-        >
-          {submitting
-            ? "Đang tạo..."
-            : `Tạo nhóm${selected.size > 0 ? ` (${selected.size + 1})` : ""}`}
-        </button>
-      }
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <GroupAvatar color={avatarColor} size={56} />
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            maxLength={50}
-            placeholder="Tên nhóm"
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-primary"
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          {GROUP_AVATAR_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setAvatarColor(c)}
-              aria-label={`Chọn màu ${c}`}
-              className={cn(
-                "size-6 shrink-0 cursor-pointer rounded-full transition-shadow",
-                avatarColor === c && "ring-2 ring-ink ring-offset-2",
-              )}
-              style={{ background: GROUP_COLOR_SWATCHES[c] }}
-            />
-          ))}
-        </div>
-
-        {selected.size > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {Array.from(selected.values()).map((u) => (
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-[#172033]/45 backdrop-blur-sm" />
+        <Dialog.Content
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="fixed top-1/2 left-1/2 z-50 flex max-h-[88vh] w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_70px_-16px_rgba(23,32,51,.3)] focus:outline-none"
+        >
+          {/* Header */}
+          <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#E5E7EB] px-8 py-6">
+            <div className="flex items-center gap-3.5">
               <span
-                key={u.id}
-                className="flex items-center gap-1.5 rounded-full bg-hover-bg py-1 pr-1 pl-2 text-xs font-medium text-[#182338]"
+                className="grid size-11 shrink-0 place-items-center rounded-2xl text-white"
+                style={{ background: "linear-gradient(135deg,#8B5CF6,#6D4AFF)" }}
               >
-                {u.name}
-                <button
-                  type="button"
-                  onClick={() => toggleSelect(u)}
-                  className="grid size-4 cursor-pointer place-items-center rounded-full hover:bg-active-bg"
-                >
-                  <X size={11} />
-                </button>
+                <Users size={21} />
               </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3">
-          <Search size={15} className="shrink-0 text-ink-faint" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm người dùng..."
-            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-faint"
-          />
-        </div>
-
-        <div className="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
-          {recentContacts === null ? (
-            <div className="flex justify-center py-6">
-              <LoaderCircle size={18} className="animate-spin text-ink-faint" />
+              <div>
+                <Dialog.Title className="text-[22px] font-bold text-[#172033]">
+                  Tạo nhóm chat
+                </Dialog.Title>
+                <Dialog.Description className="mt-0.5 text-[14px] text-[#7A8496]">
+                  Thêm bạn bè và bắt đầu trò chuyện
+                </Dialog.Description>
+              </div>
             </div>
-          ) : displayList.length === 0 ? (
-            <p className="py-6 text-center text-xs text-ink-faint">
-              {searching ? "Đang tìm..." : "Không tìm thấy ai."}
-            </p>
-          ) : (
-            displayList.map((u) => {
-              const isSelected = selected.has(u.id);
-              return (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => toggleSelect(u)}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-hover-bg"
-                >
-                  <ConversationAvatar name={u.name} avatarUrl={u.avatarUrl} size={36} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink">{u.name}</p>
-                    {u.username && (
-                      <p className="truncate text-xs text-ink-faint">
-                        @{u.username}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={cn(
-                      "grid size-5 shrink-0 place-items-center rounded-md border",
-                      isSelected
-                        ? "border-primary bg-primary text-white"
-                        : "border-border",
-                    )}
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                aria-label="Đóng"
+                className="grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-[#F2F0FF] hover:text-[#6D4AFF]"
+              >
+                <X size={18} />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          {/* Content */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-8 py-7">
+            <div className="flex flex-col gap-8">
+              {/* Identity: avatar + name */}
+              <div className="flex items-start gap-5">
+                <div className="relative shrink-0">
+                  <GroupAvatar color={avatarColor} size={112} />
+                  <button
+                    type="button"
+                    disabled
+                    title="Sắp có"
+                    className="absolute right-0 bottom-0 grid size-9 cursor-not-allowed place-items-center rounded-full border-2 border-white bg-[#F7F8FC] text-[#7A8496] shadow-[0_2px_6px_rgba(23,32,51,.15)]"
                   >
-                    {isSelected && <Check size={13} />}
-                  </span>
-                </button>
-              );
-            })
-          )}
-          {!isSearching && recentContacts !== null && followingCursor !== null && (
+                    <Camera size={15} />
+                  </button>
+                </div>
+                <div className="min-w-0 flex-1 pt-2">
+                  <label className="mb-2 block text-[14px] font-semibold text-[#172033]">
+                    Tên nhóm
+                  </label>
+                  <div className="relative">
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      maxLength={50}
+                      placeholder="Nhóm mấy anh em"
+                      className="h-12 w-full rounded-xl border border-[#E5E7EB] bg-white px-4 pr-14 text-[15px] text-[#172033] outline-none transition-colors duration-150 ease-out placeholder:text-[#7A8496] focus:border-[#6D4AFF]"
+                    />
+                    <span className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-[12px] text-[#7A8496]">
+                      {name.length}/50
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Group color */}
+              <div>
+                <p className="mb-3 text-[14px] font-semibold text-[#172033]">
+                  Chọn màu nhóm
+                </p>
+                <div className="flex flex-wrap items-center gap-3.5">
+                  {GROUP_AVATAR_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setAvatarColor(c)}
+                      aria-label={`Chọn màu ${c}`}
+                      className="relative size-10 shrink-0 cursor-pointer rounded-full transition-transform duration-150 ease-out hover:scale-105"
+                      style={{
+                        background: GROUP_COLOR_SWATCHES[c],
+                        boxShadow:
+                          avatarColor === c
+                            ? `0 0 0 2px #fff, 0 0 0 4px ${GROUP_COLOR_SWATCHES[c]}`
+                            : undefined,
+                      }}
+                    >
+                      {avatarColor === c && (
+                        <span className="absolute inset-0.5 rounded-full border-2 border-white" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selected members */}
+              {selected.size > 0 && (
+                <div>
+                  <p className="mb-3 text-[14px] font-semibold text-[#172033]">
+                    Thành viên đã chọn ({selected.size})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(selected.values()).map((u) => (
+                      <span
+                        key={u.id}
+                        className="flex items-center gap-2 rounded-full bg-[#F7F8FC] py-1.5 pr-2 pl-1.5 text-[13px] font-medium text-[#172033]"
+                      >
+                        <ConversationAvatar name={u.name} avatarUrl={u.avatarUrl} size={22} />
+                        {u.name}
+                        <button
+                          type="button"
+                          onClick={() => toggleSelect(u)}
+                          className="grid size-4.5 shrink-0 cursor-pointer place-items-center rounded-full text-[#7A8496] transition-colors duration-150 ease-out hover:bg-[#E5E7EB] hover:text-[#172033]"
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search */}
+              <div className="relative">
+                <Search
+                  size={17}
+                  className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[#7A8496]"
+                />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Tìm kiếm bạn bè..."
+                  className="h-13 w-full rounded-[14px] border border-[#E5E7EB] bg-white pr-4 pl-11 text-[15px] text-[#172033] outline-none transition-colors duration-150 ease-out placeholder:text-[#7A8496] focus:border-[#6D4AFF]"
+                />
+              </div>
+
+              {/* Friend list */}
+              <div>
+                <p className="mb-2 text-[14px] font-semibold text-[#172033]">
+                  {isSearching ? "Kết quả tìm kiếm" : "Bạn bè gợi ý"}
+                </p>
+                <div className="flex flex-col">
+                  {recentContacts === null ? (
+                    <div className="flex justify-center py-8">
+                      <LoaderCircle size={20} className="animate-spin text-[#7A8496]" />
+                    </div>
+                  ) : displayList.length === 0 ? (
+                    <p className="py-8 text-center text-[13px] text-[#7A8496]">
+                      {searching ? "Đang tìm..." : "Không tìm thấy ai."}
+                    </p>
+                  ) : (
+                    displayList.map((u) => {
+                      const isSelected = selected.has(u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => toggleSelect(u)}
+                          className="flex h-16 w-full shrink-0 cursor-pointer items-center gap-3 rounded-xl px-3 text-left transition-colors duration-150 ease-out hover:bg-[#F7F8FC]"
+                        >
+                          <ConversationAvatar name={u.name} avatarUrl={u.avatarUrl} size={42} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[15px] font-medium text-[#172033]">
+                              {u.name}
+                            </p>
+                            {u.username && (
+                              <p className="truncate text-[13px] text-[#7A8496]">
+                                @{u.username}
+                              </p>
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              "grid size-6 shrink-0 place-items-center rounded-md border transition-colors duration-150 ease-out",
+                              isSelected
+                                ? "border-[#6D4AFF] bg-[#6D4AFF] text-white"
+                                : "border-[#E5E7EB] bg-white",
+                            )}
+                          >
+                            {isSelected && <Check size={14} strokeWidth={3} />}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                  {!isSearching && recentContacts !== null && followingCursor !== null && (
+                    <button
+                      type="button"
+                      onClick={() => void handleLoadMore()}
+                      disabled={loadingMore}
+                      className="mt-1 flex cursor-pointer items-center justify-center gap-1 py-3 text-[13px] font-semibold text-[#6D4AFF] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loadingMore ? "Đang tải..." : "Xem thêm"}
+                      {!loadingMore && <ChevronDown size={15} />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex shrink-0 items-center justify-end gap-3 border-t border-[#E5E7EB] px-8 py-5">
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="h-12 cursor-pointer rounded-[14px] bg-[#F7F8FC] px-5 text-[15px] font-semibold text-[#4B5565] transition-colors duration-150 ease-out hover:bg-[#E5E7EB]"
+              >
+                Hủy
+              </button>
+            </Dialog.Close>
             <button
               type="button"
-              onClick={() => void handleLoadMore()}
-              disabled={loadingMore}
-              className="cursor-pointer py-2 text-center text-xs font-semibold text-primary disabled:opacity-60"
+              onClick={() => void handleSubmit()}
+              disabled={!canSubmit}
+              className="h-12 cursor-pointer rounded-[14px] px-6 text-[15px] font-semibold text-white shadow-[0_10px_24px_-8px_rgba(109,74,255,.55)] transition-opacity duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-45"
+              style={{ background: "linear-gradient(135deg,#8B5CF6,#6D4AFF)" }}
             >
-              {loadingMore ? "Đang tải..." : "Xem thêm"}
+              {submitting
+                ? "Đang tạo..."
+                : `Tạo nhóm${selected.size > 0 ? ` (${selected.size + 1})` : ""}`}
             </button>
-          )}
-        </div>
-      </div>
-    </SimpleModal>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
