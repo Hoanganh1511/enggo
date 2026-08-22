@@ -14,9 +14,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <FeedBootstrap />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1">
         <MainSidebar />
-        <div className="flex min-h-0 flex-1 flex-col">
+        {/* min-w-0 BAT BUOC o day - thieu no thi noi dung cuon ngang sau
+            nay (vd HorizontalScroller nhieu the trong ChapterShelf/EditorialFeed)
+            se ep ca cot nay (va header ben trong no) rong ra vuot viewport,
+            day header/nut phia ben phai ra khoi man hinh (khong scrollbar vi
+            body dang overflow-hidden - xem main-content-area.tsx) - dung day
+            trieu chung "mat cum icon header ben phai" da gap. */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <TopHeaderBar />
           <ChatMessageToastStack />
           <MainContentArea>{children}</MainContentArea>

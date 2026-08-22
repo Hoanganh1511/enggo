@@ -196,14 +196,14 @@ const TopHeaderBar = () => {
           </div>
         )}
 
-        <button
+        {/* <button
           type="button"
           onClick={handleCompose}
           className="ml-1 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm bg-black/90 px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
         >
           <SquarePen size={15} strokeWidth={2} />
           Viết bài
-        </button>
+        </button> */}
       </div>
     </header>
   );

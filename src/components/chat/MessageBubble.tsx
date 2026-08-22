@@ -161,16 +161,17 @@ export function MessageBubble({
       </div>
     );
   } else if (message.type === "IMAGE" || message.type === "GIF") {
+    // Anh/GIF KHONG can style "hop chat" (border/bong do/goc vat theo nhom)
+    // nhu tin van ban - chi la 1 tam anh doc lap, luon bo tron deu 4 goc bat
+    // ke vi tri trong nhom (khong dung tailClass) va khong border/shadow gia
+    // lam no trong nhu 1 the/card. Gio hien luc goc anh (overlay, khong
+    // chiem rieng 1 dong footer nhu truoc) - CHI khi khong co caption; co
+    // caption thi gio nam duoi caption nhu binh thuong (khong the bo vao anh
+    // duoc vi caption co the dai/xuong dong).
     bubbleContent = (
-      <div
-        className={cn(
-          "overflow-hidden rounded-2xl",
-          tailClass,
-          !isMine && "shadow-[0_1px_3px_rgba(15,23,42,.08)]",
-        )}
-      >
+      <div className="overflow-hidden rounded-2xl">
         {message.replyTo && (
-          <div className="p-2 pb-0">
+          <div className="pb-2">
             <MessageReplyPreview
               replyTo={message.replyTo}
               myId={myId}
@@ -181,24 +182,30 @@ export function MessageBubble({
           </div>
         )}
         {message.attachmentUrl && (
-          // eslint-disable-next-line @next/next/no-img-element -- host dong (S3 bucket cua user / CDN Giphy), khong allowlist tinh duoc
-          <img
-            src={message.attachmentUrl}
-            alt={message.attachmentName ?? "Hình ảnh"}
-            className="block max-h-90 w-full object-cover"
-          />
-        )}
-        {message.content && (
-          <div
-            className={cn("px-4 py-2 text-[14px]", bubbleAppearance.className)}
-            style={bubbleAppearance.style}
-          >
-            {message.content}
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element -- host dong (S3 bucket cua user / CDN Giphy), khong allowlist tinh duoc */}
+            <img
+              src={message.attachmentUrl}
+              alt={message.attachmentName ?? "Hình ảnh"}
+              className="block max-h-90 w-full rounded-2xl object-cover"
+            />
+            {!message.content && (
+              <span className="absolute right-1.5 bottom-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+                {formatTimeOnly(message.createdAt)}
+              </span>
+            )}
           </div>
         )}
-        <div className="px-1 pt-1 text-right text-[11px] text-slate-400">
-          {formatTimeOnly(message.createdAt)}
-        </div>
+        {message.content && (
+          <>
+            <div className="px-1 pt-1.5 text-[14px] text-ink">
+              {message.content}
+            </div>
+            <div className="px-1 pt-1 text-right text-[11px] text-slate-400">
+              {formatTimeOnly(message.createdAt)}
+            </div>
+          </>
+        )}
       </div>
     );
   } else if (message.type === "FILE") {

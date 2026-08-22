@@ -337,6 +337,18 @@ export function MessagesShell() {
   const pendingScrollActionRef = useRef<"bottom" | "preserve" | null>(null);
   const prevScrollHeightRef = useRef<number | null>(null);
   const loadOlderSentinelRef = useRef<HTMLDivElement>(null);
+  // "Dinh day" - khi true, MOI lan noi dung ben trong scrollRef doi chieu cao
+  // (anh/GIF/avatar tai xong, load nhanh hay cham deu duoc) se tu dong keo
+  // lai xuong day THAT SU, khong chi 1 lan luc vua co messages moi (luc do
+  // scrollHeight co the con thap hon that vi anh chua tai xong). Bat khi:
+  // tai hoi thoai lan dau, tin/GIF/poll CUA CHINH MINH vua gui. Tat khi nguoi
+  // dung tu cuon len (xem onScroll ben duoi) - khong ganh voi thao tac cua ho.
+  const stickyBottomRef = useRef(false);
+  // Bao boc TOAN BO noi dung cuon (sentinel + header dau hoi thoai + danh
+  // sach tin nhan) - ResizeObserver gan vao day (khong phai scrollRef, vi
+  // scrollRef co chieu cao CO DINH qua flex-1, chi noi dung BEN TRONG no moi
+  // doi chieu cao khi anh/GIF tai xong).
+  const scrollContentRef = useRef<HTMLDivElement>(null);
 
   const [, startFetchTransition] = useTransition();
 
@@ -431,6 +443,7 @@ export function MessagesShell() {
       const page = await listMessagesAction(activeId);
       if (cancelled) return;
       pendingScrollActionRef.current = "bottom";
+      stickyBottomRef.current = true;
       setMessages(page.items);
       setNextCursor(page.nextCursor);
     });
@@ -506,6 +519,27 @@ export function MessagesShell() {
     }
   }, [messages]);
 
+  // "Dinh day" THAT SU qua moi lan reflow, khong chi 1 lan luc [messages]
+  // doi: anh/GIF/avatar trong tin nhan tai xong SAU khi DOM da commit se lam
+  // scrollHeight tang THEM (load nhanh hay cham deu vay), luc effect [messages]
+  // o tren chay scrollHeight con thap hon that nen cuon "xong" ma van chua
+  // toi day THAT (day chinh la trieu chung "load xong bi hut view len tren").
+  // ResizeObserver bao dung MOI lan noi dung doi cao, tu keo lai xuong day
+  // trong luc con dinh (stickyBottomRef) - deu se tu ngung khi noi dung het
+  // doi (anh tai xong het) hoac nguoi dung tu cuon len (xem onScroll).
+  useEffect(() => {
+    const content = scrollContentRef.current;
+    const el = scrollRef.current;
+    if (!content || !el) return;
+    const observer = new ResizeObserver(() => {
+      if (stickyBottomRef.current) {
+        el.scrollTo({ top: el.scrollHeight });
+      }
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [activeId]);
+
   // Bao go chu/typing xuat hien o cuoi danh sach - CHI tu cuon toi neu nguoi
   // dung dang o gan day cuoi san, khong ep cuon khi ho dang doc lich su cu.
   useEffect(() => {
@@ -572,7 +606,10 @@ export function MessagesShell() {
         // tu nguoi kia toi) giu nguyen vi tri, chi hien banner "Có tin nhắn mới".
         const mine = m.senderId === myIdRef.current;
         const nearBottom = isNearBottom();
-        pendingScrollActionRef.current = mine || nearBottom ? "bottom" : null;
+        if (mine || nearBottom) {
+          pendingScrollActionRef.current = "bottom";
+          stickyBottomRef.current = true;
+        }
         if (!mine && !nearBottom) setShowNewMessagesBanner(true);
         setMessages((prev) => (prev ? appendUniqueMessage(prev, m) : prev));
         markConversationReadAction(m.conversationId).catch(() => {});
@@ -798,6 +835,8 @@ export function MessagesShell() {
   }
 
   function appendSentMessage(msg: ApiChatMessage) {
+    pendingScrollActionRef.current = "bottom";
+    stickyBottomRef.current = true;
     setMessages((prev) => (prev ? appendUniqueMessage(prev, msg) : prev));
     bumpConversationSummary(msg);
   }
@@ -992,6 +1031,7 @@ export function MessagesShell() {
       });
       const replyToId = replyTarget?.id;
       pendingScrollActionRef.current = "bottom";
+      stickyBottomRef.current = true;
       setMessages((prev) =>
         prev ? appendUniqueMessage(prev, optimistic) : prev,
       );
@@ -1021,6 +1061,7 @@ export function MessagesShell() {
     const optimistic = buildOptimisticMessage({ type: "TEXT", content: text });
     const replyToId = replyTarget?.id;
     pendingScrollActionRef.current = "bottom";
+    stickyBottomRef.current = true;
     setMessages((prev) =>
       prev ? appendUniqueMessage(prev, optimistic) : prev,
     );
@@ -1049,6 +1090,7 @@ export function MessagesShell() {
       attachmentMimeType: "image/gif",
     });
     pendingScrollActionRef.current = "bottom";
+    stickyBottomRef.current = true;
     setMessages((prev) =>
       prev ? appendUniqueMessage(prev, optimistic) : prev,
     );
@@ -1670,6 +1712,12 @@ export function MessagesShell() {
             <div
               ref={scrollRef}
               onScroll={() => {
+                // Dinh lai theo vi tri THAT SU sau moi lan cuon (ca cuon tay
+                // lan cuon do ResizeObserver/layout effect tu goi) - cuon len
+                // xem tin cu se tat "dinh day", cuon/duoc keo ve gan day cuoi
+                // se bat lai (dung hanh vi chat chuan: dang o day thi luon
+                // dinh theo, roi len thi thoi).
+                stickyBottomRef.current = isNearBottom();
                 if (showNewMessagesBanner && isNearBottom()) {
                   setShowNewMessagesBanner(false);
                 }
@@ -1687,7 +1735,7 @@ export function MessagesShell() {
                   : undefined
               }
             >
-              <div className="mx-auto">
+              <div ref={scrollContentRef} className="mx-auto">
                 {/* Marker cho IntersectionObserver - vao vung nhin cua khung
                 cuon (root: scrollRef) thi tu goi handleLoadOlder, xem effect
                 sentinel o tren. Luon mount (khong go khi het nextCursor) de

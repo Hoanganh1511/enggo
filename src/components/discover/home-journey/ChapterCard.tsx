@@ -1,18 +1,17 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { hexToRgba } from "@/lib/utils";
 import { GroupIconGlyph } from "@/components/workspaces/group-icons";
 import type { ApiJourneyGroup } from "@/lib/api/types";
 
-// Mau accent xoay theo index - tai dung dung tien le WORLD_ACCENT cua
-// EditorialFeed.tsx (hardcoded hex + hexToRgba, khong bia token moi), CHI de
-// phan biet cac the "chuong" ke nhau, khong dai dien y nghia gi rieng.
-const CHAPTER_ACCENTS = [
-  "#10b981",
-  "#0ea5e9",
-  "#8b5cf6",
-  "#f59e0b",
-  "#f43f5e",
+// Bang mau xoay theo index - PHONG DUNG 5 tong mau (nen gradient + ribbon)
+// cua ban mau tree-career-book-ui goc (khong bia them mau moi), tao cam giac
+// "ke sach" nhieu mau nhu tham chieu thay vi 1 mau don --primary.
+const CHAPTER_PALETTE = [
+  { bg: "linear-gradient(145deg,#f8f1dd,#e9f0db)", ribbon: "#68a96b" },
+  { bg: "linear-gradient(145deg,#f2f0df,#e5ead7)", ribbon: "#4f9a70" },
+  { bg: "linear-gradient(145deg,#eef0e9,#dfe9f0)", ribbon: "#3978c8" },
+  { bg: "linear-gradient(145deg,#f1e9ee,#eadff0)", ribbon: "#8b62bd" },
+  { bg: "linear-gradient(145deg,#f9ece1,#f6ddd4)", ribbon: "#c9574f" },
 ];
 
 export function ChapterCard({
@@ -24,44 +23,60 @@ export function ChapterCard({
   index: number;
   username: string;
 }) {
-  const accent = CHAPTER_ACCENTS[index % CHAPTER_ACCENTS.length];
+  const { bg, ribbon } = CHAPTER_PALETTE[index % CHAPTER_PALETTE.length];
 
   return (
     <Link
       href={`/workspace/${username}/${group.workspaceId}`}
-      className="flex w-56 shrink-0 snap-start flex-col gap-2"
+      className="relative flex w-56 min-h-49.5 shrink-0 snap-start flex-col overflow-hidden p-4"
+      style={{
+        background: bg,
+        borderRadius: "7px 10px 8px 6px",
+        borderLeft: "9px solid rgba(0,0,0,.08)",
+        boxShadow: "0 9px 16px rgba(75,53,31,.12)",
+      }}
     >
-      <div
-        className="flex h-28 w-full items-center justify-center rounded-lg"
+      <span
+        className="absolute top-0 right-3 h-11 w-5.5"
         style={{
-          background: `linear-gradient(135deg, ${hexToRgba(accent, 0.3)}, ${hexToRgba(accent, 0.1)})`,
+          background: ribbon,
+          clipPath: "polygon(0 0,100% 0,100% 100%,50% 76%,0 100%)",
         }}
+      />
+      <small className="text-[10px]" style={{ color: "#826e5d" }}>
+        Chương {index + 1}
+      </small>
+      <span className="mt-1 inline-block" style={{ color: ribbon }}>
+        <GroupIconGlyph name={group.icon} size={26} strokeWidth={1.75} />
+      </span>
+      <h3
+        className="mt-1.5 line-clamp-1 text-[19px]"
+        style={{ fontFamily: "Georgia, serif", color: "#2b2117" }}
       >
-        <GroupIconGlyph
-          name={group.icon}
-          size={32}
-          strokeWidth={1.5}
-          className="text-current"
-        />
-      </div>
-      <h3 className="line-clamp-1 text-base leading-snug font-semibold text-ink">
         {group.name}
       </h3>
       {group.description && (
-        <p className="line-clamp-2 text-xs text-ink-faint">
+        <p
+          className="mt-1 line-clamp-2 text-[10px] leading-relaxed"
+          style={{ color: "#786b60" }}
+        >
           {group.description}
         </p>
       )}
-      <div className="mt-auto flex items-center justify-between text-[11px] text-ink-muted">
+      <footer
+        className="mt-auto flex items-center justify-between pt-3 text-[10px]"
+        style={{ color: "#85776a" }}
+      >
         <span>{group.postCount} bài viết</span>
-        <span className="font-semibold text-ink">
-          {group.progressPercent}%
-        </span>
-      </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
+        <span>{group.progressPercent}%</span>
+      </footer>
+      <div
+        className="mt-1.5 h-1.25 overflow-hidden rounded-full"
+        style={{ background: "rgba(120,100,76,.13)" }}
+      >
         <div
           className="h-full rounded-full"
-          style={{ width: `${group.progressPercent}%`, background: accent }}
+          style={{ width: `${group.progressPercent}%`, background: "#69a76f" }}
         />
       </div>
     </Link>
@@ -82,13 +97,22 @@ export function AddChapterCard({
   return (
     <Link
       href={href}
-      className="flex h-[198px] w-56 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-center transition-colors duration-150 ease-out hover:border-border-strong hover:bg-surface-muted"
+      className="flex min-h-49.5 w-56 shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-[9px] border border-dashed text-center transition-colors duration-150 ease-out"
+      style={{ borderColor: "#d8c7b4", background: "rgba(255,253,249,.66)" }}
     >
-      <span className="flex size-11 items-center justify-center rounded-full border border-border bg-surface">
-        <Plus size={22} strokeWidth={2} className="text-ink-muted" />
+      <span
+        className="flex size-11 items-center justify-center rounded-full border bg-white"
+        style={{ borderColor: "#e8daca" }}
+      >
+        <Plus size={22} strokeWidth={2} style={{ color: "#806f60" }} />
       </span>
-      <b className="text-sm font-semibold text-ink">{title}</b>
-      <small className="px-4 text-[11px] leading-relaxed text-ink-faint">
+      <b className="text-[13px]" style={{ color: "#806f60" }}>
+        {title}
+      </b>
+      <small
+        className="px-4 text-[10px] leading-relaxed"
+        style={{ color: "#9c8f80" }}
+      >
         {subtitle}
       </small>
     </Link>

@@ -1,9 +1,10 @@
-import { Flame, BookMarked, Library } from "lucide-react";
+import { CheckCircle2, Flame, BookMarked, Library } from "lucide-react";
 import type { ApiJourney } from "@/lib/api/types";
 
 // Thay the khoi "Thanh tuu gan day" bia trong ban goc bang 3 so lieu THAT,
 // tinh tu journey da fetch (khong goi API rieng) - chi hien badge nao > 0,
-// an het khoi neu ca 3 deu 0 (user moi, chua co hoat dong gi).
+// an het khoi neu ca 3 deu 0 (user moi, chua co hoat dong gi). Style phong
+// dung "railCard" cua ban mau (the bo tron, tung dong co dau tich xanh).
 export function JourneyAchievements({ journey }: { journey: ApiJourney }) {
   const maxStreak = journey.groups.reduce(
     (max, g) => Math.max(max, g.currentStreak),
@@ -29,15 +30,32 @@ export function JourneyAchievements({ journey }: { journey: ApiJourney }) {
   if (badges.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      className="max-w-md rounded-[13px] border p-4.5"
+      style={{
+        borderColor: "#ebe1d5",
+        background: "#fffdf9",
+        boxShadow: "0 5px 16px rgba(82,60,38,.04)",
+      }}
+    >
+      <h3
+        className="mb-1 text-[15px]"
+        style={{ fontFamily: "Georgia, serif", color: "#2b2117" }}
+      >
+        🏆 Thành tựu gần đây
+      </h3>
       {badges.map(({ icon: Icon, label }) => (
-        <span
+        <div
           key={label}
-          className="flex items-center gap-1.5 rounded-full border border-border bg-surface-muted px-3 py-1.5 text-xs font-medium text-ink-muted"
+          className="flex items-center justify-between gap-3 py-2.5 text-[12px]"
+          style={{ borderTop: "1px solid #f0e8de", color: "#4b4c46" }}
         >
-          <Icon size={14} strokeWidth={2} className="text-primary" />
-          {label}
-        </span>
+          <span className="flex items-center gap-2">
+            <Icon size={14} strokeWidth={2} style={{ color: "#d95b16" }} />
+            {label}
+          </span>
+          <CheckCircle2 size={15} style={{ color: "#69a76f" }} />
+        </div>
       ))}
     </div>
   );

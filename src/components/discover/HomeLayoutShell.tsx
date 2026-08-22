@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 import { HomeSidebar } from "./HomeSidebar";
 import type { FeedCategoryGroup } from "@/lib/api/feed-categories";
@@ -35,6 +35,13 @@ const HomeLayoutShell = ({
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
+  // /home gio da co JourneyHero/ChapterShelf (widget "hanh trinh" ca nhan)
+  // lam trang chu rieng - sidebar loc linh vuc nghe nghiep/Content Type
+  // (HomeSidebar) theo yeu cau nguoi dung KHONG con hien o day nua de tranh
+  // roi/trung lap, nhung VAN giu cho /series, /contest (2 trang danh sach con
+  // lai dung chung shell nay) vi bo loc van huu ich o do.
+  const showFilterSidebar = pathname !== "/home";
   // Chi de lam mo noi dung + optimistic label trong luc transition (doi query
   // string tren cung route, khong co gi de "cho" ngoai 1 nhip render).
   const [isPending, startTransition] = useTransition();
@@ -135,16 +142,18 @@ const HomeLayoutShell = ({
   // "dinh" duoc nua) - day chinh la ly do sticky khong hoat dong truoc do.
   return (
     <div className="flex min-w-0 flex-1 gap-6 px-4 pt-4">
-      <HomeSidebar
-        categoryTree={categoryTree}
-        group={group}
-        field={field}
-        onGroupChange={handleGroupChange}
-        onFieldChange={handleFieldChange}
-        type={type}
-        onTypeChange={handleTypeChange}
-        onClearAll={handleClearAll}
-      />
+      {showFilterSidebar && (
+        <HomeSidebar
+          categoryTree={categoryTree}
+          group={group}
+          field={field}
+          onGroupChange={handleGroupChange}
+          onFieldChange={handleFieldChange}
+          type={type}
+          onTypeChange={handleTypeChange}
+          onClearAll={handleClearAll}
+        />
+      )}
 
       <div className="min-w-0 flex-1 rounded-md">{children}</div>
     </div>

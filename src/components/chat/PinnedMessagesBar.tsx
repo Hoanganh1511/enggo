@@ -7,8 +7,13 @@ import { formatMessagePreview } from "@/lib/chat-message-preview";
 import { formatTimeOnly } from "@/lib/format-time";
 import { ConversationAvatar } from "./ConversationAvatar";
 
-// Thanh tin nhan ghim - luon hien duoi header (khong chiem nhieu dien tich)
-// khi hoi thoai co >=1 tin da ghim (xem MessagesShell.tsx - pinnedMessages).
+// Thanh tin nhan ghim - NOI len tren cung khung tin nhan (absolute, ngay
+// duoi header cao h-21 cua <main> - xem className "relative" cua <main> lam
+// diem tua dinh vi trong MessagesShell.tsx), KHONG con nam trong flow binh
+// thuong nhu truoc. Ly do: pinnedMessages tai bat dong bo (null luc dau ->
+// co du lieu sau), tung nam trong flow se lam ca khung tin nhan ben duoi bi
+// "day" xuong 1 doan dung luc no xuat hien - gay giat/nhay layout. La overlay
+// thi tin nhan cu se tu cuon KHUAT phia sau no, khong lam dich chuyen gi ca.
 // Nhieu tin ghim thi cycle qua nut mui ten (1/N), bam vao noi dung se nhay +
 // highlight tin nhan goc (tai su dung handleJumpToMessage co san, dung cho
 // ca reply-preview-click-to-jump).
@@ -34,7 +39,7 @@ export function PinnedMessagesBar({
   const senderName = isMine ? "Bạn" : (sender?.name ?? "Người dùng");
 
   return (
-    <div className="relative z-10 flex items-center gap-3 border-b border-slate-100 bg-primary/6 px-5 py-2.5">
+    <div className="absolute top-21 right-0 left-0 z-20 flex items-center gap-3 border-b border-slate-100 bg-primary/10 px-5 py-2.5 shadow-[0_3px_18px_rgba(15,23,42,.05)] backdrop-blur-md">
       <Pin size={15} className="shrink-0 text-primary" fill="currentColor" />
       <button
         type="button"
