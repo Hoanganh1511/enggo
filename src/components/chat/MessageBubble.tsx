@@ -48,6 +48,7 @@ type MessageBubbleProps = {
   onReply: (message: ApiChatMessage) => void;
   onRecall: (messageId: string) => Promise<void>;
   onJumpToMessage: (messageId: string) => void;
+  onTogglePin: (messageId: string, currentlyPinned: boolean) => void;
 };
 
 // Render theo tung MessageType - IMAGE/GIF/FILE/VOICE dung attachment* field,
@@ -74,6 +75,7 @@ export function MessageBubble({
   onReply,
   onRecall,
   onJumpToMessage,
+  onTogglePin,
 }: MessageBubbleProps) {
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
   const align = isMine ? "justify-end" : "justify-start";
@@ -384,10 +386,12 @@ export function MessageBubble({
             <MessageActions
               isMine={isMine}
               canCopy={canCopy}
+              isPinned={message.isPinned}
               onReact={(emoji) => onReact(message.id, emoji)}
               onReply={() => onReply(message)}
               onCopy={handleCopy}
               onRecall={() => onRecall(message.id)}
+              onTogglePin={() => onTogglePin(message.id, message.isPinned)}
             />
           </div>
         </div>

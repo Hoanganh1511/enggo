@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, MoreHorizontal, Reply as ReplyIcon, Smile, Undo2 } from "lucide-react";
+import { Copy, MoreHorizontal, Pin, PinOff, Reply as ReplyIcon, Smile, Undo2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   PopoverRoot,
@@ -15,24 +15,29 @@ import { ReactionPicker } from "./ReactionPicker";
 // Toolbar hien khi hover 1 message (CSS group-hover, khong dung state rieng -
 // tranh xung dot voi opacity/scale ma framer-motion se ap qua inline style
 // neu dung animate prop cho chinh no). CHI 3 nut: React/Reply/More - "More"
-// gom Copy (that, Clipboard API) va Thu hoi (that, chi hien voi tin cua
-// minh). KHONG co Forward/Edit/Report nhu goi y trong spec vi chua co API
-// that cho 3 hanh dong do - them nut gia se vi pham nguyen tac khong tao
-// fake functionality.
+// gom Copy (that, Clipboard API), Ghim/Bo ghim (that, bat ky ai trong hoi
+// thoai cung ghim duoc - chua co khai niem "admin"), va Thu hoi (that, chi
+// hien voi tin cua minh). KHONG co Forward/Edit/Report nhu goi y trong spec
+// vi chua co API that cho 3 hanh dong do - them nut gia se vi pham nguyen
+// tac khong tao fake functionality.
 export function MessageActions({
   isMine,
   canCopy,
+  isPinned,
   onReact,
   onReply,
   onCopy,
   onRecall,
+  onTogglePin,
 }: {
   isMine: boolean;
   canCopy: boolean;
+  isPinned: boolean;
   onReact: (emoji: string) => void;
   onReply: () => void;
   onCopy: () => void;
   onRecall: () => Promise<void>;
+  onTogglePin: () => void;
 }) {
   const [reactOpen, setReactOpen] = useState(false);
   const [showFullPicker, setShowFullPicker] = useState(false);
@@ -116,6 +121,17 @@ export function MessageActions({
                   Sao chép
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => {
+                  onTogglePin();
+                  setMoreOpen(false);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] font-medium text-[#182338] hover:bg-slate-50"
+              >
+                {isPinned ? <PinOff size={14} className="text-slate-500" /> : <Pin size={14} className="text-slate-500" />}
+                {isPinned ? "Bỏ ghim" : "Ghim tin nhắn"}
+              </button>
               {isMine && (
                 <button
                   type="button"
@@ -128,9 +144,6 @@ export function MessageActions({
                   <Undo2 size={14} />
                   Thu hồi
                 </button>
-              )}
-              {!canCopy && !isMine && (
-                <p className="px-2.5 py-2 text-[12px] text-slate-400">Không có thao tác nào</p>
               )}
             </div>
           </PopoverContent>

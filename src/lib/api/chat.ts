@@ -3,6 +3,7 @@ import type {
   ApiChatMessage,
   ApiChatMessagePage,
   ApiConversationSummary,
+  ApiMediaPage,
   ApiMessageReaction,
   ApiMessageSearchPage,
   ApiMessageType,
@@ -157,4 +158,66 @@ export function markConversationUnread(
   return apiFetch(`/conversations/${conversationId}/mark-unread`, {
     method: "POST",
   });
+}
+
+export type UpdateGroupInfoInput = {
+  name?: string;
+  description?: string;
+  avatarColor?: GroupAvatarColor;
+};
+
+export function updateGroupInfo(
+  conversationId: string,
+  input: UpdateGroupInfoInput,
+): Promise<ApiConversationSummary> {
+  return apiFetch<ApiConversationSummary>(`/conversations/${conversationId}/group`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function leaveGroup(conversationId: string): Promise<{ left: boolean }> {
+  return apiFetch(`/conversations/${conversationId}/leave`, { method: "POST" });
+}
+
+export function listMedia(
+  conversationId: string,
+  cursor?: string,
+  limit?: number,
+): Promise<ApiMediaPage> {
+  const params = new URLSearchParams();
+  if (cursor) params.set("cursor", cursor);
+  if (limit) params.set("limit", String(limit));
+  const qs = params.toString();
+  return apiFetch<ApiMediaPage>(
+    `/conversations/${conversationId}/media${qs ? `?${qs}` : ""}`,
+  );
+}
+
+export function listPinnedMessages(
+  conversationId: string,
+): Promise<ApiChatMessage[]> {
+  return apiFetch<ApiChatMessage[]>(
+    `/conversations/${conversationId}/pinned-messages`,
+  );
+}
+
+export function pinMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<ApiChatMessage> {
+  return apiFetch<ApiChatMessage>(
+    `/conversations/${conversationId}/messages/${messageId}/pin`,
+    { method: "POST" },
+  );
+}
+
+export function unpinMessage(
+  conversationId: string,
+  messageId: string,
+): Promise<ApiChatMessage> {
+  return apiFetch<ApiChatMessage>(
+    `/conversations/${conversationId}/messages/${messageId}/pin`,
+    { method: "DELETE" },
+  );
 }

@@ -43,6 +43,7 @@ import {
 import type {
   ApiChatMessage,
   ApiConversationSummary,
+  ApiMemberLeftEvent,
   ApiMessageType,
   ApiPoll,
   ApiPresenceUpdate,
@@ -62,6 +63,10 @@ import { uploadChatAttachmentAction } from "@/actions/chat/upload-attachment";
 import { votePollAction } from "@/actions/chat/vote-poll";
 import { recallMessageAction } from "@/actions/chat/recall-message";
 import {
+  pinMessageAction,
+  unpinMessageAction,
+} from "@/actions/chat/group-info";
+import {
   reactToMessageAction,
   removeReactionAction,
 } from "@/actions/chat/react-message";
@@ -73,6 +78,7 @@ import { useChatSocket } from "@/lib/use-chat-socket";
 import { formatRelativeTime } from "@/lib/format-time";
 import { formatMessagePreview } from "@/lib/chat-message-preview";
 import { MessageInfoPanel } from "./MessageInfoPanel";
+import { GroupInfoPanel } from "./GroupInfoPanel";
 import { MessageBubble } from "./MessageBubble";
 import { EmojiPickerPopover } from "./EmojiPickerPopover";
 import { GifPickerPopover } from "./GifPickerPopover";
@@ -476,6 +482,38 @@ export function MessagesShell() {
         ) ?? prev,
     );
   }, []);
+  // Ten/mo ta/mau nhom doi (nguoi khac sua) - cap nhat lai dung hoi thoai do
+  // trong danh sach ben trai + header dang mo (ca 2 deu doc tu `conversations`).
+  const handleGroupUpdated = useCallback((c: ApiConversationSummary) => {
+    setConversations(
+      (prev) => prev?.map((item) => (item.id === c.id ? c : item)) ?? prev,
+    );
+  }, []);
+  // 1 thanh vien vua roi nhom - go khoi participants cua dung hoi thoai do
+  // (khong hien "system message" - chua co ha tang tin nhan he thong).
+  const handleMemberLeft = useCallback((p: ApiMemberLeftEvent) => {
+    setConversations(
+      (prev) =>
+        prev?.map((c) =>
+          c.id === p.conversationId
+            ? {
+                ...c,
+                participants: c.participants.filter((m) => m.id !== p.userId),
+              }
+            : c,
+        ) ?? prev,
+    );
+  }, []);
+  // Chinh minh vua roi 1 nhom (GroupInfoPanel.tsx) - bo hoi thoai do khoi
+  // danh sach, dong khung chat neu dang mo dung hoi thoai vua roi.
+  function handleGroupLeft(conversationId: string) {
+    setConversations((prev) => prev?.filter((c) => c.id !== conversationId) ?? prev);
+    if (activeId === conversationId) {
+      setActiveIdState(null);
+      setMessages(null);
+      router.replace("/messages", { scroll: false });
+    }
+  }
   // Dep tat ca timeout dang cho khi unmount - tranh setState sau khi component
   // da roi trang.
   useEffect(() => {
@@ -493,6 +531,8 @@ export function MessagesShell() {
     onRead: handleRead,
     onMessageUpdated: handleMessageUpdated,
     onReactionUpdate: handleReactionUpdate,
+    onGroupUpdated: handleGroupUpdated,
+    onMemberLeft: handleMemberLeft,
   });
 
   async function handleLoadOlder() {
@@ -605,6 +645,7 @@ export function MessagesShell() {
       durationSeconds: fields.durationSeconds ?? null,
       poll: null,
       isRecalled: false,
+      isPinned: false,
       replyTo: replyTarget
         ? {
             id: replyTarget.id,
@@ -904,6 +945,25 @@ export function MessagesShell() {
       setMessages(
         (prev) => prev?.map((m) => (m.id === messageId ? updated : m)) ?? prev,
       );
+    },
+    [activeId],
+  );
+
+  // Ghim/bo ghim - phia con lai trong hoi thoai nhan lai qua socket
+  // "chat:message-updated" (tai su dung handleMessageUpdated, khong can them
+  // event rieng).
+  const handleTogglePin = useCallback(
+    (messageId: string, currentlyPinned: boolean) => {
+      if (!activeId) return;
+      const action = currentlyPinned ? unpinMessageAction : pinMessageAction;
+      action(activeId, messageId)
+        .then((updated) => {
+          setMessages(
+            (prev) =>
+              prev?.map((m) => (m.id === messageId ? updated : m)) ?? prev,
+          );
+        })
+        .catch(() => toast.danger("Không thể ghim tin nhắn, thử lại sau."));
     },
     [activeId],
   );
@@ -1405,6 +1465,7 @@ export function MessagesShell() {
                           onReply={handleReply}
                           onRecall={handleRecall}
                           onJumpToMessage={handleJumpToMessage}
+                          onTogglePin={handleTogglePin}
                         />
                       );
                     })}
@@ -1744,11 +1805,25 @@ export function MessagesShell() {
       {rightPanelOpen &&
         (conversations === null ? (
           <InfoPanelSkeleton />
+        ) : activeConversation?.isGroup ? (
+          <GroupInfoPanel
+            key={activeConversation.id}
+            conversation={activeConversation}
+            myName={session?.user?.name ?? "Bạn"}
+            myAvatarUrl={session?.user?.image}
+            onClose={() => setRightPanelOpen(false)}
+            onUpdated={handleGroupUpdated}
+            onToggleMute={() =>
+              void handleToggleConversationSetting(activeConversation.id, "isMuted")
+            }
+            onOpenSearch={() => {
+              setSearchDrawerQuery("");
+              setSearchDrawerOpen(true);
+            }}
+            onJumpToMessage={handleJumpToMessage}
+            onLeft={() => handleGroupLeft(activeConversation.id)}
+          />
         ) : (
-          // Nhom CHUA co panel thong tin rieng (danh sach thanh vien, doi
-          // ten...) - an han thay vi hien nham thong tin ca nhan cua 1 nguoi
-          // BAT KY trong nhom (otherUser luc nay chi la participants[0]).
-          !activeConversation?.isGroup &&
           activeConversation?.otherUser && (
             <MessageInfoPanel otherUser={activeConversation.otherUser} />
           )

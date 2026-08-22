@@ -450,6 +450,7 @@ export type ApiChatMessage = {
   durationSeconds: number | null;
   poll: ApiPoll | null;
   isRecalled: boolean;
+  isPinned: boolean;
   replyTo: ApiReplyPreview | null;
   reactions: ApiMessageReaction[];
   createdAt: string;
@@ -478,6 +479,7 @@ export type ApiConversationSummary = {
   isGroup: boolean;
   groupName: string | null;
   groupAvatarColor: GroupAvatarColor | null;
+  groupDescription: string | null;
   // 1-1: 1 phan tu (giong het otherUser). Nhom: N phan tu (tat ca thanh vien
   // TRU minh).
   participants: ApiConversationUser[];
@@ -496,6 +498,11 @@ export type ApiConversationSummary = {
 };
 
 export type ApiChatMessagePage = {
+  items: ApiChatMessage[];
+  nextCursor: string | null;
+};
+
+export type ApiMediaPage = {
   items: ApiChatMessage[];
   nextCursor: string | null;
 };
@@ -549,4 +556,10 @@ export type ApiReadEvent = {
 export type ApiReactionUpdate = {
   messageId: string;
   reactions: ApiMessageReaction[];
+};
+
+// Payload cua socket event "chat:member-left" - 1 thanh vien vua roi nhom.
+export type ApiMemberLeftEvent = {
+  conversationId: string;
+  userId: string;
 };

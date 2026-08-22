@@ -5,6 +5,8 @@ import { io, type Socket } from "socket.io-client";
 import { getSocketTokenAction } from "@/actions/notifications/get-socket-token";
 import type {
   ApiChatMessage,
+  ApiConversationSummary,
+  ApiMemberLeftEvent,
   ApiPoll,
   ApiPresenceUpdate,
   ApiReactionUpdate,
@@ -29,6 +31,10 @@ type ChatSocketHandlers = {
   onMessageUpdated?: (m: ApiChatMessage) => void;
   // Tuy chon - reaction tren 1 tin nhan thay doi real-time.
   onReactionUpdate?: (p: ApiReactionUpdate) => void;
+  // Tuy chon - ten/mo ta/mau nhom thay doi real-time (xem GroupInfoPanel.tsx).
+  onGroupUpdated?: (c: ApiConversationSummary) => void;
+  // Tuy chon - 1 thanh vien vua roi nhom.
+  onMemberLeft?: (p: ApiMemberLeftEvent) => void;
 };
 
 // Ket noi WebSocket RIENG cho trang /messages (chi song trong luc trang nay
@@ -85,6 +91,12 @@ export function useChatSocket(
     });
     socket.on("chat:reaction-update", (p: ApiReactionUpdate) => {
       handlersRef.current?.onReactionUpdate?.(p);
+    });
+    socket.on("chat:group-updated", (c: ApiConversationSummary) => {
+      handlersRef.current?.onGroupUpdated?.(c);
+    });
+    socket.on("chat:member-left", (p: ApiMemberLeftEvent) => {
+      handlersRef.current?.onMemberLeft?.(p);
     });
 
     return () => {

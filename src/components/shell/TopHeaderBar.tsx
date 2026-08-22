@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Mail, SquarePen } from "lucide-react";
+import { Bell, Mail, Sparkles, SquarePen } from "lucide-react";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -14,6 +14,8 @@ import Logo from "../ui/logo";
 import { HeaderSearch } from "./HeaderSearch";
 import AccountMenu from "./account-menu";
 import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
+import { UpdatesPanel } from "./header-command-panels/UpdatesPanel";
+import { useChangelogUnseen } from "@/lib/use-changelog-unseen";
 import { getUnreadNotificationCountAction } from "@/actions/notifications/get-unread-count";
 import { getUnreadChatCountAction } from "@/actions/chat/get-unread-count";
 import { useNotificationSocket } from "@/lib/use-notification-socket";
@@ -36,6 +38,9 @@ const TopHeaderBar = () => {
   const router = useRouter();
   const { data: session } = useSession();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [updatesOpen, setUpdatesOpen] = useState(false);
+  const { hasUnseen: hasUnseenUpdates, markSeen: markUpdatesSeen } =
+    useChangelogUnseen();
 
   const [unreadCount, setUnreadCount] = useState(0);
   useEffect(() => {
@@ -139,6 +144,33 @@ const TopHeaderBar = () => {
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <PopoverRoot
+          open={updatesOpen}
+          onOpenChange={(next) => {
+            setUpdatesOpen(next);
+            if (next) markUpdatesSeen();
+          }}
+        >
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              title="Có gì mới"
+              className="relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+            >
+              <Sparkles size={19} strokeWidth={1.85} />
+              {hasUnseenUpdates && <HeaderBadgeDot />}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            open={updatesOpen}
+            align="end"
+            sideOffset={10}
+            className="z-50"
+          >
+            <UpdatesPanel />
+          </PopoverContent>
+        </PopoverRoot>
+
         <Link
           href="/messages"
           title="Tin nhắn"
