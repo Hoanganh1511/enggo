@@ -2177,7 +2177,14 @@ export function MessagesShell() {
                     }}
                     rows={1}
                     disabled={recording}
-                    className="max-h-24 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-[15px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 sm:px-2.5"
+                    // text-base (16px) BAT BUOC, khong duoc nho hon - iOS
+                    // Safari tu dong ZOOM CA TRANG khi focus vao 1 input/
+                    // textarea co font-size < 16px (co che "tranh nguoi dung
+                    // phai zoom tay de doc chu qua nho", khong tat duoc qua
+                    // CSS, chi tranh duoc bang cach khong bao gio de font
+                    // duoi 16px). Truoc la text-[15px] nen bam vao o soan tin
+                    // se bi zoom man hinh tren iPhone/iPad Safari.
+                    className="max-h-24 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-base text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 sm:px-2.5"
                     placeholder="Nhập tin nhắn..."
                   />
                   <button
