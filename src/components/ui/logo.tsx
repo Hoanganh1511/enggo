@@ -38,8 +38,8 @@ export function LogoIcon({
             y2="30"
             gradientUnits="userSpaceOnUse"
           >
-            <stop offset="0%" stopColor="#f2a65a" />
-            <stop offset="100%" stopColor="#dd700b" />
+            <stop offset="0%" stopColor="#52525b" />
+            <stop offset="100%" stopColor="#18181b" />
           </linearGradient>
         </defs>
       )}
@@ -92,16 +92,20 @@ const Logo = ({
     <div
       className={`flex ${isVertical ? "flex-col items-center gap-2 text-center" : "flex-row items-center gap-3"} ${className ?? ""}`}
     >
-      <LogoIcon size={size} variant={variant} />
+      {/* <LogoIcon size={size} variant={variant} /> */}
       <div className={`flex flex-col ${isVertical ? "items-center" : ""}`}>
-        <span className="text-xl leading-tight font-semibold tracking-tight text-ink">
-          Good Life
-        </span>
-        {showTagline && (
-          <span className="text-xs text-ink-muted">
-            Grow your career, step by step.
+        <div className="flex items-center gap-3">
+          {/* Royal Gold Text */}
+          <span
+            className="
+          text-xl
+          font-bold
+          tracking-[-0.02em]
+        "
+          >
+            Good Life
           </span>
-        )}
+        </div>
       </div>
     </div>
   );

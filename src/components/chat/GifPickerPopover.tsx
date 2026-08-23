@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { LoaderCircle, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiGif } from "@/lib/api/gif";
 import { searchGifsAction, trendingGifsAction } from "@/actions/chat/gifs";
 
@@ -67,7 +68,7 @@ export function GifPickerPopover({
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex h-full items-center justify-center">
-            <LoaderCircle size={18} className="animate-spin text-slate-400" />
+            <LoadingSpinner size={18} className="text-slate-400" />
           </div>
         ) : notConfigured ? (
           <p className="px-2 py-8 text-center text-[12px] text-slate-500">

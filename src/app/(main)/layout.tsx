@@ -1,32 +1,31 @@
 import MainContentArea from "@/components/shell/main-content-area";
 import TopHeaderBar from "@/components/shell/TopHeaderBar";
-import { MainSidebar } from "@/components/shell/MainSidebar";
 import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 
-// Layout: sidebar icon doc CO DINH ben trai (MainSidebar.tsx, THEM MOI theo
-// yeu cau nguoi dung sau nay) + cot phai gom header ngang CO DINH tren cung
-// (TopHeaderBar.tsx, port layout note.com theo yeu cau nguoi dung TRUOC DO) +
-// noi dung ben duoi. Ca 2 sidebar/header cung ton tai song song (khong cai
-// nao thay the cai nao) - xem comment trong MainSidebar.tsx ve lich su
-// AppSidebar.tsx cu da bi xoa roi gio them lai duoi dang khac.
+// Layout: header ngang CO DINH tren cung (TopHeaderBar.tsx) + noi dung ben
+// duoi. Sidebar doc (MainSidebar.tsx) da BO khoi layout nay theo yeu cau
+// nguoi dung - file component van con, chi khong con duoc dung o day (chua
+// xoa han, phong truong hop can dung lai sau).
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <FeedBootstrap />
-      <div className="flex min-h-0 min-w-0 flex-1">
-        <MainSidebar />
-        {/* min-w-0 BAT BUOC o day - thieu no thi noi dung cuon ngang sau
-            nay (vd HorizontalScroller nhieu the trong ChapterShelf/EditorialFeed)
-            se ep ca cot nay (va header ben trong no) rong ra vuot viewport,
-            day header/nut phia ben phai ra khoi man hinh (khong scrollbar vi
-            body dang overflow-hidden - xem main-content-area.tsx) - dung day
-            trieu chung "mat cum icon header ben phai" da gap. */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <TopHeaderBar />
-          <ChatMessageToastStack />
-          <MainContentArea>{children}</MainContentArea>
-        </div>
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+        {/* Nen luoi caro chung cho TOAN BO trang trong app (truoc day chi ve
+            rieng o HomeHero.tsx cho /home) - fixed + -z-10 de nam co dinh phia
+            sau moi noi dung, khong cuon theo MainContentArea. */}
+        <div
+          className="pointer-events-none fixed inset-0 -z-10"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)",
+            backgroundSize: "3px 3px",
+          }}
+        />
+        <TopHeaderBar />
+        <ChatMessageToastStack />
+        <MainContentArea>{children}</MainContentArea>
       </div>
     </>
   );

@@ -7,7 +7,6 @@ import {
   Camera,
   FileIcon,
   ImageIcon,
-  LoaderCircle,
   LogOut,
   MoreHorizontal,
   Pencil,
@@ -18,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "@/lib/toast/toast-store";
 import { formatMessagePreview } from "@/lib/chat-message-preview";
 import {
@@ -403,7 +403,7 @@ export function GroupInfoPanel({
         >
           {media === null ? (
             <div className="flex justify-center py-6">
-              <LoaderCircle size={18} className="animate-spin text-[#7A8496]" />
+              <LoadingSpinner size={18} className="text-[#7A8496]" />
             </div>
           ) : media.length === 0 ? (
             <EmptyRow icon={ImageIcon} text="Chưa có file/media nào được chia sẻ." />
@@ -438,7 +438,7 @@ export function GroupInfoPanel({
         <Section title="Tin nhắn đã ghim" icon={Pin}>
           {pinned === null ? (
             <div className="flex justify-center py-6">
-              <LoaderCircle size={18} className="animate-spin text-[#7A8496]" />
+              <LoadingSpinner size={18} className="text-[#7A8496]" />
             </div>
           ) : !latestPin ? (
             <EmptyRow icon={Pin} text="Chưa có tin nhắn nào được ghim." />
@@ -507,7 +507,7 @@ export function GroupInfoPanel({
       />
       {leaving && (
         <div className="fixed inset-0 z-40 grid place-items-center bg-white/40">
-          <LoaderCircle size={22} className="animate-spin text-primary" />
+          <LoadingSpinner size={22} className="text-primary" />
         </div>
       )}
     </aside>

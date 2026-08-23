@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { ChevronDown, FileIcon, FolderOpen, LoaderCircle, X } from "lucide-react";
+import { ChevronDown, FileIcon, FolderOpen, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiChatMessage } from "@/lib/api/types";
 import { listMediaAction } from "@/actions/chat/group-info";
 
@@ -86,7 +87,7 @@ export function GroupMediaModal({
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
             {items === null ? (
               <div className="flex justify-center py-10">
-                <LoaderCircle size={20} className="animate-spin text-[#7A8496]" />
+                <LoadingSpinner size={20} className="text-[#7A8496]" />
               </div>
             ) : items.length === 0 ? (
               <p className="py-10 text-center text-[13px] text-[#7A8496]">

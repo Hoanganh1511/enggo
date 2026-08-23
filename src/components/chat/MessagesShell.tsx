@@ -11,6 +11,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ConversationAvatar } from "./ConversationAvatar";
 import { GroupAvatar } from "./GroupAvatar";
 import {
@@ -23,7 +24,6 @@ import {
   FunnelIcon,
   UserRoundPlus,
   ImagePlus,
-  LoaderCircle,
   MessageCircle,
   Mic,
   MoreHorizontal,
@@ -222,6 +222,15 @@ export function MessagesShell() {
   >(null);
   const [activeId, setActiveIdState] = useState<string | null>(null);
   const [messages, setMessages] = useState<ApiChatMessage[] | null>(null);
+  // Do THAT thoi gian API tao tin nhan (sendMessageAction) mat bao lau, keyed
+  // theo id THAT (sau khi server tra ve, khong phai id optimistic tam) - chi
+  // co du lieu cho tin gui trong PHIEN NAY (khong the biet duoc thoi gian gui
+  // cua tin nhan cu tai qua listMessages, vi client khong he do luc do) - xem
+  // icon chan doan o MessageBubble.tsx, CHI hien khi co gia tri that trong
+  // map nay, khong bia so gia cho tin cu.
+  const [sendDurations, setSendDurations] = useState<Record<string, number>>(
+    {},
+  );
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [loadOlderError, setLoadOlderError] = useState(false);
@@ -930,6 +939,16 @@ export function MessagesShell() {
     setMessages((prev) => prev?.filter((m) => m.id !== tempId) ?? prev);
   }
 
+  // Luu lai thoi gian API sendMessageAction mat bao lau cho 1 tin - xem icon
+  // chan doan o MessageBubble.tsx (isMine, chi hien khi CO gia tri that o
+  // day, khong bia so cho tin cu load qua listMessages).
+  function recordSendDuration(messageId: string, durationMs: number) {
+    setSendDurations((prev) => ({
+      ...prev,
+      [messageId]: Math.round(durationMs),
+    }));
+  }
+
   function cancelPendingAttachment() {
     if (pendingAttachment?.kind === "image" && pendingAttachment.previewUrl) {
       URL.revokeObjectURL(pendingAttachment.previewUrl);
@@ -1066,6 +1085,8 @@ export function MessagesShell() {
       setDraft("");
       setReplyTarget(null);
       cancelPendingAttachment();
+      // eslint-disable-next-line react-hooks/purity
+      const sentAt = performance.now();
       try {
         const msg = await sendMessageAction(activeId, {
           type,
@@ -1077,6 +1098,8 @@ export function MessagesShell() {
           durationSeconds: optimistic.durationSeconds ?? undefined,
           replyToId,
         });
+        // eslint-disable-next-line react-hooks/purity
+        recordSendDuration(msg.id, performance.now() - sentAt);
         replaceOptimisticMessage(optimistic.id, msg);
       } catch {
         removeOptimisticMessage(optimistic.id);
@@ -1095,11 +1118,15 @@ export function MessagesShell() {
     );
     setDraft("");
     setReplyTarget(null);
+    // eslint-disable-next-line react-hooks/purity
+    const sentAt = performance.now();
     try {
       const msg = await sendMessageAction(activeId, {
         content: text,
         replyToId,
       });
+      // eslint-disable-next-line react-hooks/purity
+      recordSendDuration(msg.id, performance.now() - sentAt);
       replaceOptimisticMessage(optimistic.id, msg);
     } catch {
       removeOptimisticMessage(optimistic.id);
@@ -1122,6 +1149,7 @@ export function MessagesShell() {
     setMessages((prev) =>
       prev ? appendUniqueMessage(prev, optimistic) : prev,
     );
+    const sentAt = performance.now();
     try {
       const msg = await sendMessageAction(activeId, {
         type: "GIF",
@@ -1129,6 +1157,7 @@ export function MessagesShell() {
         attachmentName: gif.title || "GIF",
         attachmentMimeType: "image/gif",
       });
+      recordSendDuration(msg.id, performance.now() - sentAt);
       replaceOptimisticMessage(optimistic.id, msg);
     } catch {
       removeOptimisticMessage(optimistic.id);
@@ -1806,10 +1835,7 @@ export function MessagesShell() {
                 <div ref={loadOlderSentinelRef} className="h-px" />
                 {loadingOlder && (
                   <div className="mb-4 flex justify-center">
-                    <LoaderCircle
-                      size={16}
-                      className="animate-spin text-slate-400"
-                    />
+                    <LoadingSpinner size={16} className="text-slate-400" />
                   </div>
                 )}
                 {!loadingOlder && loadOlderError && (
@@ -1859,10 +1885,7 @@ export function MessagesShell() {
                   )}
                 {messages === null ? (
                   <div className="flex justify-center py-10">
-                    <LoaderCircle
-                      size={20}
-                      className="animate-spin text-slate-400"
-                    />
+                    <LoadingSpinner size={20} className="text-slate-400" />
                   </div>
                 ) : (
                   <>
@@ -1889,6 +1912,7 @@ export function MessagesShell() {
                           theme={getImmersiveTheme(immersiveThemeId)}
                           isGroup={activeConversation.isGroup}
                           isVoting={!!m.poll && votingPollIds.has(m.poll.id)}
+                          sendDurationMs={sendDurations[m.id]}
                         />
                       );
                     })}
@@ -1896,7 +1920,7 @@ export function MessagesShell() {
                       <div className="mb-2 flex items-center justify-end gap-1 pr-1 mt-1 text-[12px] font-semibold text-slate-500">
                         {lastOwnMessage.id.startsWith("temp-") ? (
                           <>
-                            <LoaderCircle size={13} className="animate-spin" />
+                            <LoadingSpinner size={13} />
                             <span>Đang gửi...</span>
                           </>
                         ) : activeConversation?.isGroup ? (
@@ -2207,7 +2231,7 @@ export function MessagesShell() {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
                   <textarea
                     value={draft}
                     onChange={(e) => {
@@ -2231,14 +2255,17 @@ export function MessagesShell() {
                     rows={1}
                     disabled={recording}
                     onBlur={handleTextareaBlur}
-                    // text-base (16px) BAT BUOC, khong duoc nho hon - iOS
-                    // Safari tu dong ZOOM CA TRANG khi focus vao 1 input/
-                    // textarea co font-size < 16px (co che "tranh nguoi dung
-                    // phai zoom tay de doc chu qua nho", khong tat duoc qua
-                    // CSS, chi tranh duoc bang cach khong bao gio de font
-                    // duoi 16px). Truoc la text-[15px] nen bam vao o soan tin
-                    // se bi zoom man hinh tren iPhone/iPad Safari.
-                    className="max-h-24 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-base text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 sm:px-2.5"
+                    // text-[16px] (KHONG dung class "text-base") BAT BUOC,
+                    // khong duoc nho hon - iOS Safari tu dong ZOOM CA TRANG
+                    // khi focus vao 1 input/textarea co font-size < 16px (co
+                    // che "tranh nguoi dung phai zoom tay de doc chu qua
+                    // nho", khong tat duoc qua CSS, chi tranh duoc bang cach
+                    // khong bao gio de font duoi 16px). Dung gia tri CU THE
+                    // (khong phai class "text-base") vi token --text-base da
+                    // bi doi xuong 14px cho toan app (xem globals.css) - neu
+                    // dung lai class "text-base" o day, o nay se tut theo
+                    // con 14px va bug zoom quay lai.
+                    className="max-h-24 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2.5 text-[16px] text-[#182338] outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-60 sm:px-2.5"
                     placeholder="Nhập tin nhắn..."
                   />
                   <button
@@ -2513,10 +2540,7 @@ function AttachmentPreviewStrip({
         </p>
       </div>
       {attachment.uploading && (
-        <LoaderCircle
-          size={16}
-          className="shrink-0 animate-spin text-slate-400"
-        />
+        <LoadingSpinner size={16} className="text-slate-400" />
       )}
       <button
         type="button"

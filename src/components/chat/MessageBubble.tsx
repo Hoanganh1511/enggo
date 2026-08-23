@@ -7,7 +7,7 @@ import {
   BarChart3,
   Download,
   File as FileIcon,
-  LoaderCircle,
+  Gauge,
   Phone,
   Pin,
   User,
@@ -16,6 +16,7 @@ import {
 import type { ApiChatMessage, ApiConversationUser } from "@/lib/api/types";
 import { formatTimeOnly } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -77,6 +78,12 @@ type MessageBubbleProps = {
   // MessagesShell.tsx) - disable thao tac vote them + hien spinner, tranh
   // bam lien tuc gay optimistic-state chong cheo nhau.
   isVoting: boolean;
+  // Thoi gian THAT (ms) ma sendMessageAction mat de gui DUNG tin nay - do o
+  // client luc gui (xem MessagesShell.tsx, recordSendDuration), CHI co gia
+  // tri cho tin gui trong phien hien tai (khong the biet duoc cho tin nhan cu
+  // tai qua listMessages - client khong he do luc do). undefined = khong hien
+  // icon chan doan, KHONG bia so gia.
+  sendDurationMs?: number;
 };
 
 // Render theo tung MessageType - IMAGE/GIF/FILE/VOICE dung attachment* field,
@@ -107,6 +114,7 @@ export function MessageBubble({
   theme,
   isGroup,
   isVoting,
+  sendDurationMs,
 }: MessageBubbleProps) {
   const [avatarPopoverOpen, setAvatarPopoverOpen] = useState(false);
 
@@ -190,7 +198,12 @@ export function MessageBubble({
               className="block size-30 rounded-2xl object-cover"
             />
             {!message.content && (
-              <span className="absolute right-1.5 bottom-1.5 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+              <span className="absolute right-1.5 bottom-1.5 flex items-center gap-1 rounded-full bg-black/45 px-1.5 py-0.5 text-[10px] text-white">
+                {isMine && sendDurationMs != null && (
+                  <span title={`API gửi tin nhắn mất ${sendDurationMs}ms`}>
+                    <Gauge size={10} className="opacity-80" />
+                  </span>
+                )}
                 {formatTimeOnly(message.createdAt)}
               </span>
             )}
@@ -201,7 +214,15 @@ export function MessageBubble({
             <div className="px-1 pt-1.5 text-[14px] text-ink">
               {message.content}
             </div>
-            <div className="px-1 pt-1 text-right text-[11px] text-slate-400">
+            <div className="flex items-center justify-end gap-1 px-1 pt-1 text-[11px] text-slate-400">
+              {isMine && sendDurationMs != null && (
+                <span
+                  title={`API gửi tin nhắn mất ${sendDurationMs}ms`}
+                  className="cursor-help"
+                >
+                  <Gauge size={10} className="opacity-70" />
+                </span>
+              )}
               {formatTimeOnly(message.createdAt)}
             </div>
           </>
@@ -355,7 +376,7 @@ export function MessageBubble({
           })}
         </div>
         <p className="mt-2.5 flex items-center gap-1.5 text-[11px] text-slate-500">
-          {isVoting && <LoaderCircle size={11} className="animate-spin" />}
+          {isVoting && <LoadingSpinner size={11} />}
           {isVoting
             ? "Đang gửi bình chọn..."
             : `${poll.totalVotes} lượt bình chọn`}
@@ -527,8 +548,19 @@ export function MessageBubble({
 
       {message.type === "TEXT" && !message.isRecalled && isLastInGroup && (
         <p
-          className={cn("mt-1 text-[12px] text-black/80", !isMine && "pl-10.5")}
+          className={cn(
+            "mt-1 flex items-center gap-1 text-[12px] text-black/80",
+            !isMine && "pl-10.5",
+          )}
         >
+          {isMine && sendDurationMs != null && (
+            <span
+              title={`API gửi tin nhắn mất ${sendDurationMs}ms`}
+              className="cursor-help"
+            >
+              <Gauge size={11} className="opacity-70" />
+            </span>
+          )}
           {formatTimeOnly(message.createdAt)}
         </p>
       )}

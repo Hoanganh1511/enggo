@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, LoaderCircle, X } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import MechanicalPanel from "./MechanicalPanel";
 import type { ApiNotification } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
@@ -217,7 +218,7 @@ export function NotificationsPanel({
       <div className="max-h-[420px] overflow-y-auto">
         {items === null ? (
           <div className="flex justify-center py-10">
-            <LoaderCircle size={18} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+            <LoadingSpinner size={18} style={{ color: "var(--ink-faint)" }} />
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">

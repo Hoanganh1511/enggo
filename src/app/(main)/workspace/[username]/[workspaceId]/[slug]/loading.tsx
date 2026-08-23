@@ -1,4 +1,4 @@
-import { LoaderCircle } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { WorkspaceAsideSkeleton } from "@/components/workspaces/WorkspaceAsideSkeleton";
 
 // Suspense boundary tu dong cua Next.js trong luc page.tsx (Server
@@ -21,12 +21,7 @@ export default function Loading() {
           background: "color-mix(in srgb, var(--surface) 82%, transparent)",
         }}
       >
-        <LoaderCircle
-          size={22}
-          strokeWidth={1.9}
-          className="animate-spin"
-          style={{ color: "var(--primary)" }}
-        />
+        <LoadingSpinner size={22} style={{ color: "var(--primary)" }} />
         <span className="text-[11px]" style={{ color: "var(--ink-faint)" }}>
           Đang tải bài viết…
         </span>

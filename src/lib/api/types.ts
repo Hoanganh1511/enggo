@@ -599,3 +599,36 @@ export type ApiMemberLeftEvent = {
   conversationId: string;
   userId: string;
 };
+
+// GL Life Book (/services/gl-life-book/[bookId]) - xem BooksService (backend)
+// cho dinh nghia day du. `content` la Konva scene JSON tu do (stage.toJSON(),
+// xem Phase 3) - null = block con rong, chua mo editor lan nao.
+export type ApiBlock = {
+  id: string;
+  pageId: string;
+  gridX: number;
+  gridY: number;
+  gridW: number;
+  gridH: number;
+  content: Record<string, unknown> | null;
+};
+
+export type ApiPage = {
+  id: string;
+  bookId: string;
+  order: number;
+  blocks: ApiBlock[];
+};
+
+export type ApiBook = {
+  id: string;
+  userId: string;
+  title: string;
+  // Cong tac "mo cua" cho route /services/gl-life-book/[bookId] - mac dinh
+  // false luc editor con dang xay dang do, xem gl-life-book/[bookId]/page.tsx.
+  isOpen: boolean;
+  coverConfig: Record<string, unknown> | null;
+  pages: ApiPage[];
+  createdAt: string;
+  updatedAt: string;
+};

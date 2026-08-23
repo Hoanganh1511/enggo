@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Layers, ListChecks, LoaderCircle, Plus, Search, X } from "lucide-react";
+import { Layers, ListChecks, Plus, Search, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
 import { ArticleCard } from "./ArticleCard";
 import { CreateSeriesModal } from "./CreateSeriesModal";
@@ -196,7 +197,7 @@ export function GroupArticlesSection({
       <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
         {loading ? (
           <div className="flex flex-col items-center gap-2 py-10">
-            <LoaderCircle size={18} strokeWidth={1.9} className="animate-spin" style={{ color: "var(--ink-faint)" }} />
+            <LoadingSpinner size={18} style={{ color: "var(--ink-faint)" }} />
             <p className="text-xs" style={{ color: "var(--ink-faint)" }}>
               Đang tải bài viết...
             </p>

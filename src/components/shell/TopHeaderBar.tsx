@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, MessageCircle, Sparkles, SquarePen } from "lucide-react";
+import { Bell, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
@@ -12,7 +12,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import Logo from "../ui/logo";
-import { HeaderSearch } from "./HeaderSearch";
+import { HeaderNav } from "./HeaderNav";
+import { HeaderSearchModal } from "./HeaderSearchModal";
 import AccountMenu from "./account-menu";
 import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
 import { UpdatesPanel } from "./header-command-panels/UpdatesPanel";
@@ -45,6 +46,7 @@ const TopHeaderBar = () => {
   const { data: session } = useSession();
   const [notifOpen, setNotifOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { hasUnseen: hasUnseenUpdates, markSeen: markUpdatesSeen } =
     useChangelogUnseen();
 
@@ -152,20 +154,35 @@ const TopHeaderBar = () => {
   }
 
   return (
-    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
-      {/* An tren mobile (md:hidden nguoc lai la hidden md:flex) - logo da
-          chuyen sang MainSidebar.tsx cho man hinh hep, tranh header tran
-          ngang (logo+chu "Tree Career" + o tim kiem day du + cum icon cong
-          lai qua rong so voi vien man hinh nho). */}
-      <Link href="/home" className="hidden shrink-0 md:flex">
-        <Logo orientation="horizontal" size={24} />
-      </Link>
-
-      <div className="min-w-0 flex-1 sm:max-w-sm">
-        <HeaderSearch />
+    <header className="grid h-[var(--header-height)] shrink-0 grid-cols-3 items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
+      {/* Cum trai - logo. Mobile: chi icon-only (gon, tranh header tran ngang
+          - logo+chu "Good Life" day du + o tim kiem + cum icon cong lai qua
+          rong tren man hinh hep). Truoc day logo mobile nam o MainSidebar.tsx
+          (rieng, da BO khoi layout) - gio ghep lai vao day de mobile khong
+          mat logo hoan toan. */}
+      <div className="flex min-w-0 items-center justify-self-start">
+        <Link href="/home" className="shrink-0 md:hidden">
+          <Logo orientation="icon-only" size={26} />
+        </Link>
+        <Link href="/home" className="hidden shrink-0 md:flex">
+          <Logo orientation="horizontal" size={24} />
+        </Link>
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+      {/* Giua - 5 muc nav that (khong dropdown mega-menu, xem HeaderNav.tsx)
+          - dung CSS grid 3 cot BANG NHAU cho ca header (thay vi flex-1 2 ben)
+          de cum nav luon can DUNG GIUA man hinh, khong bi lech theo do rong
+          thuc te cua cum logo/icon 2 ben (logo hep hon nhieu so voi cum icon
+          ben phai truoc day gay lech ro). */}
+      <div className="flex justify-center">
+        <HeaderNav />
+      </div>
+
+      <div className="flex shrink-0 items-center justify-self-end gap-1.5 sm:gap-2">
+        <button type="button" title="Tìm kiếm" onClick={() => setSearchOpen(true)}>
+          <HeaderIconChip icon={Search} />
+        </button>
+
         <PopoverRoot
           open={updatesOpen}
           onOpenChange={(next) => {
@@ -226,6 +243,8 @@ const TopHeaderBar = () => {
           Viết bài
         </button> */}
       </div>
+
+      <HeaderSearchModal open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 };
@@ -245,13 +264,13 @@ function HeaderIconChip({
   return (
     <span
       className={cn(
-        "relative flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-primary-soft text-primary transition-colors duration-150 ease-out hover:bg-primary/20",
+        "relative flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-2xl text-primary transition-colors duration-150 ease-out ",
       )}
     >
-      <Icon size={18} strokeWidth={2} />
+      <Icon size={16} strokeWidth={2} />
       {badge && (
         <span
-          className="absolute -top-1 -right-1 grid h-4.5 min-w-4.5 place-items-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-surface"
+          className="absolute -top-1 -right-1 grid h-2 min-w-2 place-items-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-surface"
           style={{ background: "var(--primary)" }}
         >
           {badge}

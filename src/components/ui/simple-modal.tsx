@@ -42,7 +42,12 @@ export function SimpleModal({
         <Dialog.Content
           onOpenAutoFocus={(e) => e.preventDefault()}
           className={cn(
-            "fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border border-border bg-surface shadow-xl focus:outline-none",
+            // sm:min-w-[500px] (khong ap dung duoi sm:) - yeu cau "modal toan
+            // web min-width 500px", nhung ap dung VO DIEU KIEN se ep modal
+            // RONG HON man hinh tren dien thoai (vd 375px) vi w-[calc(100%-3rem)]
+            // duoi day von de modal co giot khoang trong 2 ben tren man hinh
+            // hep - gioi han tu sm: (>=640px) tro len de khong vo layout mobile.
+            "fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-surface shadow-xl focus:outline-none sm:min-w-125",
             maxWidthClassName,
           )}
         >

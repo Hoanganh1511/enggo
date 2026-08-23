@@ -15,12 +15,12 @@ import {
   Highlighter,
   History,
   Layers,
-  LoaderCircle,
   MessageCircle,
   Pencil,
   StickyNote,
   type LucideIcon,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiDocument } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
 import { toast } from "@/lib/toast/toast-store";
@@ -350,12 +350,7 @@ function EditModeToast() {
         color: "var(--ink)",
       }}
     >
-      <LoaderCircle
-        size={13}
-        strokeWidth={2}
-        className="animate-spin"
-        style={{ color: "var(--primary)" }}
-      />
+      <LoadingSpinner size={13} style={{ color: "var(--primary)" }} />
       Đang chuyển mode Edit…
     </motion.div>
   );
@@ -368,12 +363,7 @@ function EditorPreparingStage() {
       animate={{ opacity: 1 }}
       className="flex h-full flex-col items-center justify-center gap-3"
     >
-      <LoaderCircle
-        size={22}
-        strokeWidth={1.9}
-        className="animate-spin"
-        style={{ color: "var(--primary)" }}
-      />
+      <LoadingSpinner size={22} style={{ color: "var(--primary)" }} />
       <span className="text-[11px]" style={{ color: "var(--ink-faint)" }}>
         Đang mở trình soạn thảo…
       </span>

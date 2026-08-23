@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto, Geist_Mono, Noto_Serif } from "next/font/google";
+import { Inter, Geist_Mono, Noto_Serif } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
@@ -8,9 +8,9 @@ import { AuthSessionProvider } from "@/components/providers/session-provider";
 // (Be Vietnam Pro cho PostCard, Work Sans cho breadcrumb Workspace, Patrick
 // Hand cho Profile/Sidebar) da BO theo yeu cau nguoi dung - toan app gio
 // dung dung 1 font Inter, khong con ngoai le.
-const inter = Roboto({
+const inter = Inter({
   variable: "--font-inter",
-  weight: "400",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 

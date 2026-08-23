@@ -7,12 +7,12 @@ import {
   Camera,
   Check,
   ChevronDown,
-  LoaderCircle,
   Search,
   Users,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { toast } from "@/lib/toast/toast-store";
 import { listConversationsAction } from "@/actions/chat/list-conversations";
 import { searchUsersAction } from "@/actions/users/search-users";
@@ -378,7 +378,7 @@ export function CreateGroupModal({
                 <div className="flex flex-col">
                   {recentContacts === null ? (
                     <div className="flex justify-center py-8">
-                      <LoaderCircle size={20} className="animate-spin text-[#7A8496]" />
+                      <LoadingSpinner size={20} className="text-[#7A8496]" />
                     </div>
                   ) : displayList.length === 0 ? (
                     <p className="py-8 text-center text-[13px] text-[#7A8496]">

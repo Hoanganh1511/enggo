@@ -141,7 +141,7 @@ const HomeLayoutShell = ({
   // giua sticky element va vung cuon that su deu lam gay sticky (khong con
   // "dinh" duoc nua) - day chinh la ly do sticky khong hoat dong truoc do.
   return (
-    <div className="flex min-w-0 flex-1 gap-6 px-4 pt-4">
+    <div className="flex min-w-0 flex-1 gap-6">
       {showFilterSidebar && (
         <HomeSidebar
           categoryTree={categoryTree}

@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Check, ChevronDown, LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { Check, ChevronDown, Search, UserPlus, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
 import { listConversationsAction } from "@/actions/chat/list-conversations";
@@ -280,7 +281,7 @@ export function AddGroupMembersModal({
                 <div className="flex flex-col">
                   {recentContacts === null ? (
                     <div className="flex justify-center py-8">
-                      <LoaderCircle size={20} className="animate-spin text-[#7A8496]" />
+                      <LoadingSpinner size={20} className="text-[#7A8496]" />
                     </div>
                   ) : displayList.length === 0 ? (
                     <p className="py-8 text-center text-[13px] text-[#7A8496]">

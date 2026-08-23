@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LoaderCircle, Search as SearchIcon, X } from "lucide-react";
+import { Search as SearchIcon, X } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiMessageSearchResult } from "@/lib/api/types";
 import { searchMessagesAction } from "@/actions/chat/search-messages";
 import { renderHighlightedSnippet } from "@/lib/chat-search-highlight";
@@ -146,10 +147,7 @@ export function MessageSearchDrawer({
                 </p>
               ) : loading ? (
                 <div className="flex h-32 items-center justify-center">
-                  <LoaderCircle
-                    size={20}
-                    className="animate-spin text-slate-400"
-                  />
+                  <LoadingSpinner size={20} className="text-slate-400" />
                 </div>
               ) : items && items.length > 0 ? (
                 <>
@@ -179,10 +177,7 @@ export function MessageSearchDrawer({
                       className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 py-2.5 text-[13px] font-medium text-slate-600 transition-colors duration-150 ease-out hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {loadingMore ? (
-                        <LoaderCircle
-                          size={14}
-                          className="animate-spin text-slate-400"
-                        />
+                        <LoadingSpinner size={14} className="text-slate-400" />
                       ) : null}
                       {loadingMore ? "Đang tải..." : "Xem thêm"}
                     </button>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { LoaderCircle, Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiMessageSearchResult } from "@/lib/api/types";
 import { searchMessagesAction } from "@/actions/chat/search-messages";
 import { renderHighlightedSnippet } from "@/lib/chat-search-highlight";
@@ -79,7 +80,7 @@ export function MessageSearchPopover({
         </p>
       ) : loading ? (
         <div className="flex h-32 items-center justify-center">
-          <LoaderCircle size={18} className="animate-spin text-slate-400" />
+          <LoadingSpinner size={18} className="text-slate-400" />
         </div>
       ) : items && items.length > 0 ? (
         <>

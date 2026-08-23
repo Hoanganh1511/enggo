@@ -8,9 +8,9 @@ import {
   Clock3,
   Eye,
   FileText,
-  LoaderCircle,
   Network,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import type { ApiDocument, ApiDocumentSummary, ApiKnowledgeGroup } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format-time";
 import { formatCompact } from "@/lib/format-number";
@@ -35,11 +35,7 @@ export function ArticleOverview({
   if (!doc) {
     return (
       <div className="flex h-40 items-center justify-center">
-        <LoaderCircle
-          size={16}
-          className="animate-spin"
-          style={{ color: "var(--ink-faint)" }}
-        />
+        <LoadingSpinner size={16} style={{ color: "var(--ink-faint)" }} />
       </div>
     );
   }
