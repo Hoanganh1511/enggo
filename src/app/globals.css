@@ -167,12 +167,44 @@
   }
 }
 
+/* Bo CSS var RIENG cho khu vuc Home Dashboard + Articles Hub (xem
+   (feed)/layout.tsx, docs/home-dashboard-style-guide.md muc 23) - port dung
+   tu 2 source demo, KHONG khai bao o :root vi se GHI DE token toan app cung
+   ten (vd --background/--border/--primary o tren da co gia tri KHAC). Khai
+   bao rieng tren class .dashboard-scope (goc o (feed)/layout.tsx) de chi
+   cascade xuong sidebar + /home + /articles, khong ro ri ra phan con lai cua
+   app. Component moi trong khu vuc nay dung bg-[var(--background)] v.v. thay
+   vi hex thang, doi mau = sua 1 cho o day. */
+.dashboard-scope {
+  --background: #fafaf9;
+  --surface: #ffffff;
+  --surface-subtle: #f7f7f5;
+  --foreground: #172033;
+  --foreground-muted: #667085;
+  --muted: #98a2b3;
+  --border: #e7e9ee;
+  --primary: #2563eb;
+  --primary-soft: #eff6ff;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.06);
+  --shadow-hover: 0 8px 24px rgba(16, 24, 40, 0.08);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-active: var(--active);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-plex-mono);
   --font-mono: var(--font-geist-mono);
+  /* Rieng cho NOI DUNG (bai/tai lieu/binh luan/mo ta...), doi lap voi
+     --font-sans mac dinh (danh cho UI/dieu huong: nut, tab, sidebar, nhan) -
+     sinh class tien ich "font-content" (quy uoc Tailwind v4: khoa --font-*
+     trong @theme tu dong co utility cung ten). Ap truc tiep tren tung cum
+     text noi dung, xem cac component da doi (PostCard, post-bodies,
+     ArticleDetailPanel, DocsMarkdown, DiaryEntrySlides, ArticleComments...). */
+  --font-content: var(--font-manrope);
 
   /* Doi mac dinh cua Tailwind (1rem/16px) xuong 14px theo yeu cau nguoi
      dung - CHI anh huong noi nao dung class "text-base" that su (khong dung

@@ -7,6 +7,7 @@ import { ArrowRight, Check, X } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import MechanicalPanel from "./MechanicalPanel";
 import type { ApiNotification } from "@/lib/api/types";
+import { notificationText, notificationHref } from "@/lib/api/notification-presenter";
 import { formatRelativeTime } from "@/lib/format-time";
 import { listNotificationsAction } from "@/actions/notifications/list-notifications";
 import { getUnreadNotificationCountAction } from "@/actions/notifications/get-unread-count";
@@ -22,30 +23,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "requests", label: "Yêu cầu" },
 ];
 
-function notificationText(n: ApiNotification): string {
-  const actorName = n.actor?.name ?? "Một người dùng";
-  const groupName = n.group?.name ?? "1 nhóm kiến thức";
-  switch (n.type) {
-    case "GROUP_COLLAB_REQUESTED":
-      return `${actorName} muốn cộng tác vào "${groupName}"`;
-    case "GROUP_COLLAB_APPROVED":
-      return `Yêu cầu cộng tác vào "${groupName}" đã được duyệt`;
-    case "GROUP_COLLAB_REJECTED":
-      return `Yêu cầu cộng tác vào "${groupName}" đã bị từ chối`;
-    case "FOLLOW":
-      return `${actorName} đã theo dõi bạn`;
-    default:
-      return "Bạn có 1 thông báo mới";
-  }
-}
-
-function notificationHref(n: ApiNotification): string | undefined {
-  if (n.type === "FOLLOW") {
-    return n.actor?.username ? `/u/${n.actor.username}` : undefined;
-  }
-  if (!n.group || !n.group.ownerUsername) return undefined;
-  return `/workspace/${n.group.ownerUsername}/${n.group.workspaceId}`;
-}
 
 // Dropdown thong bao THAT (thay EmptyPanelState placeholder cu) - phuc vu
 // cac loai lien quan yeu cau cong tac nhom kien thuc va follow (xem

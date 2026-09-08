@@ -215,6 +215,27 @@ export type ApiGroupProgress = {
   currentStreak: number;
 };
 
+// GL Daily Diary - chi 1 admin duy nhat dung (xem AdminGuard o backend).
+// Xem DiaryService.topicToApi/entryToApi.
+export type ApiDiaryTopic = {
+  id: string;
+  name: string;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiDiaryEntry = {
+  id: string;
+  topicId: string;
+  title: string;
+  content: string;
+  // "YYYY-MM-DD" - chi ngay, khong gio/timezone (xem DiaryEntry.entryDate).
+  entryDate: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ApiWorkspaceWithGroups = ApiWorkspace & {
   groups: ApiKnowledgeGroup[];
 };

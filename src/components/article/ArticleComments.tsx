@@ -64,7 +64,10 @@ function CommentItem({
         )}
       />
       <div className="min-w-0 flex-1">
-        <div className="rounded-lg bg-surface-muted px-3 py-2">
+        {/* font-content: ten nguoi binh luan + noi dung binh luan la NOI
+            DUNG, dung Manrope - nut Tra loi/Thich/form gui ben duoi la UI,
+            KHONG boc. */}
+        <div className="font-content rounded-lg bg-surface-muted px-3 py-2">
           <p className="text-sm font-semibold text-ink">{comment.author.name}</p>
           <p
             className={cn(
@@ -186,7 +189,7 @@ export function ArticleComments({
 
   return (
     <section id="comments" className="flex scroll-mt-4 flex-col gap-4">
-      <h2 className="text-lg font-bold tracking-tight text-ink">
+      <h2 className="font-content text-lg font-bold tracking-tight text-ink">
         Bình luận ({total})
       </h2>
 

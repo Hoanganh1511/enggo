@@ -61,10 +61,15 @@ export function searchUsers(
   return apiFetch<UserSearchPage>(`/users/search?${params.toString()}`);
 }
 
-// Gate cho WelcomeOnboardingModal.tsx tren /home - xem UserService.getSelf
-// o backend.
-export function getSelfStatus(): Promise<{ onboardedAt: string | null }> {
-  return apiFetch<{ onboardedAt: string | null }>("/users/me");
+// Gate cho WelcomeOnboardingModal.tsx tren /home, isAdmin gate cho
+// DailyDiaryAccessModal.tsx - xem UserService.getSelf o backend.
+export function getSelfStatus(): Promise<{
+  onboardedAt: string | null;
+  isAdmin: boolean;
+}> {
+  return apiFetch<{ onboardedAt: string | null; isAdmin: boolean }>(
+    "/users/me",
+  );
 }
 
 // Hoan tat/bo qua modal chao mung - CO firstChapterTitle se tao that 1

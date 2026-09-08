@@ -159,7 +159,7 @@ export function getOverviewExtensions(): Extensions {
 // Prose gon cho box tong quan (nho hon POST_PROSE_CLASS, chi can style cho
 // dung 4 loai duoc phep: bold/italic/bulletList/orderedList).
 export const OVERVIEW_PROSE_CLASS =
-  "text-[13px] leading-relaxed focus:outline-none " +
+  "font-content text-[13px] leading-relaxed focus:outline-none " +
   "[&_p]:my-1 [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 " +
   "[&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 " +
   "[&_strong]:font-semibold [&_em]:italic " +
@@ -168,7 +168,9 @@ export const OVERVIEW_PROSE_CLASS =
 // Class prose dung chung - style cho moi loai block (heading/list/table/
 // callout/code/image...). Ap cho ca EditorContent (soan) va vung render doc.
 export const POST_PROSE_CLASS =
-  "max-w-none text-[15px] leading-[1.75] text-ink focus:outline-none " +
+  // font-content: noi dung tai lieu/bai viet dung Manrope thay --font-sans
+  // mac dinh (UI/dieu huong) - [&_code]/[&_pre] ben duoi van font-mono rieng.
+  "font-content max-w-none text-[15px] leading-[1.75] text-ink focus:outline-none " +
   "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:text-[30px] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:tracking-tight " +
   "[&_h2]:mt-7 [&_h2]:mb-2.5 [&_h2]:text-[23px] [&_h2]:font-bold [&_h2]:leading-snug " +
   "[&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-[18px] [&_h3]:font-semibold " +

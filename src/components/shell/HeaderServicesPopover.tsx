@@ -31,7 +31,7 @@ export function HeaderServicesPopover() {
         <button
           type="button"
           className={cn(
-            "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap text-ink transition-colors duration-150 ease-out",
+            "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-regular whitespace-nowrap text-ink transition-colors duration-150 ease-out",
             open ? "bg-primary-soft text-primary" : "hover:bg-hover-bg",
           )}
         >

@@ -165,7 +165,11 @@ export function ServicesShell() {
             </button>
           </div>
         ) : (
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          // Xep DOC, moi dich vu 1 hang full-width (khong con luoi nhieu
+          // cot) - the nay giu dung ty le/khoang cach nhu anh mau (icon lon,
+          // decor ro, cum 3 nut rieng ben duoi), nhoi vao 1 o luoi hep truoc
+          // day lam vo het bo cuc.
+          <div className="mt-6 flex flex-col gap-8">
             {filteredServices.map((service) => (
               <ServiceCard
                 key={service.slug}

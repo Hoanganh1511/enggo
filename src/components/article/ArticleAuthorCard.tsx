@@ -68,7 +68,7 @@ export function ArticleAuthorCard({
             className="size-12 rounded-full object-cover"
           />
         </Link>
-        <div className="min-w-0 flex-1">
+        <div className="font-content min-w-0 flex-1">
           <Link
             href={`/u/${author.username}`}
             className="flex items-center gap-1 hover:underline"
@@ -102,7 +102,9 @@ export function ArticleAuthorCard({
           </button>
         )}
       </div>
-      {bio && <p className="text-sm leading-relaxed text-ink-muted">{bio}</p>}
+      {bio && (
+        <p className="font-content text-sm leading-relaxed text-ink-muted">{bio}</p>
+      )}
     </div>
   );
 }

@@ -1,41 +1,33 @@
-import { Suspense } from "react";
-import HomeLayoutShell from "@/components/discover/HomeLayoutShell";
-import HomeLayoutShellSkeleton from "@/components/discover/HomeLayoutShellSkeleton";
-import { getFeedCategoryTree } from "@/lib/api/feed-categories";
+import { HomeDashboardSidebar } from "@/components/discover/home-dashboard/HomeDashboardSidebar";
 
-// Route group "(feed)" - KHONG xuat hien trong URL (/home, /series, /contest
-// giu nguyen), chi gom 3 trang DANH SACH nay duoi 1 layout.tsx sidebar
-// DUY NHAT (tranh sidebar remount khi chuyen qua lai giua 3 trang, xem
-// quyet dinh 2026-08-03). Cac trang CHI TIET (/series/[slug], /contest/[slug])
-// CO Y DAT NGOAI group nay (xem series/[slug]/page.tsx, contest/[slug]/page.tsx
-// o (main)/ truc tiep, khong phai (main)/(feed)/) - detail KHONG can sidebar
-// bo loc linh vuc nghe nghiep (bo loc chi co nghia voi danh sach), day la
-// cach dung route group de 1 phan cua "series"/"contest" co sidebar, phan
-// con lai (chi tiet) khong co, ma khong can boc/un-boc layout thu cong.
-//
-// Van tu boc <Suspense> rieng (khong await thang getFeedCategoryTree() o
-// day) - giong pattern u/[username]/layout.tsx - de lan dau vao 1 trong 3
-// trang danh sach nay hien skeleton khop hinh dang thay vi spinner rong tran
-// khung cua (main)/loading.tsx.
+// Route group "(feed)" - KHONG xuat hien trong URL. Truoc day boc
+// HomeLayoutShell (sidebar loc linh vuc nghe nghiep, dung chung voi /communities
+// /contest ban cu) - 2 trang danh sach do da khong con ton tai (chi con
+// /home, /articles trong nhom nay). Sidebar dashboard MOI (HomeDashboardSidebar,
+// port tu source rieng - xem docs/home-dashboard-style-guide.md) gio la
+// sidebar CHUNG DUY NHAT cho ca /home VA /articles - dat o day (thay vi rieng
+// tung page/layout con) de KHONG remount khi chuyen qua lai giua 2 trang.
+// className "dashboard-scope" (xem globals.css) nap bo CSS var rieng cua khu
+// vuc nay (--background/--border/--primary...) - tach biet co chu dich khoi
+// token toan app, cascade xuong ca sidebar lan moi trang con.
 export default function FeedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<HomeLayoutShellSkeleton />}>
-      <FeedLayoutContent>{children}</FeedLayoutContent>
-    </Suspense>
-  );
-}
-
-async function FeedLayoutContent({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const categoryTree = await getFeedCategoryTree().catch(() => []);
-  return (
-    <HomeLayoutShell categoryTree={categoryTree}>{children}</HomeLayoutShell>
+    <div className="dashboard-scope">
+      <HomeDashboardSidebar />
+      <main className="relative z-10 py-6 lg:pl-61">
+        {/* Container chung cho BODY cua moi trang trong nhom (feed) - truoc
+            day /home va /articles moi trang tu khai bao container rieng
+            (bi lech nhau: /home co px-10, /articles thi khong) - gio dua ve
+            DUY NHAT 1 cho, page.tsx chi con lo phan grid/noi dung cua rieng
+            no (vd luoi 2 cot cua /home vs 1 cot cua /articles). CHI padding
+            TRAI (theo yeu cau nguoi dung) - noi dung liet sat vien man hinh
+            ben phai, van co khoang cach voi sidebar ben trai. */}
+        <div className="mx-auto w-full pl-10">{children}</div>
+      </main>
+    </div>
   );
 }

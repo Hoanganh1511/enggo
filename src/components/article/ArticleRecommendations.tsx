@@ -22,7 +22,7 @@ function RecommendationRow({ item }: { item: PostSummary }) {
           />
         )}
       </div>
-      <div className="min-w-0 flex-1 py-1">
+      <div className="font-content min-w-0 flex-1 py-1">
         <p className="line-clamp-2 text-sm font-medium text-ink">
           {item.title}
         </p>
@@ -49,7 +49,7 @@ export function ArticleRecommendations({
     <div className="flex flex-col gap-8">
       {moreFromAuthor.length > 0 && (
         <section>
-          <h2 className="mb-3 text-base font-bold tracking-tight text-ink">
+          <h2 className="font-content mb-3 text-base font-bold tracking-tight text-ink">
             Bài viết gần đây của tác giả
           </h2>
           <div className="flex flex-col gap-1">
@@ -62,7 +62,7 @@ export function ArticleRecommendations({
 
       {related.length > 0 && (
         <section>
-          <h2 className="mb-3 text-base font-bold tracking-tight text-ink">
+          <h2 className="font-content mb-3 text-base font-bold tracking-tight text-ink">
             Bài viết liên quan
           </h2>
           <div className="flex flex-col gap-1">

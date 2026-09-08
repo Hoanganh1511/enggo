@@ -18,6 +18,16 @@ export default auth((req) => {
   }
 });
 
+// Truoc day chi loai tru ".png$" - anh next/image local (vd
+// public/assets/images/**) duoc optimizer FETCH LAI qua chinh app (khong doc
+// thang tu filesystem), request do lai di qua proxy nay. File .jpg/.jpeg/...
+// khong khop ".png$" nen bi redirect ve /login (tra ve HTML) thay vi bytes
+// anh that -> optimizer bao loi "not a valid image", anh khong hien (bug da
+// gap voi feature-ai/work/life.jpg). Loai tru CA CUM duoi anh/font/media pho
+// bien thay vi chi rieng .png, tranh lap lai bug nay voi dinh dang khac sau
+// nay.
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|.*\\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|mp4|webm)$).*)",
+  ],
 };

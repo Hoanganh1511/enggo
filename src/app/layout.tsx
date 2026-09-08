@@ -1,17 +1,36 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono, Noto_Serif } from "next/font/google";
+import {
+  IBM_Plex_Mono,
+  Manrope,
+  Geist_Mono,
+  Noto_Serif,
+  Playfair_Display,
+} from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 
-// Font chinh toan app - xem globals.css --font-sans. Cac font rieng
-// (Be Vietnam Pro cho PostCard, Work Sans cho breadcrumb Workspace, Patrick
-// Hand cho Profile/Sidebar) da BO theo yeu cau nguoi dung - toan app gio
-// dung dung 1 font Inter, khong con ngoai le.
-const inter = Inter({
-  variable: "--font-inter",
+// Font chinh toan app - xem globals.css --font-sans. Doi tu Inter sang IBM
+// Plex Mono theo yeu cau nguoi dung (ap dung cho MOI text thuong cua app,
+// khong chi code/label) - co san subset "vietnamese" rieng (khac Playfair/DM
+// Sans ben duoi), nen dau tieng Viet van hien dung ma khong can fallback
+// latin-ext.
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
+  subsets: ["vietnamese", "latin"],
+});
+
+// Font cho NOI DUNG (khac component/dieu huong) - tieu de bai/tai lieu, than
+// bai, mo ta, binh luan, cac thong tin hien thi... noi chung MOI cho khong
+// phai nut/nhan/tab/sidebar dieu huong deu dung Manrope thay vi
+// --font-plex-mono (font chinh, chi danh cho UI/dieu huong). Ap qua class
+// tien ich .font-content (xem globals.css --font-content) tren tung cum text
+// noi dung, KHONG doi --font-sans mac dinh (se keo theo ca UI).
+const manrope = Manrope({
+  variable: "--font-manrope",
+  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["vietnamese", "latin"],
 });
 
 const geistMono = Geist_Mono({
@@ -34,6 +53,20 @@ const notoSerifBook = Noto_Serif({
   subsets: ["vietnamese", "latin"],
 });
 
+// Rieng cho trang chi tiet GL Life Book (services/life-book/page.tsx, cum
+// "từng trang một") - font nhan manh mang tinh chat "tap chi/hoai niem"
+// rieng cua trang do, KHONG lien quan --font-sans/--font-content chung.
+const playfairDisplay = Playfair_Display({
+  variable: "--font-playfair",
+  weight: ["600"],
+  style: ["italic"],
+  // Playfair Display KHONG co subset "vietnamese" rieng tren Google Fonts
+  // (khac Noto Serif/DM Sans o tren) - dung "latin-ext" (Latin Extended,
+  // bao gom phan lon to hop dau tieng Viet) de van co glyph day du cho cum
+  // "cả cuộc đời" thay vi rong subset.
+  subsets: ["latin", "latin-ext"],
+});
+
 export const metadata: Metadata = {
   title: "Career Tree",
   description: "Created by Tuấn Anh",
@@ -53,7 +86,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${geistMono.variable} ${notoSerifBook.variable} h-full antialiased`}
+      className={`${ibmPlexMono.variable} ${manrope.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
       <body className="relative flex h-dvh flex-col overflow-hidden">
         {/* <div className="absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(125%_125%_at_50%_10%,_#fff_40%,_#475569_100%)]" /> */}

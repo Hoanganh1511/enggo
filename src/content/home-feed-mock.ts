@@ -63,7 +63,17 @@ type PostCommon = {
 export type ImageAsset = { url: string; alt: string };
 
 export type Post =
-  | (PostCommon & { kind: "text"; content: string })
+  | (PostCommon & {
+      kind: "text";
+      content: string;
+      // MOI (Composer.tsx Giai doan 1) - JSON Tiptap (editor.getJSON()) cho
+      // noi dung co dinh dang day du. `content` o tren VAN la excerpt phang
+      // (dung cho feed card/getPostTitle/ToC cu) - richContent la nguon THAT
+      // de render bai doc (xem ArticleBody.tsx). Bai cu truoc Giai doan 1
+      // khong co field nay, ArticleBody tu fallback ve `content` tho.
+      richContent?: Record<string, unknown>;
+      tags?: string[];
+    })
   | (PostCommon & { kind: "image"; content?: string; image: ImageAsset })
   | (PostCommon & { kind: "gallery"; content?: string; images: ImageAsset[] })
   | (PostCommon & {

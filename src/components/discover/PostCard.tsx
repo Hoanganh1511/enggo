@@ -107,47 +107,53 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
           {menu}
         </div>
 
-        {post.topic && <TopicBreadcrumb topic={post.topic} />}
+        {/* font-content: vung NOI DUNG (breadcrumb chu de/than bai/thong tin
+            tac gia+thoi gian) dung Manrope, khac --font-sans mac dinh (Plex
+            Mono, danh cho UI/dieu huong - menu 3 cham/ActionBar ben ngoai
+            vung nay khong boc). */}
+        <div className="font-content contents">
+          {post.topic && <TopicBreadcrumb topic={post.topic} />}
 
-        <PostBody post={post} />
+          <PostBody post={post} />
 
-        {/* Cum thong tin nguoi dang len TRUOC action bar (Like/Comment/
-            Repost/Save) - dao thu tu theo yeu cau, nhan dien "ai dang" truoc
-            khi tuong tac thay vi nguoc lai nhu ban cu. */}
-        <div className="flex min-w-0 items-center gap-1.5 border-t border-border pt-3">
-          <Link href={`/u/${post.author.username}`} className="shrink-0">
-            <Image
-              src={post.author.avatarUrl}
-              alt={post.author.name}
-              width={24}
-              height={24}
-              className="size-6 shrink-0 rounded-full object-cover"
-            />
-          </Link>
-          <Link
-            href={`/u/${post.author.username}`}
-            className="min-w-0 truncate text-sm font-semibold text-ink hover:underline"
-          >
-            {post.author.name}
-          </Link>
-          {post.author.verified && (
-            <BadgeCheck
-              size={11}
-              strokeWidth={2}
-              className="shrink-0 text-primary"
-            />
-          )}
-          <span className="text-ink-faint">·</span>
-          {/* Thoi gian dang lam link toi trang chi tiet bai viet (/p/[id]) -
-              quy uoc pho bien (Twitter/Facebook) de "chi tiet" co 1 diem vao
-              ro rang ma khong phai boc ca <article> trong 1 <Link> (se xung
-              dot voi menu/ActionBar la nut/link long ben trong). */}
-          <Link
-            href={`/p/${post.id}`}
-            className="shrink-0 text-xs text-ink-faint hover:underline"
-          >
-            {formatRelativeTime(post.createdAt)}
-          </Link>
+          {/* Cum thong tin nguoi dang len TRUOC action bar (Like/Comment/
+              Repost/Save) - dao thu tu theo yeu cau, nhan dien "ai dang" truoc
+              khi tuong tac thay vi nguoc lai nhu ban cu. */}
+          <div className="flex min-w-0 items-center gap-1.5 border-t border-border pt-3">
+            <Link href={`/u/${post.author.username}`} className="shrink-0">
+              <Image
+                src={post.author.avatarUrl}
+                alt={post.author.name}
+                width={24}
+                height={24}
+                className="size-6 shrink-0 rounded-full object-cover"
+              />
+            </Link>
+            <Link
+              href={`/u/${post.author.username}`}
+              className="min-w-0 truncate text-sm font-semibold text-ink hover:underline"
+            >
+              {post.author.name}
+            </Link>
+            {post.author.verified && (
+              <BadgeCheck
+                size={11}
+                strokeWidth={2}
+                className="shrink-0 text-primary"
+              />
+            )}
+            <span className="text-ink-faint">·</span>
+            {/* Thoi gian dang lam link toi trang chi tiet bai viet (/p/[id]) -
+                quy uoc pho bien (Twitter/Facebook) de "chi tiet" co 1 diem vao
+                ro rang ma khong phai boc ca <article> trong 1 <Link> (se xung
+                dot voi menu/ActionBar la nut/link long ben trong). */}
+            <Link
+              href={`/p/${post.id}`}
+              className="shrink-0 text-xs text-ink-faint hover:underline"
+            >
+              {formatRelativeTime(post.createdAt)}
+            </Link>
+          </div>
         </div>
 
         <ActionBar post={post} />
@@ -185,7 +191,7 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <div className="font-content flex min-w-0 flex-wrap items-center gap-1.5">
               <Link
                 href={`/u/${post.author.username}`}
                 className="truncate text-base font-semibold text-ink hover:underline"
@@ -219,13 +225,17 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
             {menu}
           </div>
 
-          {post.topic && (
-            <div className="mt-0.5">
-              <TopicBreadcrumb topic={post.topic} />
-            </div>
-          )}
+          {/* font-content: vung NOI DUNG (breadcrumb + than bai) dung
+              Manrope - xem nhanh variant="card" o tren cho quy uoc chi tiet. */}
+          <div className="font-content">
+            {post.topic && (
+              <div className="mt-0.5">
+                <TopicBreadcrumb topic={post.topic} />
+              </div>
+            )}
 
-          <PostBody post={post} />
+            <PostBody post={post} />
+          </div>
           <ActionBar post={post} />
         </div>
       </div>

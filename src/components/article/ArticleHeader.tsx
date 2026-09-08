@@ -32,11 +32,13 @@ export function ArticleHeader({ post }: { post: Post }) {
         </div>
       )}
 
-      <h1 className="text-2xl leading-snug font-bold tracking-tight text-ink sm:text-[28px]">
+      {/* font-content: tieu de + thong tin bai/tac gia la NOI DUNG, dung
+          Manrope thay --font-sans mac dinh (UI/dieu huong). */}
+      <h1 className="font-content text-2xl leading-snug font-bold tracking-tight text-ink sm:text-[28px]">
         {title}
       </h1>
 
-      <div className="flex items-center gap-1.5 text-sm text-ink-faint">
+      <div className="font-content flex items-center gap-1.5 text-sm text-ink-faint">
         <Heart
           size={15}
           strokeWidth={2}
@@ -54,7 +56,7 @@ export function ArticleHeader({ post }: { post: Post }) {
           height={36}
           className="size-9 shrink-0 rounded-full object-cover"
         />
-        <div className="min-w-0 flex-1">
+        <div className="font-content min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <span className="truncate text-sm font-semibold text-ink">
               {post.author.name}

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   BookText,
   Home,
+  LayoutGrid,
   Mail,
   MessageCircle,
   Settings,
@@ -51,6 +52,17 @@ function useSidebarItems(): SidebarItem[] {
       label: "Tin nhắn",
       icon: MessageCircle,
       href: "/messages",
+      match: "startsWith",
+    },
+    // Khop voi popover "Services" tren header (HeaderServicesPopover.tsx,
+    // cung dan toi /services) - truoc day sidebar KHONG co muc nao tro toi
+    // /services nen dang o trang do (vd bam "All Services") khong co icon
+    // nao sang trong rail, lech voi noi dung dang hien that.
+    {
+      key: "services",
+      label: "Dịch vụ",
+      icon: LayoutGrid,
+      href: "/services",
       match: "startsWith",
     },
     // {

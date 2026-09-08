@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Bell, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,7 +42,6 @@ import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 // thi tu sidebar doc sang header ngang), khong viet lai tu dau.
 const TopHeaderBar = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const { data: session } = useSession();
   const [notifOpen, setNotifOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
@@ -142,17 +141,6 @@ const TopHeaderBar = () => {
         : String(unreadCount)
       : undefined;
 
-  // Focus/dieu huong toi composer o trang Home - giu dung logic cu (xem git
-  // history top-header-bar.tsx): dang o /home thi cuon+focus thang, khac thi
-  // dieu huong sang /home?compose=1 (HomeLayoutShell.tsx tu doc param nay).
-  function handleCompose() {
-    if (pathname.startsWith("/home")) {
-      document.getElementById("post-composer-input")?.focus();
-      return;
-    }
-    router.push("/home?compose=1");
-  }
-
   return (
     <header className="grid h-[var(--header-height)] shrink-0 grid-cols-3 items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
       {/* Cum trai - logo. Mobile: chi icon-only (gon, tranh header tran ngang
@@ -234,14 +222,17 @@ const TopHeaderBar = () => {
           </div>
         )}
 
-        {/* <button
-          type="button"
-          onClick={handleCompose}
+        {/* Truoc day dieu huong ve /home?compose=1 (PostComposer inline tren
+            /home, HomeLayoutShell.tsx tu doc param) - /home gio la trang
+            dashboard khac han, khong con composer inline nao. Dieu huong
+            thang toi trang /compose rieng (xem compose/page.tsx). */}
+        <Link
+          href="/compose"
           className="ml-1 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm bg-black/90 px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
         >
           <SquarePen size={15} strokeWidth={2} />
           Viết bài
-        </button> */}
+        </Link>
       </div>
 
       <HeaderSearchModal open={searchOpen} onOpenChange={setSearchOpen} />
