@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
+import { Bell, Menu, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
+import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
@@ -43,6 +44,12 @@ import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 const TopHeaderBar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
+  // /home + /articles co HomeDashboardSidebar rieng - tren mobile, o cho
+  // logo la nut mo drawer sidebar do (hop nhat 2 thanh, xem comment o JSX
+  // ben duoi), khop dung PRIMARY_NAV.match cua HomeDashboardSidebar.tsx.
+  const showDashboardDrawerToggle =
+    pathname === "/home" || pathname === "/articles" || pathname.startsWith("/articles/");
+  const setDashboardDrawerOpen = useDashboardSidebarDrawerStore((s) => s.setOpen);
   const [notifOpen, setNotifOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -142,16 +149,29 @@ const TopHeaderBar = () => {
       : undefined;
 
   return (
-    <header className="grid h-[var(--header-height)] shrink-0 grid-cols-3 items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
+    <header className="grid h-[var(--header-height)] shrink-0 grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
       {/* Cum trai - logo. Mobile: chi icon-only (gon, tranh header tran ngang
           - logo+chu "Good Life" day du + o tim kiem + cum icon cong lai qua
-          rong tren man hinh hep). Truoc day logo mobile nam o MainSidebar.tsx
-          (rieng, da BO khoi layout) - gio ghep lai vao day de mobile khong
-          mat logo hoan toan. */}
+          rong tren man hinh hep). Rieng /home va /articles (co
+          HomeDashboardSidebar) - o cho nay tren mobile la nut hamburger MO
+          DRAWER sidebar thay vi logo, hop nhat 2 thanh ngang rieng truoc day
+          (header + thanh "Mở menu điều hướng" cua HomeDashboardSidebar)
+          thanh 1 thanh duy nhat (xem dashboard-sidebar-drawer-store.ts). */}
       <div className="flex min-w-0 items-center justify-self-start">
-        <Link href="/home" className="shrink-0 md:hidden">
-          <Logo orientation="icon-only" size={26} />
-        </Link>
+        {showDashboardDrawerToggle ? (
+          <button
+            type="button"
+            onClick={() => setDashboardDrawerOpen(true)}
+            aria-label="Mở menu điều hướng"
+            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:bg-hover-bg md:hidden"
+          >
+            <Menu size={20} aria-hidden="true" />
+          </button>
+        ) : (
+          <Link href="/home" className="shrink-0 md:hidden">
+            <Logo orientation="icon-only" size={26} />
+          </Link>
+        )}
         <Link href="/home" className="hidden shrink-0 md:flex">
           <Logo orientation="horizontal" size={24} />
         </Link>

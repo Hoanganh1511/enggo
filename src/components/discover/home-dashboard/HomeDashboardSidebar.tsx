@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -14,7 +13,6 @@ import {
   Hash,
   Home,
   Leaf,
-  Menu,
   MessageCircle,
   Settings,
   Target,
@@ -22,6 +20,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -173,7 +172,11 @@ export function HomeDashboardSidebar() {
   const { data: session } = useSession();
   const username = session?.username;
   const displayName = session?.user?.name ?? "Bạn";
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  // Mobile: nut mo drawer gio nam trong TopHeaderBar.tsx (hop nhat 2 thanh
+  // rieng truoc day thanh 1), chi con doc/dong state qua store chung o day -
+  // xem dashboard-sidebar-drawer-store.ts.
+  const drawerOpen = useDashboardSidebarDrawerStore((s) => s.open);
+  const setDrawerOpen = useDashboardSidebarDrawerStore((s) => s.setOpen);
 
   return (
     <>
@@ -181,24 +184,6 @@ export function HomeDashboardSidebar() {
       <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-[244px] border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
         <SidebarBody pathname={pathname} displayName={displayName} username={username} />
       </aside>
-
-      {/* Mobile - thanh sticky thay cho sidebar da bien mat (dung theo
-          docs/home-dashboard-style-guide.md muc 21: "<1024px: gộp sidebar
-          vào điều hướng mobile"). Bam mo drawer truot tu trai, dung chung
-          SidebarBody voi ban desktop (khong lap code). */}
-      <div className="sticky top-[var(--header-height)] z-20 flex items-center gap-3 border-b border-[#edf0f4] bg-white px-4 py-3 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          aria-label="Mở menu điều hướng"
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-600 hover:bg-slate-50"
-        >
-          <Menu size={20} aria-hidden="true" />
-        </button>
-        <span className="text-[14px] font-semibold text-[#162033]">
-          {displayName}&rsquo;s Knowledge
-        </span>
-      </div>
 
       <AnimatePresence>
         {drawerOpen && (
