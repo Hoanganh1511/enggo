@@ -9,6 +9,7 @@ import { HomeHero } from "@/components/discover/home-dashboard/HomeHero";
 import { HomeArticleSection } from "@/components/discover/home-dashboard/HomeArticleSection";
 import { HomeRoadmapCard } from "@/components/discover/home-dashboard/HomeRoadmapCard";
 import { HomeWeeklyProgressCard } from "@/components/discover/home-dashboard/HomeWeeklyProgressCard";
+import { HomeMobileQuickPanels } from "@/components/discover/home-dashboard/HomeMobileQuickPanels";
 import { HomeQuoteCard } from "@/components/discover/home-dashboard/HomeQuoteCard";
 import { HomeActivityCard } from "@/components/discover/home-dashboard/HomeActivityCard";
 
@@ -49,6 +50,18 @@ export default async function HomeFeedPage() {
   const workspaceHref = username ? `/workspace/${username}` : null;
   const { quote, author } = pickDailyQuote();
 
+  // Dung 1 element cho ca 2 cho (aside desktop + drawer mobile) - render 2
+  // lan (1 lan bi `hidden` qua CSS tren mobile) nhung re, khong fetch gi
+  // them, chi tranh lap props inline 2 noi.
+  const roadmapCard = <HomeRoadmapCard journey={journey} workspaceHref={workspaceHref} />;
+  const weeklyProgressCard = (
+    <HomeWeeklyProgressCard
+      currentStreak={currentGroup?.currentStreak ?? 0}
+      totalStudyDays={currentGroup?.totalStudyDays ?? 0}
+      totalUnderstood={journey.totalUnderstood}
+    />
+  );
+
   return (
     // lg:-mr-10 huy padding phai cua container chung ((feed)/layout.tsx) -
     // rieng /home liet sat vien phai man hinh tu lg tro len (yeu cau rieng,
@@ -63,15 +76,15 @@ export default async function HomeFeedPage() {
       </div>
 
       <aside className="space-y-5">
-        <HomeRoadmapCard journey={journey} workspaceHref={workspaceHref} />
-        <HomeWeeklyProgressCard
-          currentStreak={currentGroup?.currentStreak ?? 0}
-          totalStudyDays={currentGroup?.totalStudyDays ?? 0}
-          totalUnderstood={journey.totalUnderstood}
-        />
+        {/* <1024px: 2 card nay thu gon thanh nut fixed goc duoi-phai + drawer
+            (xem HomeMobileQuickPanels ben duoi), khong hien inline nua. */}
+        <div className="hidden lg:block">{roadmapCard}</div>
+        <div className="hidden lg:block">{weeklyProgressCard}</div>
         <HomeQuoteCard quote={quote} author={author} />
         <HomeActivityCard notifications={notifications.items} />
       </aside>
+
+      <HomeMobileQuickPanels roadmap={roadmapCard} weeklyProgress={weeklyProgressCard} />
     </div>
   );
 }
