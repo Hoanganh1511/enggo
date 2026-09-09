@@ -1,4 +1,4 @@
-import { Node, mergeAttributes, type Extensions } from "@tiptap/react";
+import { Node, mergeAttributes, type Extensions } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TaskList from "@tiptap/extension-task-list";
