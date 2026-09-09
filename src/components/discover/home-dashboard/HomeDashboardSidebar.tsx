@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   Bookmark,
+  Compass,
   Folder,
   GitBranch,
   Hash,
@@ -46,6 +47,13 @@ const PRIMARY_NAV: NavEntry[] = [
     label: "Articles",
     href: "/articles",
     match: (p) => p === "/articles" || p.startsWith("/articles/"),
+  },
+  {
+    kind: "link",
+    icon: Compass,
+    label: "Tracking",
+    href: "/tracking",
+    match: (p) => p.startsWith("/tracking"),
   },
   { kind: "coming-soon", icon: Folder, label: "Collections" },
   { kind: "coming-soon", icon: GitBranch, label: "Roadmap" },

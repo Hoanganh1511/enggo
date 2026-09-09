@@ -68,7 +68,7 @@ export async function addPost(
   category?: string,
 ): Promise<boolean> {
   try {
-    const created = await createPostAction(kind, data, category);
+    const created = await createPostAction(kind, data, { category });
     posts = [created, ...posts];
     notify();
     return true;

@@ -5,7 +5,13 @@ import type { Post } from "@/content/home-feed-mock";
 export async function createPostAction(
   kind: Post["kind"],
   data: Record<string, unknown>,
-  category?: string,
+  opts?: {
+    category?: string;
+    visibility?: "draft" | "public" | "limited";
+    commentsEnabled?: boolean;
+    likesEnabled?: boolean;
+    searchable?: boolean;
+  },
 ) {
-  return createPost(kind, data, category);
+  return createPost(kind, data, opts);
 }

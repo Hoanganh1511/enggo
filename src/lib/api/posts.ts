@@ -46,15 +46,24 @@ export function getPostById(id: string): Promise<Post> {
 
 // `data` la field rieng tung kind (content/title/image/...) - shape khac
 // nhau tuy kind, xem PostComposer.tsx buildPostData(). Kind truyen kebab-case
-// dung nhu Post["kind"], backend tu chuyen sang enum luu DB. `category` la
-// gia tri enum PostCategory (vd "FRONTEND"), optional.
+// dung nhu Post["kind"], backend tu chuyen sang enum luu DB. `opts` la cac
+// cot THAT (khac `data`, xem CreatePostDto o backend) - `category` la gia
+// tri enum PostCategory (vd "FRONTEND"); `visibility`/`commentsEnabled`/
+// `likesEnabled`/`searchable` la cua Compose Giai doan 2, deu optional (khong
+// gui thi backend tu ap @default cua cot).
 export function createPost(
   kind: Post["kind"],
   data: Record<string, unknown>,
-  category?: string,
+  opts?: {
+    category?: string;
+    visibility?: "draft" | "public" | "limited";
+    commentsEnabled?: boolean;
+    likesEnabled?: boolean;
+    searchable?: boolean;
+  },
 ): Promise<Post> {
   return apiFetch<Post>(`/posts`, {
     method: "POST",
-    body: JSON.stringify({ kind, data, category }),
+    body: JSON.stringify({ kind, data, ...opts }),
   });
 }

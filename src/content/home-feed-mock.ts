@@ -58,6 +58,14 @@ type PostCommon = {
   // components/discover/home-feed/post-display.ts (getPostImageUrl) khi kind
   // khong co field anh rieng.
   coverImage?: string;
+  // Compose Giai doan 2 - cot THAT o backend (PostService.toApiPost), sibling
+  // voi cac field tren (KHONG nam trong `data`). Optional vi bai TRUOC
+  // Giai doan 2 (migrate xong moi co cot) van tra ve tu API - phong ho gia
+  // tri thieu thay vi ep kieu bat buoc.
+  visibility?: "draft" | "public" | "limited";
+  commentsEnabled?: boolean;
+  likesEnabled?: boolean;
+  searchable?: boolean;
 };
 
 export type ImageAsset = { url: string; alt: string };

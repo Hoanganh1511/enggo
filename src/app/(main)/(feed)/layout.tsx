@@ -23,14 +23,14 @@ export default function FeedLayout({
             day /home va /articles moi trang tu khai bao container rieng
             (bi lech nhau: /home co px-10, /articles thi khong) - gio dua ve
             DUY NHAT 1 cho, page.tsx chi con lo phan grid/noi dung cua rieng
-            no (vd luoi 2 cot cua /home vs 1 cot cua /articles). Tu `lg` tro
-            len CHI padding TRAI (theo yeu cau nguoi dung) - noi dung liet
-            sat vien man hinh ben phai, van co khoang cach voi sidebar ben
-            trai. Duoi `lg` (sidebar da an, thay bang thanh mobile o
-            HomeDashboardSidebar.tsx) doi sang padding DEU 2 ben, dung spec
-            "<640px: page padding 16px" o docs/home-dashboard-style-guide.md
-            muc 21. */}
-        <div className="mx-auto w-full px-4 sm:px-6 lg:pr-0 lg:pl-10">{children}</div>
+            no. Mac dinh padding DEU 2 ben tu `lg` (dung cho /articles,
+            /tracking) - RIENG /home huy padding phai bang `lg:-mr-10` ngay
+            trong home/page.tsx (yeu cau rieng: /home liet sat vien phai man
+            hinh, cac trang khac thi khong). Duoi `lg` (sidebar da an, thay
+            bang thanh mobile o HomeDashboardSidebar.tsx) padding DEU 2 ben,
+            dung spec "<640px: page padding 16px" o
+            docs/home-dashboard-style-guide.md muc 21. */}
+        <div className="mx-auto w-full px-4 sm:px-6 lg:px-10">{children}</div>
       </main>
     </div>
   );

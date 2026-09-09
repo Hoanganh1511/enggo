@@ -50,7 +50,10 @@ export default async function HomeFeedPage() {
   const { quote, author } = pickDailyQuote();
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    // lg:-mr-10 huy padding phai cua container chung ((feed)/layout.tsx) -
+    // rieng /home liet sat vien phai man hinh tu lg tro len (yeu cau rieng,
+    // khac /articles va /tracking van giu padding deu 2 ben).
+    <div className="grid grid-cols-1 gap-6 lg:-mr-10 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0">
         <HomeHero
           writeHref={writeHref}

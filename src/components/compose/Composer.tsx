@@ -19,9 +19,13 @@ import {
   Check,
   HelpCircle,
   PanelRight,
+  Send,
 } from "lucide-react";
 import { createPostAction } from "@/actions/discover/create-post";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
+import { improvePostDraftAction } from "@/actions/post-assistant/improve-post-draft";
+import { chatAboutPostDraftAction } from "@/actions/post-assistant/chat-about-post-draft";
+import type { ChatMessage } from "@/lib/api/types";
 import {
   KNOWLEDGE_WORLDS,
   slugToCategoryEnum,
@@ -35,7 +39,11 @@ import { getPostExtensions, POST_PROSE_CLASS } from "@/components/workspaces/pos
 import { PostEditorToolbar } from "@/components/workspaces/PostEditorToolbar";
 
 type PublishVisibility = "draft" | "public" | "limited";
-type RightTab = "publish" | "style" | "ai";
+type RightTab = "publish" | "ai";
+
+// 4 goi y nhanh cho "AI hỗ trợ" - nguoi dung van go duoc yeu cau tu do (input
+// ben duoi), day chi la loi tat cho cac yeu cau hay dung nhat.
+const IMPROVE_PRESETS = ["Viết tiếp", "Rút gọn", "Diễn đạt lại", "Sửa lỗi chính tả"];
 
 // Port tu source composer-knowledge-hub-main.zip, doi tong mau toi -> sang
 // (token app). Giai doan 1 (xem plan "Compose — bien cac phan Sap co thanh
@@ -72,6 +80,22 @@ export function Composer() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
   const coverInputRef = useRef<HTMLInputElement>(null);
+  // Compose Giai doan 2 - 3 co that (khac "Đặt bài viết trả phí" van disabled,
+  // xem Toggle o duoi), default true khop @default cua cot o backend.
+  const [commentsEnabled, setCommentsEnabled] = useState(true);
+  const [likesEnabled, setLikesEnabled] = useState(true);
+  const [searchable, setSearchable] = useState(true);
+  // "AI hỗ trợ" (popover trong toolbar) - instruction rong = dung preset da
+  // chon, khac rong = nguoi dung tu go (uu tien hon preset).
+  const [aiPopoverOpen, setAiPopoverOpen] = useState(false);
+  const [aiInstruction, setAiInstruction] = useState("");
+  const [isImproving, setIsImproving] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  // Tab "Trợ lý AI" - chat cuc bo (KHONG luu DB, mat khi roi trang), giong
+  // WorkspaceAiAssistant.tsx.
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatDraft, setChatDraft] = useState("");
+  const [isChatting, setIsChatting] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -145,12 +169,68 @@ export function Composer() {
           coverImage: coverImageUrl || undefined,
           tags,
         },
-        category,
+        { category, visibility, commentsEnabled, likesEnabled, searchable },
       );
       router.push(`/p/${created.id}`);
     } catch {
       setError("Không đăng được bài, thử lại sau.");
       setIsPosting(false);
+    }
+  }
+
+  // "AI hỗ trợ" - goi API that (post-assistant/improve), roi CHEN ket qua vao
+  // editor: neu dang co vung chon THAT thi thay the vung do, khong thi chen
+  // o CUOI tai lieu (khong dung vi tri con tro don thuan vi con tro co the
+  // dang o dau tai lieu, chen cuoi de doan moi luon noi tiep noi dung cu).
+  async function applyImprove(instruction: string) {
+    if (!editor || !instruction.trim() || isImproving) return;
+    setIsImproving(true);
+    setAiError(null);
+    try {
+      const { suggestion } = await improvePostDraftAction(
+        editor.getText(),
+        instruction.trim(),
+      );
+      const chain = editor.chain().focus();
+      if (!editor.state.selection.empty) {
+        chain.deleteSelection().insertContent(suggestion).run();
+      } else {
+        chain.insertContentAt(editor.state.doc.content.size, `\n${suggestion}`).run();
+      }
+      setAiInstruction("");
+      setAiPopoverOpen(false);
+    } catch {
+      setAiError("AI không phản hồi được, thử lại sau.");
+    } finally {
+      setIsImproving(false);
+    }
+  }
+
+  // Tab "Trợ lý AI" - chat nhieu luot, gui kem TOAN BO lich su cuc bo moi lan
+  // (khong luu DB, giong WorkspaceAiAssistant.tsx) + noi dung draft hien tai
+  // (editor.getText()) de AI biet dang gop y cho bai nao.
+  async function sendChat() {
+    if (!editor || !chatDraft.trim() || isChatting) return;
+    const nextMessages: ChatMessage[] = [
+      ...chatMessages,
+      { role: "user", content: chatDraft.trim() },
+    ];
+    setChatMessages(nextMessages);
+    setChatDraft("");
+    setIsChatting(true);
+    try {
+      const { answer } = await chatAboutPostDraftAction(
+        editor.getText(),
+        nextMessages,
+      );
+      setChatMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+    } catch {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Xin lỗi, mình không phản hồi được. Thử lại sau nhé." },
+      ]);
+    } finally {
+      setIsChatting(false);
     }
   }
 
@@ -248,14 +328,63 @@ export function Composer() {
             {editor && !previewMode && (
               <div className="flex items-center gap-1 border-t border-border bg-surface-muted px-3 py-1.5">
                 <PostEditorToolbar editor={editor} bare />
-                <button
-                  type="button"
-                  disabled
-                  title="AI hỗ trợ soạn bài — sắp có"
-                  className="ml-auto flex shrink-0 cursor-not-allowed items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm font-medium text-blue-400"
-                >
-                  <WandSparkles className="h-4 w-4" /> AI hỗ trợ
-                </button>
+                <PopoverRoot open={aiPopoverOpen} onOpenChange={setAiPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="ml-auto flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/60 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-100"
+                    >
+                      <WandSparkles className="h-4 w-4" /> AI hỗ trợ
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    open={aiPopoverOpen}
+                    align="end"
+                    className="z-50 w-80 rounded-lg border border-border bg-surface p-3 shadow-dropdown"
+                  >
+                    <p className="mb-2 text-xs font-semibold text-ink-faint uppercase">
+                      Gợi ý nhanh
+                    </p>
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {IMPROVE_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          disabled={isImproving}
+                          onClick={() => applyImprove(preset)}
+                          className="cursor-pointer rounded-full border border-border px-2.5 py-1 text-xs text-ink-muted transition hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        value={aiInstruction}
+                        onChange={(e) => setAiInstruction(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") applyImprove(aiInstruction);
+                        }}
+                        placeholder="Hoặc tự mô tả yêu cầu..."
+                        className="h-9 flex-1 rounded-lg border border-border bg-background px-2.5 text-sm text-ink outline-none focus:border-blue-300"
+                      />
+                      <button
+                        type="button"
+                        disabled={isImproving || !aiInstruction.trim()}
+                        onClick={() => applyImprove(aiInstruction)}
+                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {isImproving && (
+                      <p className="mt-2 text-xs text-ink-faint">Đang tạo gợi ý...</p>
+                    )}
+                    {aiError && (
+                      <p className="mt-2 text-xs text-danger">{aiError}</p>
+                    )}
+                  </PopoverContent>
+                </PopoverRoot>
               </div>
             )}
 
@@ -301,9 +430,8 @@ export function Composer() {
                 <span>{words} chữ</span>
                 <button
                   type="button"
-                  disabled
-                  title="Trò chuyện với AI — sắp có"
-                  className="cursor-not-allowed rounded-lg bg-blue-50/60 px-3 py-2 text-blue-400"
+                  onClick={() => setRightTab("ai")}
+                  className="cursor-pointer rounded-lg bg-blue-50/60 px-3 py-2 text-blue-600 transition hover:bg-blue-100"
                 >
                   ✦ AI để trao đổi
                 </button>
@@ -333,15 +461,13 @@ export function Composer() {
                   checked={visibility === "draft"}
                   onClick={() => setVisibility("draft")}
                   title="Bản nháp"
-                  desc="Sắp có — hiện đăng luôn thành bài công khai"
-                  disabled
+                  desc="Chỉ mình bạn thấy, không hiện trên feed"
                 />
                 <Radio
                   checked={visibility === "limited"}
                   onClick={() => setVisibility("limited")}
                   title="Công khai giới hạn"
-                  desc="Sắp có"
-                  disabled
+                  desc="Không hiện trên feed/tìm kiếm, ai có link vẫn xem được"
                 />
               </Panel>
 
@@ -455,13 +581,25 @@ export function Composer() {
               </div>
 
               <Panel title="Các cài đặt khác">
-                <Toggle label="Cho phép bình luận" icon={<MessageSquare />} />
-                <Toggle label="Cho phép thích" icon={<Heart />} />
+                <Toggle
+                  label="Cho phép bình luận"
+                  icon={<MessageSquare />}
+                  checked={commentsEnabled}
+                  onClick={() => setCommentsEnabled((v) => !v)}
+                />
+                <Toggle
+                  label="Cho phép thích"
+                  icon={<Heart />}
+                  checked={likesEnabled}
+                  onClick={() => setLikesEnabled((v) => !v)}
+                />
                 <Toggle
                   label="Hiển thị trên công cụ tìm kiếm"
                   icon={<Search />}
+                  checked={searchable}
+                  onClick={() => setSearchable((v) => !v)}
                 />
-                <Toggle label="Đặt bài viết trả phí" icon={<Lock />} />
+                <Toggle label="Đặt bài viết trả phí" icon={<Lock />} disabled />
               </Panel>
 
               <button
@@ -473,8 +611,54 @@ export function Composer() {
               </button>
             </>
           ) : (
-            <Panel title={rightTab === "style" ? "Phong cách" : "Trợ lý AI"}>
-              <p className="text-sm leading-6 text-ink-muted">Sắp có.</p>
+            <Panel title="Trợ lý AI">
+              <div className="flex max-h-[420px] flex-col gap-3">
+                <div className="flex-1 space-y-2.5 overflow-y-auto">
+                  {chatMessages.length === 0 ? (
+                    <p className="text-sm leading-6 text-ink-faint">
+                      Hỏi hoặc nhờ AI góp ý cho bài đang viết — AI sẽ đọc đúng nội
+                      dung hiện tại trong editor mỗi lần bạn gửi.
+                    </p>
+                  ) : (
+                    chatMessages.map((m, i) => (
+                      <div
+                        key={i}
+                        className={`rounded-lg px-3 py-2 text-sm leading-6 ${
+                          m.role === "user"
+                            ? "ml-4 bg-blue-50 text-blue-900"
+                            : "mr-4 bg-surface-muted text-ink"
+                        }`}
+                      >
+                        {m.content}
+                      </div>
+                    ))
+                  )}
+                  {isChatting && (
+                    <p className="mr-4 rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-faint">
+                      Đang trả lời...
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    value={chatDraft}
+                    onChange={(e) => setChatDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") sendChat();
+                    }}
+                    placeholder="Nhắn cho AI..."
+                    className="h-9 flex-1 rounded-lg border border-border bg-background px-2.5 text-sm text-ink outline-none focus:border-blue-300"
+                  />
+                  <button
+                    type="button"
+                    disabled={isChatting || !chatDraft.trim()}
+                    onClick={sendChat}
+                    className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </Panel>
           )}
         </aside>
@@ -507,11 +691,10 @@ function PanelTabs({
 }) {
   const tabs: { key: RightTab; label: string }[] = [
     { key: "publish", label: "Xuất bản" },
-    { key: "style", label: "Phong cách" },
     { key: "ai", label: "Trợ lý AI" },
   ];
   return (
-    <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-surface">
       {tabs.map((tab) => (
         <button
           key={tab.key}
@@ -567,23 +750,49 @@ function Radio({
   );
 }
 
-// Cong tac o "Cac cai dat khac" - CHUA co field that nao o backend cho
-// comments/likes/searchable/paid (Post model khong co cac cot nay) - disabled
-// trung thuc thay vi toggle duoc ma khong luu lai gi (dung tinh than da chot
-// o home-dashboard/articles-hub).
-function Toggle({ label, icon }: { label: string; icon: React.ReactNode }) {
+// Cong tac o "Cac cai dat khac" - Compose Giai doan 2: bind/likes/searchable
+// gio la co THAT (cot that o Post, xem post.service.ts), "Đặt bài viết trả
+// phí" van disabled (can he thong thanh toan, ngoai pham vi).
+function Toggle({
+  label,
+  icon,
+  checked,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  checked?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between py-2" title="Sắp có">
+    <div
+      className="flex items-center justify-between py-2"
+      title={disabled ? "Sắp có" : undefined}
+    >
       <span className="flex items-center gap-2 text-sm text-ink-muted">
         <span className="text-ink-faint">{icon}</span>
         {label}
       </span>
       <button
         type="button"
-        disabled
-        className="h-5 w-9 cursor-not-allowed rounded-full bg-surface-muted p-0.5"
+        disabled={disabled}
+        onClick={onClick}
+        aria-pressed={checked}
+        className={`h-5 w-9 rounded-full p-0.5 transition ${
+          disabled
+            ? "cursor-not-allowed bg-surface-muted"
+            : checked
+              ? "cursor-pointer bg-blue-600"
+              : "cursor-pointer bg-surface-muted"
+        }`}
       >
-        <span className="block h-4 w-4 rounded-full bg-ink-faint" />
+        <span
+          className={`block h-4 w-4 rounded-full bg-white transition-transform ${
+            checked && !disabled ? "translate-x-4" : "translate-x-0"
+          } ${disabled ? "bg-ink-faint" : ""}`}
+        />
       </button>
     </div>
   );
