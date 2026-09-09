@@ -57,7 +57,7 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
             ideas find people.." da co san trong anh (nam ben phai). */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/55 via-40% to-transparent" />
 
-        <div className="relative z-10 flex min-h-[238px] max-w-[520px] flex-col justify-center px-7 py-6 md:px-10">
+        <div className="relative z-10 flex min-h-[238px] max-w-[520px] flex-col justify-center px-5 py-5 sm:px-7 sm:py-6 md:px-10">
           {/* font-content: tieu de + mo ta la NOI DUNG, dung Manrope - 1 nut
               CTA ben duoi la UI, khong boc. */}
           <h1 className="font-content text-[32px] leading-[1.14] font-bold tracking-[-.03em] text-white md:text-[42px]">
@@ -90,7 +90,7 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
         </div>
       </div>
 
-      <div className="grid min-h-[210px] grid-cols-2 grid-rows-2 gap-4 md:min-h-[238px]">
+      <div className="grid min-h-0 grid-cols-1 gap-3 sm:min-h-[210px] sm:grid-cols-2 sm:grid-rows-2 sm:gap-4 md:min-h-[238px]">
         {FEATURE_TILES.map((tile) => (
           <div
             key={tile.image}

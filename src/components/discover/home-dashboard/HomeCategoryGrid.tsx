@@ -49,7 +49,7 @@ export function HomeCategoryGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5" role="group" aria-label="Lọc theo lĩnh vực">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5" role="group" aria-label="Lọc theo lĩnh vực">
       {categoryTree.slice(0, 5).map((g, i) => {
         const Icon = GROUP_ICON[g.icon ?? ""] ?? Sparkles;
         const active = g.slug === activeGroupSlug;

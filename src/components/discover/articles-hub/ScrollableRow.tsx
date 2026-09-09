@@ -67,12 +67,15 @@ export function ScrollableRow({
           overflow-hidden nao chan lai o ancestor), gay tran ngang toan trang
           moi khi 1 hang ScrollableRow nam sat mep phai vung noi dung (dung
           nguyen nhan gay thanh scroll ngang o /articles). */}
+      {/* An duoi md - mobile chu yeu thao tac bang vuot tay (native scroll
+          van hoat dong binh thuong du co nut hay khong), nut tron noi tren
+          the de gay roi mat/che noi dung o man hep. */}
       {canPrev && (
         <button
           type="button"
           onClick={() => scrollByStep(-1)}
           aria-label="Xem trước"
-          className="absolute top-1/2 left-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-hover)] transition hover:scale-105"
+          className="absolute top-1/2 left-2 hidden size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-hover)] transition hover:scale-105 md:flex"
         >
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
@@ -82,7 +85,7 @@ export function ScrollableRow({
           type="button"
           onClick={() => scrollByStep(1)}
           aria-label="Xem tiếp"
-          className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-hover)] transition hover:scale-105"
+          className="absolute top-1/2 right-2 hidden size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] shadow-[var(--shadow-hover)] transition hover:scale-105 md:flex"
         >
           <ChevronRight size={16} aria-hidden="true" />
         </button>

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   Bookmark,
@@ -11,9 +13,11 @@ import {
   Hash,
   Home,
   Leaf,
+  Menu,
   MessageCircle,
   Settings,
   Target,
+  X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,14 +55,25 @@ const PRIMARY_NAV: NavEntry[] = [
   { kind: "coming-soon", icon: Hash, label: "Tags" },
 ];
 
-export function HomeDashboardSidebar() {
-  const pathname = usePathname();
-  const { data: session } = useSession();
-  const username = session?.username;
-  const displayName = session?.user?.name ?? "Bạn";
-
+// Than noi dung sidebar (logo + 2 nhom nav + quote cuoi) - tach rieng vi
+// dung CHUNG giua <aside> desktop va drawer mobile (tranh lap code 2 lan,
+// xem HomeDashboardSidebar duoi). `onNavigate` goi khi bam 1 link THAT
+// (khong goi khi bam muc "coming-soon") - drawer mobile dung de tu dong
+// dong lai sau khi dieu huong, <aside> desktop truyen undefined (khong can
+// dong gi ca).
+function SidebarBody({
+  pathname,
+  displayName,
+  username,
+  onNavigate,
+}: {
+  pathname: string;
+  displayName: string;
+  username: string | undefined;
+  onNavigate?: () => void;
+}) {
   return (
-    <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-[244px] border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
+    <>
       <div className="flex items-center gap-3 px-1">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#eef4ff] text-[#3b82f6]">
           <Leaf size={21} aria-hidden="true" />
@@ -97,6 +112,7 @@ export function HomeDashboardSidebar() {
             <Link
               key={entry.label}
               href={entry.href}
+              onClick={onNavigate}
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[14px] transition",
@@ -116,6 +132,7 @@ export function HomeDashboardSidebar() {
       <nav className="space-y-1" aria-label="Điều hướng phụ">
         <Link
           href="/settings"
+          onClick={onNavigate}
           className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[14px] text-slate-600 hover:bg-slate-50"
         >
           <Settings size={18} aria-hidden="true" />
@@ -123,6 +140,7 @@ export function HomeDashboardSidebar() {
         </Link>
         <Link
           href={username ? `/workspace/${username}` : "/home"}
+          onClick={onNavigate}
           className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[14px] text-slate-600 hover:bg-slate-50"
         >
           <Target size={18} aria-hidden="true" />
@@ -138,6 +156,80 @@ export function HomeDashboardSidebar() {
           ⌁⌁
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function HomeDashboardSidebar() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const username = session?.username;
+  const displayName = session?.user?.name ?? "Bạn";
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop - khong doi gi so voi ban truoc. */}
+      <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-[244px] border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
+        <SidebarBody pathname={pathname} displayName={displayName} username={username} />
+      </aside>
+
+      {/* Mobile - thanh sticky thay cho sidebar da bien mat (dung theo
+          docs/home-dashboard-style-guide.md muc 21: "<1024px: gộp sidebar
+          vào điều hướng mobile"). Bam mo drawer truot tu trai, dung chung
+          SidebarBody voi ban desktop (khong lap code). */}
+      <div className="sticky top-[var(--header-height)] z-20 flex items-center gap-3 border-b border-[#edf0f4] bg-white px-4 py-3 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Mở menu điều hướng"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-600 hover:bg-slate-50"
+        >
+          <Menu size={20} aria-hidden="true" />
+        </button>
+        <span className="text-[14px] font-semibold text-[#162033]">
+          {displayName}&rsquo;s Knowledge
+        </span>
+      </div>
+
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              key="sidebar-drawer-backdrop"
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              onClick={() => setDrawerOpen(false)}
+            />
+            <motion.div
+              key="sidebar-drawer-panel"
+              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white px-5 py-6 shadow-xl lg:hidden"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(false)}
+                aria-label="Đóng menu"
+                className="absolute top-4 right-4 flex size-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+              <SidebarBody
+                pathname={pathname}
+                displayName={displayName}
+                username={username}
+                onNavigate={() => setDrawerOpen(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
