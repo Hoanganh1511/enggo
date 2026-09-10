@@ -37,6 +37,7 @@ import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { improvePostDraftAction } from "@/actions/post-assistant/improve-post-draft";
 import { chatAboutPostDraftAction } from "@/actions/post-assistant/chat-about-post-draft";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
 import type { ChatMessage } from "@/lib/api/types";
 import { formatTimeOnly } from "@/lib/format-time";
 import {
@@ -249,8 +250,13 @@ export function Composer() {
     setIsUploadingCover(true);
     setError(null);
     try {
+      const uploadFile = await convertHeicToJpegIfNeeded(file);
+      if (uploadFile.size > MAX_IMAGE_BYTES) {
+        setError("Ảnh bìa vượt quá 25MB.");
+        return;
+      }
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
       formData.append("kind", "image");
       const uploaded = await uploadPostImageAction(formData);
       setCoverImageUrl(uploaded.url);

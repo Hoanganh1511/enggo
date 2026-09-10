@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { updateProfileAction } from "@/actions/users/update-profile";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
 import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
@@ -40,8 +41,13 @@ export function useProfileImageUpload(
     setIsUploading(true);
     setError(null);
     try {
+      const uploadFile = await convertHeicToJpegIfNeeded(file);
+      if (uploadFile.size > MAX_IMAGE_BYTES) {
+        setError("Ảnh vượt quá 25MB.");
+        return;
+      }
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", uploadFile);
       formData.append("kind", "image");
       const uploaded = await uploadPostImageAction(formData);
       await updateProfileAction({ [field]: uploaded.url });

@@ -13,6 +13,14 @@ export class ApiError extends Error {
   }
 }
 
+// Loi FE tu tao (khac ApiError - loi THAT tu backend) khi can hien 1 thong
+// diep ro rang, DA VIET SAN cho nguoi dung (vd huong dan sua dinh dang anh
+// HEIC khong doc duoc - xem use-profile-image-upload.ts) thay vi de
+// getApiErrorMessage rơi ve fallback chung chung. KHONG dung cho loi he
+// thong bat ngo (TypeError, network loi la...) - nhung loi do van nen hien
+// fallback an toan, khong lo chi tiet ky thuat cho nguoi dung.
+export class UserFacingError extends Error {}
+
 // Trich thong diep loi THAT tu backend (NestJS tra {statusCode, message,
 // error} - message co the la string hoac string[] neu loi validate
 // class-validator co nhieu field) thay vi luon hien 1 cau chung chung
@@ -27,6 +35,7 @@ export function getApiErrorMessage(err: unknown, fallback: string): string {
       return Array.isArray(body.message) ? body.message.join(", ") : body.message;
     }
   }
+  if (err instanceof UserFacingError) return err.message;
   return fallback;
 }
 
