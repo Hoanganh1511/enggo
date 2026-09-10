@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Briefcase, Camera, Loader2, MapPin, Share2, User, X } from "lucide-react";
 import { SimpleModal } from "@/components/ui/simple-modal";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { updateProfileAction } from "@/actions/users/update-profile";
@@ -82,18 +83,18 @@ function IconField({
   );
 }
 
-// Field co icon dau dong nhung la <select> thuc su (Đại từ nhân xưng) - danh
-// sach dung san theo yeu cau nguoi dung ("cho data fix sẵn cũng được"). Neu
-// gia tri hien tai (du lieu cu) khong khop preset nao, TU them no vao dau
-// danh sach thay vi lam mat/doi ngam gia tri that cua nguoi dung.
-function IconSelect({
-  icon: Icon,
+// Đại từ nhân xưng - danh sach dung san theo yeu cau nguoi dung ("cho data
+// fix sẵn cũng được"). Neu gia tri hien tai (du lieu cu) khong khop preset
+// nao, TU them no vao dau danh sach thay vi lam mat/doi ngam gia tri that
+// cua nguoi dung. Dropdown tu ve (SelectMenu, dung chung token/animation voi
+// moi popover khac trong app) thay vi <select> mac dinh cua trinh duyet -
+// theo yeu cau "droplist phai dong bo style".
+function PronounSelect({
   value,
   onChange,
   options,
   placeholder,
 }: {
-  icon: typeof User;
   value: string;
   onChange: (v: string) => void;
   options: string[];
@@ -102,25 +103,13 @@ function IconSelect({
   const fullOptions =
     value && !options.includes(value) ? [value, ...options] : options;
   return (
-    <div className="relative">
-      <Icon
-        size={15}
-        strokeWidth={1.8}
-        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint"
-      />
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${fieldClass} cursor-pointer pl-9`}
-      >
-        <option value="">{placeholder}</option>
-        {fullOptions.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </div>
+    <SelectMenu
+      icon={User}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      options={fullOptions.map((o) => ({ value: o, label: o }))}
+    />
   );
 }
 
@@ -433,8 +422,7 @@ export function EditProfileModal({
         </FieldGroup>
 
         <FieldGroup label="Đại từ nhân xưng">
-          <IconSelect
-            icon={User}
+          <PronounSelect
             value={pronouns}
             onChange={setPronouns}
             options={PRONOUN_OPTIONS}
