@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   AlertTriangle,
   Download,
@@ -83,6 +84,7 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const { update: updateSession } = useSession();
 
   async function handleSave() {
     setStatus("saving");
@@ -117,6 +119,10 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
       const uploaded = await uploadPostImageAction(formData);
       await updateProfileAction({ avatarUrl: uploaded.url });
       setAvatarUrl(uploaded.url);
+      // Dong bo lai session next-auth de header/AccountMenu (doc
+      // session.user.image, khong doc lai profile) cap nhat theo ngay -
+      // xem ghi chu trong auth.ts.
+      await updateSession({ image: uploaded.url });
     } catch (err) {
       setAvatarError(getApiErrorMessage(err, "Tải ảnh thất bại, thử lại sau."));
     } finally {

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Camera, Check, MessageSquare, Plus, Settings, Share2 } from "lucide-react";
 import { createConversationAction } from "@/actions/chat/create-conversation";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
@@ -27,6 +28,7 @@ export function ProfileSidebar() {
   const { profile, following, pending, onToggleFollow, onProfileUpdate } =
     useProfileContext();
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [messaging, setMessaging] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -77,6 +79,12 @@ export function ProfileSidebar() {
       const uploaded = await uploadPostImageAction(formData);
       await updateProfileAction({ [field]: uploaded.url });
       onProfileUpdate({ [field]: uploaded.url });
+      // Avatar (khong phai cover) can dong bo lai ca session next-auth vi
+      // header/AccountMenu doc avatar tu session.user.image, khong doc lai
+      // tu profile - xem ghi chu trong auth.ts.
+      if (field === "avatarUrl") {
+        await updateSession({ image: uploaded.url });
+      }
     } catch (err) {
       setUploadError(getApiErrorMessage(err, "Tải ảnh thất bại, thử lại sau."));
     } finally {
