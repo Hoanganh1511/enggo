@@ -43,8 +43,10 @@ export type UpdateProfileInput = Partial<{
   websiteUrl: string;
   pronouns: string;
   role: string;
-  avatarUrl: string;
-  coverImageUrl: string;
+  // null = XOA anh (khac undefined/khong gui = giu nguyen) - xem
+  // UpdateProfileDto o backend.
+  avatarUrl: string | null;
+  coverImageUrl: string | null;
 }>;
 
 // Redesign Settings - luu that qua PATCH /users/me (bio/location/websiteUrl/
