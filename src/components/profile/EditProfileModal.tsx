@@ -1,34 +1,57 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
-import { Briefcase, Camera, Link2, Loader2, MapPin, Share2, User, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Briefcase, Camera, Loader2, MapPin, Share2, User, X } from "lucide-react";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { updateProfileAction } from "@/actions/users/update-profile";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { VN_PROVINCES } from "@/lib/vn-provinces";
 import { useProfileContext } from "./profile-context";
 
 const fieldClass =
   "h-10 w-full min-w-0 rounded-md border border-input-border bg-input-bg px-3 text-sm text-input-text placeholder:text-input-placeholder transition-colors duration-150 ease-out focus:border-input-focus focus:ring-2 focus:ring-input-focus/15 focus:outline-none";
+const fieldErrorClass = "border-danger focus:border-danger focus:ring-danger/15";
+
+// Khop DUNG regex backend (UpdateProfileDto.username, career-tree-api) - 1
+// nguon duy nhat de tranh 2 phia lech nhau, copy nguyen chuoi thay vi import
+// (2 repo rieng, khong share code duoc).
+const USERNAME_REGEX = /^[a-z0-9._]{3,30}$/;
+// Domain + duong dan tuy chon, KHONG kem protocol (protocol la tien to co
+// dinh "https://" o UI, xem PrefixField) - chi kiem tra so bo phia client,
+// nguon that van la @IsUrl() o backend tren URL day du da ghep san.
+const DOMAIN_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(\/\S*)?$/;
+
+const PRONOUN_OPTIONS = ["Anh/Em", "Anh/Chị", "Anh ấy/Cô ấy", "He/Him", "She/Her", "They/Them"];
+
+function stripProtocol(url: string): string {
+  return url.replace(/^https?:\/\//i, "");
+}
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-// Field co icon dau dong + nut xoa (X) khi co noi dung - dung chung cho
-// Vai trò/Nơi ở/Đại từ nhân xưng/Website (khop mockup nguoi dung gui). Van
-// la input tu do (khong phai select that) - role/pronouns trong DB la
-// String tu do, ep thanh danh sach dung san co rui ro mat du lieu neu gia
-// tri hien tai khong khop preset nao.
+// Field co icon dau dong + nut xoa (X) khi co noi dung - dung cho Vai trò
+// (input tu do, khong phai select - role trong DB la String tu do, ep thanh
+// danh sach dung san co rui ro mat du lieu neu gia tri hien tai khong khop
+// preset nao).
 function IconField({
   icon: Icon,
   value,
   onChange,
   placeholder,
+  maxLength,
+  list,
 }: {
   icon: typeof User;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  maxLength?: number;
+  // id cua 1 <datalist> ben ngoai - goi y KHONG ep chon (xem Nơi ở, danh
+  // sach tinh/thanh VN).
+  list?: string;
 }) {
   return (
     <div className="relative">
@@ -41,6 +64,8 @@ function IconField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
+        list={list}
         className={`${fieldClass} pr-8 pl-9`}
       />
       {value && (
@@ -57,16 +82,94 @@ function IconField({
   );
 }
 
+// Field co icon dau dong nhung la <select> thuc su (Đại từ nhân xưng) - danh
+// sach dung san theo yeu cau nguoi dung ("cho data fix sẵn cũng được"). Neu
+// gia tri hien tai (du lieu cu) khong khop preset nao, TU them no vao dau
+// danh sach thay vi lam mat/doi ngam gia tri that cua nguoi dung.
+function IconSelect({
+  icon: Icon,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  icon: typeof User;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder: string;
+}) {
+  const fullOptions =
+    value && !options.includes(value) ? [value, ...options] : options;
+  return (
+    <div className="relative">
+      <Icon
+        size={15}
+        strokeWidth={1.8}
+        className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint"
+      />
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${fieldClass} cursor-pointer pl-9`}
+      >
+        <option value="">{placeholder}</option>
+        {fullOptions.map((o) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// Field co TIEN TO CO DINH (khong phai icon) - dung cho Website ("https://"),
+// cung tinh than voi o Tên người dùng ("@"). `list` (datalist id) de goi y
+// khong ep chon - dung cho Nơi ở (danh sach tinh/thanh VN).
+function PrefixField({
+  prefix,
+  value,
+  onChange,
+  placeholder,
+  list,
+  error,
+}: {
+  prefix: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  list?: string;
+  error?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="flex h-10 shrink-0 items-center rounded-md border border-input-border bg-input-bg px-3 text-sm text-ink-faint">
+        {prefix}
+      </span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        list={list}
+        className={`${fieldClass} ${error ? fieldErrorClass : ""}`}
+      />
+    </div>
+  );
+}
+
 function FieldGroup({
   label,
   required,
   hint,
+  error,
   counter,
   children,
 }: {
   label: string;
   required?: boolean;
   hint?: string;
+  error?: string;
   counter?: string;
   children: ReactNode;
 }) {
@@ -78,7 +181,9 @@ function FieldGroup({
       </label>
       <div className="mt-1.5">{children}</div>
       <div className="mt-1 flex items-center justify-between gap-2">
-        {hint ? (
+        {error ? (
+          <p className="text-xs leading-5 text-danger">{error}</p>
+        ) : hint ? (
           <p className="text-xs leading-5 text-ink-muted">{hint}</p>
         ) : (
           <span />
@@ -97,12 +202,23 @@ function FieldGroup({
 // nua). Logic luu (updateProfileAction, avatar upload qua
 // useProfileImageUpload) chuyen nguyen tu SettingsSections.tsx ProfileSection
 // (da xoa) sang day, doc/ghi qua useProfileContext() giong ProfileSidebar.
+//
+// Validate: dong bo VOI DUNG rule backend (UpdateProfileDto,
+// career-tree-api) - Tên hiển thị/Tên người dùng bat buoc, username theo
+// dung regex backend, Website phai la domain hop le (backend validate URL
+// day du sau khi FE ghep tien to https://). Loi tu backend (vd trung
+// username) van hien qua getApiErrorMessage o duoi form - validate client
+// chi chan truoc cac loi CHAC CHAN sai, khong thay the validate server.
 export function EditProfileModal({
   open,
   onOpenChange,
+  initialFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // "bio" = tu focus vao o Giới thiệu ngay khi mo (tu link "+ Thêm tiểu sử"
+  // o ProfileSidebar.tsx).
+  initialFocus?: "bio";
 }) {
   const { profile, onProfileUpdate } = useProfileContext();
   const [displayName, setDisplayName] = useState(profile.displayName);
@@ -110,37 +226,57 @@ export function EditProfileModal({
   const [bio, setBio] = useState(profile.bio ?? "");
   const [role, setRole] = useState(profile.role ?? "");
   const [location, setLocation] = useState(profile.location ?? "");
-  const [website, setWebsite] = useState(profile.websiteUrl ?? "");
+  const [website, setWebsite] = useState(() => stripProtocol(profile.websiteUrl ?? ""));
   const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bioRef = useRef<HTMLTextAreaElement>(null);
   const avatarUpload = useProfileImageUpload("avatarUrl", (url) =>
     onProfileUpdate({ avatarUrl: url }),
   );
 
+  useEffect(() => {
+    if (open && initialFocus === "bio") {
+      // rAF: doi SimpleModal (Radix Dialog) mount + auto-focus mac dinh cua
+      // no chay xong roi moi chiem lai focus, khong thi bi giat/ghi de.
+      requestAnimationFrame(() => bioRef.current?.focus());
+    }
+  }, [open, initialFocus]);
+
+  const errors = useMemo(() => {
+    const e: Partial<Record<"displayName" | "username" | "website", string>> = {};
+    if (!displayName.trim()) e.displayName = "Không được để trống.";
+    if (!username.trim()) {
+      e.username = "Không được để trống.";
+    } else if (!USERNAME_REGEX.test(username)) {
+      e.username = "Chỉ gồm chữ thường, số, dấu chấm, gạch dưới (3-30 ký tự).";
+    }
+    if (website.trim() && !DOMAIN_REGEX.test(website.trim())) {
+      e.website = "Đường dẫn không hợp lệ.";
+    }
+    return e;
+  }, [displayName, username, website]);
+  const hasErrors = Object.keys(errors).length > 0;
+
   async function handleSave() {
+    setTouched(true);
+    if (hasErrors) return;
     setStatus("saving");
     setErrorMessage(null);
+    const patch = {
+      displayName: displayName.trim(),
+      username: username.trim(),
+      bio,
+      location,
+      websiteUrl: website.trim() ? `https://${website.trim()}` : "",
+      pronouns,
+      role,
+    };
     try {
-      await updateProfileAction({
-        displayName,
-        username,
-        bio,
-        location,
-        websiteUrl: website,
-        pronouns,
-        role,
-      });
-      onProfileUpdate({
-        displayName,
-        username,
-        bio,
-        location,
-        websiteUrl: website,
-        pronouns,
-        role,
-      });
+      await updateProfileAction(patch);
+      onProfileUpdate(patch);
       setStatus("saved");
       onOpenChange(false);
     } catch (err) {
@@ -171,7 +307,7 @@ export function EditProfileModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={status === "saving"}
+            disabled={status === "saving" || (touched && hasErrors)}
             className="h-9 cursor-pointer rounded-md bg-button-primary-bg px-4 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {status === "saving" ? "Đang lưu..." : "Lưu thay đổi"}
@@ -227,19 +363,25 @@ export function EditProfileModal({
           )}
         </div>
 
-        <FieldGroup label="Tên hiển thị" required counter={`${displayName.length}/50`}>
+        <FieldGroup
+          label="Tên hiển thị"
+          required
+          counter={`${displayName.length}/50`}
+          error={touched ? errors.displayName : undefined}
+        >
           <input
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={50}
-            className={fieldClass}
+            className={`${fieldClass} ${touched && errors.displayName ? fieldErrorClass : ""}`}
           />
         </FieldGroup>
 
         <FieldGroup
           label="Tên người dùng"
           required
-          hint="Chỉ có thể đổi 1 lần mỗi 30 ngày."
+          hint={touched && errors.username ? undefined : "Chỉ có thể đổi 1 lần mỗi 30 ngày."}
+          error={touched ? errors.username : undefined}
         >
           <div className="flex items-center gap-1.5">
             <span className="flex h-10 shrink-0 items-center rounded-md border border-input-border bg-input-bg px-3 text-sm text-ink-faint">
@@ -247,14 +389,16 @@ export function EditProfileModal({
             </span>
             <input
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={fieldClass}
+              onChange={(e) => setUsername(e.target.value.toLowerCase())}
+              maxLength={30}
+              className={`${fieldClass} ${touched && errors.username ? fieldErrorClass : ""}`}
             />
           </div>
         </FieldGroup>
 
         <FieldGroup label="Giới thiệu" counter={`${bio.length}/160`}>
           <textarea
+            ref={bioRef}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={160}
@@ -264,19 +408,48 @@ export function EditProfileModal({
         </FieldGroup>
 
         <FieldGroup label="Vai trò">
-          <IconField icon={Briefcase} value={role} onChange={setRole} placeholder="Software Engineer" />
+          <IconField
+            icon={Briefcase}
+            value={role}
+            onChange={setRole}
+            placeholder="Software Engineer"
+            maxLength={100}
+          />
         </FieldGroup>
 
-        <FieldGroup label="Nơi ở" hint="Chỉ là văn bản tự do, hệ thống không lưu toạ độ.">
-          <IconField icon={MapPin} value={location} onChange={setLocation} placeholder="Hà Nội, Việt Nam" />
+        <FieldGroup label="Nơi ở" hint="Gõ để xem gợi ý tỉnh/thành, hoặc tự nhập.">
+          <IconField
+            icon={MapPin}
+            value={location}
+            onChange={setLocation}
+            placeholder="Hà Nội, Việt Nam"
+            list="vn-provinces"
+          />
+          <datalist id="vn-provinces">
+            {VN_PROVINCES.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
         </FieldGroup>
 
         <FieldGroup label="Đại từ nhân xưng">
-          <IconField icon={User} value={pronouns} onChange={setPronouns} placeholder="anh ấy / cô ấy" />
+          <IconSelect
+            icon={User}
+            value={pronouns}
+            onChange={setPronouns}
+            options={PRONOUN_OPTIONS}
+            placeholder="Chọn đại từ nhân xưng"
+          />
         </FieldGroup>
 
-        <FieldGroup label="Website">
-          <IconField icon={Link2} value={website} onChange={setWebsite} placeholder="https://..." />
+        <FieldGroup label="Website" error={touched ? errors.website : undefined}>
+          <PrefixField
+            prefix="https://"
+            value={website}
+            onChange={setWebsite}
+            placeholder="tenmien.com"
+            error={touched && !!errors.website}
+          />
         </FieldGroup>
 
         <button

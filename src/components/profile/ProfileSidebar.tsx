@@ -35,6 +35,7 @@ export function ProfileSidebar() {
   const [messaging, setMessaging] = useState(false);
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [editFocusField, setEditFocusField] = useState<"bio" | undefined>(undefined);
   const [viewerKind, setViewerKind] = useState<"avatar" | "cover" | null>(null);
   const avatarUpload = useProfileImageUpload("avatarUrl", (url) =>
     onProfileUpdate({ avatarUrl: url }),
@@ -141,7 +142,7 @@ export function ProfileSidebar() {
                   e.stopPropagation();
                   coverInputRef.current?.click();
                 }}
-                className="absolute right-3 bottom-3 flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-black/45 px-3.5 text-[13px] font-medium text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60 lg:right-2 lg:bottom-2 lg:size-7 lg:justify-center lg:px-0"
+                className="absolute right-3 bottom-3 z-10 flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-black/45 px-3.5 text-[13px] font-medium text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60 lg:right-2 lg:bottom-2 lg:size-7 lg:justify-center lg:px-0"
               >
                 <Camera size={14} strokeWidth={2} className="shrink-0" />
                 <span className="lg:hidden">Thay ảnh bìa</span>
@@ -194,7 +195,7 @@ export function ProfileSidebar() {
                     e.stopPropagation();
                     avatarInputRef.current?.click();
                   }}
-                  className="absolute -right-1 -bottom-1 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="absolute -right-1 -bottom-1 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Camera size={11} strokeWidth={2} />
                 </button>
@@ -217,13 +218,17 @@ export function ProfileSidebar() {
             </p>
           ) : (
             profile.isSelf && (
-              <Link
-                href="/settings"
-                className="mt-2 inline-flex items-center gap-1.5 text-[13px] text-ink-faint hover:text-ink hover:underline"
+              <button
+                type="button"
+                onClick={() => {
+                  setEditFocusField("bio");
+                  setEditOpen(true);
+                }}
+                className="mt-2 inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-ink-faint hover:text-ink hover:underline"
               >
                 <Signature size={15} strokeWidth={1.8} className="shrink-0" />
                 Thêm tiểu sử
-              </Link>
+              </button>
             )
           )}
 
@@ -248,7 +253,10 @@ export function ProfileSidebar() {
             <div className="mt-4 flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setEditOpen(true)}
+                onClick={() => {
+                  setEditFocusField(undefined);
+                  setEditOpen(true);
+                }}
                 className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-ink text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
               >
                 <Settings size={14} strokeWidth={2} />
@@ -317,7 +325,11 @@ export function ProfileSidebar() {
       </div>
 
       {profile.isSelf && (
-        <EditProfileModal open={editOpen} onOpenChange={setEditOpen} />
+        <EditProfileModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          initialFocus={editFocusField}
+        />
       )}
 
       <AnimatePresence>
