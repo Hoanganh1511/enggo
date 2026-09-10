@@ -60,7 +60,7 @@ const SettingsShell = ({
                 type="button"
                 onClick={() => setOpenKey(open ? null : item.key)}
                 aria-expanded={open}
-                className="flex h-12 w-full cursor-pointer items-center gap-2.5 px-4 text-left text-sm font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+                className="flex h-12 w-full cursor-pointer items-center gap-2.5 bg-surface-muted px-4 text-left text-sm font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
               >
                 <item.icon size={16} strokeWidth={1.85} className="shrink-0 text-ink-muted" />
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
