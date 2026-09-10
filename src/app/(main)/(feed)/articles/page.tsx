@@ -11,7 +11,6 @@ import {
   type CreatorSummary,
 } from "@/components/discover/articles-hub/CreatorRail";
 import { TopicsRail } from "@/components/discover/articles-hub/TopicsRail";
-import { RecentPostsList } from "@/components/discover/articles-hub/RecentPostsList";
 import { NewestSection } from "@/components/discover/articles-hub/NewestSection";
 import { MOCK_CATEGORY_TREE } from "@/components/discover/articles-hub/category-tree-mock";
 import { Flame, Users } from "lucide-react";
@@ -30,7 +29,7 @@ export default async function ArticlesPage() {
   const [realCategoryTree, rawPosts, mobileProfile] = await Promise.all([
     getFeedCategoryTree().catch(() => []),
     listPostsAction({ limit: 48 }).catch(() => []),
-    // Dong tom tat ho so mobile (RecentPostsList section) - chi fetch khi da
+    // Dong tom tat ho so mobile (MobileProfileSummaryRow) - chi fetch khi da
     // dang nhap, bo qua neu chua co session (khong bia du lieu).
     username ? getProfileByUsername(username).catch(() => null) : Promise.resolve(null),
   ]);
@@ -71,12 +70,7 @@ export default async function ArticlesPage() {
       />
       <TopicsRail categoryTree={categoryTree} />
 
-      {/* Mobile/tablet (<lg): list phang tu du lieu that da fetch. Desktop
-          (lg+): giu nguyen NewestSection nhom-theo-chu-de hien co. */}
-      <RecentPostsList posts={posts} />
-      <div className="hidden lg:block">
-        <NewestSection />
-      </div>
+      <NewestSection />
     </>
   );
 }

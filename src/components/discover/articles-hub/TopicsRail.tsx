@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { Hash } from "lucide-react";
 import type { FeedCategoryGroup } from "@/lib/api/feed-categories";
 import { ScrollableRow } from "./ScrollableRow";
 
@@ -31,49 +30,25 @@ export function TopicsRail({ categoryTree }: { categoryTree: FeedCategoryGroup[]
   }
 
   return (
-    <>
-      {/* Mobile/tablet (<lg) - chip gon (icon + ten + so bai) theo spec
-          §12/§14 style-guide, thay cho the anh nen to (chiem qua nhieu dat
-          tren man hinh nho). Desktop (lg+) giu nguyen the anh hien co. */}
-      <div className="flex gap-2.5 overflow-x-auto pb-1 lg:hidden">
-        {categoryTree.map((group) => (
-          <div
-            key={group.slug}
-            className="flex shrink-0 items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[var(--shadow-card)]"
-          >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[var(--primary-soft)] text-[var(--primary)]">
-              <Hash size={13} strokeWidth={2} />
-            </span>
-            <div className="font-content min-w-0">
-              <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">
-                {group.name}
-              </p>
-              <p className="text-[11px] text-[var(--muted)]">{group.postCount} bài viết</p>
-            </div>
+    <ScrollableRow gapClassName="gap-3">
+      {categoryTree.map((group, i) => (
+        <div
+          key={group.slug}
+          className="group relative h-[86px] min-w-[205px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
+        >
+          <Image
+            src={TILE_IMAGES[i % TILE_IMAGES.length]}
+            alt=""
+            fill
+            className="object-cover transition duration-500 group-hover:scale-[1.02]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/65 via-slate-900/30 to-transparent" />
+          <div className="font-content relative flex h-full flex-col justify-center px-4 text-white">
+            <span className="text-[14px] font-semibold">{group.name}</span>
+            <span className="mt-1 text-[11px] text-white/75">{group.postCount} bài viết</span>
           </div>
-        ))}
-      </div>
-
-      <ScrollableRow gapClassName="gap-3" className="hidden lg:block">
-        {categoryTree.map((group, i) => (
-          <div
-            key={group.slug}
-            className="group relative h-[86px] min-w-[205px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
-          >
-            <Image
-              src={TILE_IMAGES[i % TILE_IMAGES.length]}
-              alt=""
-              fill
-              className="object-cover transition duration-500 group-hover:scale-[1.02]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-900/65 via-slate-900/30 to-transparent" />
-            <div className="font-content relative flex h-full flex-col justify-center px-4 text-white">
-              <span className="text-[14px] font-semibold">{group.name}</span>
-              <span className="mt-1 text-[11px] text-white/75">{group.postCount} bài viết</span>
-            </div>
-          </div>
-        ))}
-      </ScrollableRow>
-    </>
+        </div>
+      ))}
+    </ScrollableRow>
   );
 }
