@@ -19,6 +19,13 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
+      // Anh upload That qua S3 (avatar/cover/anh bai viet - xem
+      // UploadService o backend: `https://{bucket}.s3.{region}.amazonaws.com/...`).
+      // "**" khop moi tang subdomain (bucket.s3.region.amazonaws.com).
+      {
+        protocol: "https",
+        hostname: "**.amazonaws.com",
+      },
     ],
   },
 };

@@ -43,6 +43,8 @@ export type UpdateProfileInput = Partial<{
   websiteUrl: string;
   pronouns: string;
   role: string;
+  avatarUrl: string;
+  coverImageUrl: string;
 }>;
 
 // Redesign Settings - luu that qua PATCH /users/me (bio/location/websiteUrl/

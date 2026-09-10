@@ -15,6 +15,10 @@ export type ProfileContextValue = {
   onToggleFollow: () => void;
   activeHref: string;
   onNavClick: (e: React.MouseEvent<HTMLAnchorElement>, href: string) => void;
+  // Cap nhat cuc bo sau khi doi avatar/cover THAT (PATCH /users/me da luu
+  // xong o backend, day chi lam UI phan anh ngay khong can reload trang) -
+  // xem ProfileSidebar.tsx.
+  onProfileUpdate: (patch: Partial<UserProfileApiShape>) => void;
 };
 
 export const ProfileContext = createContext<ProfileContextValue | null>(null);

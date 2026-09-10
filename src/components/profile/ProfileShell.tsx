@@ -35,6 +35,11 @@ const ProfileShell = ({
   const [following, setFollowing] = useState(profile.isFollowing);
   const [followerCount, setFollowerCount] = useState(profile.followerCount);
   const [pending, setPending] = useState(false);
+  const [overrides, setOverrides] = useState<Partial<UserProfileApiShape>>({});
+
+  function handleProfileUpdate(patch: Partial<UserProfileApiShape>) {
+    setOverrides((o) => ({ ...o, ...patch }));
+  }
 
   const activeHref = isPending && pendingHref ? pendingHref : pathname;
 
@@ -67,7 +72,7 @@ const ProfileShell = ({
     }
   }
 
-  const mergedProfile = { ...profile, followerCount };
+  const mergedProfile = { ...profile, followerCount, ...overrides };
 
   return (
     <ProfileContext.Provider
@@ -78,6 +83,7 @@ const ProfileShell = ({
         onToggleFollow: handleToggleFollow,
         activeHref,
         onNavClick: handleNavClick,
+        onProfileUpdate: handleProfileUpdate,
       }}
     >
       <SectionContainer

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -13,6 +13,7 @@ import {
 import GoogleIcon from "@/components/ui/google-icon";
 import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
 import { updateProfileAction } from "@/actions/users/update-profile";
+import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   SelectField,
@@ -23,9 +24,11 @@ import {
   Toggle,
 } from "./SettingsControls";
 
-// TAT CA cac section duoi day moi la UI - state chi song trong component, CHUA
-// goi API nao de luu. Backend tuong ung (UserProfile/UserPrivacy/UserSecurity/
-// UserPreference/UserLegal) chua ton tai, xem lo trinh trong
+// ProfileSection (UserProfile) da noi backend that (PATCH /users/me) - cac
+// section con lai (Privacy/Preference/Account, tru muc doi mat khau/dang
+// xuat trong Security) van chi la UI, state chi song trong component, CHUA
+// goi API nao de luu. Backend tuong ung (UserPrivacy/UserPreference/
+// UserLegal) chua ton tai, xem lo trinh trong
 // career-tree-api/docs/user-schema-design.md.
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -57,8 +60,10 @@ function SaveBar({
 
 // "Hồ sơ công khai" - MUC DUY NHAT trong Settings da noi PATCH /users/me
 // that (xem update-profile.ts) - luu duoc displayName/username/bio/location/
-// websiteUrl/pronouns/role. "Đổi ảnh" van disabled "Sắp có" (chua co ha
-// tang luu file that - xem quyet dinh trong plan redesign Settings).
+// websiteUrl/pronouns/role/avatarUrl. "Đổi ảnh" upload That qua S3 co san
+// (POST /uploads kind=image, tai dung dung duong Composer.tsx/ProfileSidebar.tsx
+// dang dung) roi luu URL qua PATCH /users/me ngay (khong doi chung voi nut
+// "Lưu thay đổi" cua cac field text, vi anh nen phan hoi ngay khi chon).
 export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [username, setUsername] = useState(profile.username ?? "");
@@ -68,6 +73,10 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [website, setWebsite] = useState(profile.websiteUrl ?? "");
   const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
   const [status, setStatus] = useState<SaveStatus>("idle");
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   async function handleSave() {
     setStatus("saving");
@@ -87,6 +96,27 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
     }
   }
 
+  async function handleAvatarFile(file: File) {
+    if (file.size > 25 * 1024 * 1024) {
+      setAvatarError("Ảnh vượt quá 25MB.");
+      return;
+    }
+    setIsUploadingAvatar(true);
+    setAvatarError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("kind", "image");
+      const uploaded = await uploadPostImageAction(formData);
+      await updateProfileAction({ avatarUrl: uploaded.url });
+      setAvatarUrl(uploaded.url);
+    } catch {
+      setAvatarError("Tải ảnh thất bại, thử lại sau.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
   return (
     <SettingsSection
       bare
@@ -96,20 +126,32 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
       <SettingsRow label="Ảnh đại diện">
         <div className="flex items-center gap-3">
           <Image
-            src={profile.avatarUrl}
+            src={avatarUrl}
             alt=""
             width={48}
             height={48}
             className="size-12 rounded-full object-cover"
           />
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) handleAvatarFile(file);
+            }}
+          />
           <button
             type="button"
-            disabled
-            title="Sắp có"
-            className="h-9 cursor-not-allowed rounded-md border border-border px-3 text-sm font-medium text-ink-faint"
+            disabled={isUploadingAvatar}
+            onClick={() => avatarInputRef.current?.click()}
+            className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Đổi ảnh
+            {isUploadingAvatar ? "Đang tải..." : "Đổi ảnh"}
           </button>
+          {avatarError && <span className="text-xs text-danger">{avatarError}</span>}
         </div>
       </SettingsRow>
 
