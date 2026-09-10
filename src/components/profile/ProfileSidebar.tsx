@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Camera, Check, Loader2, MessageSquare, Plus, Settings, Share2 } from "lucide-react";
+import { Camera, Check, Loader2, MessageSquare, Plus, Settings, Share2, Signature } from "lucide-react";
 import { createConversationAction } from "@/actions/chat/create-conversation";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { formatCompact } from "@/lib/format-number";
 import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
+import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import { useProfileContext } from "./profile-context";
 
 // Sidebar profile - redesign theo mockup "WriteHub" nguoi dung gui: cover
@@ -69,15 +70,20 @@ export function ProfileSidebar() {
 
   return (
     <aside className="flex w-full flex-col gap-4 lg:w-72 lg:shrink-0">
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="relative h-28 w-full sm:h-32">
+      {/* -mx-[var(--layout-padding)] tren mobile: keo card nay tran het ra 2
+          mep man hinh (bo padding cua SectionContainer cha - ProfileShell.tsx
+          - CHI cho rieng khung nay), dung tinh than mockup: anh bia tran vien,
+          bo/khong bo tron/khong border tren mobile; tu lg tro len giu nguyen
+          card binh thuong (mx-0, bo tron, co border) nhu truoc. */}
+      <div className="-mx-[var(--layout-padding)] overflow-hidden bg-surface lg:mx-0 lg:rounded-lg lg:border lg:border-border">
+        <div className="relative h-52 w-full sm:h-60 lg:h-32">
           {profile.coverImageUrl ? (
             <Image
               src={profile.coverImageUrl}
               alt=""
               fill
               className="object-cover"
-              sizes="288px"
+              sizes="(min-width: 1024px) 288px, 100vw"
             />
           ) : (
             <div className="size-full bg-gradient-to-br from-primary-soft via-primary-soft to-primary/20" />
@@ -106,27 +112,29 @@ export function ProfileSidebar() {
                   if (file) coverUpload.upload(file);
                 }}
               />
+              {/* Pill co chu (khop mockup) tren mobile, thu gon lai thanh nut
+                  icon-only tren lg+ (card sidebar hep 288px, khong du cho chu). */}
               <button
                 type="button"
                 disabled={coverUpload.isUploading}
                 title="Đổi ảnh bìa"
                 onClick={() => coverInputRef.current?.click()}
-                className="absolute right-2 bottom-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
+                className="absolute right-3 bottom-3 flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-black/45 px-3.5 text-[13px] font-medium text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60 lg:right-2 lg:bottom-2 lg:size-7 lg:justify-center lg:px-0"
               >
-                <Camera size={13} strokeWidth={2} />
+                <Camera size={14} strokeWidth={2} className="shrink-0" />
+                <span className="lg:hidden">Thay ảnh bìa</span>
               </button>
             </>
           )}
         </div>
 
-        <div className="px-5 pb-5">
+        <div className="px-4 pb-5 sm:px-5">
           <div className="relative -mt-10 inline-block">
-            <Image
+            <UserAvatarImage
               src={profile.avatarUrl}
-              alt={profile.displayName}
-              width={72}
-              height={72}
-              className="size-18 shrink-0 rounded-full object-cover ring-4 ring-surface"
+              name={profile.displayName}
+              size={72}
+              className="size-18 ring-4 ring-surface"
             />
             {avatarUpload.isUploading && (
               <div className="absolute inset-0 grid size-18 place-items-center rounded-full bg-black/40">
@@ -176,9 +184,10 @@ export function ProfileSidebar() {
             profile.isSelf && (
               <Link
                 href="/settings"
-                className="mt-2 inline-block text-[13px] text-ink-faint hover:text-ink hover:underline"
+                className="mt-2 inline-flex items-center gap-1.5 text-[13px] text-ink-faint hover:text-ink hover:underline"
               >
-                + Thêm tiểu sử
+                <Signature size={15} strokeWidth={1.8} className="shrink-0" />
+                Thêm tiểu sử
               </Link>
             )
           )}

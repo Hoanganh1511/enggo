@@ -15,9 +15,9 @@ export default function ProfileShellSkeleton() {
       className="flex flex-col gap-6 py-6 lg:flex-row"
     >
       <div className="flex w-full flex-col gap-4 lg:w-72 lg:shrink-0">
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
-          <Skeleton className="h-28 w-full rounded-none sm:h-32" />
-          <div className="px-5 pb-5">
+        <div className="-mx-[var(--layout-padding)] overflow-hidden bg-surface lg:mx-0 lg:rounded-lg lg:border lg:border-border">
+          <Skeleton className="h-52 w-full rounded-none sm:h-60 lg:h-32" />
+          <div className="px-4 pb-5 sm:px-5">
             <Skeleton className="-mt-10 size-18 rounded-full ring-4 ring-surface" />
             <Skeleton className="mt-3 h-5 w-32 rounded-md" />
             <Skeleton className="mt-2 h-3.5 w-full rounded-md" />

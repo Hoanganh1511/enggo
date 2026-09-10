@@ -41,8 +41,9 @@ export function Avatar({ user, size }: { user: AccountUser; size: number }) {
   // xem ghi chu trong current-avatar-store.ts ve ly do khong the chi dua
   // vao session next-auth de dong bo avatar ngay sau khi doi.
   const overrideUrl = useCurrentAvatarStore((s) => s.overrideUrl);
+  const [failed, setFailed] = useState(false);
   const image = overrideUrl ?? user.image;
-  if (image) {
+  if (image && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -51,6 +52,10 @@ export function Avatar({ user, size }: { user: AccountUser; size: number }) {
         referrerPolicy="no-referrer"
         width={size}
         height={size}
+        // Fallback ve chu cai dau ten khi URL loi that su (vd object S3 da
+        // bi cron don rac xoa nham - da gap that, xem UploadService
+        // deleteOrphanedUploads o backend) thay vi hien icon "ảnh vỡ".
+        onError={() => setFailed(true)}
         className="aspect-square shrink-0 rounded-full object-cover"
       />
     );

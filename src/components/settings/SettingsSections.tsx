@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -17,6 +16,7 @@ import { updateProfileAction } from "@/actions/users/update-profile";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
+import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   SelectField,
@@ -121,13 +121,7 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
       <SettingsRow label="Ảnh đại diện">
         <div className="flex items-center gap-3">
           <div className="relative size-12 shrink-0">
-            <Image
-              src={avatarUrl}
-              alt=""
-              width={48}
-              height={48}
-              className="size-12 rounded-full object-cover"
-            />
+            <UserAvatarImage src={avatarUrl} name={profile.displayName} size={48} className="size-12" />
             {avatarUpload.isUploading && (
               <div className="absolute inset-0 grid place-items-center rounded-full bg-black/40">
                 <Loader2 size={16} strokeWidth={2.2} className="animate-spin text-white" />
