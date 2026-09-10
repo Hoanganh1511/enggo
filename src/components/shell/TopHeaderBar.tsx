@@ -227,12 +227,16 @@ const TopHeaderBar = () => {
         {/* Giu san 1 slot co kich thuoc co dinh (size 30 - khop Avatar trong
             AccountMenu) ngay ca khi session dang tai/chua co user, tranh cum
             icon ben canh (nut "Viết bài") bi xe dich sang trai roi nhay lai
-            sang phai ngay khi avatar load xong. */}
-        <div className="ml-1 shrink-0 overflow-hidden rounded-full bg-surface-muted">
+            sang phai ngay khi avatar load xong. KHONG boc them rounded-full
+            overflow-hidden o day nua - truoc day boc ca nut AccountMenu (co
+            padding LECH pr-2/pl-1, khong vuong) khien khung tron bi keo thanh
+            hinh oval/stadium, lam avatar hien lech/bi cat mep; Avatar tu no
+            da tu rounded-full + object-cover dung roi. */}
+        <div className="ml-1 shrink-0">
           {session?.user ? (
             <AccountMenu user={session.user} />
           ) : (
-            <div className="size-7.5 animate-pulse rounded-full bg-hover-bg" />
+            <div className="mx-1 size-7.5 animate-pulse rounded-full bg-hover-bg" />
           )}
         </div>
 
