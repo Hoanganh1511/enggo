@@ -12,7 +12,7 @@ export default function ProfileShellSkeleton() {
     <SectionContainer
       as="div"
       maxWidth="7xl"
-      className="flex flex-col gap-6 py-6 lg:flex-row"
+      className="flex flex-col gap-6 pb-6 lg:flex-row"
     >
       <div className="flex w-full flex-col gap-4 lg:w-72 lg:shrink-0">
         <div className="-mx-[var(--layout-padding)] overflow-hidden bg-surface lg:mx-0 lg:rounded-lg lg:border lg:border-border">

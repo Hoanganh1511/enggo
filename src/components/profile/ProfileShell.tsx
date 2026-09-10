@@ -89,7 +89,7 @@ const ProfileShell = ({
       <SectionContainer
         as="div"
         maxWidth="7xl"
-        className="flex flex-col gap-6 py-6 lg:flex-row"
+        className="flex flex-col gap-6 pb-6 lg:flex-row"
       >
         <ProfileSidebar />
 
