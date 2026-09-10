@@ -88,7 +88,16 @@ export default function RootLayout({
       lang="en"
       className={`${ibmPlexMono.variable} ${manrope.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
-      <body className="relative flex h-dvh flex-col overflow-hidden">
+      {/* suppressHydrationWarning CHI o body, KHONG lan xuong children - can
+          thiet vi mot so extension trinh duyet (vd ColorZilla) tu chen
+          attribute la (cz-shortcut-listen="true"...) vao <body> TRUOC khi
+          React hydrate, khien React tuong server/client HTML lech nhau du
+          code khong sai gi - day la workaround chinh thuc cua Next.js cho
+          truong hop nay (xem nextjs.org/docs/messages/react-hydration-error). */}
+      <body
+        className="relative flex h-dvh flex-col overflow-hidden"
+        suppressHydrationWarning
+      >
         {/* <div className="absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(125%_125%_at_50%_10%,_#fff_40%,_#475569_100%)]" /> */}
         <AuthSessionProvider>{children}</AuthSessionProvider>
         <Toaster />

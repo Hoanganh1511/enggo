@@ -8,6 +8,86 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-09-10 — `/p/[id]` báo "A server error occurred" cho bài kind "text" có `richContent`
+
+**Triệu chứng:** mở trang chi tiết 1 bài text vừa tạo bằng Composer (Compose
+Giai đoạn 1) ra thẳng trang lỗi chung của Next.js, không phải 404. Trước đó
+vừa xử lý xong 1 sự cố Prisma drift ở `career-tree-api` nên nghi ngờ ban đầu
+là do DB/migration — kiểm tra kỹ (query thẳng row qua Prisma Client, gọi
+thẳng `GET /posts/:id` bằng token tự ký) thì backend trả 200 kèm dữ liệu
+đúng, bug không nằm ở đó.
+
+**Root cause thật:** `ArticleBody.tsx` là Server Component (không có
+`"use client"`, chạy trong luồng SSR của `page.tsx`), nhưng gọi
+`generateHTML()` từ `@tiptap/core` — hàm này gọi xuống
+`prosemirror-model`'s `DOMSerializer`, cần `window`/`document` THẬT (chỉ có
+trong browser). Chạy trên Node (SSR) ném thẳng
+`ReferenceError: window is not defined` cho MỌI bài kind "text" có
+`richContent` — tái hiện được bằng cách gọi thẳng `generateHTML()` ngoài
+Next.js (`npx tsx`) với đúng JSON + extensions của bài lỗi.
+
+`ArticleCard.tsx`/`GroupRoadmapSection.tsx`/`GroupGoalModal.tsx` cũng gọi
+`generateHTML()` từ `@tiptap/core` y hệt nhưng KHÔNG lỗi vì cả 3 đều có
+`"use client"` (chạy trong browser, có `window` thật) — chỉ `ArticleBody.tsx`
+là nơi duy nhất gọi hàm này từ Server Component.
+
+**Hướng đã cân nhắc (fix lớp 1 - chưa đủ):**
+1. Thêm `"use client"` vào `ArticleBody.tsx`. → Loại: đây là phần nội dung
+   CHÍNH của trang bài viết — chuyển sang client-render mất SSR (ảnh hưởng
+   SEO/LCP), chỉ để né 1 lỗi có thể tránh được ở tầng import.
+2. Cài `@tiptap/html`, import `generateHTML` từ `@tiptap/html/server` (build
+   sẵn DOM giả bằng `happy-dom`/linkedom, chạy được trên Node). → Tạm chọn,
+   nhưng gặp NGAY lỗi khác khi restart dev server thật (không tái hiện được
+   bằng `npx tsx` chạy độc lập): `Cannot read properties of undefined
+   (reading 'addExtensions')` trong `getSchema()` của `@tiptap/core` — tức
+   1 phần tử trong mảng `getPostExtensions()` không phải instance `Node`/
+   `Extension` thật. Bỏ hướng dùng `@tiptap/html` (nghi oan do bundle riêng
+   của no), thay bang tu viet `renderTiptapHTML()` (dùng thẳng
+   `getSchema`/`Node.fromJSON`/`DOMSerializer` từ CHÍNH `@tiptap/core`+
+   `@tiptap/pm` mà app đang dùng, cộng `happy-dom` tự dựng `document`) — lỗi
+   VẪN Y HỆT, chứng minh nguyên nhân không phải do gói `@tiptap/html`.
+
+**Root cause thật sự (lớp 2):** `glossary-hint-extension.tsx` (1 trong các
+extension của `getPostExtensions()`) có `"use client"` ở đầu file, và export
+CẢ object extension `GlossaryHint = Node.create({...})` (dữ liệu thuần) LẪN
+component React `GlossaryHintView` (cần hook) trong CÙNG 1 module. Khi 1
+Server Component import bất kỳ export nào từ file `"use client"`, Next.js
+RSC thay TOÀN BỘ export của module đó bằng "client reference" (placeholder
+object dùng để lazy-load component qua boundary) — kể cả export không phải
+component React. `GlossaryHint` nhận được ở phía server vì vậy KHÔNG PHẢI
+object `Node` thật, thiếu hẳn `.config` → `getSchema()` crash ngay khi
+duyệt qua nó. Tách `GlossaryHintView` (client, dùng hook) ra file riêng
+`glossary-hint-view.tsx`, giữ `glossary-hint-extension.tsx` KHÔNG
+`"use client"` thì hết lỗi này — nhưng lộ ra lỗi lớp 3.
+
+**Root cause lớp 3:** sau khi bỏ `"use client"`, file vẫn `import { Node,
+mergeAttributes, ReactNodeViewRenderer } from "@tiptap/react"` — và
+`@tiptap/react` (khác `@tiptap/core`) có bản build RIÊNG cho môi trường
+`react-server` (Next.js RSC), khiến `Node` import từ đó không phải class
+`Node` thật khi module bị Turbopack đánh giá phía server (`Node.create is
+not a function`). Fix: import `Node`/`mergeAttributes` thẳng từ
+`@tiptap/core` (nơi định nghĩa gốc, thư viện thuần JS không có React nên
+không bị tách bản `react-server`) - CHỈ `ReactNodeViewRenderer` (dùng bên
+trong `addNodeView()`, không bao giờ được GỌI lúc build schema tĩnh) mới
+giữ import từ `@tiptap/react`.
+
+**Cách tư duy rút ra:** lỗi ban đầu ("window is not defined") là thật nhưng
+NÔNG - sửa xong lộ thêm 2 lớp lỗi RSC boundary sâu hơn, cả 2 đều cùng 1 loại
+bẫy: **1 module chứa CẢ dữ liệu/logic thuần (cần chạy được ở server) LẪN
+React component dùng hook (chỉ chạy được ở client) thì KHÔNG được đặt cùng
+file, và cũng KHÔNG được import 2 thứ đó cùng lúc từ 1 package có "bản build
+khác nhau theo môi trường" (`@tiptap/react` tách bản cho `react-server`,
+`@tiptap/core` thì không vì không có React).** Bài học chung khi ghép Tiptap
+custom Node (chạy schema ở server) với NodeView React (chỉ chạy ở client):
+luôn tách class `Node.create()` (server-safe, import core primitives từ
+`@tiptap/core`) khỏi component NodeView (client-only, file riêng
+`"use client"`), không gộp chung như pattern ban đầu (tưởng gọn nhưng chỉ
+"tình cờ chạy được" khi mọi nơi dùng nó đều là client component - đến khi có
+1 nơi dùng từ Server Component thì vỡ, và vỡ theo 2 lớp khác nhau chứ không
+báo lỗi rõ ràng ngay từ dòng import).
+
+---
+
 ## 2026-08-22 — Tin nhắn tự gửi bị lệch vị trí: UUID cũ lẫn ULID mới sort sai thứ tự
 
 **Triệu chứng người dùng báo:** "tin tôi gửi lại ở tít cuối cùng phải lăn

@@ -1,12 +1,21 @@
-import { generateHTML } from "@tiptap/core";
 import type { Post } from "@/content/home-feed-mock";
 import { PostBody } from "@/components/discover/post-bodies";
-import { getPostContentText, parseContentLines } from "@/lib/discover/article-content";
+import {
+  getPostContentText,
+  parseContentLines,
+} from "@/lib/discover/article-content";
+import { renderTiptapHTML } from "@/lib/discover/render-tiptap-html";
 import { getPostExtensions, POST_PROSE_CLASS } from "@/components/workspaces/post-extensions";
 
 // Kind "text" co richContent (JSON Tiptap tu Composer.tsx Giai doan 1) -> render
-// HTML that (dung chung schema extension voi luc soan, generateHTML() la ham
-// doc-only, khong mount useEditor). Bai cu hon (chua co richContent) hoac cac
+// HTML that (dung chung schema extension voi luc soan). Component nay la
+// Server Component (SSR, khong "use client") nen KHONG the dung generateHTML
+// cua "@tiptap/core" thang (doi window/document THAT, chi co trong browser) -
+// dung renderTiptapHTML() tu gia lap DOM bang happy-dom thay the (xem
+// docs/engineering-log.md 2026-09-10 - lý do khong dung goi "@tiptap/html" co
+// san). ArticleCard.tsx dung "@tiptap/core" ban goc vi no la "use client"
+// (co window that).
+// Bai cu hon (chua co richContent) hoac cac
 // kind con lai co van ban tho (image/gallery/video/file/link/resource/note) ->
 // tu parse heading/doan van tu content that (xem article-content.ts), khop id
 // voi ArticleTableOfContents.tsx. Kind KHONG co content dang van ban
@@ -15,7 +24,7 @@ import { getPostExtensions, POST_PROSE_CLASS } from "@/components/workspaces/pos
 // khong can viet lai).
 export function ArticleBody({ post }: { post: Post }) {
   if (post.kind === "text" && post.richContent) {
-    const html = generateHTML(post.richContent, getPostExtensions());
+    const html = renderTiptapHTML(post.richContent, getPostExtensions());
     return (
       <div
         className={POST_PROSE_CLASS}
