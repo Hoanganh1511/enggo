@@ -245,10 +245,14 @@ const TopHeaderBar = () => {
         {/* Truoc day dieu huong ve /home?compose=1 (PostComposer inline tren
             /home, HomeLayoutShell.tsx tu doc param) - /home gio la trang
             dashboard khac han, khong con composer inline nao. Dieu huong
-            thang toi trang /compose rieng (xem compose/page.tsx). */}
+            thang toi trang /compose rieng (xem compose/page.tsx). Tren
+            mobile/tablet (<lg) nut nay AN o day - thay bang 1 nut icon-only
+            fixed goc duoi-phai (MobileComposeFab.tsx, hoac dung luon cho
+            duoc gop san trong HomeMobileQuickPanels.tsx tren /home), tranh
+            chiem cho trong header von da chat cum icon. */}
         <Link
           href="/compose"
-          className="ml-1 flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm bg-black/90 px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+          className="ml-1 hidden h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm bg-black/90 px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90 lg:flex"
         >
           <SquarePen size={15} strokeWidth={2} />
           Viết bài

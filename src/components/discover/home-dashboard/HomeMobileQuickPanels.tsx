@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Compass, Flame, X } from "lucide-react";
+import { Compass, Flame, SquarePen, X } from "lucide-react";
 
 type PanelKey = "roadmap" | "progress";
 
@@ -12,6 +13,9 @@ type PanelKey = "roadmap" | "progress";
 // drawer truot tu TRAI (dung chung animation voi drawer sidebar mobile,
 // xem HomeDashboardSidebar.tsx) - noi dung ben trong la chinh Server
 // Component da render san, truyen qua children/props (khong can fetch lai).
+// Nut "Viết bài" (icon-only) dat TREN CUNG cum nay - thay cho pill chu
+// "Viết bài" trong header, gio an tren mobile (xem TopHeaderBar.tsx) vi la
+// hanh dong chinh, can noi bat nhat trong cum.
 export function HomeMobileQuickPanels({
   roadmap,
   weeklyProgress,
@@ -24,6 +28,13 @@ export function HomeMobileQuickPanels({
   return (
     <>
       <div className="fixed right-4 bottom-4 z-30 flex flex-col gap-2.5 lg:hidden">
+        <Link
+          href="/compose"
+          aria-label="Viết bài"
+          className="flex size-12 cursor-pointer items-center justify-center rounded-full bg-black/90 text-white shadow-lg hover:opacity-90"
+        >
+          <SquarePen size={19} aria-hidden="true" />
+        </Link>
         <button
           type="button"
           onClick={() => setOpen("roadmap")}

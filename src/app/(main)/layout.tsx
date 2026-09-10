@@ -1,5 +1,6 @@
 import MainContentArea from "@/components/shell/main-content-area";
 import TopHeaderBar from "@/components/shell/TopHeaderBar";
+import { MobileComposeFab } from "@/components/shell/MobileComposeFab";
 import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 
@@ -25,6 +26,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         />
         <TopHeaderBar />
         <ChatMessageToastStack />
+        <MobileComposeFab />
         <MainContentArea>{children}</MainContentArea>
       </div>
     </>
