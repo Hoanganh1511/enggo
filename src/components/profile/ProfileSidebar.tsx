@@ -4,16 +4,11 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { Camera, Check, MessageSquare, Plus, Settings, Share2 } from "lucide-react";
+import { Camera, Check, Loader2, MessageSquare, Plus, Settings, Share2 } from "lucide-react";
 import { createConversationAction } from "@/actions/chat/create-conversation";
-import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
-import { updateProfileAction } from "@/actions/users/update-profile";
-import { getApiErrorMessage } from "@/lib/api/client";
+import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { formatCompact } from "@/lib/format-number";
 import { useProfileContext } from "./profile-context";
-
-const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 
 // Sidebar profile - redesign theo mockup "WriteHub" nguoi dung gui: cover
 // banner + avatar de len tren, bio ngay duoi username (fallback "+ Thêm
@@ -21,19 +16,21 @@ const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 // rieng), nut share (THAT - copy link ho so), card Magazine giu tinh than
 // "Sắp ra mắt" cu nhung bo cuc lai. Doi avatar/cover THAT (upload qua S3 co
 // san, POST /uploads kind=image - tai dung dung duong Composer.tsx dang
-// dung - roi luu URL qua PATCH /users/me). Doc profile/following/pending/
-// onToggleFollow/onProfileUpdate qua useProfileContext() (ProfileShell.tsx
-// la provider).
+// dung - roi luu URL qua PATCH /users/me, logic dung chung qua
+// useProfileImageUpload). Doc profile/following/pending/onToggleFollow/
+// onProfileUpdate qua useProfileContext() (ProfileShell.tsx la provider).
 export function ProfileSidebar() {
   const { profile, following, pending, onToggleFollow, onProfileUpdate } =
     useProfileContext();
   const router = useRouter();
-  const { update: updateSession } = useSession();
   const [messaging, setMessaging] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const avatarUpload = useProfileImageUpload("avatarUrl", (url) =>
+    onProfileUpdate({ avatarUrl: url }),
+  );
+  const coverUpload = useProfileImageUpload("coverImageUrl", (url) =>
+    onProfileUpdate({ coverImageUrl: url }),
+  );
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,37 +58,6 @@ export function ProfileSidebar() {
     }
   }
 
-  async function handleImageUpload(
-    file: File,
-    field: "avatarUrl" | "coverImageUrl",
-  ) {
-    if (file.size > MAX_IMAGE_BYTES) {
-      setUploadError("Ảnh vượt quá 25MB.");
-      return;
-    }
-    const setUploading = field === "avatarUrl" ? setIsUploadingAvatar : setIsUploadingCover;
-    setUploading(true);
-    setUploadError(null);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("kind", "image");
-      const uploaded = await uploadPostImageAction(formData);
-      await updateProfileAction({ [field]: uploaded.url });
-      onProfileUpdate({ [field]: uploaded.url });
-      // Avatar (khong phai cover) can dong bo lai ca session next-auth vi
-      // header/AccountMenu doc avatar tu session.user.image, khong doc lai
-      // tu profile - xem ghi chu trong auth.ts.
-      if (field === "avatarUrl") {
-        await updateSession({ image: uploaded.url });
-      }
-    } catch (err) {
-      setUploadError(getApiErrorMessage(err, "Tải ảnh thất bại, thử lại sau."));
-    } finally {
-      setUploading(false);
-    }
-  }
-
   return (
     <aside className="flex w-full flex-col gap-4 lg:w-72 lg:shrink-0">
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
@@ -107,6 +73,11 @@ export function ProfileSidebar() {
           ) : (
             <div className="size-full bg-gradient-to-br from-primary-soft via-primary-soft to-primary/20" />
           )}
+          {coverUpload.isUploading && (
+            <div className="absolute inset-0 grid place-items-center bg-black/30">
+              <Loader2 size={22} strokeWidth={2.2} className="animate-spin text-white" />
+            </div>
+          )}
           {profile.isSelf && (
             <>
               <input
@@ -117,12 +88,12 @@ export function ProfileSidebar() {
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   e.target.value = "";
-                  if (file) handleImageUpload(file, "coverImageUrl");
+                  if (file) coverUpload.upload(file);
                 }}
               />
               <button
                 type="button"
-                disabled={isUploadingCover}
+                disabled={coverUpload.isUploading}
                 title="Đổi ảnh bìa"
                 onClick={() => coverInputRef.current?.click()}
                 className="absolute right-2 bottom-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
@@ -142,6 +113,11 @@ export function ProfileSidebar() {
               height={72}
               className="size-18 shrink-0 rounded-full object-cover ring-4 ring-surface"
             />
+            {avatarUpload.isUploading && (
+              <div className="absolute inset-0 grid size-18 place-items-center rounded-full bg-black/40">
+                <Loader2 size={20} strokeWidth={2.2} className="animate-spin text-white" />
+              </div>
+            )}
             {profile.isSelf && (
               <>
                 <input
@@ -152,12 +128,12 @@ export function ProfileSidebar() {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     e.target.value = "";
-                    if (file) handleImageUpload(file, "avatarUrl");
+                    if (file) avatarUpload.upload(file);
                   }}
                 />
                 <button
                   type="button"
-                  disabled={isUploadingAvatar}
+                  disabled={avatarUpload.isUploading}
                   title="Đổi ảnh đại diện"
                   onClick={() => avatarInputRef.current?.click()}
                   className="absolute -right-1 -bottom-1 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
@@ -168,8 +144,10 @@ export function ProfileSidebar() {
             )}
           </div>
 
-          {uploadError && (
-            <p className="mt-1 text-[11px] text-danger">{uploadError}</p>
+          {(avatarUpload.error || coverUpload.error) && (
+            <p className="mt-1 text-[11px] text-danger">
+              {avatarUpload.error || coverUpload.error}
+            </p>
           )}
 
           <h1 className="mt-3 text-lg font-bold text-ink">{profile.displayName}</h1>

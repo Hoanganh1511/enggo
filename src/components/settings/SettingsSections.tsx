@@ -3,10 +3,10 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import {
   AlertTriangle,
   Download,
+  Loader2,
   LogOut,
   MonitorSmartphone,
   ShieldCheck,
@@ -14,8 +14,8 @@ import {
 import GoogleIcon from "@/components/ui/google-icon";
 import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
 import { updateProfileAction } from "@/actions/users/update-profile";
-import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   SelectField,
@@ -81,10 +81,8 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarUpload = useProfileImageUpload("avatarUrl", setAvatarUrl);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const { update: updateSession } = useSession();
 
   async function handleSave() {
     setStatus("saving");
@@ -105,31 +103,6 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
     }
   }
 
-  async function handleAvatarFile(file: File) {
-    if (file.size > 25 * 1024 * 1024) {
-      setAvatarError("Ảnh vượt quá 25MB.");
-      return;
-    }
-    setIsUploadingAvatar(true);
-    setAvatarError(null);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("kind", "image");
-      const uploaded = await uploadPostImageAction(formData);
-      await updateProfileAction({ avatarUrl: uploaded.url });
-      setAvatarUrl(uploaded.url);
-      // Dong bo lai session next-auth de header/AccountMenu (doc
-      // session.user.image, khong doc lai profile) cap nhat theo ngay -
-      // xem ghi chu trong auth.ts.
-      await updateSession({ image: uploaded.url });
-    } catch (err) {
-      setAvatarError(getApiErrorMessage(err, "Tải ảnh thất bại, thử lại sau."));
-    } finally {
-      setIsUploadingAvatar(false);
-    }
-  }
-
   return (
     <SettingsSection
       bare
@@ -138,13 +111,20 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
     >
       <SettingsRow label="Ảnh đại diện">
         <div className="flex items-center gap-3">
-          <Image
-            src={avatarUrl}
-            alt=""
-            width={48}
-            height={48}
-            className="size-12 rounded-full object-cover"
-          />
+          <div className="relative size-12 shrink-0">
+            <Image
+              src={avatarUrl}
+              alt=""
+              width={48}
+              height={48}
+              className="size-12 rounded-full object-cover"
+            />
+            {avatarUpload.isUploading && (
+              <div className="absolute inset-0 grid place-items-center rounded-full bg-black/40">
+                <Loader2 size={16} strokeWidth={2.2} className="animate-spin text-white" />
+              </div>
+            )}
+          </div>
           <input
             ref={avatarInputRef}
             type="file"
@@ -153,18 +133,20 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
-              if (file) handleAvatarFile(file);
+              if (file) avatarUpload.upload(file);
             }}
           />
           <button
             type="button"
-            disabled={isUploadingAvatar}
+            disabled={avatarUpload.isUploading}
             onClick={() => avatarInputRef.current?.click()}
             className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isUploadingAvatar ? "Đang tải..." : "Đổi ảnh"}
+            {avatarUpload.isUploading ? "Đang tải..." : "Đổi ảnh"}
           </button>
-          {avatarError && <span className="text-xs text-danger">{avatarError}</span>}
+          {avatarUpload.error && (
+            <span className="text-xs text-danger">{avatarUpload.error}</span>
+          )}
         </div>
       </SettingsRow>
 
