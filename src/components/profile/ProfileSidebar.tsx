@@ -10,6 +10,7 @@ import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { formatCompact } from "@/lib/format-number";
 import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 import { UserAvatarImage } from "@/components/ui/user-avatar-image";
+import { EditProfileModal } from "./EditProfileModal";
 import { useProfileContext } from "./profile-context";
 
 // Sidebar profile - redesign theo mockup "WriteHub" nguoi dung gui: cover
@@ -27,6 +28,7 @@ export function ProfileSidebar() {
   const router = useRouter();
   const [messaging, setMessaging] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const avatarUpload = useProfileImageUpload("avatarUrl", (url) =>
     onProfileUpdate({ avatarUrl: url }),
   );
@@ -211,13 +213,14 @@ export function ProfileSidebar() {
 
           {profile.isSelf ? (
             <div className="mt-4 flex items-center gap-2">
-              <Link
-                href="/settings"
-                className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-ink text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+              <button
+                type="button"
+                onClick={() => setEditOpen(true)}
+                className="flex h-10 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-ink text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
               >
                 <Settings size={14} strokeWidth={2} />
                 Chỉnh sửa hồ sơ
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={handleShare}
@@ -279,6 +282,10 @@ export function ProfileSidebar() {
           SẮP RA MẮT
         </span>
       </div>
+
+      {profile.isSelf && (
+        <EditProfileModal open={editOpen} onOpenChange={setEditOpen} />
+      )}
     </aside>
   );
 }

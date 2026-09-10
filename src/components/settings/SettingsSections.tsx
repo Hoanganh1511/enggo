@@ -1,209 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
   Download,
-  Loader2,
   LogOut,
   MonitorSmartphone,
   ShieldCheck,
 } from "lucide-react";
 import GoogleIcon from "@/components/ui/google-icon";
 import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
-import { updateProfileAction } from "@/actions/users/update-profile";
-import { getApiErrorMessage } from "@/lib/api/client";
-import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
-import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
-import { UserAvatarImage } from "@/components/ui/user-avatar-image";
-import type { UserProfileApiShape } from "@/lib/api/users";
-import {
-  SelectField,
-  SettingsRow,
-  SettingsSection,
-  TextArea,
-  TextField,
-  Toggle,
-} from "./SettingsControls";
+import { SelectField, SettingsRow, SettingsSection, Toggle } from "./SettingsControls";
 
-// ProfileSection (UserProfile) da noi backend that (PATCH /users/me) - cac
-// section con lai (Privacy/Preference/Account, tru muc doi mat khau/dang
-// xuat trong Security) van chi la UI, state chi song trong component, CHUA
-// goi API nao de luu. Backend tuong ung (UserPrivacy/UserPreference/
-// UserLegal) chua ton tai, xem lo trinh trong
+// "Hồ sơ công khai" (avatar/tên/tiểu sử/vai trò/nơi ở/website/đại từ nhân
+// xưng) KHONG con nam trong Settings - da chuyen sang EditProfileModal.tsx,
+// mo tu nut "Chỉnh sửa hồ sơ" o ProfileSidebar.tsx (theo yeu cau nguoi dung).
+// Cac section con lai o day (Privacy/Preference/Account, tru muc doi mat
+// khau/dang xuat trong Security) van chi la UI, state chi song trong
+// component, CHUA goi API nao de luu. Backend tuong ung (UserPrivacy/
+// UserPreference/UserLegal) chua ton tai, xem lo trinh trong
 // career-tree-api/docs/user-schema-design.md.
-
-type SaveStatus = "idle" | "saving" | "saved" | "error";
-
-function SaveBar({
-  onSave,
-  status,
-  errorMessage,
-}: {
-  onSave: () => void;
-  status: SaveStatus;
-  errorMessage?: string | null;
-}) {
-  return (
-    <div className="flex items-center justify-end gap-3 px-5 py-3">
-      {status === "saved" && <span className="text-xs text-success">Đã lưu.</span>}
-      {status === "error" && (
-        <span className="text-xs text-danger">
-          {errorMessage ?? "Không lưu được, thử lại sau."}
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={status === "saving"}
-        className="h-9 cursor-pointer rounded-md bg-button-primary-bg px-4 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {status === "saving" ? "Đang lưu..." : "Lưu thay đổi"}
-      </button>
-    </div>
-  );
-}
-
-// "Hồ sơ công khai" - MUC DUY NHAT trong Settings da noi PATCH /users/me
-// that (xem update-profile.ts) - luu duoc displayName/username/bio/location/
-// websiteUrl/pronouns/role/avatarUrl. "Đổi ảnh" upload That qua S3 co san
-// (POST /uploads kind=image, tai dung dung duong Composer.tsx/ProfileSidebar.tsx
-// dang dung) roi luu URL qua PATCH /users/me ngay (khong doi chung voi nut
-// "Lưu thay đổi" cua cac field text, vi anh nen phan hoi ngay khi chon).
-export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
-  const [displayName, setDisplayName] = useState(profile.displayName);
-  const [username, setUsername] = useState(profile.username ?? "");
-  const [bio, setBio] = useState(profile.bio ?? "");
-  const [role, setRole] = useState(profile.role ?? "");
-  const [location, setLocation] = useState(profile.location ?? "");
-  const [website, setWebsite] = useState(profile.websiteUrl ?? "");
-  const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
-  const [status, setStatus] = useState<SaveStatus>("idle");
-  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
-  const avatarUpload = useProfileImageUpload("avatarUrl", setAvatarUrl);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
-  const setCurrentAvatarUrl = useCurrentAvatarStore((s) => s.setAvatarUrl);
-
-  // Settings luon la trang cua CHINH MINH - tu "chua lanh" store header moi
-  // lan vao trang nay, phong truong hop lan doi avatar truoc chua kip dong
-  // bo (xem ghi chu trong current-avatar-store.ts).
-  useEffect(() => {
-    setCurrentAvatarUrl(profile.avatarUrl);
-  }, [profile.avatarUrl, setCurrentAvatarUrl]);
-
-  async function handleSave() {
-    setStatus("saving");
-    try {
-      await updateProfileAction({
-        displayName,
-        username,
-        bio,
-        location,
-        websiteUrl: website,
-        pronouns,
-        role,
-      });
-      setStatus("saved");
-    } catch (err) {
-      setSaveErrorMessage(getApiErrorMessage(err, "Không lưu được, thử lại sau."));
-      setStatus("error");
-    }
-  }
-
-  return (
-    <SettingsSection
-      bare
-      title="Hồ sơ công khai"
-      description="Những thông tin này hiển thị với người khác trên trang cá nhân của bạn."
-    >
-      <SettingsRow label="Ảnh đại diện">
-        <div className="flex items-center gap-3">
-          <div className="relative size-12 shrink-0">
-            <UserAvatarImage src={avatarUrl} name={profile.displayName} size={48} className="size-12" />
-            {avatarUpload.isUploading && (
-              <div className="absolute inset-0 grid place-items-center rounded-full bg-black/40">
-                <Loader2 size={16} strokeWidth={2.2} className="animate-spin text-white" />
-              </div>
-            )}
-          </div>
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) avatarUpload.upload(file);
-            }}
-          />
-          <button
-            type="button"
-            disabled={avatarUpload.isUploading}
-            onClick={() => avatarInputRef.current?.click()}
-            className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {avatarUpload.isUploading ? "Đang tải..." : "Đổi ảnh"}
-          </button>
-          {avatarUpload.error && (
-            <span className="text-xs text-danger">{avatarUpload.error}</span>
-          )}
-        </div>
-      </SettingsRow>
-
-      <SettingsRow label="Tên hiển thị" hint="Cho phép tiếng Việt có dấu và emoji, tối đa 50 ký tự.">
-        <TextField value={displayName} onChange={setDisplayName} />
-      </SettingsRow>
-
-      <SettingsRow
-        label="Tên người dùng"
-        hint="Đây là đường dẫn tới trang cá nhân của bạn. Chỉ đổi được 1 lần mỗi 30 ngày."
-      >
-        <TextField value={username} onChange={setUsername} prefix="@" />
-      </SettingsRow>
-
-      <SettingsRow label="Giới thiệu" hint="Vài dòng về bạn, hiển thị ngay dưới tên.">
-        <TextArea value={bio} onChange={setBio} maxLength={300} />
-      </SettingsRow>
-
-      <SettingsRow label="Vai trò">
-        <TextField
-          value={role}
-          onChange={setRole}
-          placeholder="Software Engineer"
-        />
-      </SettingsRow>
-
-      <SettingsRow label="Nơi ở" hint="Chỉ là văn bản tự do, hệ thống không lưu toạ độ.">
-        <TextField
-          value={location}
-          onChange={setLocation}
-          placeholder="Hà Nội, Việt Nam"
-        />
-      </SettingsRow>
-
-      <SettingsRow label="Website">
-        <TextField
-          value={website}
-          onChange={setWebsite}
-          placeholder="https://..."
-        />
-      </SettingsRow>
-
-      <SettingsRow label="Đại từ nhân xưng">
-        <TextField
-          value={pronouns}
-          onChange={setPronouns}
-          placeholder="anh ấy / cô ấy"
-        />
-      </SettingsRow>
-
-      <SaveBar onSave={handleSave} status={status} errorMessage={saveErrorMessage} />
-    </SettingsSection>
-  );
-}
 
 export function PrivacySection() {
   const [visibility, setVisibility] = useState<"PUBLIC" | "FOLLOWERS_ONLY" | "PRIVATE">("PUBLIC");

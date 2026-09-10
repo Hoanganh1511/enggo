@@ -85,60 +85,6 @@ export function Toggle({
 const fieldClass =
   "h-9 w-full min-w-0 rounded-md border border-input-border bg-input-bg px-2.5 text-sm text-input-text placeholder:text-input-placeholder transition-colors duration-150 ease-out focus:border-input-focus focus:ring-2 focus:ring-input-focus/15 focus:outline-none";
 
-export function TextField({
-  value,
-  onChange,
-  placeholder,
-  prefix,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  prefix?: string;
-}) {
-  return (
-    <div className="flex w-full items-center gap-1.5 sm:w-72">
-      {prefix && <span className="shrink-0 text-sm text-ink-faint">{prefix}</span>}
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={fieldClass}
-      />
-    </div>
-  );
-}
-
-export function TextArea({
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  maxLength?: number;
-}) {
-  return (
-    <div className="w-full sm:w-72">
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        rows={3}
-        className="w-full resize-none rounded-md border border-input-border bg-input-bg px-2.5 py-2 text-sm text-input-text placeholder:text-input-placeholder transition-colors duration-150 ease-out focus:border-input-focus focus:ring-2 focus:ring-input-focus/15 focus:outline-none"
-      />
-      {maxLength && (
-        <p className="mt-1 text-right text-[11px] text-ink-faint tabular-nums">
-          {value.length}/{maxLength}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function SelectField<T extends string>({
   value,
   onChange,
