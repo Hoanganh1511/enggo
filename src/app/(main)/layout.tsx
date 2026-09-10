@@ -4,6 +4,7 @@ import { MobileComposeFab } from "@/components/shell/MobileComposeFab";
 import { DashboardSidebarDrawer } from "@/components/discover/home-dashboard/HomeDashboardSidebar";
 import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
+import { AvatarBootstrap } from "@/components/providers/AvatarBootstrap";
 
 // Layout: header ngang CO DINH tren cung (TopHeaderBar.tsx) + noi dung ben
 // duoi. Sidebar doc (MainSidebar.tsx) da BO khoi layout nay theo yeu cau
@@ -13,6 +14,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <FeedBootstrap />
+      <AvatarBootstrap />
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white">
         {/* Nen luoi caro chung cho TOAN BO trang trong app (truoc day chi ve
             rieng o HomeHero.tsx cho /home) - fixed + -z-10 de nam co dinh phia
