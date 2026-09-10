@@ -44,11 +44,6 @@ import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 const TopHeaderBar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
-  // /home + /articles co HomeDashboardSidebar rieng - tren mobile, o cho
-  // logo la nut mo drawer sidebar do (hop nhat 2 thanh, xem comment o JSX
-  // ben duoi), khop dung PRIMARY_NAV.match cua HomeDashboardSidebar.tsx.
-  const showDashboardDrawerToggle =
-    pathname === "/home" || pathname === "/articles" || pathname.startsWith("/articles/");
   const setDashboardDrawerOpen = useDashboardSidebarDrawerStore((s) => s.setOpen);
   const [notifOpen, setNotifOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
@@ -150,28 +145,21 @@ const TopHeaderBar = () => {
 
   return (
     <header className="grid h-[var(--header-height)] shrink-0 grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
-      {/* Cum trai - logo. Mobile: chi icon-only (gon, tranh header tran ngang
-          - logo+chu "Good Life" day du + o tim kiem + cum icon cong lai qua
-          rong tren man hinh hep). Rieng /home va /articles (co
-          HomeDashboardSidebar) - o cho nay tren mobile la nut hamburger MO
-          DRAWER sidebar thay vi logo, hop nhat 2 thanh ngang rieng truoc day
-          (header + thanh "Mở menu điều hướng" cua HomeDashboardSidebar)
-          thanh 1 thanh duy nhat (xem dashboard-sidebar-drawer-store.ts). */}
+      {/* Cum trai. Mobile: nut hamburger MO DRAWER sidebar (dong bo tren
+          MOI trang, khong rieng /home & /articles nua - truoc day trang
+          khac hien logo icon-only o day, gio thong nhat het thanh nut mo
+          sidebar, xem DashboardSidebarDrawer trong HomeDashboardSidebar.tsx
+          + dashboard-sidebar-drawer-store.ts). Desktop (md+) van la logo
+          ngang binh thuong, khong doi. */}
       <div className="flex min-w-0 items-center justify-self-start">
-        {showDashboardDrawerToggle ? (
-          <button
-            type="button"
-            onClick={() => setDashboardDrawerOpen(true)}
-            aria-label="Mở menu điều hướng"
-            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:bg-hover-bg md:hidden"
-          >
-            <Menu size={20} aria-hidden="true" />
-          </button>
-        ) : (
-          <Link href="/home" className="shrink-0 md:hidden">
-            <Logo orientation="icon-only" size={26} />
-          </Link>
-        )}
+        <button
+          type="button"
+          onClick={() => setDashboardDrawerOpen(true)}
+          aria-label="Mở menu điều hướng"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:bg-hover-bg md:hidden"
+        >
+          <Menu size={20} aria-hidden="true" />
+        </button>
         <Link href="/home" className="hidden shrink-0 md:flex">
           <Logo orientation="horizontal" size={24} />
         </Link>

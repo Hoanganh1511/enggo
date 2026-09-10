@@ -167,62 +167,73 @@ function SidebarBody({
   );
 }
 
+// Desktop - CHI cho /home va /articles (dat trong (feed)/layout.tsx, cung
+// noi tru padding lg:pl-61 danh cho no) - KHONG doi gi so voi ban truoc.
+// Drawer mobile da tach rieng ra DashboardSidebarDrawer (duoi) de mount
+// TOAN CUC, dung o moi trang chu khong rieng gi /home, /articles nua.
 export function HomeDashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const username = session?.username;
   const displayName = session?.user?.name ?? "Bạn";
-  // Mobile: nut mo drawer gio nam trong TopHeaderBar.tsx (hop nhat 2 thanh
-  // rieng truoc day thanh 1), chi con doc/dong state qua store chung o day -
-  // xem dashboard-sidebar-drawer-store.ts.
+
+  return (
+    <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-[244px] border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
+      <SidebarBody pathname={pathname} displayName={displayName} username={username} />
+    </aside>
+  );
+}
+
+// Drawer mobile (<lg) - mount 1 LAN DUY NHAT o (main)/layout.tsx (toan cuc,
+// hoat dong tren MOI trang, khong rieng /home & /articles nua) - bam
+// hamburger o TopHeaderBar.tsx (dong bo tren toan app, xem
+// dashboard-sidebar-drawer-store.ts) se mo drawer nay du dang o trang nao.
+export function DashboardSidebarDrawer() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const username = session?.username;
+  const displayName = session?.user?.name ?? "Bạn";
   const drawerOpen = useDashboardSidebarDrawerStore((s) => s.open);
   const setDrawerOpen = useDashboardSidebarDrawerStore((s) => s.setOpen);
 
   return (
-    <>
-      {/* Desktop - khong doi gi so voi ban truoc. */}
-      <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-[244px] border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
-        <SidebarBody pathname={pathname} displayName={displayName} username={username} />
-      </aside>
-
-      <AnimatePresence>
-        {drawerOpen && (
-          <>
-            <motion.div
-              key="sidebar-drawer-backdrop"
-              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+    <AnimatePresence>
+      {drawerOpen && (
+        <>
+          <motion.div
+            key="sidebar-drawer-backdrop"
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            onClick={() => setDrawerOpen(false)}
+          />
+          <motion.div
+            key="sidebar-drawer-panel"
+            className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white px-5 py-6 shadow-xl lg:hidden"
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
+            <button
+              type="button"
               onClick={() => setDrawerOpen(false)}
-            />
-            <motion.div
-              key="sidebar-drawer-panel"
-              className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-white px-5 py-6 shadow-xl lg:hidden"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              aria-label="Đóng menu"
+              className="absolute top-4 right-4 flex size-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
             >
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="Đóng menu"
-                className="absolute top-4 right-4 flex size-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              >
-                <X size={18} aria-hidden="true" />
-              </button>
-              <SidebarBody
-                pathname={pathname}
-                displayName={displayName}
-                username={username}
-                onNavigate={() => setDrawerOpen(false)}
-              />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
+              <X size={18} aria-hidden="true" />
+            </button>
+            <SidebarBody
+              pathname={pathname}
+              displayName={displayName}
+              username={username}
+              onNavigate={() => setDrawerOpen(false)}
+            />
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
