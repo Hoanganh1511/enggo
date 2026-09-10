@@ -152,7 +152,7 @@ export function ProfileImageViewer({
           />
           <div className="fixed inset-x-0 bottom-0 z-20 rounded-t-2xl bg-surface pb-[max(env(safe-area-inset-bottom),16px)]">
             <div className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-border" />
-            <div className="flex flex-col px-2 pt-2">
+            <div className="flex flex-col px-4 pt-2">
               <button
                 type="button"
                 onClick={handleShare}
@@ -186,7 +186,7 @@ export function ProfileImageViewer({
                 </button>
               )}
             </div>
-            <div className="p-2 pt-1">
+            <div className="px-4 pt-1 pb-2">
               <button
                 type="button"
                 onClick={() => setSheetOpen(false)}
