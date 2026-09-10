@@ -224,11 +224,17 @@ const TopHeaderBar = () => {
           </PopoverContent>
         </PopoverRoot>
 
-        {session?.user && (
-          <div className="ml-1 overflow-hidden rounded-full bg-surface-muted">
+        {/* Giu san 1 slot co kich thuoc co dinh (size 30 - khop Avatar trong
+            AccountMenu) ngay ca khi session dang tai/chua co user, tranh cum
+            icon ben canh (nut "Viết bài") bi xe dich sang trai roi nhay lai
+            sang phai ngay khi avatar load xong. */}
+        <div className="ml-1 shrink-0 overflow-hidden rounded-full bg-surface-muted">
+          {session?.user ? (
             <AccountMenu user={session.user} />
-          </div>
-        )}
+          ) : (
+            <div className="size-7.5 animate-pulse rounded-full bg-hover-bg" />
+          )}
+        </div>
 
         {/* Truoc day dieu huong ve /home?compose=1 (PostComposer inline tren
             /home, HomeLayoutShell.tsx tu doc param) - /home gio la trang
