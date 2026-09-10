@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, ChevronDown, KeyRound, Lock, UserRound, type LucideIcon } from "lucide-react";
 import type { UserProfileApiShape } from "@/lib/api/users";
+import SectionContainer from "@/components/ui/section-container";
 import {
   AccountSection,
   PreferenceSection,
@@ -39,7 +40,7 @@ const SettingsShell = ({
   const [openKey, setOpenKey] = useState<SectionKey | null>("profile");
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 pt-4">
+    <SectionContainer as="div" maxWidth="4xl" className="flex flex-col gap-5 py-4">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-ink">Cài đặt</h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -81,7 +82,7 @@ const SettingsShell = ({
           );
         })}
       </div>
-    </div>
+    </SectionContainer>
   );
 };
 
