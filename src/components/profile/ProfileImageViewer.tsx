@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { MoreHorizontal, Pencil, Share2, Trash2, X } from "lucide-react";
 import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
@@ -11,19 +12,28 @@ import { useProfileContext } from "./profile-context";
 
 type ImageKind = "avatar" | "cover";
 
+// layoutId KHOP DUNG voi motion.div boc anh nho trong ProfileSidebar.tsx
+// (PROFILE_AVATAR_LAYOUT_ID/PROFILE_COVER_LAYOUT_ID) - framer-motion tu
+// noi 2 phan tu chung layoutId thanh 1 hieu ung "phong to tu vi tri goc"
+// (shared layout transition) khi component nay mount/unmount, thay vi bop
+// choc hien/an dot ngot. Dat o file dung chung (khong export tu component)
+// de ca 2 noi cung 1 nguon, tranh go nham 1 ben.
+export const PROFILE_AVATAR_LAYOUT_ID = "profile-avatar-photo";
+export const PROFILE_COVER_LAYOUT_ID = "profile-cover-photo";
+
 // Xem anh toan man hinh (avatar/cover) + bottom sheet hanh dong (Chia se/
 // Doi anh/Xoa anh - CHI hien voi chu so huu) - theo mockup nguoi dung gui.
 // Khong dung SimpleModal (dialog giua man hinh) vi day la trai nghiem
 // toan-man-hinh-toi khac han; tu ve overlay rieng, chi muon ConfirmModal cho
-// buoc xac nhan xoa (hanh dong pha huy).
+// buoc xac nhan xoa (hanh dong pha huy). Component nay PHAI duoc goi ben
+// trong <AnimatePresence> o ProfileSidebar.tsx de hieu ung dong (ca luc mo
+// lan luc dong) chay dung - tu no khong tu boc AnimatePresence rieng.
 export function ProfileImageViewer({
-  open,
   onClose,
   kind,
   imageUrl,
   onChangePhoto,
 }: {
-  open: boolean;
   onClose: () => void;
   kind: ImageKind;
   imageUrl: string;
@@ -36,8 +46,6 @@ export function ProfileImageViewer({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [shareFeedback, setShareFeedback] = useState<string | null>(null);
-
-  if (!open) return null;
 
   async function handleShare() {
     setSheetOpen(false);
@@ -68,9 +76,17 @@ export function ProfileImageViewer({
   }
 
   const changeLabel = kind === "avatar" ? "Đổi ảnh đại diện" : "Thay ảnh bìa";
+  const layoutId =
+    kind === "avatar" ? PROFILE_AVATAR_LAYOUT_ID : PROFILE_COVER_LAYOUT_ID;
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-black">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-40 flex flex-col bg-black"
+    >
       <div className="flex shrink-0 items-center justify-between px-4 py-3">
         <button
           type="button"
@@ -92,18 +108,26 @@ export function ProfileImageViewer({
 
       <div className="flex min-h-0 flex-1 items-center justify-center px-6">
         {kind === "avatar" ? (
-          <div className="size-70 max-h-[70vw] max-w-[70vw] drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]">
+          <motion.div
+            layoutId={layoutId}
+            transition={{ type: "spring", stiffness: 350, damping: 32 }}
+            className="size-70 max-h-[70vw] max-w-[70vw] overflow-hidden rounded-full drop-shadow-[0_0_60px_rgba(255,255,255,0.25)]"
+          >
             <UserAvatarImage
               src={imageUrl}
               name={profile.displayName}
               size={280}
               className="size-full"
             />
-          </div>
+          </motion.div>
         ) : (
-          <div className="relative h-full w-full">
+          <motion.div
+            layoutId={layoutId}
+            transition={{ type: "spring", stiffness: 350, damping: 32 }}
+            className="relative h-full w-full overflow-hidden"
+          >
             <Image src={imageUrl} alt="" fill className="object-contain" sizes="100vw" />
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -184,6 +208,6 @@ export function ProfileImageViewer({
         danger
         onConfirm={handleDelete}
       />
-    </div>
+    </motion.div>
   );
 }

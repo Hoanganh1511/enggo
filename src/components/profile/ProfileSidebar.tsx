@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Check, Loader2, MessageSquare, Plus, Settings, Share2, Signature } from "lucide-react";
 import { createConversationAction } from "@/actions/chat/create-conversation";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
@@ -11,7 +12,11 @@ import { formatCompact } from "@/lib/format-number";
 import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 import { UserAvatarImage } from "@/components/ui/user-avatar-image";
 import { EditProfileModal } from "./EditProfileModal";
-import { ProfileImageViewer } from "./ProfileImageViewer";
+import {
+  PROFILE_AVATAR_LAYOUT_ID,
+  PROFILE_COVER_LAYOUT_ID,
+  ProfileImageViewer,
+} from "./ProfileImageViewer";
 import { useProfileContext } from "./profile-context";
 
 // Sidebar profile - redesign theo mockup "WriteHub" nguoi dung gui: cover
@@ -86,17 +91,22 @@ export function ProfileSidebar() {
           onClick={() => profile.coverImageUrl && setViewerKind("cover")}
           className={`relative h-52 w-full sm:h-60 lg:h-32 ${profile.coverImageUrl ? "cursor-pointer" : ""}`}
         >
-          {profile.coverImageUrl ? (
-            <Image
-              src={profile.coverImageUrl}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="(min-width: 1024px) 288px, 100vw"
-            />
-          ) : (
-            <div className="size-full bg-gradient-to-br from-primary-soft via-primary-soft to-primary/20" />
-          )}
+          {/* layoutId CHI boc rieng anh (khong boc nut/spinner) - de nut
+              khong bi meo theo transform scale cua hieu ung "phong to tu vi
+              tri goc" luc mo ProfileImageViewer (xem ghi chu layoutId o do). */}
+          <motion.div layoutId={PROFILE_COVER_LAYOUT_ID} className="absolute inset-0 overflow-hidden">
+            {profile.coverImageUrl ? (
+              <Image
+                src={profile.coverImageUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 288px, 100vw"
+              />
+            ) : (
+              <div className="size-full bg-gradient-to-br from-primary-soft via-primary-soft to-primary/20" />
+            )}
+          </motion.div>
           {coverUpload.isUploading && (
             <div className="cover-water-fill absolute inset-0 bg-black/15">
               <div className="absolute inset-0 grid place-items-center">
@@ -147,12 +157,17 @@ export function ProfileSidebar() {
             onClick={() => setViewerKind("avatar")}
             className="relative -mt-10 inline-block cursor-pointer"
           >
-            <UserAvatarImage
-              src={profile.avatarUrl}
-              name={profile.displayName}
-              size={72}
-              className="size-18 ring-4 ring-surface"
-            />
+            <motion.div
+              layoutId={PROFILE_AVATAR_LAYOUT_ID}
+              className="size-18 overflow-hidden rounded-full ring-4 ring-surface"
+            >
+              <UserAvatarImage
+                src={profile.avatarUrl}
+                name={profile.displayName}
+                size={72}
+                className="size-full"
+              />
+            </motion.div>
             {avatarUpload.isUploading && (
               <div className="absolute inset-0 grid size-18 place-items-center rounded-full bg-black/40">
                 <Loader2 size={20} strokeWidth={2.2} className="animate-spin text-white" />
@@ -305,19 +320,21 @@ export function ProfileSidebar() {
         <EditProfileModal open={editOpen} onOpenChange={setEditOpen} />
       )}
 
-      {viewerKind && (
-        <ProfileImageViewer
-          open
-          onClose={() => setViewerKind(null)}
-          kind={viewerKind}
-          imageUrl={viewerKind === "avatar" ? profile.avatarUrl : (profile.coverImageUrl ?? "")}
-          onChangePhoto={() =>
-            viewerKind === "avatar"
-              ? avatarInputRef.current?.click()
-              : coverInputRef.current?.click()
-          }
-        />
-      )}
+      <AnimatePresence>
+        {viewerKind && (
+          <ProfileImageViewer
+            key={viewerKind}
+            onClose={() => setViewerKind(null)}
+            kind={viewerKind}
+            imageUrl={viewerKind === "avatar" ? profile.avatarUrl : (profile.coverImageUrl ?? "")}
+            onChangePhoto={() =>
+              viewerKind === "avatar"
+                ? avatarInputRef.current?.click()
+                : coverInputRef.current?.click()
+            }
+          />
+        )}
+      </AnimatePresence>
     </aside>
   );
 }
