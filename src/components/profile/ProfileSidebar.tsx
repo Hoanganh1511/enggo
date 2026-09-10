@@ -86,16 +86,18 @@ export function ProfileSidebar() {
           bo/khong bo tron/khong border tren mobile; tu lg tro len giu nguyen
           card binh thuong (mx-0, bo tron, co border) nhu truoc. */}
       <div className="-mx-[var(--layout-padding)] overflow-hidden bg-surface lg:mx-0 lg:rounded-lg lg:border lg:border-border">
-        <div
-          role={profile.coverImageUrl ? "button" : undefined}
-          tabIndex={profile.coverImageUrl ? 0 : undefined}
-          onClick={() => profile.coverImageUrl && setViewerKind("cover")}
-          className={`relative h-52 w-full sm:h-60 lg:h-32 ${profile.coverImageUrl ? "cursor-pointer" : ""}`}
-        >
-          {/* layoutId CHI boc rieng anh (khong boc nut/spinner) - de nut
-              khong bi meo theo transform scale cua hieu ung "phong to tu vi
-              tri goc" luc mo ProfileImageViewer (xem ghi chu layoutId o do). */}
-          <motion.div layoutId={PROFILE_COVER_LAYOUT_ID} className="absolute inset-0 overflow-hidden">
+        <div className="relative h-52 w-full sm:h-60 lg:h-32">
+          {/* onClick xem anh nam TRUC TIEP tren motion.div (chinh anh), nut
+              "Đổi ảnh bìa" la sibling HOAN TOAN doc lap ben ngoai no - khong
+              con quan he cha-con nen khong the "dinh" su kien vao nhau,
+              khong can stopPropagation nua. */}
+          <motion.div
+            layoutId={PROFILE_COVER_LAYOUT_ID}
+            role={profile.coverImageUrl ? "button" : undefined}
+            tabIndex={profile.coverImageUrl ? 0 : undefined}
+            onClick={() => profile.coverImageUrl && setViewerKind("cover")}
+            className={`absolute inset-0 overflow-hidden ${profile.coverImageUrl ? "cursor-pointer" : ""}`}
+          >
             {profile.coverImageUrl ? (
               <Image
                 src={profile.coverImageUrl}
@@ -109,7 +111,7 @@ export function ProfileSidebar() {
             )}
           </motion.div>
           {coverUpload.isUploading && (
-            <div className="cover-water-fill absolute inset-0 bg-black/15">
+            <div className="cover-water-fill pointer-events-none absolute inset-0 bg-black/15">
               <div className="absolute inset-0 grid place-items-center">
                 <Loader2
                   size={22}
@@ -138,11 +140,8 @@ export function ProfileSidebar() {
                 type="button"
                 disabled={coverUpload.isUploading}
                 title="Đổi ảnh bìa"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  coverInputRef.current?.click();
-                }}
-                className="absolute right-3 bottom-3 z-10 flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-black/45 px-3.5 text-[13px] font-medium text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60 lg:right-2 lg:bottom-2 lg:size-7 lg:justify-center lg:px-0"
+                onClick={() => coverInputRef.current?.click()}
+                className="absolute right-3 bottom-3 flex h-9 cursor-pointer items-center gap-1.5 rounded-full bg-black/45 px-3.5 text-[13px] font-medium text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60 lg:right-2 lg:bottom-2 lg:size-7 lg:justify-center lg:px-0"
               >
                 <Camera size={14} strokeWidth={2} className="shrink-0" />
                 <span className="lg:hidden">Thay ảnh bìa</span>
@@ -152,15 +151,19 @@ export function ProfileSidebar() {
         </div>
 
         <div className="px-4 pb-5 sm:px-5">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setViewerKind("avatar")}
-            className="relative -mt-10 inline-block cursor-pointer"
-          >
+          {/* KHONG dat onClick tren div bao ngoai nua (tung dua vao
+              stopPropagation o nut camera, de gay dinh nham su kien) - onClick
+              xem anh gio nam TRUC TIEP tren motion.div (chinh anh), nut camera
+              la sibling HOAN TOAN doc lap, khong nam trong bat ky phan tu nao
+              co onClick xem anh -> khong con duong nao de su kien "dinh" sang
+              nhau nua, khong can stopPropagation. */}
+          <div className="relative -mt-10 inline-block">
             <motion.div
               layoutId={PROFILE_AVATAR_LAYOUT_ID}
-              className="size-18 overflow-hidden rounded-full ring-4 ring-surface"
+              role="button"
+              tabIndex={0}
+              onClick={() => setViewerKind("avatar")}
+              className="size-18 cursor-pointer overflow-hidden rounded-full ring-4 ring-surface"
             >
               <UserAvatarImage
                 src={profile.avatarUrl}
@@ -170,7 +173,7 @@ export function ProfileSidebar() {
               />
             </motion.div>
             {avatarUpload.isUploading && (
-              <div className="absolute inset-0 grid size-18 place-items-center rounded-full bg-black/40">
+              <div className="pointer-events-none absolute inset-0 grid size-18 place-items-center rounded-full bg-black/40">
                 <Loader2 size={20} strokeWidth={2.2} className="animate-spin text-white" />
               </div>
             )}
@@ -191,11 +194,8 @@ export function ProfileSidebar() {
                   type="button"
                   disabled={avatarUpload.isUploading}
                   title="Đổi ảnh đại diện"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    avatarInputRef.current?.click();
-                  }}
-                  className="absolute -right-1 -bottom-1 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="absolute -right-1 -bottom-1 flex size-6 cursor-pointer items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Camera size={11} strokeWidth={2} />
                 </button>
