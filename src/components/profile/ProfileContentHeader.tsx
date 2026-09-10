@@ -37,15 +37,20 @@ export function ProfileContentHeader({
 }) {
   return (
     <div className="flex flex-col gap-3 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-ink">{title}</h2>
           {description && (
             <p className="mt-0.5 text-[13px] text-ink-faint">{description}</p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="relative">
+        {/* Luon la 1 hang RIENG, RONG HET container (khong con nam chung
+            hang voi title qua flex-wrap - do la ly do cum nay truoc kia bi
+            "co lai" ben trai thay vi choan het chieu rong tren man hinh
+            hep). O tim kiem flex-1 de choan het khoang con lai, filter/nut
+            tao giu nguyen kich thuoc. */}
+        <div className="flex items-center gap-2 sm:shrink-0">
+          <div className="relative min-w-0 flex-1 sm:flex-initial">
             <Search
               size={14}
               className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-faint"
@@ -54,7 +59,7 @@ export function ProfileContentHeader({
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Tìm kiếm..."
-              className="h-9 w-36 rounded-full border border-border bg-surface pr-3 pl-8 text-sm text-ink outline-none focus:border-primary/50 sm:w-52"
+              className="h-9 w-full rounded-full border border-border bg-surface pr-3 pl-8 text-sm text-ink outline-none focus:border-primary/50 sm:w-52"
             />
           </div>
           <button
