@@ -51,7 +51,7 @@ export function Avatar({ user, size }: { user: AccountUser; size: number }) {
         referrerPolicy="no-referrer"
         width={size}
         height={size}
-        className="shrink-0 rounded-full"
+        className="aspect-square shrink-0 rounded-full object-cover"
       />
     );
   }
