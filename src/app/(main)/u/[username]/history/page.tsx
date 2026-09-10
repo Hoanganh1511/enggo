@@ -11,5 +11,11 @@ export default function ProfileHistoryTabPage() {
   const allPosts = useAllPosts();
   const posts = useMemo(() => allPosts.slice(0, 8), [allPosts]);
 
-  return <ProfileArticleGrid heading="Lịch sử xem" posts={posts} />;
+  return (
+    <ProfileArticleGrid
+      heading="Lịch sử xem"
+      posts={posts}
+      createLabel="Bài viết"
+    />
+  );
 }

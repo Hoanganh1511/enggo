@@ -15,10 +15,12 @@ export function ScrollableRow({
   children,
   gapClassName = "gap-4",
   itemsPerStep = 2,
+  className,
 }: {
   children: React.ReactNode;
   gapClassName?: string;
   itemsPerStep?: number;
+  className?: string;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
@@ -52,7 +54,7 @@ export function ScrollableRow({
   }
 
   return (
-    <div className="group/row relative">
+    <div className={cn("group/row relative", className)}>
       <div
         ref={scrollerRef}
         onScroll={updateArrows}

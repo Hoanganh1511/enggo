@@ -80,7 +80,11 @@ const ProfileShell = ({
         onNavClick: handleNavClick,
       }}
     >
-      <SectionContainer as="div" maxWidth="7xl" className="flex gap-6 py-6">
+      <SectionContainer
+        as="div"
+        maxWidth="7xl"
+        className="flex flex-col gap-6 py-6 lg:flex-row"
+      >
         <ProfileSidebar />
 
         <main

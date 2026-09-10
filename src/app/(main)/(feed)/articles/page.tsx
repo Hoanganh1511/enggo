@@ -1,14 +1,17 @@
 import { auth } from "@/auth";
 import { getFeedCategoryTree } from "@/lib/api/feed-categories";
+import { getProfileByUsername } from "@/lib/api/users";
 import { listPostsAction } from "@/actions/discover/list-posts";
 import { normalizePost } from "@/lib/discover/normalize-post";
 import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
+import { MobileProfileSummaryRow } from "@/components/discover/articles-hub/MobileProfileSummaryRow";
 import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
 import {
   CreatorRail,
   type CreatorSummary,
 } from "@/components/discover/articles-hub/CreatorRail";
 import { TopicsRail } from "@/components/discover/articles-hub/TopicsRail";
+import { RecentPostsList } from "@/components/discover/articles-hub/RecentPostsList";
 import { NewestSection } from "@/components/discover/articles-hub/NewestSection";
 import { MOCK_CATEGORY_TREE } from "@/components/discover/articles-hub/category-tree-mock";
 import { Flame, Users } from "lucide-react";
@@ -24,9 +27,12 @@ export default async function ArticlesPage() {
   const username = session?.username ?? null;
   const writeHref = username ? `/workspace/${username}` : "/login";
 
-  const [realCategoryTree, rawPosts] = await Promise.all([
+  const [realCategoryTree, rawPosts, mobileProfile] = await Promise.all([
     getFeedCategoryTree().catch(() => []),
     listPostsAction({ limit: 48 }).catch(() => []),
+    // Dong tom tat ho so mobile (RecentPostsList section) - chi fetch khi da
+    // dang nhap, bo qua neu chua co session (khong bia du lieu).
+    username ? getProfileByUsername(username).catch(() => null) : Promise.resolve(null),
   ]);
   // Fallback TAM: categoryTree that dang rong (backend chi tinh nhom co bai
   // trong 7 ngay gan nhat, hien khong co bai nao du moi - xem
@@ -49,6 +55,8 @@ export default async function ArticlesPage() {
     <>
       <ArticlesHero writeHref={writeHref} />
 
+      {mobileProfile && <MobileProfileSummaryRow profile={mobileProfile} />}
+
       <SectionTitle
         icon={Users}
         title="Tác giả nổi bật"
@@ -63,7 +71,12 @@ export default async function ArticlesPage() {
       />
       <TopicsRail categoryTree={categoryTree} />
 
-      <NewestSection />
+      {/* Mobile/tablet (<lg): list phang tu du lieu that da fetch. Desktop
+          (lg+): giu nguyen NewestSection nhom-theo-chu-de hien co. */}
+      <RecentPostsList posts={posts} />
+      <div className="hidden lg:block">
+        <NewestSection />
+      </div>
     </>
   );
 }

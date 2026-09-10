@@ -42,7 +42,32 @@ const HERO_SLIDE_COUNT = 4;
 // chiem 30%) theo dung thiet ke tham chieu nguoi dung gui.
 export function ArticlesHero({ writeHref }: { writeHref: string }) {
   return (
-    <section className="grid gap-4 xl:grid-cols-[7fr_3fr]">
+    <>
+      {/* Mobile/tablet (<lg) - dai ngan gon thay vi hero to + 3 feature tile
+          (chiem qua nhieu dat theo gop y nguoi dung), chi con 1 dong tagline
+          + nut "Viết ngay". Desktop (lg+) giu NGUYEN ban duoi, khong doi. */}
+      <section className="relative flex h-16 items-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] sm:h-20 lg:hidden">
+        <Image
+          src="/assets/images/hero-1-articles-page.png"
+          alt=""
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent" />
+        <div className="relative z-10 flex w-full items-center justify-between gap-3 px-4">
+          <p className="font-content text-[13px] font-semibold text-white sm:text-sm">
+            Good ideas find people…
+          </p>
+          <Link
+            href={writeHref}
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-[13px] font-semibold text-[var(--foreground)] transition hover:-translate-y-px hover:shadow-md"
+          >
+            <PenLine size={13} aria-hidden="true" /> Viết ngay
+          </Link>
+        </div>
+      </section>
+
+      <section className="hidden gap-4 xl:grid-cols-[7fr_3fr] lg:grid">
       <div className="relative min-h-[210px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] md:min-h-[238px]">
         <Image
           src="/assets/images/hero-1-articles-page.png"
@@ -114,6 +139,7 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
           </div>
         ))}
       </div>
-    </section>
+      </section>
+    </>
   );
 }

@@ -10,5 +10,11 @@ export default function ProfileLikesTabPage() {
   const allPosts = useAllPosts();
   const posts = useMemo(() => allPosts.filter((p) => p.liked), [allPosts]);
 
-  return <ProfileArticleGrid heading="Bài viết đã thích" posts={posts} />;
+  return (
+    <ProfileArticleGrid
+      heading="Bài viết đã thích"
+      posts={posts}
+      createLabel="Bài viết"
+    />
+  );
 }

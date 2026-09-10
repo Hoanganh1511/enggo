@@ -9,14 +9,21 @@ import SectionContainer from "@/components/ui/section-container";
 // skeleton sang noi dung that.
 export default function ProfileShellSkeleton() {
   return (
-    <SectionContainer as="div" maxWidth="7xl" className="flex gap-6 py-6">
-      <div className="hidden w-72 shrink-0 flex-col gap-4 lg:flex">
-        <div className="rounded-lg border border-border bg-surface p-5">
-          <Skeleton className="size-18 rounded-full" />
-          <Skeleton className="mt-3 h-5 w-32 rounded-md" />
-          <Skeleton className="mt-2 h-3.5 w-full rounded-md" />
-          <Skeleton className="mt-1.5 h-3.5 w-2/3 rounded-md" />
-          <Skeleton className="mt-4 h-10 w-full rounded-full" />
+    <SectionContainer
+      as="div"
+      maxWidth="7xl"
+      className="flex flex-col gap-6 py-6 lg:flex-row"
+    >
+      <div className="flex w-full flex-col gap-4 lg:w-72 lg:shrink-0">
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <Skeleton className="h-28 w-full rounded-none sm:h-32" />
+          <div className="px-5 pb-5">
+            <Skeleton className="-mt-10 size-18 rounded-full ring-4 ring-surface" />
+            <Skeleton className="mt-3 h-5 w-32 rounded-md" />
+            <Skeleton className="mt-2 h-3.5 w-full rounded-md" />
+            <Skeleton className="mt-1.5 h-3.5 w-2/3 rounded-md" />
+            <Skeleton className="mt-4 h-10 w-full rounded-full" />
+          </div>
         </div>
         <div className="rounded-lg border border-border bg-surface p-5">
           <Skeleton className="h-4 w-20 rounded-md" />
