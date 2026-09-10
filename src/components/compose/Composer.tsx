@@ -36,6 +36,7 @@ import { createPostAction } from "@/actions/discover/create-post";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { improvePostDraftAction } from "@/actions/post-assistant/improve-post-draft";
 import { chatAboutPostDraftAction } from "@/actions/post-assistant/chat-about-post-draft";
+import { getApiErrorMessage } from "@/lib/api/client";
 import type { ChatMessage } from "@/lib/api/types";
 import { formatTimeOnly } from "@/lib/format-time";
 import {
@@ -253,8 +254,8 @@ export function Composer() {
       formData.append("kind", "image");
       const uploaded = await uploadPostImageAction(formData);
       setCoverImageUrl(uploaded.url);
-    } catch {
-      setError("Tải ảnh bìa thất bại, thử lại sau.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Tải ảnh bìa thất bại, thử lại sau."));
     } finally {
       setIsUploadingCover(false);
     }
@@ -299,8 +300,8 @@ export function Composer() {
         // im lang - khong critical, chi la don dep nhap con lai.
       }
       router.push(`/p/${created.id}`);
-    } catch {
-      setError("Không đăng được bài, thử lại sau.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Không đăng được bài, thử lại sau."));
       setIsPosting(false);
     }
   }
@@ -326,8 +327,8 @@ export function Composer() {
       }
       setAiInstruction("");
       setAiPopoverOpen(false);
-    } catch {
-      setAiError("AI không phản hồi được, thử lại sau.");
+    } catch (err) {
+      setAiError(getApiErrorMessage(err, "AI không phản hồi được, thử lại sau."));
     } finally {
       setIsImproving(false);
     }
@@ -351,10 +352,11 @@ export function Composer() {
         nextMessages,
       );
       setChatMessages((prev) => [...prev, { role: "assistant", content: answer }]);
-    } catch {
+    } catch (err) {
+      const reason = getApiErrorMessage(err, "mình không phản hồi được, thử lại sau nhé.");
       setChatMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Xin lỗi, mình không phản hồi được. Thử lại sau nhé." },
+        { role: "assistant", content: `Xin lỗi, ${reason}` },
       ]);
     } finally {
       setIsChatting(false);

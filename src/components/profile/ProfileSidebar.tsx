@@ -8,6 +8,7 @@ import { Camera, Check, MessageSquare, Plus, Settings, Share2 } from "lucide-rea
 import { createConversationAction } from "@/actions/chat/create-conversation";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { updateProfileAction } from "@/actions/users/update-profile";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { formatCompact } from "@/lib/format-number";
 import { useProfileContext } from "./profile-context";
 
@@ -76,8 +77,8 @@ export function ProfileSidebar() {
       const uploaded = await uploadPostImageAction(formData);
       await updateProfileAction({ [field]: uploaded.url });
       onProfileUpdate({ [field]: uploaded.url });
-    } catch {
-      setUploadError("Tải ảnh thất bại, thử lại sau.");
+    } catch (err) {
+      setUploadError(getApiErrorMessage(err, "Tải ảnh thất bại, thử lại sau."));
     } finally {
       setUploading(false);
     }

@@ -13,6 +13,23 @@ export class ApiError extends Error {
   }
 }
 
+// Trich thong diep loi THAT tu backend (NestJS tra {statusCode, message,
+// error} - message co the la string hoac string[] neu loi validate
+// class-validator co nhieu field) thay vi luon hien 1 cau chung chung
+// "thất bại, thử lại sau" - nguoi dung can biet DUNG ly do (het dung
+// luong/sai dinh dang/server chua cau hinh...) de tu sua, khong phai doan.
+// Dung o MOI noi bat loi tu apiFetch (upload/luu ho so/dang bai...) thay vi
+// moi cho tu viet 1 kieu bat loi rieng.
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { message?: string | string[] } | null;
+    if (body?.message) {
+      return Array.isArray(body.message) ? body.message.join(", ") : body.message;
+    }
+  }
+  return fallback;
+}
+
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,

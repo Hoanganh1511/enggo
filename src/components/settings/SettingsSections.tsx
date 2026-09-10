@@ -14,6 +14,7 @@ import GoogleIcon from "@/components/ui/google-icon";
 import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
 import { updateProfileAction } from "@/actions/users/update-profile";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
+import { getApiErrorMessage } from "@/lib/api/client";
 import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   SelectField,
@@ -36,15 +37,19 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 function SaveBar({
   onSave,
   status,
+  errorMessage,
 }: {
   onSave: () => void;
   status: SaveStatus;
+  errorMessage?: string | null;
 }) {
   return (
     <div className="flex items-center justify-end gap-3 px-5 py-3">
       {status === "saved" && <span className="text-xs text-success">Đã lưu.</span>}
       {status === "error" && (
-        <span className="text-xs text-danger">Không lưu được, thử lại sau.</span>
+        <span className="text-xs text-danger">
+          {errorMessage ?? "Không lưu được, thử lại sau."}
+        </span>
       )}
       <button
         type="button"
@@ -73,6 +78,7 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [website, setWebsite] = useState(profile.websiteUrl ?? "");
   const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
   const [status, setStatus] = useState<SaveStatus>("idle");
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -91,7 +97,8 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
         role,
       });
       setStatus("saved");
-    } catch {
+    } catch (err) {
+      setSaveErrorMessage(getApiErrorMessage(err, "Không lưu được, thử lại sau."));
       setStatus("error");
     }
   }
@@ -110,8 +117,8 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
       const uploaded = await uploadPostImageAction(formData);
       await updateProfileAction({ avatarUrl: uploaded.url });
       setAvatarUrl(uploaded.url);
-    } catch {
-      setAvatarError("Tải ảnh thất bại, thử lại sau.");
+    } catch (err) {
+      setAvatarError(getApiErrorMessage(err, "Tải ảnh thất bại, thử lại sau."));
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -202,7 +209,7 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
         />
       </SettingsRow>
 
-      <SaveBar onSave={handleSave} status={status} />
+      <SaveBar onSave={handleSave} status={status} errorMessage={saveErrorMessage} />
     </SettingsSection>
   );
 }
