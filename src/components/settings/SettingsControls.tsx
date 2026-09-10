@@ -9,14 +9,20 @@ export function SettingsSection({
   title,
   description,
   children,
+  bare = false,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
+  // true khi nam trong 1 accordion item (SettingsShell.tsx) - accordion da
+  // tu ve khung rounded-lg/border/bg rieng, "bare" bo di lop card-trong-card,
+  // chi giu header+divider (border-t de tach voi thanh accordion/section
+  // truoc do, khong phu thuoc vi tri).
+  bare?: boolean;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-surface">
-      <div className="border-b border-border px-5 py-4">
+    <section className={bare ? "" : "rounded-lg border border-border bg-surface"}>
+      <div className={`px-5 py-4 ${bare ? "border-t border-b border-border" : "border-b border-border"}`}>
         <h2 className="text-sm font-bold text-ink">{title}</h2>
         {description && (
           <p className="mt-1 text-xs leading-5 text-ink-muted">{description}</p>

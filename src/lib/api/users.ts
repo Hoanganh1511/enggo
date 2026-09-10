@@ -23,6 +23,7 @@ export type UserProfileApiShape = {
   location: string | null;
   websiteUrl: string | null;
   pronouns: string | null;
+  role: string | null;
   postCount: number;
   isSelf: boolean;
   isFollowing: boolean;
@@ -32,6 +33,28 @@ export function getProfileByUsername(
   username: string,
 ): Promise<UserProfileApiShape> {
   return apiFetch<UserProfileApiShape>(`/users/${username}`);
+}
+
+export type UpdateProfileInput = Partial<{
+  displayName: string;
+  username: string;
+  bio: string;
+  location: string;
+  websiteUrl: string;
+  pronouns: string;
+  role: string;
+}>;
+
+// Redesign Settings - luu that qua PATCH /users/me (bio/location/websiteUrl/
+// pronouns/role nam tren UserProfile, upsert o backend). Tra ve profile day
+// du (cung shape voi getProfileByUsername) de FE cap nhat lai UI ngay.
+export function updateProfile(
+  dto: UpdateProfileInput,
+): Promise<UserProfileApiShape> {
+  return apiFetch<UserProfileApiShape>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(dto),
+  });
 }
 
 export type UserSearchItem = {

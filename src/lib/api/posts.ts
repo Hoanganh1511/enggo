@@ -60,6 +60,7 @@ export function createPost(
     commentsEnabled?: boolean;
     likesEnabled?: boolean;
     searchable?: boolean;
+    excerpt?: string;
   },
 ): Promise<Post> {
   return apiFetch<Post>(`/posts`, {

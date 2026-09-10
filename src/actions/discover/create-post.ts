@@ -11,6 +11,7 @@ export async function createPostAction(
     commentsEnabled?: boolean;
     likesEnabled?: boolean;
     searchable?: boolean;
+    excerpt?: string;
   },
 ) {
   return createPost(kind, data, opts);

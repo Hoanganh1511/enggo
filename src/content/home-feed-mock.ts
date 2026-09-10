@@ -63,6 +63,9 @@ type PostCommon = {
   // Giai doan 2 (migrate xong moi co cot) van tra ve tu API - phong ho gia
   // tri thieu thay vi ep kieu bat buoc.
   visibility?: "draft" | "public" | "limited";
+  // Redesign Compose mobile - nguoi dung tu viet ("Tóm tắt bài viết"), cot
+  // THAT sibling voi visibility/commentsEnabled (khong nam trong `data`).
+  excerpt?: string | null;
   commentsEnabled?: boolean;
   likesEnabled?: boolean;
   searchable?: boolean;

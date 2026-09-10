@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import GoogleIcon from "@/components/ui/google-icon";
 import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
-import type { UserProfileData } from "@/content/user-profile";
+import { updateProfileAction } from "@/actions/users/update-profile";
+import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   SelectField,
   SettingsRow,
@@ -27,31 +28,68 @@ import {
 // UserPreference/UserLegal) chua ton tai, xem lo trinh trong
 // career-tree-api/docs/user-schema-design.md.
 
-function SaveBar({ onSave }: { onSave: () => void }) {
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+function SaveBar({
+  onSave,
+  status,
+}: {
+  onSave: () => void;
+  status: SaveStatus;
+}) {
   return (
-    <div className="flex justify-end px-5 py-3">
+    <div className="flex items-center justify-end gap-3 px-5 py-3">
+      {status === "saved" && <span className="text-xs text-success">Đã lưu.</span>}
+      {status === "error" && (
+        <span className="text-xs text-danger">Không lưu được, thử lại sau.</span>
+      )}
       <button
         type="button"
         onClick={onSave}
-        className="h-9 cursor-pointer rounded-md bg-button-primary-bg px-4 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover"
+        disabled={status === "saving"}
+        className="h-9 cursor-pointer rounded-md bg-button-primary-bg px-4 text-sm font-semibold text-white transition-colors duration-150 ease-out hover:bg-button-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Lưu thay đổi
+        {status === "saving" ? "Đang lưu..." : "Lưu thay đổi"}
       </button>
     </div>
   );
 }
 
-export function ProfileSection({ profile }: { profile: UserProfileData }) {
+// "Hồ sơ công khai" - MUC DUY NHAT trong Settings da noi PATCH /users/me
+// that (xem update-profile.ts) - luu duoc displayName/username/bio/location/
+// websiteUrl/pronouns/role. "Đổi ảnh" van disabled "Sắp có" (chua co ha
+// tang luu file that - xem quyet dinh trong plan redesign Settings).
+export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [displayName, setDisplayName] = useState(profile.displayName);
-  const [username, setUsername] = useState(profile.username);
+  const [username, setUsername] = useState(profile.username ?? "");
   const [bio, setBio] = useState(profile.bio ?? "");
   const [role, setRole] = useState(profile.role ?? "");
   const [location, setLocation] = useState(profile.location ?? "");
   const [website, setWebsite] = useState(profile.websiteUrl ?? "");
   const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
+  const [status, setStatus] = useState<SaveStatus>("idle");
+
+  async function handleSave() {
+    setStatus("saving");
+    try {
+      await updateProfileAction({
+        displayName,
+        username,
+        bio,
+        location,
+        websiteUrl: website,
+        pronouns,
+        role,
+      });
+      setStatus("saved");
+    } catch {
+      setStatus("error");
+    }
+  }
 
   return (
     <SettingsSection
+      bare
       title="Hồ sơ công khai"
       description="Những thông tin này hiển thị với người khác trên trang cá nhân của bạn."
     >
@@ -66,7 +104,9 @@ export function ProfileSection({ profile }: { profile: UserProfileData }) {
           />
           <button
             type="button"
-            className="h-9 cursor-pointer rounded-md border border-border px-3 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+            disabled
+            title="Sắp có"
+            className="h-9 cursor-not-allowed rounded-md border border-border px-3 text-sm font-medium text-ink-faint"
           >
             Đổi ảnh
           </button>
@@ -120,7 +160,7 @@ export function ProfileSection({ profile }: { profile: UserProfileData }) {
         />
       </SettingsRow>
 
-      <SaveBar onSave={() => {}} />
+      <SaveBar onSave={handleSave} status={status} />
     </SettingsSection>
   );
 }
@@ -136,6 +176,7 @@ export function PrivacySection() {
 
   return (
     <SettingsSection
+      bare
       title="Quyền riêng tư"
       description="Kiểm soát ai xem được hồ sơ và tương tác được với bạn."
     >
@@ -236,6 +277,7 @@ export function SecuritySection() {
 
   return (
     <SettingsSection
+      bare
       title="Bảo mật"
       description="Career Tree đăng nhập qua Google — mật khẩu và xác thực 2 lớp do Google quản lý."
     >
@@ -291,7 +333,7 @@ export function PreferenceSection() {
 
   return (
     <>
-      <SettingsSection title="Giao diện & ngôn ngữ">
+      <SettingsSection bare title="Giao diện & ngôn ngữ">
         <SettingsRow label="Giao diện">
           <SelectField
             value={theme}
@@ -316,6 +358,7 @@ export function PreferenceSection() {
       </SettingsSection>
 
       <SettingsSection
+      bare
         title="Thông báo"
         description="Chọn loại hoạt động bạn muốn được thông báo."
       >
@@ -360,7 +403,7 @@ export function AccountSection({ email }: { email: string }) {
 
   return (
     <>
-      <SettingsSection title="Tài khoản">
+      <SettingsSection bare title="Tài khoản">
         <SettingsRow
           label="Email"
           hint="Lấy từ tài khoản Google, không đổi trực tiếp tại đây."
@@ -392,6 +435,7 @@ export function AccountSection({ email }: { email: string }) {
       </SettingsSection>
 
       <SettingsSection
+      bare
         title="Vùng nguy hiểm"
         description="Các thao tác dưới đây ảnh hưởng vĩnh viễn tới tài khoản của bạn."
       >

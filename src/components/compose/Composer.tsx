@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { generateHTML } from "@tiptap/core";
@@ -8,6 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import {
   ChevronDown,
   Image as ImageIcon,
+  ImagePlus,
   WandSparkles,
   Sparkles,
   MessageSquare,
@@ -20,12 +21,23 @@ import {
   HelpCircle,
   PanelRight,
   Send,
+  Globe,
+  FileText,
+  Users,
+  RefreshCw,
+  PenLine,
+  ListTree,
+  Wand2,
+  FileSearch,
+  RotateCcw,
+  SpellCheck2,
 } from "lucide-react";
 import { createPostAction } from "@/actions/discover/create-post";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { improvePostDraftAction } from "@/actions/post-assistant/improve-post-draft";
 import { chatAboutPostDraftAction } from "@/actions/post-assistant/chat-about-post-draft";
 import type { ChatMessage } from "@/lib/api/types";
+import { formatTimeOnly } from "@/lib/format-time";
 import {
   KNOWLEDGE_WORLDS,
   slugToCategoryEnum,
@@ -41,9 +53,30 @@ import { PostEditorToolbar } from "@/components/workspaces/PostEditorToolbar";
 type PublishVisibility = "draft" | "public" | "limited";
 type RightTab = "publish" | "ai";
 
-// 4 goi y nhanh cho "AI hỗ trợ" - nguoi dung van go duoc yeu cau tu do (input
-// ben duoi), day chi la loi tat cho cac yeu cau hay dung nhat.
+// 4 goi y nhanh cho "AI hỗ trợ" (popover trong toolbar, desktop lan mobile
+// deu dung) - nguoi dung van go duoc yeu cau tu do (input ben duoi), day chi
+// la loi tat cho cac yeu cau hay dung nhat.
 const IMPROVE_PRESETS = ["Viết tiếp", "Rút gọn", "Diễn đạt lại", "Sửa lỗi chính tả"];
+
+// 6 the goi y trong tab "Trợ lý AI" (mobile, xem mockup) - CA 6 deu goi lai
+// applyImprove() ~ dung 1 endpoint /post-assistant/improve GENERIC san co
+// (nhan content+instruction bat ky), KHONG can backend moi - chi la 6 chuoi
+// instruction khac nhau.
+const AI_ACTION_CARDS: {
+  icon: typeof PenLine;
+  label: string;
+  desc: string;
+  instruction: string;
+}[] = [
+  { icon: PenLine, label: "Viết mở bài", desc: "Tạo đoạn mở đầu thu hút", instruction: "Viết đoạn mở bài thu hút cho bài viết này" },
+  { icon: ListTree, label: "Viết dàn ý", desc: "Tạo cấu trúc bài viết chi tiết", instruction: "Viết dàn ý (outline) chi tiết cho bài viết này" },
+  { icon: Wand2, label: "Mở rộng nội dung", desc: "Phát triển ý tưởng của bạn", instruction: "Mở rộng và phát triển thêm nội dung bài viết này" },
+  { icon: FileSearch, label: "Tóm tắt nội dung", desc: "Rút gọn bài viết", instruction: "Tóm tắt ngắn gọn nội dung bài viết này" },
+  { icon: RotateCcw, label: "Diễn đạt lại", desc: "Viết lại hay hơn, tự nhiên hơn", instruction: "Diễn đạt lại nội dung cho hay hơn, tự nhiên hơn" },
+  { icon: SpellCheck2, label: "Kiểm tra chính tả", desc: "Phát hiện lỗi và sửa ngữ pháp", instruction: "Kiểm tra và sửa lỗi chính tả, ngữ pháp" },
+];
+
+const DRAFT_STORAGE_KEY = "compose-draft";
 
 // Port tu source composer-knowledge-hub-main.zip, doi tong mau toi -> sang
 // (token app). Giai doan 1 (xem plan "Compose — bien cac phan Sap co thanh
@@ -79,7 +112,12 @@ export function Composer() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
+  const [excerpt, setExcerpt] = useState("");
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const asideRef = useRef<HTMLElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoredRef = useRef(false);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   // Compose Giai doan 2 - 3 co that (khac "Đặt bài viết trả phí" van disabled,
   // xem Toggle o duoi), default true khop @default cua cot o backend.
   const [commentsEnabled, setCommentsEnabled] = useState(true);
@@ -109,6 +147,7 @@ export function Composer() {
     editorProps: {
       attributes: { class: POST_PROSE_CLASS + " min-h-[230px]" },
     },
+    onUpdate: () => scheduleAutosave(),
   });
 
   // shouldRerenderOnTransaction dam bao editor.getText() o day luon la ban
@@ -121,6 +160,79 @@ export function Composer() {
   const categoryLabel = KNOWLEDGE_WORLDS.flatMap((w) => w.topics).find(
     (t) => t.slug === categorySlug,
   )?.label;
+
+  // Autosave nhap (localStorage, khong backend - xem plan redesign Compose
+  // mobile). Debounce 1s sau khi doi title/excerpt/tags/categorySlug/
+  // visibility; noi dung editor tu goi qua onUpdate (xem useEditor ben
+  // duoi) vi editor.state khong nam trong dependency array on dinh duoc.
+  function scheduleAutosave() {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      if (!editor) return;
+      try {
+        localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({
+            title,
+            excerpt,
+            tags,
+            categorySlug,
+            visibility,
+            content: editor.getJSON(),
+            savedAt: Date.now(),
+          }),
+        );
+        setLastSavedAt(Date.now());
+      } catch {
+        // localStorage day/bi chan - im lang, autosave chi la luoi an toan.
+      }
+    }, 1000);
+  }
+
+  useEffect(() => {
+    scheduleAutosave();
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, excerpt, tags, categorySlug, visibility]);
+
+  // Khoi phuc nhap 1 LAN duy nhat khi editor san sang - CHI khi trang dang
+  // thuc su rong (chua go gi), tranh ghi de neu nguoi dung da bat dau viet
+  // truoc khi effect nay chay.
+  useEffect(() => {
+    if (!editor || restoredRef.current) return;
+    restoredRef.current = true;
+    if (title.trim() || !editor.isEmpty) return;
+    // setTimeout(0) - day setState ra khoi than effect (react-hooks/
+    // set-state-in-effect), chi chay 1 LAN luc mount nen do tre 1 tick
+    // khong anh huong trai nghiem.
+    setTimeout(() => {
+      try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (!raw) return;
+        const draft = JSON.parse(raw) as {
+          title?: string;
+          excerpt?: string;
+          tags?: string[];
+          categorySlug?: string | null;
+          visibility?: PublishVisibility;
+          content?: object;
+          savedAt?: number;
+        };
+        if (draft.title) setTitle(draft.title);
+        if (draft.excerpt) setExcerpt(draft.excerpt);
+        if (Array.isArray(draft.tags)) setTags(draft.tags);
+        if (draft.categorySlug) setCategorySlug(draft.categorySlug);
+        if (draft.visibility) setVisibility(draft.visibility);
+        if (draft.content) editor.commands.setContent(draft.content);
+        if (draft.savedAt) setLastSavedAt(draft.savedAt);
+      } catch {
+        // Nhap hong/khong doc duoc - bo qua, khong chan trang soan.
+      }
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
 
   function addTag() {
     const t = tagDraft.trim().replace(/^#/, "");
@@ -153,10 +265,13 @@ export function Composer() {
     setIsPosting(true);
     setError(null);
     const richContent = editor.getJSON();
-    const excerptSource = title.trim()
+    // "Tóm tắt bài viết" nguoi dung tu go (excerpt state) uu tien; rong thi
+    // fallback tu cat content nhu truoc (backend cung tu fallback neu khong
+    // gui gi, day chi la fallback PHIA CLIENT cho `data.content` - field
+    // rieng, khac cot `excerpt` that o duoi).
+    const fallbackContent = title.trim()
       ? `${title.trim()}\n\n${editor.getText()}`
       : editor.getText();
-    const excerpt = excerptSource.slice(0, 600);
     const category = categorySlug
       ? slugToCategoryEnum(categorySlug)
       : undefined;
@@ -164,13 +279,25 @@ export function Composer() {
       const created = await createPostAction(
         "text",
         {
-          content: excerpt,
+          content: excerpt.trim() || fallbackContent.slice(0, 600),
           richContent,
           coverImage: coverImageUrl || undefined,
           tags,
         },
-        { category, visibility, commentsEnabled, likesEnabled, searchable },
+        {
+          category,
+          visibility,
+          commentsEnabled,
+          likesEnabled,
+          searchable,
+          excerpt: excerpt.trim() || undefined,
+        },
       );
+      try {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        // im lang - khong critical, chi la don dep nhap con lai.
+      }
       router.push(`/p/${created.id}`);
     } catch {
       setError("Không đăng được bài, thử lại sau.");
@@ -266,6 +393,36 @@ export function Composer() {
             </div>
           </div>
 
+          {/* Mobile (<lg) - dropzone anh bia ro rang hon khi CHUA co anh
+              (thay cho chi 1 icon nho trong hero). Da co anh roi thi hero
+              ben duoi (moi kich thuoc) da du de doi/xoa, khong can dropzone
+              nay nua. Co che upload GIU NGUYEN (uploadCoverImage). */}
+          {!coverImageUrl && (
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = e.dataTransfer.files?.[0];
+                if (file) uploadCoverImage(file);
+              }}
+              onClick={() => coverInputRef.current?.click()}
+              className="mb-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-surface-muted py-8 text-center lg:hidden"
+            >
+              <ImagePlus size={24} className="text-ink-faint" />
+              <p className="text-sm text-ink-muted">
+                {isUploadingCover ? (
+                  "Đang tải ảnh..."
+                ) : (
+                  <>
+                    Kéo thả ảnh hoặc{" "}
+                    <span className="font-semibold text-primary">chọn file</span>
+                  </>
+                )}
+              </p>
+              <p className="text-xs text-ink-faint">JPG, PNG (tối đa 25MB)</p>
+            </div>
+          )}
+
           <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_8px_30px_rgba(16,24,40,.08)]">
             <div
               className="relative flex h-[220px] flex-col justify-end bg-surface-muted p-9"
@@ -317,12 +474,20 @@ export function Composer() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Tiêu đề bài viết"
+                maxLength={150}
                 className={`w-full bg-transparent text-4xl font-bold tracking-tight outline-none md:text-5xl ${
                   coverImageUrl
                     ? "text-white placeholder:text-white/60"
                     : "text-ink placeholder:text-ink-faint"
                 }`}
               />
+              <p
+                className={`mt-1 text-right text-xs tabular-nums ${
+                  coverImageUrl ? "text-white/60" : "text-ink-faint"
+                }`}
+              >
+                {title.length}/150
+              </p>
             </div>
 
             {editor && !previewMode && (
@@ -416,16 +581,56 @@ export function Composer() {
                 <EditorContent editor={editor} />
               )}
 
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-border bg-surface-muted px-4 py-4 text-sm text-ink-muted">
+              <div className="mt-6 hidden items-center gap-3 rounded-xl border border-border bg-surface-muted px-4 py-4 text-sm text-ink-muted lg:flex">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-50 text-cyan-600">
                   <Sparkles className="h-4 w-4" />
                 </span>
                 &ldquo;Bạn có muốn viết về điều gì đó bạn vừa học được và có thể
                 hữu ích cho người khác không?&rdquo;
               </div>
+
+              {/* Mobile (<lg) - "Gợi ý cho bạn": bam 1 chip = dien san cau
+                  hoi vao khung chat that (chatDraft) roi chuyen sang tab
+                  "Trợ lý AI" (khong logic AI moi, tai dung sendChat da co). */}
+              <div className="mt-6 rounded-xl border border-border bg-surface-muted p-4 lg:hidden">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                    <Sparkles size={14} className="text-cyan-600" /> Gợi ý cho bạn
+                  </p>
+                  <RefreshCw size={13} className="text-ink-faint" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    "Viết mở bài thu hút cho bài viết về...",
+                    "Viết dàn ý chi tiết cho chủ đề này",
+                    "Diễn đạt lại đoạn văn này hay hơn",
+                  ].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setChatDraft(s);
+                        setRightTab("ai");
+                        asideRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                      }}
+                      className="cursor-pointer rounded-lg border border-border bg-surface px-3 py-2 text-left text-xs text-ink-muted hover:bg-hover-bg"
+                    >
+                      &ldquo;{s}&rdquo;
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-ink-faint">
+                  Mẹo: Sử dụng ## để tạo tiêu đề, **bold** để in đậm.
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between border-t border-border bg-surface-muted px-5 py-3 text-sm text-ink-faint">
+            {/* Thanh trang thai duoi cung - desktop giu NGUYEN (hidden lg:flex),
+                mobile them dong autosave that (xem scheduleAutosave o tren). */}
+            <div className="hidden items-center justify-between border-t border-border bg-surface-muted px-5 py-3 text-sm text-ink-faint lg:flex">
               <div className="flex items-center gap-3">
                 <span>{words} chữ</span>
                 <button
@@ -442,33 +647,84 @@ export function Composer() {
                 <PanelRight className="h-4 w-4" />
               </div>
             </div>
+            <div className="flex items-center justify-between border-t border-border bg-surface-muted px-4 py-2.5 text-xs text-ink-faint lg:hidden">
+              <span>
+                {words} từ
+                {lastSavedAt && ` · Đã lưu nháp lúc ${formatTimeOnly(new Date(lastSavedAt).toISOString())}`}
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRightTab("ai")}
+                  aria-label="Mở Trợ lý AI"
+                  className="cursor-pointer text-ink-faint hover:text-ink"
+                >
+                  <WandSparkles className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  aria-label="Chọn ảnh bìa"
+                  className="cursor-pointer text-ink-faint hover:text-ink"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
-        <aside className="space-y-4">
+        <aside ref={asideRef} className="space-y-4">
           <PanelTabs active={rightTab} setActive={setRightTab} />
 
           {rightTab === "publish" ? (
             <>
-              <Panel title="Cài đặt xuất bản">
-                <Radio
-                  checked={visibility === "public"}
-                  onClick={() => setVisibility("public")}
-                  title="Công khai"
-                  desc="Mọi người đều có thể xem"
-                />
-                <Radio
-                  checked={visibility === "draft"}
-                  onClick={() => setVisibility("draft")}
-                  title="Bản nháp"
-                  desc="Chỉ mình bạn thấy, không hiện trên feed"
-                />
-                <Radio
-                  checked={visibility === "limited"}
-                  onClick={() => setVisibility("limited")}
-                  title="Công khai giới hạn"
-                  desc="Không hiện trên feed/tìm kiếm, ai có link vẫn xem được"
-                />
+              <Panel title="Chế độ xuất bản">
+                {/* Mobile (<lg) - the (card) co icon, khop mockup. Desktop
+                    (hidden lg:block) giu nguyen danh sach Radio hien co. */}
+                <div className="grid grid-cols-3 gap-2 lg:hidden">
+                  <VisibilityCard
+                    icon={Globe}
+                    checked={visibility === "public"}
+                    onClick={() => setVisibility("public")}
+                    title="Công khai"
+                    desc="Mọi người đều xem"
+                  />
+                  <VisibilityCard
+                    icon={FileText}
+                    checked={visibility === "draft"}
+                    onClick={() => setVisibility("draft")}
+                    title="Bản nháp"
+                    desc="Chỉ mình bạn thấy"
+                  />
+                  <VisibilityCard
+                    icon={Users}
+                    checked={visibility === "limited"}
+                    onClick={() => setVisibility("limited")}
+                    title="Giới hạn"
+                    desc="Ai có link mới xem"
+                  />
+                </div>
+                <div className="hidden lg:block">
+                  <Radio
+                    checked={visibility === "public"}
+                    onClick={() => setVisibility("public")}
+                    title="Công khai"
+                    desc="Mọi người đều có thể xem"
+                  />
+                  <Radio
+                    checked={visibility === "draft"}
+                    onClick={() => setVisibility("draft")}
+                    title="Bản nháp"
+                    desc="Chỉ mình bạn thấy, không hiện trên feed"
+                  />
+                  <Radio
+                    checked={visibility === "limited"}
+                    onClick={() => setVisibility("limited")}
+                    title="Công khai giới hạn"
+                    desc="Không hiện trên feed/tìm kiếm, ai có link vẫn xem được"
+                  />
+                </div>
               </Panel>
 
               <Panel title="Danh mục">
@@ -571,6 +827,20 @@ export function Composer() {
                 </div>
               </Panel>
 
+              <Panel title="Tóm tắt bài viết">
+                <textarea
+                  value={excerpt}
+                  onChange={(e) => setExcerpt(e.target.value)}
+                  maxLength={300}
+                  rows={3}
+                  placeholder="Viết vài dòng mô tả ngắn về bài viết..."
+                  className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-blue-300"
+                />
+                <p className="mt-1 text-right text-xs text-ink-faint tabular-nums">
+                  {excerpt.length}/300
+                </p>
+              </Panel>
+
               <div className="rounded-xl border border-border bg-surface p-4">
                 <p className="font-medium text-ink">
                   Hãy để cảm hứng muốn viết luôn ở bên bạn.
@@ -612,6 +882,34 @@ export function Composer() {
             </>
           ) : (
             <Panel title="Trợ lý AI">
+              {/* Mobile (<lg) - 6 the goi y, deu goi applyImprove() (endpoint
+                  /post-assistant/improve co san, generic - xem
+                  AI_ACTION_CARDS). Desktop khong doi (khong co khoi nay,
+                  presets 4-nut van o popover "AI hỗ trợ" tren toolbar). */}
+              <div className="mb-4 flex flex-col gap-1.5 lg:hidden">
+                {AI_ACTION_CARDS.map((card) => (
+                  <button
+                    key={card.label}
+                    type="button"
+                    disabled={isImproving}
+                    onClick={() => applyImprove(card.instruction)}
+                    className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5 text-left transition hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                      <card.icon size={15} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-ink">{card.label}</span>
+                      <span className="block text-xs text-ink-faint">{card.desc}</span>
+                    </span>
+                  </button>
+                ))}
+                {isImproving && (
+                  <p className="text-xs text-ink-faint">Đang tạo gợi ý...</p>
+                )}
+                {aiError && <p className="text-xs text-danger">{aiError}</p>}
+              </div>
+
               <div className="flex max-h-[420px] flex-col gap-3">
                 <div className="flex-1 space-y-2.5 overflow-y-auto">
                   {chatMessages.length === 0 ? (
@@ -690,7 +988,7 @@ function PanelTabs({
   setActive: (x: RightTab) => void;
 }) {
   const tabs: { key: RightTab; label: string }[] = [
-    { key: "publish", label: "Xuất bản" },
+    { key: "publish", label: "Cài đặt" },
     { key: "ai", label: "Trợ lý AI" },
   ];
   return (
@@ -710,6 +1008,38 @@ function PanelTabs({
         </button>
       ))}
     </div>
+  );
+}
+
+// The che do xuat ban dang card (mobile, xem VisibilityCard trong Composer) -
+// cung state/interaction voi Radio ben duoi (desktop), chi khac trinh bay.
+function VisibilityCard({
+  icon: Icon,
+  checked,
+  onClick,
+  title,
+  desc,
+}: {
+  icon: typeof Globe;
+  checked: boolean;
+  onClick: () => void;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-center transition ${
+        checked
+          ? "border-blue-400 bg-blue-50 text-blue-700"
+          : "border-border text-ink-muted hover:bg-hover-bg"
+      }`}
+    >
+      <Icon size={18} strokeWidth={1.85} />
+      <span className="text-xs font-semibold">{title}</span>
+      <span className="text-[10px] leading-3.5 text-ink-faint">{desc}</span>
+    </button>
   );
 }
 
