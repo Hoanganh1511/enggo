@@ -85,7 +85,7 @@ export function ProfileImageViewer({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-40 flex flex-col bg-black"
+      className="fixed inset-0 z-40 flex flex-col bg-black/80 backdrop-blur-sm"
     >
       <div className="flex shrink-0 items-center justify-between px-4 py-3">
         <button
