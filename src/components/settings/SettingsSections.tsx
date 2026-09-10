@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -16,6 +16,7 @@ import { revokeSessionsAction } from "@/actions/auth/revoke-sessions-action";
 import { updateProfileAction } from "@/actions/users/update-profile";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
+import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   SelectField,
@@ -83,6 +84,14 @@ export function ProfileSection({ profile }: { profile: UserProfileApiShape }) {
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl);
   const avatarUpload = useProfileImageUpload("avatarUrl", setAvatarUrl);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const setCurrentAvatarUrl = useCurrentAvatarStore((s) => s.setAvatarUrl);
+
+  // Settings luon la trang cua CHINH MINH - tu "chua lanh" store header moi
+  // lan vao trang nay, phong truong hop lan doi avatar truoc chua kip dong
+  // bo (xem ghi chu trong current-avatar-store.ts).
+  useEffect(() => {
+    setCurrentAvatarUrl(profile.avatarUrl);
+  }, [profile.avatarUrl, setCurrentAvatarUrl]);
 
   async function handleSave() {
     setStatus("saving");

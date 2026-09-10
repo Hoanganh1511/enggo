@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { Camera, Check, Loader2, MessageSquare, Plus, Settings, Share2 } from "l
 import { createConversationAction } from "@/actions/chat/create-conversation";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { formatCompact } from "@/lib/format-number";
+import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 import { useProfileContext } from "./profile-context";
 
 // Sidebar profile - redesign theo mockup "WriteHub" nguoi dung gui: cover
@@ -33,6 +34,14 @@ export function ProfileSidebar() {
   );
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const setCurrentAvatarUrl = useCurrentAvatarStore((s) => s.setAvatarUrl);
+
+  // Tu "chua lanh" store header moi lan xem lai profile CUA CHINH MINH - phong
+  // truong hop useSession().update() (best-effort, xem use-profile-image-
+  // upload.ts) khong kip dong bo JWT truoc do (vd sau F5).
+  useEffect(() => {
+    if (profile.isSelf) setCurrentAvatarUrl(profile.avatarUrl);
+  }, [profile.isSelf, profile.avatarUrl, setCurrentAvatarUrl]);
 
   async function handleMessage() {
     if (!profile.username || messaging) return;

@@ -18,6 +18,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { signOutAction } from "@/actions/auth/sign-out-action";
+import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 
 export type AccountUser = {
   name?: string | null;
@@ -36,11 +37,16 @@ function getInitials(name?: string | null): string {
 // Export de AppSidebar.tsx dung lai cho the profile (avatar + fallback chu
 // cai dau) thay vi viet lai logic fallback rieng.
 export function Avatar({ user, size }: { user: AccountUser; size: number }) {
-  if (user.image) {
+  // overrideUrl (Zustand, dung chung tab) uu tien hon session.user.image -
+  // xem ghi chu trong current-avatar-store.ts ve ly do khong the chi dua
+  // vao session next-auth de dong bo avatar ngay sau khi doi.
+  const overrideUrl = useCurrentAvatarStore((s) => s.overrideUrl);
+  const image = overrideUrl ?? user.image;
+  if (image) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={user.image}
+        src={image}
         alt=""
         referrerPolicy="no-referrer"
         width={size}
