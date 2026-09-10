@@ -23,7 +23,7 @@ export function GroupIconPicker({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface-muted px-2.5">
+      <div className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-input-bg px-2.5">
         <Search size={12} strokeWidth={1.9} className="text-ink-faint" />
         <input
           value={search}

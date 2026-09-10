@@ -63,6 +63,22 @@
   --surface: #ffffff;
   --surface-raised: #ffffff;
   --surface-muted: #f4f4f5;
+  /* Bo token rieng cho input/textarea/select TOAN APP (TextField/TextArea/
+     SelectField trong SettingsControls.tsx va moi o nhap khac) - truoc day
+     dung chung --surface-muted (#f4f4f5) voi ca head accordion/dropdown/
+     the..., nguoi dung thay "hoi dam" (giong disabled) kho phan biet trang
+     thai. Gia tri lay dung theo bang mau nguoi dung cung cap (mockup so
+     sanh Hien tai/De xuat, trang Settings). --input-focus la mau RIENG
+     (xanh tim, khac --primary cam) - CHU DICH danh rieng cho trang thai
+     focus cua input, khong dung --focus-border/--primary chung cua app.
+     --input-disabled dung khi input disabled (chua co input nao dung state
+     nay hien tai, du san cho sau). */
+  --input-bg: #f8f8f9;
+  --input-border: #dedee3;
+  --input-text: #202124;
+  --input-placeholder: #9a9aa3;
+  --input-focus: #6d7cff;
+  --input-disabled: #f1f1f3;
   --surface-header: color-mix(in srgb, var(--background) 86%, transparent);
   --hover-bg: #f5f5f5;
   --press-bg: color-mix(in srgb, var(--primary) 10%, white);
@@ -239,6 +255,12 @@
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
   --color-surface-muted: var(--surface-muted);
+  --color-input-bg: var(--input-bg);
+  --color-input-border: var(--input-border);
+  --color-input-text: var(--input-text);
+  --color-input-placeholder: var(--input-placeholder);
+  --color-input-focus: var(--input-focus);
+  --color-input-disabled: var(--input-disabled);
   --color-surface-header: var(--surface-header);
   --color-background-secondary: var(--background-secondary);
   --color-hover-bg: var(--hover-bg);

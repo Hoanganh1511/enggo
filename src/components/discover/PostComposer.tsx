@@ -115,7 +115,7 @@ const TYPE_GROUPS: { label: string; types: TypeOption[] }[] = [
 const ALL_TYPES = TYPE_GROUPS.flatMap((g) => g.types);
 
 const fieldInputClass =
-  "h-11 min-w-0 flex-1 rounded-lg border border-border bg-surface-muted py-1 px-2 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none";
+  "h-11 min-w-0 flex-1 rounded-lg border border-border bg-input-bg py-1 px-2 text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none";
 
 function FieldRow({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -639,7 +639,7 @@ const PostComposer = () => {
             onFocus={() => setIsOpen(true)}
             placeholder={PLACEHOLDER_BY_KIND[activeKind]}
             rows={4}
-            className="min-h-28 min-w-0 flex-1 resize-none rounded-lg border border-border bg-surface-muted px-4 py-3 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
+            className="min-h-28 min-w-0 flex-1 resize-none rounded-lg border border-border bg-input-bg px-4 py-3 font-mono text-sm text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
           />
         ) : (
           <input
@@ -650,7 +650,7 @@ const PostComposer = () => {
             placeholder={
               PLACEHOLDER_BY_KIND[activeKind] ?? "Bạn muốn chia sẻ điều gì?"
             }
-            className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-surface-muted px-4 text-base text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
+            className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-input-bg px-4 text-base text-ink placeholder:text-ink-faint focus:border-focus-border focus:outline-none"
           />
         )}
         <div className="flex shrink-0 gap-1">

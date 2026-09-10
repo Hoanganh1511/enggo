@@ -191,7 +191,7 @@ export function PostEditorModal({
               <select
                 value={selectedSeriesId}
                 onChange={(e) => setSelectedSeriesId(e.target.value)}
-                className="h-8 min-w-0 flex-1 cursor-pointer rounded-md border border-border bg-surface-muted px-2 text-xs font-medium text-ink-muted outline-none"
+                className="h-8 min-w-0 flex-1 cursor-pointer rounded-md border border-border bg-input-bg px-2 text-xs font-medium text-ink-muted outline-none"
               >
                 <option value="">Không thuộc danh mục nào</option>
                 {seriesOptions.map((s) => (
