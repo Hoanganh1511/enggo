@@ -543,6 +543,53 @@ body {
   }
 }
 
+/* Loading "Water Fill" cho anh bia luc dang upload (xem ProfileSidebar.tsx,
+   coverUpload.isUploading) - khong co progress % that (upload la 1 await
+   duy nhat, khong co progress event tu server) nen mo phong muc nuoc dang
+   LIEN TUC dang len roi lap lai (sawtooth), thay vi 1 spinner tinh, de bao
+   "van dang xu ly" ro hon. ::before la khoi nuoc (mau primary mo), ::after
+   la dai song mong (tai dung texture + animation cua .poll-wave o tren) bam
+   theo dung mep tren khoi nuoc, ca 2 cung chay 1 animation top% de dong bo. */
+.cover-water-fill {
+  position: relative;
+  overflow: hidden;
+}
+.cover-water-fill::before,
+.cover-water-fill::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+.cover-water-fill::before {
+  bottom: 0;
+  top: 100%;
+  background: color-mix(in srgb, var(--primary) 45%, transparent);
+  animation: cover-water-rise 2.6s ease-in-out infinite;
+}
+.cover-water-fill::after {
+  height: 16px;
+  top: 100%;
+  transform: translateY(-50%);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><path d="M0 10 Q10 2 20 10 T40 10 V20 H0 Z" fill="white" fill-opacity="0.75"/></svg>');
+  background-repeat: repeat-x;
+  background-size: 40px 100%;
+  animation:
+    cover-water-rise 2.6s ease-in-out infinite,
+    poll-wave-move 1.2s linear infinite;
+}
+@keyframes cover-water-rise {
+  0% {
+    top: 100%;
+  }
+  80% {
+    top: 14%;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
 .react-flow__controls {
   box-shadow: none;
   border: 1px solid var(--border);

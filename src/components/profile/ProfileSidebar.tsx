@@ -83,8 +83,14 @@ export function ProfileSidebar() {
             <div className="size-full bg-gradient-to-br from-primary-soft via-primary-soft to-primary/20" />
           )}
           {coverUpload.isUploading && (
-            <div className="absolute inset-0 grid place-items-center bg-black/30">
-              <Loader2 size={22} strokeWidth={2.2} className="animate-spin text-white" />
+            <div className="cover-water-fill absolute inset-0 bg-black/15">
+              <div className="absolute inset-0 grid place-items-center">
+                <Loader2
+                  size={22}
+                  strokeWidth={2.2}
+                  className="relative z-10 animate-spin text-white drop-shadow"
+                />
+              </div>
             </div>
           )}
           {profile.isSelf && (
