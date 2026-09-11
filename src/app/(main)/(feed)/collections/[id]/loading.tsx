@@ -2,10 +2,13 @@ import Skeleton from "@/components/ui/skeleton";
 
 // Route-level Suspense fallback cho /collections/[id] - khop dung khung
 // that trong page.tsx: back link + anh bia ti le 3/1 + tieu de/mo ta/thong
-// tin (so bai/rieng tu-cong khai/cap nhat) + luoi NoteCard.tsx 3 cot.
+// tin (so bai/rieng tu-cong khai/cap nhat) + luoi NoteCard.tsx 4 cot. KHONG
+// gioi han max-w (page.tsx that cung chi "w-full", layout cha (feed)/layout.tsx
+// khong co max-width) - truoc day co max-w-5xl khien skeleton hep hon han
+// trang that luc noi dung load xong, gay "nhay" layout ro ret.
 export default function CollectionDetailLoading() {
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="w-full">
       <Skeleton className="h-4 w-20" />
 
       <Skeleton className="mt-4 aspect-3/1 w-full rounded-xl" />
@@ -23,8 +26,8 @@ export default function CollectionDetailLoading() {
         <Skeleton className="h-9 w-24 shrink-0 rounded-full" />
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="mt-8 grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
           <div key={i}>
             <Skeleton className="aspect-16/10 w-full rounded-lg" />
             <Skeleton className="mt-2.5 h-4 w-full" />
