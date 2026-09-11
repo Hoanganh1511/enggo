@@ -7,6 +7,7 @@ import {
 } from "@/components/discover/home-feed/post-display";
 import { formatCompact } from "@/lib/format-number";
 import { formatRelativeTime } from "@/lib/format-time";
+import { ArticleMainImage } from "./ArticleMainImage";
 
 // Dau trang chi tiet bai viet - GOI chung anh bia + tieu de + mo ta (excerpt
 // that, xem post.excerpt) + cum thich/binh luan + tac gia GON vao 1 khoi
@@ -23,16 +24,7 @@ export function ArticleHeader({ post }: { post: Post }) {
   return (
     <header className="flex flex-col gap-4">
       {imageUrl && (
-        <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-surface-muted">
-          <Image
-            src={imageUrl}
-            alt={title}
-            fill
-            sizes="900px"
-            priority
-            className="object-cover"
-          />
-        </div>
+        <ArticleMainImage imageUrl={imageUrl} alt={title} postId={post.id} />
       )}
 
       {/* font-content: mo ta + thong tin bai/tac gia la NOI DUNG, dung

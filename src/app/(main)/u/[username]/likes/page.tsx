@@ -8,7 +8,7 @@ import { useAllPosts } from "@/lib/discover/use-all-posts";
 // khong loc theo chinh chu profile nhu cac tab khac.
 export default function ProfileLikesTabPage() {
   const allPosts = useAllPosts();
-  const posts = useMemo(() => allPosts.filter((p) => p.liked), [allPosts]);
+  const posts = useMemo(() => allPosts.filter((p) => p.likedByMe), [allPosts]);
 
   return (
     <ProfileArticleGrid

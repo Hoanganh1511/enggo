@@ -72,6 +72,18 @@ export function createPost(
   });
 }
 
+// Like that (PostLike, tu 2026-09-12) - cung shape response voi
+// togglePostCommentLike (post-comments.ts): {liked, likesCount} la KET QUA
+// cua lan toggle nay, KHAC field hien thi `likedByMe` tren Post (xem
+// home-feed-mock.ts).
+export function toggleLikePost(
+  id: string,
+): Promise<{ liked: boolean; likesCount: number }> {
+  return apiFetch<{ liked: boolean; likesCount: number }>(`/posts/${id}/like`, {
+    method: "POST",
+  });
+}
+
 // Sua bai da dang (tinh nang Sua bai, Composer.tsx `initialPost`) - PATCH
 // dung id CU (khong tao bai moi). `kind` KHONG gui duoc (khong the doi sau
 // khi tao, xem UpdatePostDto o backend) - `data` optional vi co the chi sua

@@ -2,10 +2,11 @@ import { auth } from "@/auth";
 import { getFeedCategoryTree } from "@/lib/api/feed-categories";
 import { listPostsAction } from "@/actions/discover/list-posts";
 import { listPublicCollectionsAction } from "@/actions/discover/collections/list-public-collections";
+import { getFollowingAction } from "@/actions/discover/follow-user";
 import { normalizePost } from "@/lib/discover/normalize-post";
 import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
 import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
-import { CreatorRail } from "@/components/discover/articles-hub/CreatorRail";
+import { CreatorRail, type CreatorSummary } from "@/components/discover/articles-hub/CreatorRail";
 import { AttentionCollectionsRail } from "@/components/discover/articles-hub/AttentionCollectionsRail";
 import { NewestSection } from "@/components/discover/articles-hub/NewestSection";
 import { ArticlesPostGrid } from "@/components/discover/articles-hub/ArticlesPostGrid";
@@ -56,17 +57,31 @@ export default async function ArticlesPage() {
     )
   ).filter((g) => g.posts.length > 0);
 
-  // Author (khong phai CreatorSummary hep hon cua CreatorRail) - chi can 3
-  // field (username/name/avatarUrl) nhung giu nguyen shape Author cho gon,
-  // khong tach type rieng chi de bot vai field.
-  const creators: Author[] = [];
+  const authorCandidates: Author[] = [];
   const seenUsernames = new Set<string>();
   for (const post of posts) {
     if (seenUsernames.has(post.author.username)) continue;
     seenUsernames.add(post.author.username);
-    creators.push(post.author);
-    if (creators.length >= 12) break;
+    authorCandidates.push(post.author);
+    if (authorCandidates.length >= 12) break;
   }
+  // isFollowing THAT (tu 2026-09-12) - de CreatorRail.tsx biet an/hien dau
+  // "+" theo doi nhanh goc avatar, khong hien nham voi nguoi da theo doi.
+  // Chi lay TRANG DAU danh sach dang theo doi (khong phan trang sau, du cho
+  // muc dich "goi y nhanh" nay) - dung tinh than followingUsernames o /articles
+  // (ban cu, xem git history).
+  const followingList = username
+    ? await getFollowingAction(username).catch(() => ({ items: [], nextCursor: null }))
+    : { items: [], nextCursor: null };
+  const followingUsernames = new Set(
+    followingList.items.map((u) => u.username).filter((u): u is string => Boolean(u)),
+  );
+  const creators: CreatorSummary[] = authorCandidates.map((author) => ({
+    username: author.username,
+    name: author.name,
+    avatarUrl: author.avatarUrl,
+    isFollowing: followingUsernames.has(author.username),
+  }));
 
   return (
     <>

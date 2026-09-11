@@ -1,6 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, PenLine } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // 3 anh nguoi dung cung cap (feature-ai/work/life.jpg) CHI dung lam LOP ANH
 // NEN - tieu de/mo ta la 1 lop RIENG do chinh component nay ve (khong dung
@@ -28,38 +32,138 @@ const FEATURE_TILES = [
   },
 ];
 
-// Anh hero - THIET KE that co 4 anh xoay carousel, hien tai CHI co 1 anh that
-// (hero-1-articles-page.png, nguoi dung cung cap - canh ban lam viec canh cua
-// so, da co san chu thich "good ideas find people.." NUNG SAN trong chinh
-// anh, KHONG can ve them lop text rieng de nua) - 3 anh con lai se bo sung
-// sau. Cham dot o duoi VAN hien du 4 (dung UI cuoi cung), nhung CHUA co logic
-// xoay/carousel that (chi 1 slide thi khong co gi de xoay) - them
-// useState/interval khi co du 4 anh that.
-const HERO_SLIDE_COUNT = 4;
+// 4 slide xoay gioi thieu TINH NANG THAT cua app (khac FEATURE_TILES o tren -
+// do la chu de NOI DUNG, day la TINH NANG SAN PHAM) - thay cho 1 hero tinh
+// chi co "Viết ngay" truoc day. Slide 1 giu NGUYEN anh+chu cu (hero-1-articles-page.png
+// da co san chu thich "good ideas find people.." nung trong anh, khong doi
+// de khong mat dong chu that dep do) - 3 slide sau tai dung anh cua
+// FEATURE_TILES lam nen (da la anh trang tri, khong gan noi dung cu the nen
+// dung lai duoc) kem tieu de/mo ta MOI ve tinh nang, moi slide 1 CTA rieng
+// dan thang toi trang tinh nang do (khac ban cu, moi slide deu la "Viết ngay").
+const HERO_SLIDES = [
+  {
+    image: "/assets/images/hero-1-articles-page.png",
+    tagline: "Good ideas find people…",
+    title: (
+      <>
+        Viết, là để
+        <br />
+        sống sâu hơn.
+      </>
+    ),
+    description: (
+      <>
+        Suy nghĩ, tạo ra, và chia sẻ.
+        <br />
+        Đây là nơi lưu giữ điều bạn học và trao đi điều bạn tin.
+      </>
+    ),
+    ctaLabel: "Bắt đầu viết",
+    ctaIcon: PenLine,
+    getHref: (writeHref: string) => writeHref,
+  },
+  {
+    image: "/assets/images/articles-hub/feature-ai.jpg",
+    tagline: "AI đồng hành khi bạn viết",
+    title: (
+      <>
+        Chưa biết viết gì?
+        <br />
+        Để AI gợi ý cùng bạn.
+      </>
+    ),
+    description: (
+      <>
+        Gợi ý ý tưởng, chỉnh câu chữ, tóm tắt nội dung.
+        <br />
+        Ngay trong lúc soạn bài, không cần rời trang.
+      </>
+    ),
+    ctaLabel: "Thử viết với AI",
+    ctaIcon: ArrowRight,
+    getHref: (writeHref: string) => writeHref,
+  },
+  {
+    image: "/assets/images/articles-hub/feature-work.jpg",
+    tagline: "Bộ sưu tập của riêng bạn",
+    title: (
+      <>
+        Gom lại những gì
+        <br />
+        đáng đọc lại.
+      </>
+    ),
+    description: (
+      <>
+        Lưu bài viết vào bộ sưu tập theo chủ đề bạn tự đặt.
+        <br />
+        Công khai để chia sẻ, hoặc riêng tư cho chính mình.
+      </>
+    ),
+    ctaLabel: "Khám phá bộ sưu tập",
+    ctaIcon: ArrowRight,
+    getHref: () => "/collections",
+  },
+  {
+    image: "/assets/images/articles-hub/feature-life.jpg",
+    tagline: "Theo dõi hành trình mỗi ngày",
+    title: (
+      <>
+        Tiến độ, mục tiêu,
+        <br />
+        năng lượng — 1 nơi.
+      </>
+    ),
+    description: (
+      <>
+        Ghi lại việc đã làm, mục tiêu đang theo đuổi.
+        <br />
+        Nhìn lại chặng đường của chính mình bất cứ lúc nào.
+      </>
+    ),
+    ctaLabel: "Xem trang theo dõi",
+    ctaIcon: ArrowRight,
+    getHref: () => "/tracking",
+  },
+];
 
-// Server Component thuan (khong "use client") - hero + 3 the linh vuc noi
-// bat la static, khong can hydrate. Bo cuc 70/30 (hero chiem 70%, cum 3 the
-// chiem 30%) theo dung thiet ke tham chieu nguoi dung gui.
+const SLIDE_INTERVAL_MS = 6000;
+
+// "use client" (khac ban cu, tung la Server Component thuan) - carousel THAT
+// can useState (slide dang hien) + useEffect (tu chuyen slide dinh ky). 3 the
+// linh vuc noi bat (FEATURE_TILES) VAN tinh, khong doi.
 export function ArticlesHero({ writeHref }: { writeHref: string }) {
+  const [active, setActive] = useState(0);
+  const slide = HERO_SLIDES[active];
+  const CtaIcon = slide.ctaIcon;
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % HERO_SLIDES.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <>
-      {/* Mobile/tablet (<lg) - dai ngan gon thay vi hero to + 3 feature tile
-          (chiem qua nhieu dat theo gop y nguoi dung), chi con 1 dong tagline
-          + nut "Viết ngay". Desktop (lg+) giu NGUYEN ban duoi, khong doi. */}
+      {/* Mobile/tablet (<lg) - dai ngan gon, chi doi TAGLINE theo slide dang
+          xoay (khong du cho hien ca title/description day du nhu ban
+          desktop) - anh nen cung doi theo de dong bo cam giac "dang xoay". */}
       <section className="relative flex h-16 items-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] sm:h-20 lg:hidden">
         <Image
-          src="/assets/images/hero-1-articles-page.png"
+          key={slide.image}
+          src={slide.image}
           alt=""
           fill
-          className="object-cover"
+          className="object-cover transition-opacity duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent" />
         <div className="relative z-10 flex w-full items-center justify-between gap-3 px-4">
-          <p className="font-content text-[13px] font-semibold text-white sm:text-sm">
-            Good ideas find people…
+          <p className="font-content line-clamp-2 text-[13px] font-semibold text-white sm:text-sm">
+            {slide.tagline}
           </p>
           <Link
-            href={writeHref}
+            href={slide.getHref(writeHref)}
             className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-[13px] font-semibold text-[var(--foreground)] transition hover:-translate-y-px hover:shadow-md"
           >
             <PenLine size={13} aria-hidden="true" /> Viết ngay
@@ -70,46 +174,52 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
       <section className="hidden gap-4 xl:grid-cols-[7fr_3fr] lg:grid">
       <div className="relative min-h-[210px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] md:min-h-[238px]">
         <Image
-          src="/assets/images/hero-1-articles-page.png"
+          key={slide.image}
+          src={slide.image}
           alt=""
           fill
-          className="object-cover"
+          className="object-cover transition-opacity duration-500"
           priority
         />
         {/* Anh nen sang mau (canh ban ngay gan cua so) - overlay den can DAM
             hon ban truoc (anh nui toi mau) de chu trang van doc duoc, nhung
             fade het truoc ~65% chieu rong de KHONG de len chu thich "good
-            ideas find people.." da co san trong anh (nam ben phai). */}
+            ideas find people.." da co san trong anh slide 1 (nam ben phai). */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/55 via-40% to-transparent" />
 
-        <div className="relative z-10 flex min-h-[238px] max-w-[520px] flex-col justify-center px-5 py-5 sm:px-7 sm:py-6 md:px-10">
+        <div
+          key={active}
+          className="animate-hero-slide-in relative z-10 flex min-h-[238px] max-w-[520px] flex-col justify-center px-5 py-5 sm:px-7 sm:py-6 md:px-10"
+        >
           {/* font-content: tieu de + mo ta la NOI DUNG, dung Manrope - 1 nut
               CTA ben duoi la UI, khong boc. */}
           <h1 className="font-content text-[32px] leading-[1.14] font-bold tracking-[-.03em] text-white md:text-[42px]">
-            Viết, là để
-            <br />
-            sống sâu hơn.
+            {slide.title}
           </h1>
           <p className="font-content mt-4 max-w-[400px] text-sm leading-6 text-white/75">
-            Suy nghĩ, tạo ra, và chia sẻ.
-            <br />
-            Đây là nơi lưu giữ điều bạn học và trao đi điều bạn tin.
+            {slide.description}
           </p>
           <div className="mt-6">
             <Link
-              href={writeHref}
+              href={slide.getHref(writeHref)}
               className="flex h-11 w-fit items-center gap-2 rounded-[10px] bg-white px-[18px] text-[14px] font-semibold text-[var(--foreground)] transition hover:-translate-y-px hover:shadow-md"
             >
-              <PenLine size={16} aria-hidden="true" /> Bắt đầu viết <ArrowRight size={15} aria-hidden="true" />
+              <CtaIcon size={16} aria-hidden="true" /> {slide.ctaLabel}
             </Link>
           </div>
         </div>
 
         <div className="absolute right-6 bottom-5 flex gap-2">
-          {Array.from({ length: HERO_SLIDE_COUNT }, (_, i) => (
-            <span
-              key={i}
-              className={i === 0 ? "h-1.5 w-5 rounded-full bg-white" : "h-1.5 w-1.5 rounded-full bg-white/50"}
+          {HERO_SLIDES.map((s, i) => (
+            <button
+              key={s.image}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`Xem slide ${i + 1}`}
+              className={cn(
+                "h-1.5 cursor-pointer rounded-full transition-all duration-300",
+                i === active ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/75",
+              )}
             />
           ))}
         </div>

@@ -17,9 +17,11 @@ export type PostSummary = {
 };
 
 // Binh luan bai viet - model/API that o backend (PostComment/PostCommentLike,
-// xem src/lib/api/post-comments.ts) - dang NESTED (replies long ben trong,
-// khop dung UI ArticleComments.tsx dang render goc->reply 1 cap), dung
-// buildCommentTree() de dung tu du lieu phang API tra ve.
+// xem src/lib/api/post-comments.ts). Tu 2026-09-12: reply KHONG con tai het
+// tu dau (repliesCount tu API, repliesLoaded rong den khi nguoi dung bam "Có
+// N trả lời" - xem ArticleComments.tsx fetch tung 3). 2 field cuoi la STATE
+// UI THUAN (khong tu API, gan/xoa truc tiep tren object trong setState) cho
+// hieu ung optimistic gui/xoa - luon undefined voi comment that binh thuong.
 export type ArticleComment = {
   id: string;
   author: Author;
@@ -28,5 +30,16 @@ export type ArticleComment = {
   likesCount: number;
   likedByMe: boolean;
   isOwner: boolean;
-  replies: ArticleComment[];
+  repliesCount: number;
+  repliesLoaded: ArticleComment[];
+  repliesCursor: string | null;
+  repliesExpanded: boolean;
+  // true = dang cho server xac nhan (comment "gia" vua bam Gui, nhap nhay
+  // mo). undefined/false = binh thuong.
+  pending?: boolean;
+  // true = dang choi hieu ung nuoc dang truoc khi bien mat that khoi DOM.
+  deleting?: boolean;
+  // true = VUA duoc server xac nhan xong (choi flash 1 lan) - tu tat qua
+  // onAnimationEnd, khong luu lau dai.
+  justConfirmed?: boolean;
 };

@@ -10,38 +10,57 @@ import { toArticleComment } from "./comment-tree";
 import { createPostCommentAction } from "@/actions/discover/post-comments/create-post-comment";
 import { deletePostCommentAction } from "@/actions/discover/post-comments/delete-post-comment";
 import { togglePostCommentLikeAction } from "@/actions/discover/post-comments/toggle-post-comment-like";
+import { getPostCommentRepliesAction } from "@/actions/discover/post-comments/get-post-comment-replies";
 import { useCurrentAvatarStore } from "@/stores/current-avatar-store";
 import { formatRelativeTime } from "@/lib/format-time";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const PAGE_SIZE = 4;
+// Khop voi thoi luong animation "comment-delete-water-rise" trong globals.css
+// (900ms) - doi CA hieu ung LAN api that xong (whichever lau hon) roi moi
+// go comment that su khoi DOM, tranh nuoc "dang" chua kip len het da bien mat.
+const DELETE_ANIMATION_MS = 900;
 
 function countAll(comments: ArticleComment[]): number {
-  return comments.reduce((sum, c) => sum + 1 + c.replies.length, 0);
+  return comments.reduce((sum, c) => sum + 1 + c.repliesCount, 0);
 }
 
-// Thay 1 comment (goc hoac reply, cay chi sau 1 cap) bang ket qua map(),
-// dung chung cho toggle-like/thay id tam bang id that.
-function updateComment(
+// Cap nhat 1 comment (goc HOAC 1 reply DA TAI) o BAT KY dau trong cay 2 tang.
+function mapAny(
   comments: ArticleComment[],
   id: string,
   map: (c: ArticleComment) => ArticleComment,
 ): ArticleComment[] {
-  return comments.map((c) => {
-    if (c.id === id) return map(c);
-    if (c.replies.some((r) => r.id === id)) {
-      return { ...c, replies: c.replies.map((r) => (r.id === id ? map(r) : r)) };
+  return comments.map((root) => {
+    if (root.id === id) return map(root);
+    if (root.repliesLoaded.some((r) => r.id === id)) {
+      return {
+        ...root,
+        repliesLoaded: root.repliesLoaded.map((r) => (r.id === id ? map(r) : r)),
+      };
     }
-    return c;
+    return root;
   });
 }
 
-// Xoa 1 comment KHOI CA 2 tang (goc hoac reply) trong 1 lan duyet.
-function removeComment(comments: ArticleComment[], id: string): ArticleComment[] {
+// Xoa 1 comment (goc hoac reply) KHOI cay - xoa 1 reply thi TRU LUON
+// repliesCount cua goc tuong ung (dung chung cho ca xoa that LAN rollback
+// optimistic reply gui that bai, xem submitReply).
+function removeAny(comments: ArticleComment[], id: string): ArticleComment[] {
   return comments
-    .filter((c) => c.id !== id)
-    .map((c) => ({ ...c, replies: c.replies.filter((r) => r.id !== id) }));
+    .filter((root) => root.id !== id)
+    .map((root) => {
+      if (!root.repliesLoaded.some((r) => r.id === id)) return root;
+      return {
+        ...root,
+        repliesLoaded: root.repliesLoaded.filter((r) => r.id !== id),
+        repliesCount: Math.max(0, root.repliesCount - 1),
+      };
+    });
 }
+
+const DELETING_LABEL = "Đang xoá...";
 
 // 1 dong binh luan (dung chung cho ca comment goc VA reply, phan biet qua
 // `depth`). Line-clamp 6 dong + nut "Xem them" rieng cho tung comment (state
@@ -55,6 +74,10 @@ function CommentItem({
   onReply,
   onToggleLike,
   onDelete,
+  onConfirmed,
+  onToggleReplies,
+  onLoadMoreReplies,
+  repliesLoadingRootId,
 }: {
   comment: ArticleComment;
   depth: 0 | 1;
@@ -64,13 +87,18 @@ function CommentItem({
   // LAN reply, tranh phai tao closure rieng cho tung reply luc render de quy.
   onToggleLike: (id: string) => void;
   onDelete: (id: string) => void;
+  onConfirmed: (id: string) => void;
+  onToggleReplies?: (rootId: string) => void;
+  onLoadMoreReplies?: (rootId: string) => void;
+  repliesLoadingRootId?: string | null;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expandedText, setExpandedText] = useState(false);
   const [replying, setReplying] = useState(false);
   const [replyDraft, setReplyDraft] = useState("");
   // Uoc luong "qua 6 dong" theo do dai ky tu thay vi do chieu cao thuc te
   // (don gian hon) - nguong 260 ky tu ~ 6 dong o do rong cot 620px, font 14px.
   const isLong = comment.content.length > 260;
+  const isLoadingReplies = repliesLoadingRootId === comment.id;
 
   return (
     <div className="flex gap-2.5">
@@ -87,13 +115,26 @@ function CommentItem({
       <div className="min-w-0 flex-1">
         {/* font-content: ten nguoi binh luan + noi dung binh luan la NOI
             DUNG, dung Manrope - nut Tra loi/Thich/form gui ben duoi la UI,
-            KHONG boc. */}
-        <div className="font-content rounded-lg bg-surface-muted px-3 py-2">
+            KHONG boc. relative + overflow-hidden: neo cho spinner pending
+            (goc tren-trai) VA overlay nuoc dang luc xoa (::before/::after
+            cua .comment-delete-water, xem globals.css). */}
+        <div
+          onAnimationEnd={() => comment.justConfirmed && onConfirmed(comment.id)}
+          className={cn(
+            "font-content relative overflow-hidden rounded-lg bg-surface-muted px-3 py-2",
+            comment.pending && "animate-comment-pending",
+            comment.justConfirmed && "animate-comment-confirm-flash",
+            comment.deleting && "comment-delete-water",
+          )}
+        >
+          {comment.pending && (
+            <LoadingSpinner size={12} className="absolute top-1.5 left-1.5 text-primary" />
+          )}
           <p className="text-sm font-semibold text-ink">{comment.author.name}</p>
           <p
             className={cn(
               "text-sm leading-relaxed text-ink",
-              !expanded && "line-clamp-6",
+              !expandedText && "line-clamp-6",
             )}
           >
             {comment.content}
@@ -101,11 +142,31 @@ function CommentItem({
           {isLong && (
             <button
               type="button"
-              onClick={() => setExpanded((v) => !v)}
+              onClick={() => setExpandedText((v) => !v)}
               className="mt-0.5 cursor-pointer text-xs font-medium text-primary hover:underline"
             >
-              {expanded ? "Thu gọn" : "Xem thêm"}
+              {expandedText ? "Thu gọn" : "Xem thêm"}
             </button>
+          )}
+
+          {/* Overlay "Đang xoá..." - CHI hien khi deleting, nam TREN nuoc
+              (z-10, nuoc la ::before/::after cua chinh div nay). Tach tung
+              ky tu thanh 1 <span> rieng, stagger animationDelay de tao hieu
+              ung "nhay tung chu cai mot" thay vi ca cum nhay cung luc. */}
+          {comment.deleting && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <span className="text-sm font-bold text-white">
+                {DELETING_LABEL.split("").map((ch, i) => (
+                  <span
+                    key={i}
+                    className="animate-comment-delete-letter"
+                    style={{ animationDelay: `${i * 55}ms` }}
+                  >
+                    {ch === " " ? " " : ch}
+                  </span>
+                ))}
+              </span>
+            </div>
           )}
         </div>
 
@@ -114,7 +175,7 @@ function CommentItem({
           <button
             type="button"
             onClick={() => onToggleLike(comment.id)}
-            disabled={!canInteract}
+            disabled={!canInteract || comment.pending || comment.deleting}
             className={cn(
               "flex cursor-pointer items-center gap-1 font-medium transition-colors duration-150 ease-out hover:text-ink disabled:cursor-not-allowed",
               comment.likedByMe && "text-rose-500",
@@ -123,7 +184,7 @@ function CommentItem({
             <Heart size={11} strokeWidth={2} fill={comment.likedByMe ? "currentColor" : "none"} />
             {comment.likesCount}
           </button>
-          {depth === 0 && onReply && canInteract && (
+          {depth === 0 && onReply && canInteract && !comment.pending && !comment.deleting && (
             <button
               type="button"
               onClick={() => setReplying((v) => !v)}
@@ -132,7 +193,7 @@ function CommentItem({
               Trả lời
             </button>
           )}
-          {comment.isOwner && (
+          {comment.isOwner && !comment.pending && !comment.deleting && (
             <button
               type="button"
               onClick={() => onDelete(comment.id)}
@@ -172,18 +233,59 @@ function CommentItem({
           </form>
         )}
 
-        {comment.replies.length > 0 && (
-          <div className="mt-2.5 flex flex-col gap-2.5 border-l-2 border-border pl-3">
-            {comment.replies.map((reply) => (
-              <CommentItem
-                key={reply.id}
-                comment={reply}
-                depth={1}
-                canInteract={canInteract}
-                onToggleLike={onToggleLike}
-                onDelete={onDelete}
-              />
-            ))}
+        {/* Tang goc (depth 0) moi co reply - "Có N trả lời" CHUA tai san,
+            bam vao moi that fetch (onToggleReplies) thay vi hien san tu
+            comment-tree.ts nhu truoc. Da mo (repliesExpanded) thi hien danh
+            sach da tai + nut "Xem thêm trả lời" neu con (repliesCursor). */}
+        {depth === 0 && comment.repliesCount > 0 && (
+          <div className="mt-2">
+            {!comment.repliesExpanded ? (
+              <button
+                type="button"
+                onClick={() => onToggleReplies?.(comment.id)}
+                disabled={isLoadingReplies}
+                className="cursor-pointer text-xs font-semibold text-primary hover:underline disabled:cursor-wait"
+              >
+                {isLoadingReplies ? "Đang tải..." : `Có ${comment.repliesCount} trả lời`}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onToggleReplies?.(comment.id)}
+                  className="mb-2 cursor-pointer text-xs font-semibold text-ink-faint hover:text-ink hover:underline"
+                >
+                  Ẩn trả lời
+                </button>
+                {comment.repliesLoaded.length > 0 && (
+                  <div className="flex flex-col gap-2.5 border-l-2 border-border pl-3">
+                    {comment.repliesLoaded.map((reply) => (
+                      <CommentItem
+                        key={reply.id}
+                        comment={reply}
+                        depth={1}
+                        canInteract={canInteract}
+                        onToggleLike={onToggleLike}
+                        onDelete={onDelete}
+                        onConfirmed={onConfirmed}
+                      />
+                    ))}
+                  </div>
+                )}
+                {comment.repliesLoaded.length < comment.repliesCount && (
+                  <button
+                    type="button"
+                    onClick={() => onLoadMoreReplies?.(comment.id)}
+                    disabled={isLoadingReplies}
+                    className="mt-2 ml-3 cursor-pointer text-xs font-semibold text-primary hover:underline disabled:cursor-wait"
+                  >
+                    {isLoadingReplies
+                      ? "Đang tải..."
+                      : `Xem thêm trả lời (còn ${comment.repliesCount - comment.repliesLoaded.length})`}
+                  </button>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -206,45 +308,92 @@ export function ArticleComments({
   const [comments, setComments] = useState(initialComments);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [draft, setDraft] = useState("");
+  // Chi 1 root duoc load reply CUNG LUC (du dung UX, tranh phai quan ly 1
+  // Set chi de disable nut - nguoi dung hiem khi bam 2 nut "Xem them" lien
+  // tiep truoc khi cai truoc kip xong).
+  const [repliesLoadingRootId, setRepliesLoadingRootId] = useState<string | null>(null);
 
   const total = countAll(comments);
   const visible = comments.slice(0, visibleCount);
   const hasMore = visibleCount < comments.length;
 
+  function buildOptimisticComment(content: string, tempId: string): ArticleComment {
+    return {
+      id: tempId,
+      author: {
+        username: session?.username ?? "",
+        name: session?.user?.name ?? "Bạn",
+        avatarUrl: myAvatarUrl,
+        verified: false,
+      },
+      createdAt: new Date().toISOString(),
+      content,
+      likesCount: 0,
+      likedByMe: false,
+      isOwner: true,
+      repliesCount: 0,
+      repliesLoaded: [],
+      repliesCursor: null,
+      repliesExpanded: false,
+      pending: true,
+    };
+  }
+
+  // Gui binh luan goc - hien NGAY 1 comment "gia" (nhap nhay mo, xem
+  // CommentItem) truoc khi server tra loi, thay bang comment THAT (kem 1
+  // lan flash sang) khi thanh cong - xem yeu cau "trang thai sending loading".
   async function submitRoot(e: React.FormEvent) {
     e.preventDefault();
     const content = draft.trim();
     if (!content || !session?.username) return;
     setDraft("");
+    const tempId = `temp-${Date.now()}`;
+    setComments((prev) => [buildOptimisticComment(content, tempId), ...prev]);
     try {
       const created = await createPostCommentAction(postId, content);
-      setComments((prev) => [toArticleComment(created), ...prev]);
+      setComments((prev) =>
+        mapAny(prev, tempId, () => ({ ...toArticleComment(created), justConfirmed: true })),
+      );
     } catch {
+      setComments((prev) => prev.filter((c) => c.id !== tempId));
       setDraft(content); // hoan lai noi dung neu gui that bai, khong mat chu da go
     }
   }
 
   async function submitReply(parentId: string, content: string) {
     if (!session?.username) return;
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = buildOptimisticComment(content, tempId);
+    // Tu mo rong reply (repliesExpanded) de nguoi dung thay NGAY reply minh
+    // vua gui, khong phai tu bam "Có N trả lời" cho chinh no.
+    setComments((prev) =>
+      mapAny(prev, parentId, (root) => ({
+        ...root,
+        repliesExpanded: true,
+        repliesCount: root.repliesCount + 1,
+        repliesLoaded: [...root.repliesLoaded, optimistic],
+      })),
+    );
     try {
       const created = await createPostCommentAction(postId, content, parentId);
       setComments((prev) =>
-        prev.map((c) =>
-          c.id === parentId
-            ? { ...c, replies: [...c.replies, toArticleComment(created)] }
-            : c,
-        ),
+        mapAny(prev, tempId, () => ({ ...toArticleComment(created), justConfirmed: true })),
       );
     } catch {
-      // im lang - form da dong, khong co cho hien lai loi tung ky tu da go.
+      // removeAny tu tru lai repliesCount da tang optimistic o tren.
+      setComments((prev) => removeAny(prev, tempId));
     }
+  }
+
+  function handleConfirmed(id: string) {
+    setComments((prev) => mapAny(prev, id, (c) => ({ ...c, justConfirmed: false })));
   }
 
   async function toggleLike(id: string) {
     if (!session?.username) return;
     // optimistic
     setComments((prev) =>
-      updateComment(prev, id, (c) => ({
+      mapAny(prev, id, (c) => ({
         ...c,
         likedByMe: !c.likedByMe,
         likesCount: c.likesCount + (c.likedByMe ? -1 : 1),
@@ -252,11 +401,11 @@ export function ArticleComments({
     );
     try {
       const { liked, likesCount } = await togglePostCommentLikeAction(id);
-      setComments((prev) => updateComment(prev, id, (c) => ({ ...c, likedByMe: liked, likesCount })));
+      setComments((prev) => mapAny(prev, id, (c) => ({ ...c, likedByMe: liked, likesCount })));
     } catch {
       // rollback
       setComments((prev) =>
-        updateComment(prev, id, (c) => ({
+        mapAny(prev, id, (c) => ({
           ...c,
           likedByMe: !c.likedByMe,
           likesCount: c.likesCount + (c.likedByMe ? -1 : 1),
@@ -265,14 +414,48 @@ export function ArticleComments({
     }
   }
 
+  // Xoa: bat "deleting" (choi hieu ung nuoc dang, xem CommentItem/globals.css)
+  // roi doi CA animation LAN API xong (Promise.all voi 1 setTimeout dung
+  // DELETE_ANIMATION_MS) - tranh nuoc chua kip dang het da bien mat khoi DOM
+  // (API thuong nhanh hon 900ms, se bi cho khop animation).
   async function deleteComment(id: string) {
-    const before = comments;
-    setComments((prev) => removeComment(prev, id));
-    try {
-      await deletePostCommentAction(id);
-    } catch {
-      setComments(before); // rollback neu xoa that bai
+    setComments((prev) => mapAny(prev, id, (c) => ({ ...c, deleting: true })));
+    const [apiResult] = await Promise.allSettled([
+      deletePostCommentAction(id),
+      new Promise((resolve) => setTimeout(resolve, DELETE_ANIMATION_MS)),
+    ]);
+    if (apiResult.status === "fulfilled") {
+      setComments((prev) => removeAny(prev, id));
+    } else {
+      setComments((prev) => mapAny(prev, id, (c) => ({ ...c, deleting: false })));
     }
+  }
+
+  async function loadMoreReplies(rootId: string) {
+    const root = comments.find((c) => c.id === rootId);
+    if (!root || repliesLoadingRootId) return;
+    setRepliesLoadingRootId(rootId);
+    try {
+      const page = await getPostCommentRepliesAction(rootId, root.repliesCursor ?? undefined);
+      setComments((prev) =>
+        mapAny(prev, rootId, (c) => ({
+          ...c,
+          repliesLoaded: [...c.repliesLoaded, ...page.items.map(toArticleComment)],
+          repliesCursor: page.nextCursor,
+        })),
+      );
+    } finally {
+      setRepliesLoadingRootId(null);
+    }
+  }
+
+  function toggleReplies(rootId: string) {
+    const root = comments.find((c) => c.id === rootId);
+    if (!root) return;
+    if (!root.repliesExpanded && root.repliesLoaded.length === 0) {
+      loadMoreReplies(rootId);
+    }
+    setComments((prev) => mapAny(prev, rootId, (c) => ({ ...c, repliesExpanded: !c.repliesExpanded })));
   }
 
   return (
@@ -330,6 +513,10 @@ export function ArticleComments({
             onReply={submitReply}
             onToggleLike={toggleLike}
             onDelete={deleteComment}
+            onConfirmed={handleConfirmed}
+            onToggleReplies={toggleReplies}
+            onLoadMoreReplies={loadMoreReplies}
+            repliesLoadingRootId={repliesLoadingRootId}
           />
         ))}
       </div>

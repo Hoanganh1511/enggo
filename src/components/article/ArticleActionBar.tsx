@@ -2,65 +2,96 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bookmark, Check, Folder, Heart, MessageCircle, Pencil, Plus, Share2 } from "lucide-react";
+import { Bookmark, Check, Folder, Heart, Link2, MessageCircle, Pencil, Plus } from "lucide-react";
 import { formatCompact } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast/toast-store";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { getCollectionMembershipAction } from "@/actions/discover/collections/get-collection-membership";
 import { addToCollectionAction } from "@/actions/discover/collections/add-to-collection";
 import { removeFromCollectionAction } from "@/actions/discover/collections/remove-from-collection";
+import { toggleLikePostAction } from "@/actions/discover/toggle-like-post";
 import { CreateCollectionModal } from "@/components/collections/CreateCollectionModal";
 import type { CollectionMembership } from "@/lib/api/collections";
 
-// Cum hanh dong day du (khac Count Like tinh o ArticleHeader.tsx - o day
-// like BAM DUOC, toggle active state local, CHUA goi API that - chua co
-// endpoint Like cho Post, xem home-feed-mock.ts comment ve lien luon
-// undefined tu API). "Lưu" GIO LA THAT - xem SaveToCollectionButton duoi
-// day (tinh nang Bo suu tap, thay cho toggle cuc bo cu khong ket noi gi).
-// `sticky` (mobile) - dinh co dinh duoi cung man hinh (theo mockup "Mobile
-// Sticky Action") thay vi nam inline trong dong chay bai viet, luon thay
-// duoc du cuon toi dau. Render 2 lan qua breakpoint CSS o page.tsx (ban
-// thuong "hidden lg:flex" desktop, ban sticky "flex lg:hidden" mobile) -
-// state like khong lien ket giua 2 ban (moi ban co state rieng, CHUA co API
-// that luu like) nhung "Lưu" (goi API that) tu dong khop nhau vi ca 2 ban
-// cung goi getCollectionMembershipAction lay tu server, khong con lech.
+// Cum hanh dong day du. CHI 1 INSTANCE DUY NHAT cho ca desktop lan mobile (2
+// <div> layout khac nhau qua CSS breakpoint, dung CHUNG 1 state ben trong) -
+// TRUOC DAY render 2 lan rieng biet o page.tsx (1 ban thuong desktop, 1 ban
+// sticky mobile), moi ban co useState("liked") RIENG nen bam like ben nay
+// khong thay doi ben kia, lech han. "Lưu"/Like gio deu goi API that (Like
+// tu 2026-09-12, xem PostLike o backend) nen gop lam 1 component la du,
+// khong can co che dong bo rieng nua.
 export function ArticleActionBar({
-  likes,
-  commentCount,
-  sticky = false,
   postId,
+  initialLikes,
+  initialLiked = false,
+  commentCount,
   isOwner = false,
 }: {
-  likes: number;
-  commentCount: number;
-  sticky?: boolean;
-  // Tinh nang Sua bai - CHI hien nut khi la chu bai (post.isOwner, xem
-  // PostService.findOne). Nut "Lưu" cung can postId (luu duoc bai BAT KY
-  // ai dang, khong rieng bai cua minh).
   postId?: string;
+  initialLikes: number;
+  initialLiked?: boolean;
+  commentCount: number;
   isOwner?: boolean;
 }) {
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(initialLiked);
+  const [likes, setLikes] = useState(initialLikes);
+  // Chi bat animation "pop" khi VUA CHUYEN sang thich (khong chay luc bo
+  // thich, khong lap lai moi lan re-render) - tu tat qua onAnimationEnd thay
+  // vi setTimeout (khop chinh xac voi thoi luong animation trong CSS).
+  const [justLiked, setJustLiked] = useState(false);
+  const [likePending, setLikePending] = useState(false);
 
-  return (
-    <div
-      className={
-        sticky
-          ? "fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-border bg-surface px-4 py-2.5 pb-[max(env(safe-area-inset-bottom),10px)] shadow-[0_-4px_12px_rgba(0,0,0,0.06)]"
-          : "flex items-center justify-between border-y border-border py-3"
-      }
-    >
+  async function handleToggleLike() {
+    if (!postId || likePending) return;
+    setLikePending(true);
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+    setLikes((n) => n + (nextLiked ? 1 : -1));
+    if (nextLiked) setJustLiked(true);
+    try {
+      const res = await toggleLikePostAction(postId);
+      setLiked(res.liked);
+      setLikes(res.likesCount);
+    } catch {
+      // rollback ve truoc luc bam neu API loi.
+      setLiked(!nextLiked);
+      setLikes((n) => n + (nextLiked ? -1 : 1));
+      toast.danger("Không thực hiện được, thử lại sau.");
+    } finally {
+      setLikePending(false);
+    }
+  }
+
+  function handleShare() {
+    if (!postId) return;
+    const url = `${window.location.origin}/p/${postId}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => toast.success("Đã copy link bài viết"))
+      .catch(() => toast.danger("Không copy được link, thử lại sau."));
+  }
+
+  const actions = (
+    <>
       <div className="flex items-center gap-1">
         <button
           type="button"
-          onClick={() => setLiked((v) => !v)}
+          onClick={handleToggleLike}
+          disabled={!postId}
           className={cn(
-            "flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors duration-150 ease-out hover:bg-hover-bg",
+            "flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed",
             liked ? "text-rose-500" : "text-ink-muted",
           )}
         >
-          <Heart size={17} strokeWidth={2} fill={liked ? "currentColor" : "none"} />
-          {formatCompact(likes + (liked ? 1 : 0))}
+          <Heart
+            size={17}
+            strokeWidth={2}
+            fill={liked ? "currentColor" : "none"}
+            className={justLiked ? "animate-heart-like-pop" : undefined}
+            onAnimationEnd={() => setJustLiked(false)}
+          />
+          {formatCompact(likes)}
         </button>
 
         <a
@@ -88,13 +119,30 @@ export function ArticleActionBar({
         )}
         <button
           type="button"
-          aria-label="Chia sẻ"
-          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          onClick={handleShare}
+          disabled={!postId}
+          aria-label="Copy link bài viết"
+          title="Copy link bài viết"
+          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed"
         >
-          <Share2 size={17} strokeWidth={2} />
+          <Link2 size={17} strokeWidth={2} />
         </button>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Ban desktop - inline, sau than bai (>=1200px). */}
+      <div className="hidden min-[1200px]:flex min-[1200px]:items-center min-[1200px]:justify-between min-[1200px]:border-y min-[1200px]:border-border min-[1200px]:py-3">
+        {actions}
+      </div>
+      {/* Ban mobile/tablet - dinh co dinh duoi cung man hinh (<1200px, ke ca
+          tablet), luon thay duoc du cuon toi dau. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-border bg-surface px-4 py-2.5 pb-[max(env(safe-area-inset-bottom),10px)] shadow-[0_-4px_12px_rgba(0,0,0,0.06)] min-[1200px]:hidden">
+        {actions}
+      </div>
+    </>
   );
 }
 

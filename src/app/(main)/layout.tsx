@@ -1,6 +1,7 @@
 import MainContentArea from "@/components/shell/main-content-area";
 import TopHeaderBar from "@/components/shell/TopHeaderBar";
 import { MobileComposeFab } from "@/components/shell/MobileComposeFab";
+import { ScrollToTopButton } from "@/components/shell/ScrollToTopButton";
 import { DashboardSidebarDrawer } from "@/components/discover/home-dashboard/HomeDashboardSidebar";
 import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
@@ -30,6 +31,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <TopHeaderBar />
         <ChatMessageToastStack />
         <MobileComposeFab />
+        <ScrollToTopButton />
         {/* Drawer sidebar mobile - mount toan cuc (khong rieng /home,
             /articles nua) de nut hamburger o TopHeaderBar hoat dong dong bo
             tren MOI trang. */}

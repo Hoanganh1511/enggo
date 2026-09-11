@@ -1,8 +1,11 @@
 import type { PostCommentApiShape } from "@/lib/api/post-comments";
 import type { ArticleComment } from "./article-types";
 
-// Chuyen 1 PostCommentApiShape (phang, tu API that) thanh ArticleComment
-// (chua co replies, dung khi vua tao 1 comment/reply moi that thanh cong).
+// Chuyen 1 PostCommentApiShape (phang, tu API that) thanh ArticleComment -
+// dung khi vua tao 1 comment/reply moi thanh cong, HOAC khi fetch 1 trang
+// reply (getPostCommentReplies). repliesCount mac dinh 0 vi API tra ve field
+// nay CHI o comment goc (xem toApiComment o backend) - comment moi tao/reply
+// luon coi la chua co reply nao.
 export function toArticleComment(c: PostCommentApiShape): ArticleComment {
   return {
     id: c.id,
@@ -12,25 +15,17 @@ export function toArticleComment(c: PostCommentApiShape): ArticleComment {
     likesCount: c.likesCount,
     likedByMe: c.likedByMe,
     isOwner: c.isOwner,
-    replies: [],
+    repliesCount: c.repliesCount ?? 0,
+    repliesLoaded: [],
+    repliesCursor: null,
+    repliesExpanded: false,
   };
 }
 
-// Dung mang PHANG (API that tra ve, sap theo createdAt asc) thanh cay long
-// (dung UI ArticleComments.tsx dang render, goc -> reply CHI 1 cap - comment
-// nao co parentId tro toi 1 comment KHAC cung la reply (tuc parentId cung
-// co parentId) thi van gom vao replies cua goc gan nhat, khop dung gioi han
-// UI hien tai (khong render reply-cua-reply).
-export function buildCommentTree(flat: PostCommentApiShape[]): ArticleComment[] {
-  const nodes = new Map<string, ArticleComment>();
-  for (const c of flat) nodes.set(c.id, toArticleComment(c));
-
-  const roots: ArticleComment[] = [];
-  for (const c of flat) {
-    const node = nodes.get(c.id)!;
-    const parent = c.parentId ? nodes.get(c.parentId) : undefined;
-    if (parent) parent.replies.push(node);
-    else roots.push(node);
-  }
-  return roots;
+// listPostComments() gio CHI tra comment GOC (parentId null, xem
+// post-comment.service.ts backend) - khong con can "dung tu mang phang" nua,
+// chi map 1-1 qua toArticleComment. Giu ten ham (goi tu p/[id]/page.tsx) de
+// khong phai doi noi goi, du ben trong don gian hon han truoc.
+export function buildCommentTree(roots: PostCommentApiShape[]): ArticleComment[] {
+  return roots.map(toArticleComment);
 }

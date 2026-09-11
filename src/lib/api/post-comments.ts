@@ -15,13 +15,32 @@ export type PostCommentApiShape = {
   };
   isOwner: boolean;
   likedByMe: boolean;
+  // CHI co gia tri (khong undefined) o comment GOC tra ve tu listPostComments
+  // - reply (getPostCommentReplies) khong tra field nay, UI gioi han reply
+  // CHI 1 cap nen khong can biet reply co con reply rieng khong.
+  repliesCount?: number;
+};
+
+export type PostCommentRepliesPage = {
+  items: PostCommentApiShape[];
+  nextCursor: string | null;
 };
 
 // Binh luan THAT cho Post thuong - path RIENG "/post-comments" (khong phai
 // "/posts/:id/comments" - da bi CommentController cua CommunityPost chiem,
-// xem post-comment.service.ts o backend).
+// xem post-comment.service.ts o backend). CHI tra comment GOC (parentId
+// null) - reply KHONG con nam san trong day nua (xem getPostCommentReplies),
+// UI chi hien "Có N trả lời" roi fetch that khi bam vao.
 export function listPostComments(postId: string): Promise<PostCommentApiShape[]> {
   return apiFetch<PostCommentApiShape[]>(`/post-comments/post/${postId}`);
+}
+
+export function getPostCommentReplies(
+  commentId: string,
+  cursor?: string,
+): Promise<PostCommentRepliesPage> {
+  const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+  return apiFetch<PostCommentRepliesPage>(`/post-comments/${commentId}/replies${qs}`);
 }
 
 export function createPostComment(

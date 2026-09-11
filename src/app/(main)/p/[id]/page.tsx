@@ -123,25 +123,28 @@ export default async function PostDetailPage({
 
         {/* Muc luc thu gon, inline ngay duoi tieu de - CHI duoi 1200px (ke ca
             tablet). Tu 1200px tro len muc luc nam trong ArticleSidebar dinh
-            ben phai thay the, an ban nay di. */}
-        <div className="min-[1200px]:hidden">
+            ben phai thay the, an ban nay di. sticky top-0: dinh lai o dinh
+            vung cuon (MainContentArea.tsx) khi cuon qua - top-0 la du vi
+            header ngang KHONG nam trong vung cuon do (xem
+            ScrollToTopButton.tsx cho ly giai tuong tu). z-20 de noi dung
+            ben duoi khong de len luc dinh lai (nav ben trong da co san
+            bg-surface, khong can them nen o wrapper). */}
+        <div className="sticky top-0 z-20 min-[1200px]:hidden">
           <ArticleTableOfContents content={content} richHeadings={rich?.headings} variant="inline" />
         </div>
 
         <ArticleBody post={post} richHtml={rich?.html} />
 
-        {/* Thanh hanh dong: ban thuong (inline, sau than bai) CHI desktop
-            (>=1200px) - duoi 1200px (ke ca tablet) thay bang ban dinh duoi
-            cung man hinh (sticky, xem duoi cung trang) de luon bam duoc du
-            cuon toi dau. */}
-        <div className="hidden min-[1200px]:block">
-          <ArticleActionBar
-            likes={post.stats.likes}
-            commentCount={post.stats.comments}
-            postId={post.id}
-            isOwner={post.isOwner ?? false}
-          />
-        </div>
+        {/* ArticleActionBar tu render CA 2 layout (desktop inline + mobile
+            sticky) trong 1 instance duy nhat, dung chung state like - xem
+            comment trong component. */}
+        <ArticleActionBar
+          postId={post.id}
+          initialLikes={post.stats.likes}
+          initialLiked={post.likedByMe}
+          commentCount={post.stats.comments}
+          isOwner={post.isOwner ?? false}
+        />
 
         <ArticleAuthorCard
           author={post.author}
@@ -165,16 +168,6 @@ export default async function PostDetailPage({
       <aside className="hidden w-72 shrink-0 min-[1200px]:block">
         <ArticleSidebar content={content} richHeadings={rich?.headings} related={related} />
       </aside>
-
-      <div className="min-[1200px]:hidden">
-        <ArticleActionBar
-          likes={post.stats.likes}
-          commentCount={post.stats.comments}
-          postId={post.id}
-          isOwner={post.isOwner ?? false}
-          sticky
-        />
-      </div>
     </div>
   );
 }
