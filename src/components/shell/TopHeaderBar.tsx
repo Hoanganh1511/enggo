@@ -16,6 +16,7 @@ import Logo from "../ui/logo";
 import { HeaderNav } from "./HeaderNav";
 import { HeaderSearchModal } from "./HeaderSearchModal";
 import AccountMenu from "./account-menu";
+import { RecentPostsMenu } from "./RecentPostsMenu";
 import { NotificationsPanel } from "./header-command-panels/NotificationsPanel";
 import { UpdatesPanel } from "./header-command-panels/UpdatesPanel";
 import { useChangelogUnseen } from "@/lib/use-changelog-unseen";
@@ -248,13 +249,19 @@ const TopHeaderBar = () => {
             fixed goc duoi-phai (MobileComposeFab.tsx, hoac dung luon cho
             duoc gop san trong HomeMobileQuickPanels.tsx tren /home), tranh
             chiem cho trong header von da chat cum icon. */}
-        <Link
-          href="/compose"
-          className="ml-1 hidden h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-sm bg-black/90 px-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90 lg:flex"
-        >
-          <SquarePen size={15} strokeWidth={2} />
-          Viết bài
-        </Link>
+        {/* Nhom "split button": Link Viết bài + duong ke doc ngan cach +
+            chevron mo popover 5 bai viet gan day (RecentPostsMenu.tsx) - 2
+            nua cung 1 khoi bg-black/90, chi bo tron 1 dau moi ben. */}
+        <div className="ml-1 hidden items-stretch lg:flex">
+          <Link
+            href="/compose"
+            className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-l-sm bg-black/90 pr-3 pl-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+          >
+            <SquarePen size={15} strokeWidth={2} />
+            Viết bài
+          </Link>
+          <RecentPostsMenu />
+        </div>
       </div>
 
       <HeaderSearchModal open={searchOpen} onOpenChange={setSearchOpen} />
