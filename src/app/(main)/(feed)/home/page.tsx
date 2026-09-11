@@ -9,9 +9,9 @@ import { MobileProfileSummaryRow } from "@/components/discover/articles-hub/Mobi
 import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
 import { CreatorRail } from "@/components/discover/articles-hub/CreatorRail";
 import { AttentionCollectionsRail } from "@/components/discover/articles-hub/AttentionCollectionsRail";
-import { TopicsRail } from "@/components/discover/articles-hub/TopicsRail";
+import { NewestSection } from "@/components/discover/articles-hub/NewestSection";
 import { ArticlesPostGrid } from "@/components/discover/articles-hub/ArticlesPostGrid";
-import { Flame, Newspaper, Tags, Users } from "lucide-react";
+import { Flame, Newspaper, Users } from "lucide-react";
 import type { Author } from "@/content/home-feed-mock";
 
 // /home - port giao dien tu source knowledge-dashboard-note-knowledge-hub-style.zip
@@ -38,12 +38,28 @@ export default async function ArticlesPage() {
     listPublicCollectionsAction({ scope: "all", sort: "most-posts", limit: 10 })
       .then((r) => r.items)
       .catch(() => []),
-    // "Chủ đề đang hot" - phuc hoi lai TopicsRail.tsx (tung bi thay hoan toan
-    // boi AttentionCollectionsRail o tren, gio giu CA HAI - list linh vuc
-    // rieng, khac muc dich voi list bo suu tap).
+    // Cay nhom chu de nghe nghiep - dung de xep hang cho NewestSection ben
+    // duoi (moi nhom 1 hang), KHONG phai de hien TopicsRail (da xoa han).
     getFeedCategoryTree().catch(() => []),
   ]);
   const posts = rawPosts.map(normalizePost);
+
+  // "Bài viết mới nhất theo chủ đề" - moi nhom nghe nghiep 1 hang, toi da 20
+  // bai/hang qua careerGroup (tu mo rong ca nhanh con, xem post.controller.ts).
+  // KHAC BAN MOCK CU (newest-topics-mock.ts, da xoa vi 100% gia): day la du
+  // lieu THAT tu API, nen nhom nao chua co bai (careerGroup moi/it nguoi
+  // dung) se TU AN thay vi bia so lieu - xem NewestSection.tsx.
+  const newestGroups = (
+    await Promise.all(
+      categoryTree.map(async (group) => ({
+        slug: group.slug,
+        name: group.name,
+        posts: await listPostsAction({ careerGroup: group.slug, limit: 20 })
+          .then((p) => p.map(normalizePost))
+          .catch(() => []),
+      })),
+    )
+  ).filter((g) => g.posts.length > 0);
 
   // Author (khong phai CreatorSummary hep hon cua CreatorRail) - chi can 3
   // field (username/name/avatarUrl) nhung giu nguyen shape Author cho gon,
@@ -78,18 +94,13 @@ export default async function ArticlesPage() {
       <AttentionCollectionsRail collections={attentionCollections} />
 
       <SectionTitle
-        icon={Tags}
-        title="Chủ đề đang hot"
-        sub="Lĩnh vực hoạt động nhiều trong 7 ngày qua"
-      />
-      <TopicsRail categoryTree={categoryTree} />
-
-      <SectionTitle
         icon={Newspaper}
         title="Bài viết mới nhất"
         sub="Cập nhật liên tục từ mọi lĩnh vực"
       />
       <ArticlesPostGrid posts={posts} />
+
+      <NewestSection groups={newestGroups} />
     </>
   );
 }
