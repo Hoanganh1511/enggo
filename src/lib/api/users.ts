@@ -100,6 +100,18 @@ export function searchUsers(
   return apiFetch<UserSearchPage>(`/users/search?${params.toString()}`);
 }
 
+// Widget "Đang hoạt động" (/home) - tra ve theo username (khong phai id, xem
+// UserService.getOnlineStatusByUsernames o backend) vi Author (post.author)
+// khong co id, chi co username. Tai dung presence da co san cho chat
+// (NotificationGateway.isOnline), khong Redis/heartbeat rieng.
+export function getOnlineStatus(
+  usernames: string[],
+): Promise<Record<string, boolean>> {
+  if (usernames.length === 0) return Promise.resolve({});
+  const params = new URLSearchParams({ usernames: usernames.join(",") });
+  return apiFetch<Record<string, boolean>>(`/users/online-status?${params.toString()}`);
+}
+
 // Gate cho WelcomeOnboardingModal.tsx tren /home, isAdmin gate cho
 // DailyDiaryAccessModal.tsx - xem UserService.getSelf o backend.
 export function getSelfStatus(): Promise<{

@@ -51,20 +51,38 @@ export function getPostById(id: string): Promise<Post> {
 // tri enum PostCategory (vd "FRONTEND"); `visibility`/`commentsEnabled`/
 // `likesEnabled`/`searchable` la cua Compose Giai doan 2, deu optional (khong
 // gui thi backend tu ap @default cua cot).
+type PostOpts = {
+  category?: string;
+  visibility?: "draft" | "public" | "limited";
+  commentsEnabled?: boolean;
+  likesEnabled?: boolean;
+  searchable?: boolean;
+  excerpt?: string;
+  title?: string;
+};
+
 export function createPost(
   kind: Post["kind"],
   data: Record<string, unknown>,
-  opts?: {
-    category?: string;
-    visibility?: "draft" | "public" | "limited";
-    commentsEnabled?: boolean;
-    likesEnabled?: boolean;
-    searchable?: boolean;
-    excerpt?: string;
-  },
+  opts?: PostOpts,
 ): Promise<Post> {
   return apiFetch<Post>(`/posts`, {
     method: "POST",
     body: JSON.stringify({ kind, data, ...opts }),
+  });
+}
+
+// Sua bai da dang (tinh nang Sua bai, Composer.tsx `initialPost`) - PATCH
+// dung id CU (khong tao bai moi). `kind` KHONG gui duoc (khong the doi sau
+// khi tao, xem UpdatePostDto o backend) - `data` optional vi co the chi sua
+// cac cot that (vd chi doi visibility) ma khong dung toi noi dung.
+export function updatePost(
+  id: string,
+  data?: Record<string, unknown>,
+  opts?: PostOpts,
+): Promise<Post> {
+  return apiFetch<Post>(`/posts/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ ...(data ? { data } : {}), ...opts }),
   });
 }

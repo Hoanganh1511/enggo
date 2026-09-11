@@ -63,12 +63,23 @@ type PostCommon = {
   // Giai doan 2 (migrate xong moi co cot) van tra ve tu API - phong ho gia
   // tri thieu thay vi ep kieu bat buoc.
   visibility?: "draft" | "public" | "limited";
+  // Tinh nang Sua bai - TRUOC DAY tieu de chi la state cuc bo tren
+  // Composer.tsx, tu ghep vao dong dau `content` (mat neu co excerpt).
+  // Promote thanh cot that (sibling voi excerpt), xem getPostTitle() da uu
+  // tien field nay san. Mot so kind khac (note/achievement/milestone/...) da
+  // co san `title: string` rieng cua kind - khong xung dot (TS thu gon giao
+  // 2 kieu ve string binh thuong).
+  title?: string | null;
   // Redesign Compose mobile - nguoi dung tu viet ("Tóm tắt bài viết"), cot
   // THAT sibling voi visibility/commentsEnabled (khong nam trong `data`).
   excerpt?: string | null;
   commentsEnabled?: boolean;
   likesEnabled?: boolean;
   searchable?: boolean;
+  // CHI co khi lay qua getPostById (PostService.findOne) - findAll (feed)
+  // khong tinh field nay, tranh so sanh thua cho ca danh sach. Dung de gate
+  // trang Sua bai (/compose/[id]) va nut "Sửa bài" tren ArticleActionBar.
+  isOwner?: boolean;
 };
 
 export type ImageAsset = { url: string; alt: string };

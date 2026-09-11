@@ -38,15 +38,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Rieng cho khu vuc "hanh trinh cuon sach" (JourneyHero/ChapterCard/
+// Ban dau rieng cho khu vuc "hanh trinh cuon sach" (JourneyHero/ChapterCard/
 // WelcomeOnboardingModal...) - truoc dung raw "Georgia, serif" (khong qua
 // next/font) nhung Georgia thieu glyph ghep san cho dau thanh tieng Viet
 // (vd "đầu" bi tach dau ra khoi chu, hien loi nhu "đâ`u"). Noto Serif co
 // subset "vietnamese" rieng (thiet ke du Unicode cho dau to hop), dung qua
-// next/font (tu host, khong goi Google luc runtime) de sua tan goc - KHONG
-// dung cho phan con lai cua app (van chi Inter, dung tinh than "khong con
-// ngoai le" o comment tren, day la ngoai le DUY NHAT + co chu dich, theo
-// yeu cau nguoi dung ve tone "cuon sach").
+// next/font (tu host, khong goi Google luc runtime) de sua tan goc. Sau do
+// mo rong them cho tieu de trang chi tiet bai viet (ArticleHeader.tsx, theo
+// yeu cau nguoi dung) - VAN khong dung cho UI/dieu huong chung cua app (van
+// chi IBM Plex Mono), chi ap dung tung cho tieu de/noi dung dai o 2 khu vuc
+// nay qua var(--font-serif-book) truc tiep (chua co Tailwind utility rieng).
 const notoSerifBook = Noto_Serif({
   variable: "--font-serif-book",
   weight: ["400", "500", "600", "700"],

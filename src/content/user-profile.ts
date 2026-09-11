@@ -40,14 +40,6 @@ export type MiniUser = {
   avatarUrl: string;
 };
 
-// "Bo suu tap" - nhom tai lieu/lo trinh nguoi dung tu gom lai.
-export type ProfileCollection = {
-  id: string;
-  title: string;
-  itemCount: number;
-  thumbnailUrl: string;
-};
-
 export type UserProfileData = {
   // --- Nhom "User" (hot path, doc o moi post) ---
   id: string;
@@ -84,7 +76,6 @@ export type UserProfileData = {
   badgeCount: number;
   followingPreview: MiniUser[];
   followerPreview: MiniUser[];
-  collections: ProfileCollection[];
 
   // --- Quan he giua nguoi xem va profile nay (server tinh, khong luu DB) ---
   isSelf: boolean;
@@ -149,26 +140,6 @@ const CURRENT_USER: UserProfileData = {
   ],
   followingPreview: miniUsers([31, 32, 33, 34]),
   followerPreview: miniUsers([41, 42, 43, 44]),
-  collections: [
-    {
-      id: "c1",
-      title: "System Design Deep Dive",
-      itemCount: 12,
-      thumbnailUrl: "https://picsum.photos/seed/col-sysdesign/240/140",
-    },
-    {
-      id: "c2",
-      title: "Backend Best Practices",
-      itemCount: 23,
-      thumbnailUrl: "https://picsum.photos/seed/col-backend/240/140",
-    },
-    {
-      id: "c3",
-      title: "Dev Logs",
-      itemCount: 35,
-      thumbnailUrl: "https://picsum.photos/seed/col-devlog/240/140",
-    },
-  ],
   isSelf: true,
   isFollowing: false,
   career: {
@@ -229,7 +200,6 @@ function withSocialDefaults(seed: OtherSeed): UserProfileData {
     })),
     followingPreview: miniUsers([11, 12, 13, 14]),
     followerPreview: miniUsers([21, 22, 23, 24]),
-    collections: [],
   };
 }
 

@@ -1,10 +1,9 @@
 "use server";
-import { createPost } from "@/lib/api/posts";
-import type { Post } from "@/content/home-feed-mock";
+import { updatePost } from "@/lib/api/posts";
 
-export async function createPostAction(
-  kind: Post["kind"],
-  data: Record<string, unknown>,
+export async function updatePostAction(
+  id: string,
+  data?: Record<string, unknown>,
   opts?: {
     category?: string;
     visibility?: "draft" | "public" | "limited";
@@ -15,5 +14,5 @@ export async function createPostAction(
     title?: string;
   },
 ) {
-  return createPost(kind, data, opts);
+  return updatePost(id, data, opts);
 }

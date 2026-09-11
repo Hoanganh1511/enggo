@@ -1,70 +1,74 @@
 import Skeleton from "@/components/ui/skeleton";
 
-// Route-level Suspense fallback (Next tu boc page.tsx - toan bo page la 1
-// Server Component await Promise.all, nen suspend het ca trang cho toi khi
-// xong). Khop dung khung that: hero (dai ngan mobile / 70-30 desktop -
-// ArticlesHero.tsx), hang "Tác giả nổi bật" (CreatorRail.tsx), hang "Chủ đề
-// đang hot" (TopicsRail.tsx), luoi "Bài viết mới nhất" (ArticlesPostGrid.tsx).
-export default function ArticlesLoading() {
+// Route-level Suspense fallback (Next tu boc page.tsx - ca trang la 1 Server
+// Component await Promise.all nen suspend het cho toi khi xong). Khop dung
+// khung "knowledge dashboard" that: hero (HomeHero.tsx), luoi "Browse by
+// category" (HomeCategoryGrid.tsx) + luoi bai viet (HomeArticleSection.tsx)
+// o cot chinh, 4 the sidebar (Roadmap/WeeklyProgress/Quote/Activity) o cot
+// phu - dung 2 cot grid y het page.tsx (khong phai ban cu dung SectionSkeleton
+// cua EditorialFeed, sai hoan toan bo cuc trang hien tai).
+function SidebarCardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <div className="flex flex-col">
-      <Skeleton className="h-16 w-full rounded-xl sm:h-20 lg:hidden" />
-      <div className="hidden gap-4 lg:grid lg:grid-cols-[7fr_3fr]">
-        <Skeleton className="min-h-[210px] w-full rounded-2xl md:min-h-[238px]" />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:grid-rows-2 sm:gap-4">
-          <Skeleton className="h-full min-h-[100px] w-full rounded-2xl sm:col-span-2" />
-          <Skeleton className="h-full min-h-[100px] w-full rounded-2xl" />
-          <Skeleton className="h-full min-h-[100px] w-full rounded-2xl" />
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface p-4 lg:hidden">
-        <Skeleton className="size-10 shrink-0 rounded-full" />
-        <div className="min-w-0 flex-1">
-          <Skeleton className="h-3.5 w-32" />
-          <Skeleton className="mt-2 h-3 w-48" />
-        </div>
-      </div>
-
-      <div className="mt-8 mb-4 flex items-center gap-2.5">
-        <Skeleton className="size-[18px] rounded-full" />
-        <Skeleton className="h-5 w-36" />
-      </div>
-      <div className="flex gap-5 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex min-w-[64px] shrink-0 flex-col items-center gap-2">
-            <Skeleton className="size-12 shrink-0 rounded-full" />
-            <Skeleton className="h-2.5 w-12" />
-          </div>
+    <div className="rounded-xl border border-border bg-surface p-5">
+      <Skeleton className="h-4 w-32" />
+      <div className="mt-4 space-y-3">
+        {Array.from({ length: lines }).map((_, i) => (
+          <Skeleton key={i} className="h-3.5 w-full" />
         ))}
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-8 mb-4 flex items-center gap-2.5">
-        <Skeleton className="size-[18px] rounded-full" />
-        <Skeleton className="h-5 w-40" />
-      </div>
-      <div className="flex gap-3 overflow-hidden">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[86px] w-[205px] shrink-0 rounded-xl" />
-        ))}
-      </div>
+export default function HomeFeedLoading() {
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:-mr-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0">
+        <Skeleton className="h-65 w-full rounded-2xl sm:h-75 lg:h-83.75" />
 
-      <div className="mt-8 mb-4 flex items-center gap-2.5">
-        <Skeleton className="size-[18px] rounded-full" />
-        <Skeleton className="h-5 w-44" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-border bg-surface">
-            <Skeleton className="h-[135px] w-full rounded-none" />
-            <div className="p-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="mt-2 h-4 w-3/4" />
-              <Skeleton className="mt-3 h-3 w-1/2" />
+        <div className="mt-8 mb-4">
+          <Skeleton className="h-5 w-40" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border p-4">
+              <Skeleton className="mb-4 size-8 rounded-lg" />
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="mt-2 h-3 w-1/2" />
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <div className="mt-8 mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-9 w-full max-w-[320px] rounded-lg" />
+        </div>
+        <div className="mb-4 flex gap-7 border-b border-border pb-3">
+          <Skeleton className="h-3.5 w-14" />
+          <Skeleton className="h-3.5 w-14" />
+          <Skeleton className="h-3.5 w-20" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i}>
+              <Skeleton className="aspect-16/10 w-full rounded-lg" />
+              <Skeleton className="mt-2 h-4 w-full" />
+              <Skeleton className="mt-1.5 h-4 w-2/3" />
+            </div>
+          ))}
+        </div>
       </div>
+
+      <aside className="space-y-5">
+        <div className="hidden lg:block">
+          <SidebarCardSkeleton lines={2} />
+        </div>
+        <div className="hidden lg:block">
+          <SidebarCardSkeleton lines={2} />
+        </div>
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <SidebarCardSkeleton lines={4} />
+      </aside>
     </div>
   );
 }

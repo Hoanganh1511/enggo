@@ -1,19 +1,35 @@
-import ProfileArticleGrid from "@/components/profile/ProfileArticleGrid";
+import { auth } from "@/auth";
+import { listUserCollectionsAction } from "@/actions/discover/collections/list-user-collections";
+import { CollectionsGrid } from "@/components/collections/CollectionsGrid";
 import { ProfileSuggestionsRow } from "@/components/profile/ProfileSuggestionsRow";
 
-// Tab "Bo suu tap" - chua co du lieu that, hien trang thai rong (khong
-// gia lap noi dung). Nut tao khong duoc truyen -> ProfileContentHeader tu
-// hien "Sắp có".
-export default function ProfileCollectionsTabPage() {
+// Tab "Bo suu tap" - da noi du lieu THAT (truoc day hard-code posts={[]}).
+// Chi hien bo sung tap CONG KHAI neu xem profile nguoi khac (backend tu loc
+// qua listUserCollectionsAction, xem PostCollectionService.listByUsername) -
+// chinh chu xem thi thay ca Rieng tu. canCreate CHI true khi dung chinh chu
+// profile nay (khong tao thay bo suu tap cho nguoi khac duoc).
+export default async function ProfileCollectionsTabPage({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}) {
+  const { username } = await params;
+  const decodedUsername = decodeURIComponent(username);
+  const [collections, session] = await Promise.all([
+    listUserCollectionsAction(decodedUsername).catch(() => []),
+    auth(),
+  ]);
+  const isSelf = session?.username === decodedUsername;
+
   return (
     <>
-      <ProfileArticleGrid
+      <CollectionsGrid
         heading="Bộ sưu tập"
         description="Tổng hợp những nội dung bạn muốn lưu lại để xem sau."
-        posts={[]}
-        createLabel="Bộ sưu tập"
+        collections={collections}
+        canCreate={isSelf}
       />
-      <ProfileSuggestionsRow />
+      {collections.length === 0 && <ProfileSuggestionsRow />}
     </>
   );
 }

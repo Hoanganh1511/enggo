@@ -8,6 +8,49 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-09-11 — Đổi chỗ URL `/home` ↔ `/articles`, giữ nguyên sidebar
+
+**Yêu cầu:** người dùng muốn nội dung đang ở `/articles` (hero + Tác giả nổi
+bật + Chủ đề đang hot + Bài viết mới nhất) chuyển sang URL `/home`, và nội
+dung "knowledge dashboard" đang ở `/home` (Roadmap/Weekly Progress/Quote/
+Activity) chuyển sang URL `/articles` — sidebar (`HomeDashboardSidebar.tsx`)
+giữ nguyên nhãn/href, không đổi theo.
+
+**Hướng đã cân nhắc:**
+1. Redirect/rewrite ở tầng Next.js (`next.config`) giữa 2 path. → Loại: vẫn
+   là 2 cây component riêng, chỉ đổi URL hiển thị — không thật sự "đổi chỗ
+   nội dung", và rewrite qua lại giữa 2 route cùng cấp dễ gây vòng lặp/khó
+   debug hơn là chỉ đổi code.
+2. Đổi thẳng NỘI DUNG 2 file `page.tsx`/`loading.tsx` cho nhau (giữ nguyên
+   thư mục component `home-dashboard/`/`articles-hub/`, chỉ đổi file nào
+   IMPORT chúng). → Chọn hướng này — đơn giản, không cần cấu hình routing
+   đặc biệt, và tên thư mục component cố tình KHÔNG đổi theo URL (tách biệt
+   "thư mục nguồn gốc port từ source nào" khỏi "URL nào đang hiển thị nó").
+
+**Cạm bẫy phải tự rà soát thủ công (không có công cụ nào bắt lỗi này):** mỗi
+`page.tsx` có nhiều chỗ tự tham chiếu URL CHÍNH NÓ trong comment/fallback
+href (vd `workspaceHref ?? "/home"`, comment "rieng /home liet sat vien phai
+man hinh..."). Khi nội dung of file A chuyển sang URL của file B, MỌI tham
+chiếu "URL của chính tôi" trong nội dung đó phải đổi theo (thành URL mới),
+còn tham chiếu "URL của trang kia" thì đổi ngược lại — không phải blanket
+find-replace "/home" ↔ "/articles" trên toàn file, vì import path kiểu
+`@/components/discover/home-dashboard/HomeHero` cũng chứa chuỗi con `/home`
+(là tên thư mục, không phải URL) nên không được đổi. Ngoài `page.tsx`, tài
+liệu `docs/home-dashboard-style-guide.md` cũng gán cứng "widget riêng của
+/home"/"widget riêng của /articles" theo route — đã sửa lại để mô tả theo
+TÊN THƯ MỤC component (ổn định, không đổi theo URL) thay vì theo route (đổi
+theo yêu cầu này), tránh lần sau đọc lại bị nhầm.
+
+**Fast-follow cùng lúc:** nhân tiện thêm khu "Bộ sưu tập gần đây" (2/4 tab có
+dữ liệu thật: Dành cho bạn/Từ người bạn theo dõi — dùng lại
+`listUserCollectionsAction`/`getFollowingAction` có sẵn; 2 tab còn lại Từ
+quản trị viên/Cộng đồng để "Sắp có" vì chưa có khái niệm admin-curated/cộng
+đồng nào trong app) ngay dưới hero của nội dung articles-hub — đã hỏi và
+người dùng xác nhận làm phần này trước đó rồi hoãn lại, giờ làm luôn khi đổi
+route.
+
+---
+
 ## 2026-09-10 — `/p/[id]` báo "A server error occurred" cho bài kind "text" có `richContent`
 
 **Triệu chứng:** mở trang chi tiết 1 bài text vừa tạo bằng Composer (Compose

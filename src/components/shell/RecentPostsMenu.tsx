@@ -17,12 +17,13 @@ import type { Post } from "@/content/home-feed-mock";
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 // 1 hang bai viet - bam vao mo popover con (kieu menu chuot phai) thay vi
-// dieu huong thang, cho 2 tuy chon: "Xem bài" (dieu huong that toi /p/[id])
-// va "Sửa bài" (SAP CO - chua co man hinh/API chinh sua bai viet nao trong
-// app, xem post.controller.ts o backend khong co @Patch(':id'); disable that
-// long thay vi gia vo co, dung tinh than "Sắp có" dung o moi cho khac trong
-// app chua co backend). `openId`/`onOpenChange` nam o component cha de chi
-// 1 hang mo popover con tai 1 thoi diem.
+// dieu huong thang, cho 2 tuy chon: "Xem bài" (dieu huong toi /p/[id]) va
+// "Sửa bài" (dieu huong toi /compose/[id], xem Composer.tsx `initialPost`) -
+// menu nay von chi liet ke bai CUA CHINH nguoi xem (listPostsAction({
+// authorUsername: session.username })) nen khong can check quyen so huu
+// them o day, trang /compose/[id] van tu gate lai (post.isOwner) phong khi
+// bi dieu huong thang toi duong dan nay tu cho khac. `openId`/`onOpenChange`
+// nam o component cha de chi 1 hang mo popover con tai 1 thoi diem.
 function PostRow({
   post,
   open,
@@ -71,13 +72,14 @@ function PostRow({
         </button>
         <button
           type="button"
-          disabled
-          title="Sắp có"
-          className="flex w-full cursor-not-allowed items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-ink-faint"
+          onClick={() => {
+            onOpenChange(false);
+            router.push(`/compose/${post.id}`);
+          }}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
         >
           <Pencil size={13} strokeWidth={1.8} />
           Sửa bài
-          <span className="ml-auto text-[10px]">Sắp có</span>
         </button>
       </PopoverContent>
     </PopoverRoot>

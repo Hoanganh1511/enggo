@@ -21,6 +21,8 @@ import { ArticlePrevNextNav } from "@/components/article/ArticlePrevNextNav";
 import { ArticleComments } from "@/components/article/ArticleComments";
 import { ArticleRecommendations } from "@/components/article/ArticleRecommendations";
 import type { PostSummary } from "@/components/article/article-types";
+import { buildCommentTree } from "@/components/article/comment-tree";
+import { listPostCommentsAction } from "@/actions/discover/post-comments/list-post-comments";
 
 const WORDS_PER_MINUTE = 200;
 
@@ -38,12 +40,17 @@ function toSummary(post: Post): PostSummary {
 
 // Trang chi tiet 1 Post THAT (khong con la "Article" mock rieng - da doi
 // huong lai, xem quyet dinh 2026-08-03 trong docs/engineering-log.md). Bo
-// cuc 3 cot tu lg+: cot TRAI dinh (ArticleStickyAuthorBar, chi hien khi cuon
-// qua card tac gia that o duoi) + cot GIUA noi dung chinh (max 620px de de
-// doc) + cot PHAI dinh (Muc luc/Bai viet lien quan, xem ArticleSidebar.tsx) -
-// 2 cot dinh doi xung nhau theo yeu cau nguoi dung. Tren mobile chi con 1
-// cot: Muc luc thu gon inline + thanh hanh dong dinh duoi cung (theo mockup
-// nguoi dung gui), khong co cot trai/phai (khong du cho).
+// cuc 3 cot tu 1200px+ (dung mocktup responsive nguoi dung gui - Tablet
+// 768-1199px VAN la 1 cot, khong phai tu lg=1024px nhu Tailwind mac dinh,
+// nen dung breakpoint tuy chinh "min-[1200px]:" thay vi "lg:"): cot TRAI
+// dinh (ArticleStickyAuthorBar, chi hien khi cuon qua card tac gia that o
+// duoi) + cot GIUA noi dung chinh (max 900px, gom ArticleHeader anh bia/
+// tieu de/mo ta/thich/binh luan/tac gia GON + ArticleBody dung CHUNG 1
+// max-width - tang o day se rong ca 2 theo, xem yeu cau nguoi dung) + cot
+// PHAI dinh (Muc luc/Bai viet lien quan, xem ArticleSidebar.tsx) - 2 cot
+// dinh doi xung nhau theo yeu cau nguoi dung. Duoi 1200px (ke ca tablet)
+// chi con 1 cot: Muc luc thu gon inline + thanh hanh dong dinh duoi cung
+// (theo mockup nguoi dung gui), khong co cot trai/phai (khong du cho).
 export default async function PostDetailPage({
   params,
 }: {
@@ -53,7 +60,7 @@ export default async function PostDetailPage({
   const post = await getPostAction(id).catch(() => null);
   if (!post) notFound();
 
-  const [authorPosts, relatedPosts, profile] = await Promise.all([
+  const [authorPosts, relatedPosts, profile, rawComments] = await Promise.all([
     listPostsAction({ authorUsername: post.author.username, limit: 20 }).catch(
       () => [] as Post[],
     ),
@@ -63,7 +70,9 @@ export default async function PostDetailPage({
         )
       : Promise.resolve([] as Post[]),
     getProfileByUsername(post.author.username).catch(() => null),
+    listPostCommentsAction(post.id).catch(() => []),
   ]);
+  const comments = buildCommentTree(rawComments);
 
   const currentIndex = authorPosts.findIndex((p) => p.id === post.id);
   const prev = currentIndex >= 0 ? authorPosts[currentIndex + 1] : undefined;
@@ -92,14 +101,14 @@ export default async function PostDetailPage({
       ? renderTiptapHTML(post.richContent, getPostExtensions())
       : null;
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 pb-24 lg:flex-row lg:pb-6">
-      {/* Cot TRAI - CHI desktop, doi dien voi ArticleSidebar (Muc luc) o cot
-          phai theo yeu cau nguoi dung. Tu quyet dinh an/hien qua
+    <div className="mx-auto flex w-full max-w-400 flex-col gap-8 px-4 py-6 pb-24 min-[1200px]:flex-row min-[1200px]:pb-6">
+      {/* Cot TRAI - CHI desktop (>=1200px), doi dien voi ArticleSidebar (Muc
+          luc) o cot phai theo yeu cau nguoi dung. Tu quyet dinh an/hien qua
           IntersectionObserver (xem component), tra ve null luc chua can
-          hien nen khong can boc them dieu kien o day. Tren mobile KHONG hien
-          nua (khong co cho cho 1 cot rieng) - thanh hanh dong dinh duoi cung
-          da dam nhiem vai tro "luon thay duoc" o do roi. */}
-      <aside className="hidden w-64 shrink-0 lg:block">
+          hien nen khong can boc them dieu kien o day. Duoi 1200px (ke ca
+          tablet) KHONG hien nua (khong co cho cho 1 cot rieng) - thanh hanh
+          dong dinh duoi cung da dam nhiem vai tro "luon thay duoc" o do roi. */}
+      <aside className="hidden w-64 shrink-0 min-[1200px]:block">
         <ArticleStickyAuthorBar
           author={post.author}
           profile={profile}
@@ -109,23 +118,29 @@ export default async function PostDetailPage({
         />
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-6 lg:max-w-155">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 min-[1200px]:max-w-225">
         <ArticleHeader post={post} />
 
-        {/* Muc luc thu gon, inline ngay duoi tieu de - CHI mobile/tablet
-            (<lg). Tu lg tro len muc luc nam trong ArticleSidebar dinh ben
-            phai thay the, an ban nay di. */}
-        <div className="lg:hidden">
+        {/* Muc luc thu gon, inline ngay duoi tieu de - CHI duoi 1200px (ke ca
+            tablet). Tu 1200px tro len muc luc nam trong ArticleSidebar dinh
+            ben phai thay the, an ban nay di. */}
+        <div className="min-[1200px]:hidden">
           <ArticleTableOfContents content={content} richHeadings={rich?.headings} variant="inline" />
         </div>
 
         <ArticleBody post={post} richHtml={rich?.html} />
 
-        {/* Thanh hanh dong: ban thuong (inline, sau than bai) CHI desktop -
-            tren mobile thay bang ban dinh duoi cung man hinh (sticky, xem
-            duoi cung trang) de luon bam duoc du cuon toi dau. */}
-        <div className="hidden lg:block">
-          <ArticleActionBar likes={post.stats.likes} commentCount={post.stats.comments} />
+        {/* Thanh hanh dong: ban thuong (inline, sau than bai) CHI desktop
+            (>=1200px) - duoi 1200px (ke ca tablet) thay bang ban dinh duoi
+            cung man hinh (sticky, xem duoi cung trang) de luon bam duoc du
+            cuon toi dau. */}
+        <div className="hidden min-[1200px]:block">
+          <ArticleActionBar
+            likes={post.stats.likes}
+            commentCount={post.stats.comments}
+            postId={post.id}
+            isOwner={post.isOwner ?? false}
+          />
         </div>
 
         <ArticleAuthorCard
@@ -140,21 +155,25 @@ export default async function PostDetailPage({
           prev={prev && toSummary(prev)}
           next={next && toSummary(next)}
         />
-        {/* comments rong - chua co model/API Comment that cho Post (chi co
-            stats.comments la SO DEM), xem ArticleComments.tsx/article-types.ts. */}
-        <ArticleComments comments={[]} />
+        <ArticleComments postId={post.id} comments={comments} />
         <ArticleRecommendations
           moreFromAuthor={moreFromAuthor}
           related={related}
         />
       </div>
 
-      <aside className="hidden w-72 shrink-0 lg:block">
+      <aside className="hidden w-72 shrink-0 min-[1200px]:block">
         <ArticleSidebar content={content} richHeadings={rich?.headings} related={related} />
       </aside>
 
-      <div className="lg:hidden">
-        <ArticleActionBar likes={post.stats.likes} commentCount={post.stats.comments} sticky />
+      <div className="min-[1200px]:hidden">
+        <ArticleActionBar
+          likes={post.stats.likes}
+          commentCount={post.stats.comments}
+          postId={post.id}
+          isOwner={post.isOwner ?? false}
+          sticky
+        />
       </div>
     </div>
   );

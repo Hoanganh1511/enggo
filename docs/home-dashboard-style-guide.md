@@ -1,9 +1,11 @@
 # Style guide — Dashboard area (`/home`, `/articles`)
 
 Tại sao có file này: `/home` và `/articles` dùng chung 1 "khu vực dashboard"
-port từ 2 source riêng (`knowledge-dashboard-nextjs.zip` cho `/home`,
-`knowledge-dashboard-note-knowledge-hub-style.zip` cho phần thân `/articles`)
-— khu vực này **cố tình** giữ bảng màu/spacing/font riêng, KHÔNG dùng token
+port từ 2 source riêng (`knowledge-dashboard-nextjs.zip` cho thư mục
+component `home-dashboard/`, `knowledge-dashboard-note-knowledge-hub-style.zip`
+cho thư mục `articles-hub/` — xem ghi chú "ĐỔI CHỖ ROUTE" ngay dưới đây, 2 tên
+thư mục này KHÔNG còn khớp URL cùng tên nữa) — khu vực này **cố tình** giữ
+bảng màu/spacing/font riêng, KHÔNG dùng token
 `--ink`/`--border`... của phần còn lại app, theo yêu cầu người dùng lúc port
 ("giữ đúng toàn bộ UI/UX như trong file"). File này chốt lại đầy đủ hệ thống
 thiết kế của khu vực đó (grid/spacing/màu/type scale/motion...) để khi mở
@@ -13,14 +15,23 @@ còn lại app vào.
 
 ## Phạm vi áp dụng
 
-Áp dụng cho `src/components/discover/home-dashboard/` (widget riêng của
-`/home`: `HomeHero.tsx`, `HomeArticleSection.tsx`, `HomeRoadmapCard.tsx`...)
-và `src/components/discover/articles-hub/` (widget riêng của `/articles`:
-`ArticlesHero.tsx`, `RecommendedGrid.tsx`, `TopicsRail.tsx`,
-`NewestSection.tsx`...), cộng `HomeDashboardSidebar.tsx` (sidebar CHUNG cho cả
-2 trang). **KHÔNG** áp dụng cho phần còn lại app (dùng token
-`--ink`/`--border`/`--primary`... trong `globals.css` như bình thường) — 2 hệ
-thống màu tách biệt có chủ đích.
+Áp dụng cho `src/components/discover/home-dashboard/` (widget dạng
+"knowledge dashboard": `HomeHero.tsx`, `HomeArticleSection.tsx`,
+`HomeRoadmapCard.tsx`...) và `src/components/discover/articles-hub/` (widget
+dạng "articles hub": `ArticlesHero.tsx`, `CreatorRail.tsx`, `TopicsRail.tsx`,
+`ArticlesPostGrid.tsx`, `RecentCollectionsSection.tsx`...), cộng
+`HomeDashboardSidebar.tsx` (sidebar CHUNG cho cả 2 trang). **KHÔNG** áp dụng
+cho phần còn lại app (dùng token `--ink`/`--border`/`--primary`... trong
+`globals.css` như bình thường) — 2 hệ thống màu tách biệt có chủ đích.
+
+> **ĐỔI CHỖ ROUTE (2026):** theo yêu cầu người dùng, nội dung 2 trang đã đổi
+> URL cho nhau. `home/page.tsx` (URL `/home`) giờ compose từ
+> `articles-hub/` (hero + Tác giả nổi bật + Chủ đề đang hot + Bài viết mới
+> nhất + Bộ sưu tập gần đây); `articles/page.tsx` (URL `/articles`) giờ
+> compose từ `home-dashboard/` (hero + Roadmap/Weekly Progress/Quote/Activity
+> ở right rail). Tên thư mục component (`home-dashboard/`, `articles-hub/`)
+> **KHÔNG đổi theo** — chỉ route/page.tsx nào import chúng mới đổi.
+> Sidebar (`HomeDashboardSidebar.tsx`) giữ nguyên nhãn/href, không đổi.
 
 ### Kiến trúc route (layout dùng chung)
 
@@ -34,12 +45,14 @@ cascade xuống sidebar + cả 2 trang con.
 ### Kiến trúc component (Server/Client split)
 
 Mỗi trang composed từ nhiều Server Component nhỏ (`HomeHero`,
-`HomeRoadmapCard`, `ArticlesHero`, `RecommendedGrid`, `TopicsRail`... — KHÔNG
-`"use client"`, không hydrate, không JS) + ĐÚNG 1 client island cho phần thật
-sự cần tương tác (`HomeArticleSection.tsx` trên `/home` — filter category +
-search dùng chung state; `NewestSection.tsx` trên `/articles` — tab lọc theo
-lĩnh vực). Khi thêm widget mới: mặc định viết Server Component trước, chỉ
-thêm `"use client"` khi thật sự cần state/event handler cục bộ.
+`HomeRoadmapCard`, `ArticlesHero`, `CreatorRail`, `TopicsRail`... — KHÔNG
+`"use client"`, không hydrate, không JS) + vài client island cho phần thật sự
+cần tương tác: `HomeArticleSection.tsx` (trên `/articles` sau khi đổi chỗ —
+filter category + search dùng chung state), `ArticlesPostGrid.tsx` (trên
+`/home` — dùng framer-motion nên cần boundary client, xem file đó),
+`RecentCollectionsSection.tsx` (trên `/home` — tab chuyển đổi). Khi thêm
+widget mới: mặc định viết Server Component trước, chỉ thêm `"use client"`
+khi thật sự cần state/event handler cục bộ.
 
 ---
 
@@ -50,12 +63,14 @@ Page
 ├── Sidebar: 240px (chung cho /home và /articles, xem (feed)/layout.tsx)
 └── Workspace
     ├── Main: minmax(0, 1fr)
-    └── Right rail: 320px (/home only — /articles không có right rail)
+    └── Right rail: 320px (/articles only, sau khi đổi chỗ route (2026) —
+                            /home không có right rail)
 ```
 
-Dùng CSS Grid cho cấu trúc trang chính (`/home` dùng
-`lg:grid-cols-[minmax(0,1fr)_320px]` trong `home/page.tsx` vì có right rail;
-`/articles` chỉ 1 cột, không right rail). Sidebar `fixed` sống trong
+Dùng CSS Grid cho cấu trúc trang chính (`/articles` dùng
+`lg:grid-cols-[minmax(0,1fr)_320px]` trong `articles/page.tsx` vì có right
+rail — nội dung home-dashboard sau khi đổi chỗ; `/home` chỉ 1 cột, không
+right rail). Sidebar `fixed` sống trong
 `(feed)/layout.tsx`, offset nội dung qua `lg:pl-61` trên `<main>`. Container
 BODY dùng chung (`mx-auto w-full px-10`) cũng đặt Ở ĐÚNG 1 CHỖ trong
 `(feed)/layout.tsx` (bọc `{children}`, nằm trong `<main>`) — `page.tsx` của

@@ -16,15 +16,17 @@ export type PostSummary = {
   readMinutes?: number;
 };
 
-// Binh luan bai viet - CHUA co model/API that o backend (post.commentsCount
-// la so dem, khong co bang Comment/Reply that) nen ArticleComments.tsx khoi
-// tao rong cho MOI bai that, chi cho phep them/tra loi trong pham vi state
-// client cua phien xem nay (khong luu len server).
+// Binh luan bai viet - model/API that o backend (PostComment/PostCommentLike,
+// xem src/lib/api/post-comments.ts) - dang NESTED (replies long ben trong,
+// khop dung UI ArticleComments.tsx dang render goc->reply 1 cap), dung
+// buildCommentTree() de dung tu du lieu phang API tra ve.
 export type ArticleComment = {
   id: string;
   author: Author;
   createdAt: string;
   content: string;
-  likes: number;
+  likesCount: number;
+  likedByMe: boolean;
+  isOwner: boolean;
   replies: ArticleComment[];
 };

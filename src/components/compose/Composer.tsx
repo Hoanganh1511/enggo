@@ -31,19 +31,31 @@ import {
   FileSearch,
   RotateCcw,
   SpellCheck2,
+  Plus,
+  Folder,
 } from "lucide-react";
 import { createPostAction } from "@/actions/discover/create-post";
+import { updatePostAction } from "@/actions/discover/update-post";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
+import { listMyCollectionsAction } from "@/actions/discover/collections/list-my-collections";
+import { addToCollectionAction } from "@/actions/discover/collections/add-to-collection";
+import { CreateCollectionModal } from "@/components/collections/CreateCollectionModal";
+import type { PostCollectionApiShape } from "@/lib/api/collections";
 import { improvePostDraftAction } from "@/actions/post-assistant/improve-post-draft";
 import { chatAboutPostDraftAction } from "@/actions/post-assistant/chat-about-post-draft";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
+import { validateCoverImageFile, validateCoverImageDimensions } from "@/lib/validate-cover-image";
+import { loadImageBitmap, cropAndResizeCoverImage } from "@/lib/resize-cover-image";
 import type { ChatMessage } from "@/lib/api/types";
 import { formatTimeOnly } from "@/lib/format-time";
 import {
   KNOWLEDGE_WORLDS,
   slugToCategoryEnum,
+  categoryEnumToSlug,
 } from "@/lib/discover/knowledge-worlds";
+import type { Post } from "@/content/home-feed-mock";
+import { getPostTitle } from "@/components/discover/home-feed/post-display";
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -96,12 +108,16 @@ const DRAFT_STORAGE_KEY = "compose-draft";
 // - Con lai (draft/cong khai gioi han, cong tac binh luan/thich/tim kiem/tra
 //   phi, AI ho tro/AI chat, tab Phong cach) - Giai doan sau, van disabled
 //   trung thuc + "Sắp có" dung quy uoc da chot.
-// Gioi han kich thuoc anh (bia/chen) - khop voi FileInterceptor o backend
-// (UploadController, 25MB), bao truoc thay vi de request that bai roi moi bao.
-const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+// Anh bia rieng co bo tieu chi CHAT hon backend (FileInterceptor cho phep
+// toi 25MB chung cho moi loai anh) - 10MB/1200x600/ty le 2:1 la yeu cau
+// SAN PHAM danh rieng cho anh bia bai viet, xem validate-cover-image.ts.
 
-export function Composer() {
+// initialPost co gia tri -> che do SUA bai da dang (tinh nang Sua bai) thay
+// vi tao moi - xem /compose/[id]/page.tsx (nguon duy nhat truyen prop nay).
+export function Composer({ initialPost }: { initialPost?: Post } = {}) {
   const router = useRouter();
+  const isEditMode = Boolean(initialPost);
+  const hydratedRef = useRef(false);
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<PublishVisibility>("public");
   const [rightTab, setRightTab] = useState<RightTab>("publish");
@@ -125,6 +141,14 @@ export function Composer() {
   const [commentsEnabled, setCommentsEnabled] = useState(true);
   const [likesEnabled, setLikesEnabled] = useState(true);
   const [searchable, setSearchable] = useState(true);
+  // Panel "Thêm vào bộ sưu tập" - fetch 1 lan luc mount (Composer da "use
+  // client" san). Bai CHUA co id luc dang soan nen chi luu
+  // selectedCollectionId cuc bo, goi addToCollectionAction SAU KHI publish
+  // thanh cong (xem handlePublish) - khong the goi truoc do vi chua co postId.
+  const [myCollections, setMyCollections] = useState<PostCollectionApiShape[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
+  const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
   // "AI hỗ trợ" (popover trong toolbar) - instruction rong = dung preset da
   // chon, khac rong = nguoi dung tu go (uu tien hon preset).
   const [aiPopoverOpen, setAiPopoverOpen] = useState(false);
@@ -168,6 +192,10 @@ export function Composer() {
   // visibility; noi dung editor tu goi qua onUpdate (xem useEditor ben
   // duoi) vi editor.state khong nam trong dependency array on dinh duoc.
   function scheduleAutosave() {
+    // Sua bai KHONG duoc dung/ghi vao nhap cuc bo "bai moi" - 2 khai niem
+    // tach biet, dung chung key se lam nhap that lac dau vao bai dang sua
+    // (hoac nguoc lai, mat noi dung dang sua neu 1 nhap cu con sot lai).
+    if (isEditMode) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       if (!editor) return;
@@ -203,7 +231,7 @@ export function Composer() {
   // thuc su rong (chua go gi), tranh ghi de neu nguoi dung da bat dau viet
   // truoc khi effect nay chay.
   useEffect(() => {
-    if (!editor || restoredRef.current) return;
+    if (!editor || restoredRef.current || isEditMode) return;
     restoredRef.current = true;
     if (title.trim() || !editor.isEmpty) return;
     // setTimeout(0) - day setState ra khoi than effect (react-hooks/
@@ -236,27 +264,74 @@ export function Composer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  // Che do SUA bai - nap du lieu bai da dang vao form/editor, CHI 1 LAN luc
+  // editor san sang (hydratedRef, cung tinh than voi restoredRef o tren).
+  // Composer chi tung tao/sua kind "text" - initialPost.kind khac "text"
+  // (ve ly thuyet khong xay ra tren du lieu that vi day la CACH DUY NHAT tao
+  // bai) thi bo qua, khong co gi de hydrate.
+  useEffect(() => {
+    if (!editor || !initialPost || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (initialPost.kind !== "text") return;
+    // setTimeout(0) - day setState ra khoi than effect (react-hooks/
+    // set-state-in-effect), cung ky thuat voi effect khoi phuc nhap o tren.
+    setTimeout(() => {
+      // Bai cu (dang truoc khi title thanh cot that) khong co initialPost.title
+      // - fallback ve getPostTitle() (suy tu dong dau content, dung logic
+      // hien dang dung o moi noi hien thi tieu de khac) thay vi de trong.
+      setTitle(initialPost.title || getPostTitle(initialPost));
+      if (initialPost.excerpt) setExcerpt(initialPost.excerpt);
+      if (initialPost.tags) setTags(initialPost.tags);
+      if (initialPost.category) setCategorySlug(categoryEnumToSlug(initialPost.category));
+      if (initialPost.visibility) setVisibility(initialPost.visibility);
+      if (initialPost.coverImage) setCoverImageUrl(initialPost.coverImage);
+      if (typeof initialPost.commentsEnabled === "boolean") setCommentsEnabled(initialPost.commentsEnabled);
+      if (typeof initialPost.likesEnabled === "boolean") setLikesEnabled(initialPost.likesEnabled);
+      if (typeof initialPost.searchable === "boolean") setSearchable(initialPost.searchable);
+      if (initialPost.richContent) editor.commands.setContent(initialPost.richContent);
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor]);
+
+  // Panel "Thêm vào bộ sưu tập" - fetch 1 lan luc mount, khong phu thuoc
+  // editor (khac 2 effect tren, day chi la load 1 danh sach tinh).
+  useEffect(() => {
+    listMyCollectionsAction()
+      .then(setMyCollections)
+      .catch(() => {
+        // im lang - panel se hien danh sach rong, khong chan soan bai.
+      });
+  }, []);
+
   function addTag() {
     const t = tagDraft.trim().replace(/^#/, "");
     if (t && !tags.includes(t) && tags.length < 8) setTags((p) => [...p, t]);
     setTagDraft("");
   }
 
+  // Validate ĐỦ tiêu chí (định dạng/dung lượng/kích thước, xem
+  // validate-cover-image.ts) TRƯỚC khi upload - moi loi deu la UserFacingError
+  // voi thong diep RO RANG tung tieu chi (khong chung chung), duoc
+  // getApiErrorMessage nhan dien va hien nguyen van. Anh dat het tieu chi ->
+  // tu dong crop ve dung ty le 2:1 + resize toi da 1600px + nen JPEG 0.85
+  // ("hệ thống tự resize/compress") TRUOC khi gui len server, dam bao bai
+  // viet nao cung hien anh bia dung ty le, khong bi meo/qua nang.
   async function uploadCoverImage(file: File) {
-    if (file.size > MAX_IMAGE_BYTES) {
-      setError("Ảnh bìa vượt quá 25MB.");
-      return;
-    }
     setIsUploadingCover(true);
     setError(null);
     try {
-      const uploadFile = await convertHeicToJpegIfNeeded(file);
-      if (uploadFile.size > MAX_IMAGE_BYTES) {
-        setError("Ảnh bìa vượt quá 25MB.");
-        return;
-      }
+      const heicConverted = await convertHeicToJpegIfNeeded(file);
+      validateCoverImageFile(heicConverted);
+      const bitmap = await loadImageBitmap(heicConverted);
+      validateCoverImageDimensions(bitmap.width, bitmap.height);
+      const processedBlob = await cropAndResizeCoverImage(bitmap);
+      const processedFile = new File(
+        [processedBlob],
+        heicConverted.name.replace(/\.[^.]+$/, "") + ".jpg",
+        { type: "image/jpeg" },
+      );
       const formData = new FormData();
-      formData.append("file", uploadFile);
+      formData.append("file", processedFile);
       formData.append("kind", "image");
       const uploaded = await uploadPostImageAction(formData);
       setCoverImageUrl(uploaded.url);
@@ -282,32 +357,52 @@ export function Composer() {
     const category = categorySlug
       ? slugToCategoryEnum(categorySlug)
       : undefined;
+    const data = {
+      content: excerpt.trim() || fallbackContent.slice(0, 600),
+      richContent,
+      coverImage: coverImageUrl || undefined,
+      tags,
+    };
+    const opts = {
+      category,
+      visibility,
+      commentsEnabled,
+      likesEnabled,
+      searchable,
+      excerpt: excerpt.trim() || undefined,
+      title: title.trim() || undefined,
+    };
     try {
-      const created = await createPostAction(
-        "text",
-        {
-          content: excerpt.trim() || fallbackContent.slice(0, 600),
-          richContent,
-          coverImage: coverImageUrl || undefined,
-          tags,
-        },
-        {
-          category,
-          visibility,
-          commentsEnabled,
-          likesEnabled,
-          searchable,
-          excerpt: excerpt.trim() || undefined,
-        },
-      );
-      try {
-        localStorage.removeItem(DRAFT_STORAGE_KEY);
-      } catch {
-        // im lang - khong critical, chi la don dep nhap con lai.
+      if (isEditMode && initialPost) {
+        await updatePostAction(initialPost.id, data, opts);
+        if (selectedCollectionId) {
+          await addToCollectionAction(selectedCollectionId, initialPost.id).catch(() => {
+            // best-effort - khong chan dieu huong neu loi (giong don dep
+            // localStorage ben duoi).
+          });
+        }
+        router.push(`/p/${initialPost.id}`);
+      } else {
+        const created = await createPostAction("text", data, opts);
+        if (selectedCollectionId) {
+          await addToCollectionAction(selectedCollectionId, created.id).catch(() => {
+            // best-effort
+          });
+        }
+        try {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch {
+          // im lang - khong critical, chi la don dep nhap con lai.
+        }
+        router.push(`/p/${created.id}`);
       }
-      router.push(`/p/${created.id}`);
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không đăng được bài, thử lại sau."));
+      setError(
+        getApiErrorMessage(
+          err,
+          isEditMode ? "Không lưu được bài viết, thử lại sau." : "Không đăng được bài, thử lại sau.",
+        ),
+      );
       setIsPosting(false);
     }
   }
@@ -396,7 +491,13 @@ export function Composer() {
                 onClick={handlePublish}
                 className="cursor-pointer rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-surface transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isPosting ? "Đang đăng..." : "Đăng bài"}
+                {isPosting
+                  ? isEditMode
+                    ? "Đang lưu..."
+                    : "Đang đăng..."
+                  : isEditMode
+                    ? "Lưu thay đổi"
+                    : "Đăng bài"}
               </button>
             </div>
           </div>
@@ -427,13 +528,15 @@ export function Composer() {
                   </>
                 )}
               </p>
-              <p className="text-xs text-ink-faint">JPG, PNG (tối đa 25MB)</p>
+              <p className="text-xs text-ink-faint">
+                JPG, PNG, WebP · tối đa 10MB · khuyến nghị 1600×800px (tỉ lệ 2:1)
+              </p>
             </div>
           )}
 
           <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_8px_30px_rgba(16,24,40,.08)]">
             <div
-              className="relative flex h-[220px] flex-col justify-end bg-surface-muted p-9"
+              className="relative flex h-[320px] flex-col justify-end bg-surface-muted p-9"
               style={
                 coverImageUrl
                   ? {
@@ -447,7 +550,7 @@ export function Composer() {
               <input
                 ref={coverInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,.heic,.heif"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
@@ -848,6 +951,84 @@ export function Composer() {
                   {excerpt.length}/300
                 </p>
               </Panel>
+
+              <Panel title="Thêm vào bộ sưu tập">
+                <PopoverRoot open={collectionMenuOpen} onOpenChange={setCollectionMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition-colors duration-150 ease-out ${
+                        selectedCollectionId
+                          ? "border-blue-300 bg-blue-50 text-blue-600"
+                          : "border-border text-ink-muted hover:bg-hover-bg"
+                      }`}
+                    >
+                      {myCollections.find((c) => c.id === selectedCollectionId)?.title ?? "Chọn bộ sưu tập"}
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    open={collectionMenuOpen}
+                    align="start"
+                    className="z-50 max-h-72 w-64 overflow-y-auto rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCollectionMenuOpen(false);
+                        setCreateCollectionOpen(true);
+                      }}
+                      className="mb-1 flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-primary hover:bg-hover-bg"
+                    >
+                      <Plus size={14} strokeWidth={2.2} /> Tạo bộ sưu tập mới
+                    </button>
+                    {selectedCollectionId && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCollectionId(null);
+                          setCollectionMenuOpen(false);
+                        }}
+                        className="mb-1 flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-danger hover:bg-hover-bg"
+                      >
+                        <X size={14} /> Bỏ chọn
+                      </button>
+                    )}
+                    {myCollections.length === 0 ? (
+                      <p className="px-2 py-3 text-center text-xs text-ink-faint">
+                        Bạn chưa có bộ sưu tập nào.
+                      </p>
+                    ) : (
+                      myCollections.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCollectionId(c.id);
+                            setCollectionMenuOpen(false);
+                          }}
+                          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink hover:bg-hover-bg"
+                        >
+                          <Folder size={14} strokeWidth={1.8} className="shrink-0 text-ink-faint" />
+                          <span className="flex-1 truncate">{c.title}</span>
+                          {selectedCollectionId === c.id && (
+                            <Check size={14} className="shrink-0 text-blue-500" />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </PopoverContent>
+                </PopoverRoot>
+              </Panel>
+
+              <CreateCollectionModal
+                open={createCollectionOpen}
+                onOpenChange={setCreateCollectionOpen}
+                onCreated={(created) => {
+                  setMyCollections((prev) => [created, ...prev]);
+                  setSelectedCollectionId(created.id);
+                }}
+              />
 
               <div className="rounded-xl border border-border bg-surface p-4">
                 <p className="font-medium text-ink">

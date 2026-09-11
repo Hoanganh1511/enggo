@@ -1,81 +1,118 @@
 import { auth } from "@/auth";
 import { getFeedCategoryTree } from "@/lib/api/feed-categories";
-import { getProfileByUsername } from "@/lib/api/users";
 import { listPostsAction } from "@/actions/discover/list-posts";
+import { getMyJourneyAction } from "@/actions/knowledge-groups/get-my-journey";
+import { listNotificationsAction } from "@/actions/notifications/list-notifications";
 import { normalizePost } from "@/lib/discover/normalize-post";
-import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
-import { MobileProfileSummaryRow } from "@/components/discover/articles-hub/MobileProfileSummaryRow";
-import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
-import {
-  CreatorRail,
-  type CreatorSummary,
-} from "@/components/discover/articles-hub/CreatorRail";
-import { TopicsRail } from "@/components/discover/articles-hub/TopicsRail";
-import { ArticlesPostGrid } from "@/components/discover/articles-hub/ArticlesPostGrid";
-import { MOCK_CATEGORY_TREE } from "@/components/discover/articles-hub/category-tree-mock";
-import { Flame, Newspaper, Users } from "lucide-react";
+import { pickDailyQuote } from "@/components/discover/home-dashboard/home-quotes";
+import { HomeHero } from "@/components/discover/home-dashboard/HomeHero";
+import { HomeArticleSection } from "@/components/discover/home-dashboard/HomeArticleSection";
+import { HomeRoadmapCard } from "@/components/discover/home-dashboard/HomeRoadmapCard";
+import { HomeWeeklyProgressCard } from "@/components/discover/home-dashboard/HomeWeeklyProgressCard";
+import { HomeMobileQuickPanels } from "@/components/discover/home-dashboard/HomeMobileQuickPanels";
+import { HomeQuoteCard } from "@/components/discover/home-dashboard/HomeQuoteCard";
+import { HomeActivityCard } from "@/components/discover/home-dashboard/HomeActivityCard";
+import { HomeOnlineNowCard } from "@/components/discover/home-dashboard/HomeOnlineNowCard";
+import { getOnlineStatusAction } from "@/actions/discover/get-online-status";
+import type { Author } from "@/content/home-feed-mock";
 
-// /articles - port giao dien tu source knowledge-dashboard-note-knowledge-hub-style.zip
-// (ban goc tieng Nhat kieu Zenn.dev, da doi copy sang tieng Anh/Viet khop tone
-// con lai cua app - khong ship nguyen van tieng Nhat demo). Dung CHUNG sidebar
-// voi /home qua (feed)/layout.tsx (xem file do) - trang nay KHONG tu ve
-// sidebar rieng nua. Server Component thuan + 1 island client duy nhat
-// (ArticlesPostGrid - the bai dung framer-motion, xem file do).
-export default async function ArticlesPage() {
+// /articles - port giao dien "knowledge dashboard" tu source
+// knowledge-dashboard-nextjs.zip. Day LA trang /articles chinh thuc (khong
+// con HomeHero/HomeFeatureGrid/HomePrinciples/HomeSystemSection cu - da
+// xoa), sidebar da chuyen sang layout.tsx cung cap. Composed truc tiep tu
+// cac Server Component nho (Hero/Roadmap/WeeklyProgress/Quote/Activity -
+// khong "use client", khong dinh JS) + 1 island DUY NHAT can tuong tac
+// (HomeArticleSection - category filter + search, xem component do).
+// DOI CHO voi /home theo yeu cau nguoi dung (2026) - noi dung nay TRUOC DAY
+// nam o /home, gio chuyen sang day; sidebar (HomeDashboardSidebar.tsx) GIU
+// NGUYEN, khong doi nhan/href.
+export default async function HomeFeedPage() {
   const session = await auth();
   const username = session?.username ?? null;
-  const writeHref = username ? `/workspace/${username}` : "/login";
 
-  const [realCategoryTree, rawPosts, mobileProfile] = await Promise.all([
+  const [categoryTree, rawPosts, journey, notifications] = await Promise.all([
     getFeedCategoryTree().catch(() => []),
     listPostsAction({ limit: 48 }).catch(() => []),
-    // Dong tom tat ho so mobile (MobileProfileSummaryRow) - chi fetch khi da
-    // dang nhap, bo qua neu chua co session (khong bia du lieu).
-    username ? getProfileByUsername(username).catch(() => null) : Promise.resolve(null),
+    getMyJourneyAction().catch(() => ({
+      groups: [],
+      currentGroupId: null,
+      totalUnderstood: 0,
+    })),
+    listNotificationsAction("all").catch(() => ({
+      items: [],
+      nextCursor: null,
+    })),
   ]);
-  // Fallback TAM: categoryTree that dang rong (backend chi tinh nhom co bai
-  // trong 7 ngay gan nhat, hien khong co bai nao du moi - xem
-  // category-tree-mock.ts). Chi dung khi that su rong, nen ngay khi co bai
-  // that trong 7 ngay, du lieu that se tu dong thay the.
-  const categoryTree =
-    realCategoryTree.length > 0 ? realCategoryTree : MOCK_CATEGORY_TREE;
-  const posts = rawPosts.map(normalizePost);
 
-  const creators: CreatorSummary[] = [];
+  const posts = rawPosts.map(normalizePost);
+  const currentGroup = journey.groups.find(
+    (g) => g.id === journey.currentGroupId,
+  );
+  const writeHref = username
+    ? currentGroup
+      ? `/workspace/${username}/${currentGroup.workspaceId}`
+      : `/workspace/${username}`
+    : "/articles";
+  const workspaceHref = username ? `/workspace/${username}` : null;
+  const { quote, author } = pickDailyQuote();
+
+  // Widget "Đang hoạt động" - ung vien tu chinh 48 bai da fetch o tren (cung
+  // ky thuat dedupe seenUsernames dang dung o /home/page.tsx cho
+  // CreatorRail), LOAI TRU chinh nguoi xem. Goi 1 API rieng lay trang thai
+  // online THAT (getOnlineStatusAction -> NotificationGateway.isOnline),
+  // khong phai mock - xem HomeOnlineNowCard.tsx.
+  const candidateAuthors: Author[] = [];
   const seenUsernames = new Set<string>();
+  if (username) seenUsernames.add(username);
   for (const post of posts) {
     if (seenUsernames.has(post.author.username)) continue;
     seenUsernames.add(post.author.username);
-    creators.push(post.author);
-    if (creators.length >= 12) break;
+    candidateAuthors.push(post.author);
+    if (candidateAuthors.length >= 12) break;
   }
+  const onlineStatus = await getOnlineStatusAction(
+    candidateAuthors.map((a) => a.username),
+  ).catch(() => ({}) as Record<string, boolean>);
+  const onlineAuthors = candidateAuthors
+    .filter((a) => onlineStatus[a.username])
+    .slice(0, 8);
+
+  // Dung 1 element cho ca 2 cho (aside desktop + drawer mobile) - render 2
+  // lan (1 lan bi `hidden` qua CSS tren mobile) nhung re, khong fetch gi
+  // them, chi tranh lap props inline 2 noi.
+  const roadmapCard = <HomeRoadmapCard journey={journey} workspaceHref={workspaceHref} />;
+  const weeklyProgressCard = (
+    <HomeWeeklyProgressCard
+      currentStreak={currentGroup?.currentStreak ?? 0}
+      totalStudyDays={currentGroup?.totalStudyDays ?? 0}
+      totalUnderstood={journey.totalUnderstood}
+    />
+  );
 
   return (
-    <>
-      <ArticlesHero writeHref={writeHref} />
+    // lg:-mr-10 huy padding phai cua container chung ((feed)/layout.tsx) -
+    // rieng /articles liet sat vien phai man hinh tu lg tro len (yeu cau
+    // rieng, khac /home va /tracking van giu padding deu 2 ben).
+    <div className="grid grid-cols-1 gap-6 lg:-mr-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0">
+        <HomeHero
+          writeHref={writeHref}
+          workspaceHref={workspaceHref ?? "/articles"}
+        />
+        <HomeArticleSection categoryTree={categoryTree} posts={posts} />
+      </div>
 
-      {mobileProfile && <MobileProfileSummaryRow profile={mobileProfile} />}
+      <aside className="space-y-5">
+        {/* <1024px: 2 card nay thu gon thanh nut fixed goc duoi-phai + drawer
+            (xem HomeMobileQuickPanels ben duoi), khong hien inline nua. */}
+        <div className="hidden lg:block">{roadmapCard}</div>
+        <div className="hidden lg:block">{weeklyProgressCard}</div>
+        <HomeQuoteCard quote={quote} author={author} />
+        <HomeOnlineNowCard authors={onlineAuthors} />
+        <HomeActivityCard notifications={notifications.items} />
+      </aside>
 
-      <SectionTitle
-        icon={Users}
-        title="Tác giả nổi bật"
-        sub="Rút từ các bài viết gần đây"
-      />
-      <CreatorRail creators={creators} />
-
-      <SectionTitle
-        icon={Flame}
-        title="Chủ đề đang hot"
-        sub="Lĩnh vực hoạt động nhiều trong 7 ngày qua"
-      />
-      <TopicsRail categoryTree={categoryTree} />
-
-      <SectionTitle
-        icon={Newspaper}
-        title="Bài viết mới nhất"
-        sub="Cập nhật liên tục từ mọi lĩnh vực"
-      />
-      <ArticlesPostGrid posts={posts} />
-    </>
+      <HomeMobileQuickPanels roadmap={roadmapCard} weeklyProgress={weeklyProgressCard} />
+    </div>
   );
 }
