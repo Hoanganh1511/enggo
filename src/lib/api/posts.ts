@@ -84,6 +84,23 @@ export function toggleLikePost(
   });
 }
 
+// "Đã lưu" (SavedPost, tu 2026-09-13) - RIENG BIET voi PostCollection (bo
+// suu tap tu dat ten, xem SaveToCollectionButton neu con giu). Bam nut Luu
+// gio LUU/BO NGAY, khong con popover chon bo suu tap. {saved} la KET QUA
+// toggle, khac field hien thi `savedByMe` tren Post.
+export function toggleSavePost(id: string): Promise<{ saved: boolean }> {
+  return apiFetch<{ saved: boolean }>(`/posts/${id}/save`, { method: "POST" });
+}
+
+export type SavedPostsPage = { items: Post[]; nextCursor: string | null };
+
+// Danh sach "Đã lưu" cua CHINH nguoi xem - dung cho tab /u/[username]/saved
+// (CHI hien khi isSelf, danh sach nay RIENG TU - xem ProfileTabBar.tsx).
+export function listSavedPosts(cursor?: string): Promise<SavedPostsPage> {
+  const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+  return apiFetch<SavedPostsPage>(`/posts/saved${qs}`);
+}
+
 // Sua bai da dang (tinh nang Sua bai, Composer.tsx `initialPost`) - PATCH
 // dung id CU (khong tao bai moi). `kind` KHONG gui duoc (khong the doi sau
 // khi tao, xem UpdatePostDto o backend) - `data` optional vi co the chi sua

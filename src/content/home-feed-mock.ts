@@ -34,16 +34,14 @@ type PostCommon = {
   // qua formatRelativeTime() (src/lib/format-time.ts).
   createdAt: string;
   stats: { likes: number; comments: number; reposts: number };
-  // likedByMe: da co bang that (PostLike, tu 2026-09-12) - API tra dung
-  // gia tri per-viewer (xem PostService.toApiPost). Cung ten voi
-  // PostComment's likedByMe (post-comments.ts), khac voi {liked, likesCount}
-  // - shape RIENG cua response toggle-like (khong phai field hien thi).
-  // saved: CHUA co bang Save that o backend - "Lưu bài viết" hien dung
-  // PostCollection (them vao 1 bo suu tap bat ky) thay vi 1 co bookmark don,
-  // xem SaveToCollectionButton trong ArticleActionBar.tsx. Field nay luon
-  // undefined, giu lai chi de UI khong vo neu doc toi.
+  // likedByMe/savedByMe: 2 bang THAT rieng biet (PostLike tu 2026-09-12,
+  // SavedPost tu 2026-09-13) - API tra dung gia tri per-viewer (xem
+  // PostService.toApiPost). savedByMe la "Đã lưu" (bookmark 1-cham, danh
+  // sach RIENG TU cua chinh minh) - KHAC HAN PostCollection (bo suu tap tu
+  // dat ten, cong khai duoc, van con nut rieng trong ArticleActionBar.tsx
+  // - 2 tinh nang song song, khong thay the nhau).
   likedByMe?: boolean;
-  saved?: boolean;
+  savedByMe?: boolean;
   // Breadcrumb "danh muc kien thuc" THUAN HIEN THI (vd ["Backend", "Node.js"])
   // - doan cuoi la chu de cu the, hien dam + mau accent. KHONG map toi
   // workspace/category/node THAT nao ca (khac han skill-report - xem

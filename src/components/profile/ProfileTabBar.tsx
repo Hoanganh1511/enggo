@@ -5,6 +5,7 @@ import {
   Bookmark,
   BriefcaseBusiness,
   FileText,
+  Folder,
   Heart,
   History,
   Home,
@@ -45,8 +46,23 @@ function buildTabs(username: string): TabItem[] {
     {
       key: "collections",
       label: "Bộ sưu tập",
-      icon: Bookmark,
+      // Folder (khong phai Bookmark nua) - tach ro voi tab "Đã lưu" ben duoi,
+      // 2 khai niem khac nhau (bo suu tap tu dat ten/cong khai duoc, doi lap
+      // "Đã lưu" la danh sach rieng tu don gian) tung dung CHUNG 1 icon
+      // Bookmark gay nham lan (yeu cau nguoi dung sua).
+      icon: Folder,
       href: `${base}/collections`,
+    },
+    {
+      key: "saved",
+      label: "Đã lưu",
+      icon: Bookmark,
+      href: `${base}/saved`,
+      // RIENG TU - backend (GET /posts/saved) luon tra danh sach cua CHINH
+      // nguoi dang dang nhap, khong co cach xem "Đã lưu" cua nguoi khac -
+      // an han tab nay khi xem profile nguoi khac thay vi hien ra roi lai
+      // hien du lieu SAI CHU (cua chinh minh, khong phai cua ho).
+      selfOnly: true,
     },
     { key: "likes", label: "Thích", icon: Heart, href: `${base}/likes` },
     {

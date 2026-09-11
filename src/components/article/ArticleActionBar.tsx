@@ -11,6 +11,7 @@ import { getCollectionMembershipAction } from "@/actions/discover/collections/ge
 import { addToCollectionAction } from "@/actions/discover/collections/add-to-collection";
 import { removeFromCollectionAction } from "@/actions/discover/collections/remove-from-collection";
 import { toggleLikePostAction } from "@/actions/discover/toggle-like-post";
+import { toggleSavePostAction } from "@/actions/discover/toggle-save-post";
 import { CreateCollectionModal } from "@/components/collections/CreateCollectionModal";
 import type { CollectionMembership } from "@/lib/api/collections";
 
@@ -25,17 +26,21 @@ export function ArticleActionBar({
   postId,
   initialLikes,
   initialLiked = false,
+  initialSaved = false,
   commentCount,
   isOwner = false,
 }: {
   postId?: string;
   initialLikes: number;
   initialLiked?: boolean;
+  initialSaved?: boolean;
   commentCount: number;
   isOwner?: boolean;
 }) {
   const [liked, setLiked] = useState(initialLiked);
   const [likes, setLikes] = useState(initialLikes);
+  const [saved, setSaved] = useState(initialSaved);
+  const [savePending, setSavePending] = useState(false);
   // Chi bat animation "pop" khi VUA CHUYEN sang thich (khong chay luc bo
   // thich, khong lap lai moi lan re-render) - tu tat qua onAnimationEnd thay
   // vi setTimeout (khop chinh xac voi thoi luong animation trong CSS).
@@ -60,6 +65,22 @@ export function ArticleActionBar({
       toast.danger("Không thực hiện được, thử lại sau.");
     } finally {
       setLikePending(false);
+    }
+  }
+
+  async function handleToggleSave() {
+    if (!postId || savePending) return;
+    setSavePending(true);
+    const next = !saved;
+    setSaved(next); // optimistic
+    try {
+      const res = await toggleSavePostAction(postId);
+      setSaved(res.saved);
+    } catch {
+      setSaved(!next); // rollback neu API loi
+      toast.danger("Không thực hiện được, thử lại sau.");
+    } finally {
+      setSavePending(false);
     }
   }
 
@@ -102,7 +123,27 @@ export function ArticleActionBar({
           {formatCompact(commentCount)}
         </a>
 
-        {postId && <SaveToCollectionButton postId={postId} />}
+        {/* "Đã lưu" - LUU/BO NGAY vao danh sach rieng cua chinh minh (SavedPost,
+            tu 2026-09-13), KHONG con hien popover chon bo suu tap nua (gay
+            nham lan voi PostCollection - xem yeu cau nguoi dung). Muon them
+            bai vao 1 bo suu tap CU THE thi dung nut Folder ben canh
+            (AddToCollectionButton) - 2 tinh nang RIENG, khong con chung 1
+            nut nhu truoc. */}
+        <button
+          type="button"
+          onClick={handleToggleSave}
+          disabled={!postId || savePending}
+          aria-label={saved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
+          title={saved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
+          className={cn(
+            "flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-not-allowed",
+            saved ? "text-primary" : "text-ink-muted",
+          )}
+        >
+          <Bookmark size={17} strokeWidth={2} fill={saved ? "currentColor" : "none"} />
+        </button>
+
+        {postId && <AddToCollectionButton postId={postId} />}
       </div>
 
       <div className="flex items-center gap-1">
@@ -148,17 +189,20 @@ export function ArticleActionBar({
 
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
-// Nut "Lưu" that - mo popover danh sach bo suu tap cua CHINH nguoi xem, tick
-// vao/bo tick de them/xoa bai nay (khong rieng bai cua minh, luu duoc bai
-// BAT KY ai dang). Fetch LAZY (chi goi getCollectionMembershipAction luc mo
-// popover lan dau, khong phai moi lan render trang) - cung tinh than
-// RecentPostsMenu.tsx.
-function SaveToCollectionButton({ postId }: { postId: string }) {
+// Them bai vao 1 (hoac nhieu) BO SUU TAP CU THE cua chinh nguoi xem - RIENG
+// voi nut "Lưu" (SavedPost, ben canh) - mo popover danh sach bo suu tap,
+// tick vao/bo tick de them/xoa bai nay (khong rieng bai cua minh, them duoc
+// bai BAT KY ai dang). Fetch LAZY (chi goi getCollectionMembershipAction
+// luc mo popover lan dau, khong phai moi lan render trang) - cung tinh than
+// RecentPostsMenu.tsx. TRUOC DAY chinh la nut "Lưu" (Bookmark icon) - doi
+// sang Folder + doi ten de KHONG con nham voi "Đã lưu" nua (yeu cau nguoi
+// dung: 2 tinh nang khac nhau, khong dung chung 1 nut).
+function AddToCollectionButton({ postId }: { postId: string }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<LoadState>("idle");
   const [items, setItems] = useState<CollectionMembership[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
-  const saved = items.some((i) => i.contains);
+  const inAnyCollection = items.some((i) => i.contains);
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
@@ -196,14 +240,14 @@ function SaveToCollectionButton({ postId }: { postId: string }) {
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label="Lưu vào bộ sưu tập"
-            title="Lưu vào bộ sưu tập"
+            aria-label="Thêm vào bộ sưu tập"
+            title="Thêm vào bộ sưu tập"
             className={cn(
               "flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out hover:bg-hover-bg",
-              saved ? "text-primary" : "text-ink-muted",
+              inAnyCollection ? "text-primary" : "text-ink-muted",
             )}
           >
-            <Bookmark size={17} strokeWidth={2} fill={saved ? "currentColor" : "none"} />
+            <Folder size={17} strokeWidth={2} fill={inAnyCollection ? "currentColor" : "none"} />
           </button>
         </PopoverTrigger>
         <PopoverContent

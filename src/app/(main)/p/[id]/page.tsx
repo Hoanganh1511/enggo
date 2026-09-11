@@ -142,6 +142,7 @@ export default async function PostDetailPage({
           postId={post.id}
           initialLikes={post.stats.likes}
           initialLiked={post.likedByMe}
+          initialSaved={post.savedByMe}
           commentCount={post.stats.comments}
           isOwner={post.isOwner ?? false}
         />
