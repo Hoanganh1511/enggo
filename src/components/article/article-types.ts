@@ -9,6 +9,11 @@ export type PostSummary = {
   title: string;
   imageUrl?: string;
   createdAt: string;
+  // Uoc luong so phut doc (~200 tu/phut, tinh tu do dai content that - xem
+  // toSummary() trong p/[id]/page.tsx) - optional vi khong phai noi goi
+  // toSummary() nao cung can hien no (ArticleRecommendations dang hien
+  // ngay thang, chi ArticleSidebarRelated moi dung field nay).
+  readMinutes?: number;
 };
 
 // Binh luan bai viet - CHUA co model/API that o backend (post.commentsCount

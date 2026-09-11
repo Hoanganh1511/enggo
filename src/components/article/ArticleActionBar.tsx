@@ -11,18 +11,33 @@ import { cn } from "@/lib/utils";
 // luon undefined tu API). "Luu" KHONG hien so dem (Post khong co truong luot
 // luu that, khac likes/comments da co san tu backend) - chi la toggle ca
 // nhan giong Twitter bookmark, khong phai con so cong khai.
+// `sticky` (mobile) - dinh co dinh duoi cung man hinh (theo mockup "Mobile
+// Sticky Action") thay vi nam inline trong dong chay bai viet, luon thay
+// duoc du cuon toi dau. Render 2 lan qua breakpoint CSS o page.tsx (ban
+// thuong "hidden lg:flex" desktop, ban sticky "flex lg:hidden" mobile) -
+// state like/save khong lien ket giua 2 ban (moi ban co state rieng), chap
+// nhan duoc vi CHUA co API that luu like/save (xem ghi chu duoi day), nguoi
+// dung cung chi thay 1 ban tai 1 thoi diem theo do rong man hinh.
 export function ArticleActionBar({
   likes,
   commentCount,
+  sticky = false,
 }: {
   likes: number;
   commentCount: number;
+  sticky?: boolean;
 }) {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
 
   return (
-    <div className="flex items-center justify-between border-y border-border py-3">
+    <div
+      className={
+        sticky
+          ? "fixed inset-x-0 bottom-0 z-40 flex items-center justify-between border-t border-border bg-surface px-4 py-2.5 pb-[max(env(safe-area-inset-bottom),10px)] shadow-[0_-4px_12px_rgba(0,0,0,0.06)]"
+          : "flex items-center justify-between border-y border-border py-3"
+      }
+    >
       <div className="flex items-center gap-1">
         <button
           type="button"

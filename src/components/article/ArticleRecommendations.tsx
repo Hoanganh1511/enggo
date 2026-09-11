@@ -61,7 +61,7 @@ export function ArticleRecommendations({
       )}
 
       {related.length > 0 && (
-        <section>
+        <section id="related-posts" className="scroll-mt-20">
           <h2 className="font-content mb-3 text-base font-bold tracking-tight text-ink">
             Bài viết liên quan
           </h2>
