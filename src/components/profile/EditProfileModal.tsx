@@ -1,15 +1,45 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Briefcase, Camera, Loader2, MapPin, Share2, User, X } from "lucide-react";
+import {
+  Briefcase,
+  Camera,
+  ChevronDown,
+  Loader2,
+  MapPin,
+  Rss,
+  Share2,
+  User,
+  X,
+} from "lucide-react";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { UserAvatarImage } from "@/components/ui/user-avatar-image";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  LinkedinIcon,
+  YoutubeIcon,
+} from "@/components/ui/social-icons";
 import { useProfileImageUpload } from "@/lib/use-profile-image-upload";
 import { updateProfileAction } from "@/actions/users/update-profile";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { VN_PROVINCES } from "@/lib/vn-provinces";
 import { useProfileContext } from "./profile-context";
+
+// 6 nen tang mang xa hoi that - moi phan tu 1 key trong UpdateProfileInput/
+// UserProfileApiShape (career-tree-api, cung ten field). Dung 1 mang cau
+// hinh thay vi lap lai 6 lan y het nhau (label/icon/placeholder) cho state/
+// validate/render.
+const SOCIAL_PLATFORMS = [
+  { key: "twitterUrl", label: "X (Twitter)", icon: X, placeholder: "x.com/tenban" },
+  { key: "facebookUrl", label: "Facebook", icon: FacebookIcon, placeholder: "facebook.com/tenban" },
+  { key: "instagramUrl", label: "Instagram", icon: InstagramIcon, placeholder: "instagram.com/tenban" },
+  { key: "youtubeUrl", label: "YouTube", icon: YoutubeIcon, placeholder: "youtube.com/@tenban" },
+  { key: "linkedinUrl", label: "LinkedIn", icon: LinkedinIcon, placeholder: "linkedin.com/in/tenban" },
+  { key: "rssUrl", label: "RSS", icon: Rss, placeholder: "tenmien.com/feed" },
+] as const;
+type SocialKey = (typeof SOCIAL_PLATFORMS)[number]["key"];
 
 const fieldClass =
   "h-10 w-full min-w-0 rounded-md border border-input-border bg-input-bg px-3 text-sm text-input-text placeholder:text-input-placeholder transition-colors duration-150 ease-out focus:border-input-focus focus:ring-2 focus:ring-input-focus/15 focus:outline-none";
@@ -33,10 +63,20 @@ function stripProtocol(url: string): string {
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
+// Icon co the la 1 icon lucide-react (User/Briefcase/MapPin/...) HOAC 1 icon
+// tu ve rieng (FacebookIcon/InstagramIcon/... trong social-icons.tsx - lucide
+// da bo cac icon thuong hieu nay) - ca 2 deu nhan dung 3 prop nay.
+type FieldIcon = React.ComponentType<{
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}>;
+
 // Field co icon dau dong + nut xoa (X) khi co noi dung - dung cho Vai trò
 // (input tu do, khong phai select - role trong DB la String tu do, ep thanh
 // danh sach dung san co rui ro mat du lieu neu gia tri hien tai khong khop
-// preset nao).
+// preset nao) VA cho tung nen tang mang xa hoi (icon rieng, xem
+// SOCIAL_PLATFORMS).
 function IconField({
   icon: Icon,
   value,
@@ -44,8 +84,9 @@ function IconField({
   placeholder,
   maxLength,
   list,
+  error,
 }: {
-  icon: typeof User;
+  icon: FieldIcon;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
@@ -53,6 +94,7 @@ function IconField({
   // id cua 1 <datalist> ben ngoai - goi y KHONG ep chon (xem Nơi ở, danh
   // sach tinh/thanh VN).
   list?: string;
+  error?: boolean;
 }) {
   return (
     <div className="relative">
@@ -67,7 +109,7 @@ function IconField({
         placeholder={placeholder}
         maxLength={maxLength}
         list={list}
-        className={`${fieldClass} pr-8 pl-9`}
+        className={`${fieldClass} pr-8 pl-9 ${error ? fieldErrorClass : ""}`}
       />
       {value && (
         <button
@@ -217,6 +259,15 @@ export function EditProfileModal({
   const [location, setLocation] = useState(profile.location ?? "");
   const [website, setWebsite] = useState(() => stripProtocol(profile.websiteUrl ?? ""));
   const [pronouns, setPronouns] = useState(profile.pronouns ?? "");
+  const [social, setSocial] = useState<Record<SocialKey, string>>(() => ({
+    twitterUrl: stripProtocol(profile.twitterUrl ?? ""),
+    facebookUrl: stripProtocol(profile.facebookUrl ?? ""),
+    instagramUrl: stripProtocol(profile.instagramUrl ?? ""),
+    youtubeUrl: stripProtocol(profile.youtubeUrl ?? ""),
+    linkedinUrl: stripProtocol(profile.linkedinUrl ?? ""),
+    rssUrl: stripProtocol(profile.rssUrl ?? ""),
+  }));
+  const [socialOpen, setSocialOpen] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
@@ -235,7 +286,7 @@ export function EditProfileModal({
   }, [open, initialFocus]);
 
   const errors = useMemo(() => {
-    const e: Partial<Record<"displayName" | "username" | "website", string>> = {};
+    const e: Partial<Record<"displayName" | "username" | "website" | SocialKey, string>> = {};
     if (!displayName.trim()) e.displayName = "Không được để trống.";
     if (!username.trim()) {
       e.username = "Không được để trống.";
@@ -245,8 +296,14 @@ export function EditProfileModal({
     if (website.trim() && !DOMAIN_REGEX.test(website.trim())) {
       e.website = "Đường dẫn không hợp lệ.";
     }
+    for (const platform of SOCIAL_PLATFORMS) {
+      const v = social[platform.key].trim();
+      if (v && !DOMAIN_REGEX.test(v)) {
+        e[platform.key] = "Đường dẫn không hợp lệ.";
+      }
+    }
     return e;
-  }, [displayName, username, website]);
+  }, [displayName, username, website, social]);
   const hasErrors = Object.keys(errors).length > 0;
 
   async function handleSave() {
@@ -254,6 +311,12 @@ export function EditProfileModal({
     if (hasErrors) return;
     setStatus("saving");
     setErrorMessage(null);
+    const socialPatch = Object.fromEntries(
+      SOCIAL_PLATFORMS.map(({ key }) => [
+        key,
+        social[key].trim() ? `https://${social[key].trim()}` : "",
+      ]),
+    ) as Record<SocialKey, string>;
     const patch = {
       displayName: displayName.trim(),
       username: username.trim(),
@@ -262,6 +325,7 @@ export function EditProfileModal({
       websiteUrl: website.trim() ? `https://${website.trim()}` : "",
       pronouns,
       role,
+      ...socialPatch,
     };
     try {
       await updateProfileAction(patch);
@@ -440,16 +504,40 @@ export function EditProfileModal({
           />
         </FieldGroup>
 
-        <button
-          type="button"
-          disabled
-          title="Sắp có"
-          className="flex h-11 cursor-not-allowed items-center gap-2.5 rounded-md border border-border px-3 text-left text-sm font-medium text-ink-faint"
-        >
-          <Share2 size={15} strokeWidth={1.8} className="shrink-0" />
-          <span className="flex-1">Mạng xã hội</span>
-          <span className="text-xs">Sắp có</span>
-        </button>
+        <div className="rounded-md border border-border">
+          <button
+            type="button"
+            onClick={() => setSocialOpen((v) => !v)}
+            className="flex h-11 w-full cursor-pointer items-center gap-2.5 px-3 text-left text-sm font-medium text-ink"
+          >
+            <Share2 size={15} strokeWidth={1.8} className="shrink-0" />
+            <span className="flex-1">Mạng xã hội</span>
+            <ChevronDown
+              size={14}
+              strokeWidth={2}
+              className={`shrink-0 text-ink-faint transition-transform duration-150 ${socialOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+          {socialOpen && (
+            <div className="flex flex-col gap-4 border-t border-border p-3">
+              {SOCIAL_PLATFORMS.map((platform) => (
+                <FieldGroup
+                  key={platform.key}
+                  label={platform.label}
+                  error={touched ? errors[platform.key] : undefined}
+                >
+                  <IconField
+                    icon={platform.icon}
+                    value={social[platform.key]}
+                    onChange={(v) => setSocial((s) => ({ ...s, [platform.key]: v }))}
+                    placeholder={platform.placeholder}
+                    error={touched && !!errors[platform.key]}
+                  />
+                </FieldGroup>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </SimpleModal>
   );

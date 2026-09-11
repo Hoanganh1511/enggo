@@ -99,10 +99,10 @@ export default async function PostDetailPage({
           hien nen khong can boc them dieu kien o day. Tren mobile KHONG hien
           nua (khong co cho cho 1 cot rieng) - thanh hanh dong dinh duoi cung
           da dam nhiem vai tro "luon thay duoc" o do roi. */}
-      <aside className="hidden w-56 shrink-0 lg:block">
+      <aside className="hidden w-64 shrink-0 lg:block">
         <ArticleStickyAuthorBar
           author={post.author}
-          followerCount={profile?.followerCount}
+          profile={profile}
           isFollowing={profile?.isFollowing ?? false}
           isSelf={profile?.isSelf ?? false}
           authorCardId="article-author-card"

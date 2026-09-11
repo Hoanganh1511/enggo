@@ -24,6 +24,12 @@ export type UserProfileApiShape = {
   websiteUrl: string | null;
   pronouns: string | null;
   role: string | null;
+  twitterUrl: string | null;
+  facebookUrl: string | null;
+  instagramUrl: string | null;
+  youtubeUrl: string | null;
+  linkedinUrl: string | null;
+  rssUrl: string | null;
   postCount: number;
   isSelf: boolean;
   isFollowing: boolean;
@@ -43,6 +49,12 @@ export type UpdateProfileInput = Partial<{
   websiteUrl: string;
   pronouns: string;
   role: string;
+  twitterUrl: string;
+  facebookUrl: string;
+  instagramUrl: string;
+  youtubeUrl: string;
+  linkedinUrl: string;
+  rssUrl: string;
   // null = XOA anh (khac undefined/khong gui = giu nguyen) - xem
   // UpdateProfileDto o backend.
   avatarUrl: string | null;
