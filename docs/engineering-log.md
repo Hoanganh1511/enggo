@@ -8,6 +8,60 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-09-11 — Gắn link trong Compose: lưu lại chỉ có gạch chân, mất href
+
+**Triệu chứng:** người dùng bôi đen 1 cụm text, gắn link qua nút "Liên kết"
+trên toolbar, lưu bài xong mở ra xem thì chỉ thấy gạch chân, không click
+được. Tra thẳng `Post.data.richContent` trong DB thì mark thấy đúng:
+`{"type":"link"}` — **hoàn toàn không có `attrs`/`href`** (mark
+`{"type":"underline"}` bên cạnh thì bình thường).
+
+**Root cause:** `getPostExtensions()` (post-extensions.ts) khai báo
+`StarterKit` trần + thêm riêng `Underline`/`Link.configure({ openOnClick:
+false })` bên dưới — đúng theo pattern Tiptap **v2** (`StarterKit` không kèm
+2 cái đó). Nhưng repo đang ở Tiptap **v3** (`@tiptap/starter-kit@3.28.0`),
+bản này **đã tự mang theo `Link` + `Underline`** trong `StarterKit` (xem
+source `starter-kit.ts`: `if (this.options.link !== false)
+extensions.push(Link.configure(...))`). Kết quả: 2 extension CÙNG TÊN
+`"link"` (và `"underline"`) tồn tại trong 1 schema — chính Tiptap in ra
+console warning `Duplicate extension names found: ['link', 'underline'].
+This can lead to issues.`, nhưng warning đó bị bỏ qua bấy lâu (không ai để ý
+console lúc soạn bài).
+
+**Xác minh không đoán:** dựng `getSchema(getPostExtensions())` độc lập (qua
+`tsx`, ngoài Next.js) thì thấy warning y hệt. Tái hiện thêm bằng cách mount
+1 `Editor` thật với DOM giả (happy-dom): ngoài warning, còn bắt được **crash
+thật** `RangeError: Adding different instances of a keyed plugin` — không
+chỉ là cảnh báo suông, 2 extension trùng tên còn tranh nhau đăng ký chung 1
+plugin key trong ProseMirror.
+
+**Fix:** tắt hẳn `link`/`underline` mặc định của `StarterKit`
+(`StarterKit.configure({ link: false, underline: false })`), chỉ giữ lại
+ĐÚNG 1 bản (`Link.configure({ openOnClick: false })` + `Underline` khai báo
+riêng bên dưới) — dùng lại chính xác pattern mà `getOverviewExtensions()`
+(cùng file, ngay bên dưới) đã làm từ trước cho `heading`/`blockquote`/
+`codeBlock`/... - chỉ là chưa áp dụng nhất quán sang `getPostExtensions()`.
+Sau fix: `getSchema()` hết warning, `schema.marks.link.spec.attrs` vẫn đủ
+`href`/`target`/`rel`/`class`/`title`, gọi `setLink()` qua command chain
+(headless, không mount View) giữ đúng href trong JSON trả về.
+
+**Giới hạn của lần xác minh:** không tái lập được TRỌN VẸN đường "paste HTML
+có sẵn `<a href>`" (giống đúng dữ liệu lỗi thật trong DB, có vẻ đến từ dán
+nội dung từ trang khác chứ không phải gõ tay + bấm nút Liên kết) bằng
+happy-dom polyfill toàn cục - Editor tự động mount 1 View thật khi thấy có
+`window`/`document` global, và việc mount đó crash vì hạn chế riêng của môi
+trường giả lập (không chắc phản ánh đúng browser thật), không liên quan gì
+đến fix này. Cần người dùng tự thử lại trong trình duyệt thật (cả 2 luồng:
+bấm nút Liên kết VÀ dán nội dung có link từ nơi khác) để xác nhận triệt để.
+
+**Cách tư duy rút ra:** khi 1 dependency lên major version mới (StarterKit
+v2 → v3), đừng giả định "config cũ vẫn đúng nguyên xi" - v3 đổi hẳn những gì
+`StarterKit` bao gồm mặc định (thêm Link/Underline). Console warning của
+chính thư viện (`Duplicate extension names...`) là tín hiệu ĐÁNG tin, không
+nên bỏ qua dù app "vẫn chạy được" - ở đây nó âm thầm làm rớt mất 1 field
+quan trọng (href) thay vì crash ngay lập tức, nên rất dễ bị bỏ sót qua nhiều
+lần soạn bài trước khi ai đó để ý.
+
 ## 2026-09-11 — Ảnh bìa bài viết tự nhiên "vỡ" sau vài giờ: cron dọn rác S3 xoá nhầm
 
 **Triệu chứng:** người dùng đăng bài, ảnh bìa hiển thị bình thường lúc đăng,

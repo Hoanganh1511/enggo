@@ -122,9 +122,21 @@ export const Callout = Node.create({
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
 // them rieng trong PostEditor).
+//
+// StarterKit (Tiptap v3) tu mang san Link + Underline (khac v2, luc file nay
+// duoc viet) - de nguyen StarterKit tran + khai bao rieng Link/Underline ben
+// duoi nhu cu se tao ra 2 extension CUNG TEN "link"/"underline" trong 1
+// schema. Khong chi la warning suong: da tai hien duoc crash that
+// ("RangeError: Adding different instances of a keyed plugin") khi mount 1
+// Editor voi DOM that, VA du khong crash thi mark "link" ap dung qua
+// setLink() bi luu THIEU HAN attrs (href/target/rel rong) - xem
+// docs/engineering-log.md 2026-09-11. Phai tat 2 cai StarterKit tu mang theo
+// (link:false, underline:false) de CHI CON 1 ban duy nhat (ban .configure()
+// rieng ben duoi, giu dung { openOnClick: false }) - dung y het cach
+// getOverviewExtensions() ben duoi da lam voi heading/blockquote/codeBlock...
 export function getPostExtensions(): Extensions {
   return [
-    StarterKit,
+    StarterKit.configure({ link: false, underline: false }),
     Underline,
     TaskList,
     TaskItem.configure({ nested: true }),

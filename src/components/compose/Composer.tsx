@@ -534,9 +534,19 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_8px_30px_rgba(16,24,40,.08)]">
+          {/* KHONG con overflow-hidden o day - "position: sticky" cua toolbar
+              ben duoi tinh mon theo TO TIEN CO overflow != visible GAN NHAT
+              (spec CSS), neu de o day (div nay auto-height, khong tu cuon)
+              sticky se VO TAC DUNG (toolbar troi theo ca khoi card thay vi
+              dinh lai). Vung cuon that cua app la MainContentArea.tsx
+              (overflow-auto, header KHONG nam trong do) nen chuyen len lam
+              to tien sticky dung, chi con "rounded-2xl border" o day. Bo
+              overflow-hidden cung dong nghia MAT boc goc tron cho anh bia -
+              chuyen rieng xuong div ngay duoi (rounded-t-2xl overflow-hidden,
+              chi can boc goc TREN vi no luon la khoi dau tien). */}
+          <div className="rounded-2xl border border-border bg-surface shadow-[0_8px_30px_rgba(16,24,40,.08)]">
             <div
-              className="relative flex h-[320px] flex-col justify-end bg-surface-muted p-9"
+              className="relative flex h-[320px] flex-col justify-end overflow-hidden rounded-t-2xl bg-surface-muted p-9"
               style={
                 coverImageUrl
                   ? {
@@ -602,7 +612,13 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
             </div>
 
             {editor && !previewMode && (
-              <div className="flex items-center gap-1 border-t border-border bg-surface-muted px-3 py-1.5">
+              // sticky top-0: bam theo luc cuon bai dai, moc theo vung cuon
+              // THAT cua app (MainContentArea.tsx, overflow-auto) - header
+              // ngang khong nam trong vung cuon do nen top-0 la du, khong can
+              // tru them --header-height. z-10 + border-b (them, khac ban
+              // cu chi co border-t) de tach ro toolbar khoi noi dung bai dang
+              // troi ben duoi khi da dinh lai.
+              <div className="sticky top-0 z-10 flex items-center gap-1 border-t border-b border-border bg-surface-muted px-3 py-1.5">
                 <PostEditorToolbar editor={editor} bare />
                 <PopoverRoot open={aiPopoverOpen} onOpenChange={setAiPopoverOpen}>
                   <PopoverTrigger asChild>
