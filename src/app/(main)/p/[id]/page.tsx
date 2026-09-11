@@ -92,7 +92,7 @@ export default async function PostDetailPage({
       ? renderTiptapHTML(post.richContent, getPostExtensions())
       : null;
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 pb-24 lg:flex-row lg:items-start lg:pb-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 pb-24 lg:flex-row lg:pb-6">
       {/* Cot TRAI - CHI desktop, doi dien voi ArticleSidebar (Muc luc) o cot
           phai theo yeu cau nguoi dung. Tu quyet dinh an/hien qua
           IntersectionObserver (xem component), tra ve null luc chua can
