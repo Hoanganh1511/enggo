@@ -42,6 +42,10 @@ export function ArticleAuthorCard({
 }) {
   const [following, setFollowing] = useState(isFollowing);
   const [pending, setPending] = useState(false);
+  // CHI hien nen tang tac gia DA dien - xem ghi chu goc o
+  // ArticleStickyAuthorBar.tsx (nguoi dung doi tu "hien ca 6, mo di" sang
+  // "chi hien cai co that").
+  const activeSocialLinks = SOCIAL_LINKS.filter(({ key }) => profile?.[key]);
 
   async function handleToggleFollow() {
     const next = !following;
@@ -114,13 +118,13 @@ export function ArticleAuthorCard({
         <p className="font-content text-sm leading-relaxed text-ink-muted">{bio}</p>
       )}
 
-      {/* Hang icon mang xa hoi - ngang, greyed + tooltip khi tac gia chua
-          dien (cung quy uoc voi ArticleStickyAuthorBar.tsx), theo mockup
+      {/* Hang icon mang xa hoi - ngang, CHI hien nen tang tac gia da dien
+          (an han neu chua co, khong con mo icon nhu ban cu), theo mockup
           card tac gia cua note.com nguoi dung gui. */}
-      <div className="flex items-center gap-1 border-t border-border pt-3">
-        {SOCIAL_LINKS.map(({ key, label, icon: Icon }) => {
-          const url = profile?.[key] as string | null | undefined;
-          if (url) {
+      {activeSocialLinks.length > 0 && (
+        <div className="flex items-center gap-1 border-t border-border pt-3">
+          {activeSocialLinks.map(({ key, label, icon: Icon }) => {
+            const url = profile?.[key] as string;
             return (
               <a
                 key={key}
@@ -133,18 +137,9 @@ export function ArticleAuthorCard({
                 <Icon size={16} strokeWidth={1.8} />
               </a>
             );
-          }
-          return (
-            <span
-              key={key}
-              title="Icon mờ đi nếu tác giả chưa cập nhật"
-              className="grid size-8 shrink-0 cursor-not-allowed place-items-center rounded-full text-ink-faint/40"
-            >
-              <Icon size={16} strokeWidth={1.8} />
-            </span>
-          );
-        })}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 }

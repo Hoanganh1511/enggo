@@ -104,8 +104,14 @@ export function ArticleStickyAuthorBar({
 
   if (!visible) return null;
 
+  // CHI hien nen tang tac gia DA dien (url that) - truoc day hien ca 6, mo
+  // di + tooltip khi thieu, nguoi dung doi lai vi 1 danh sach toan icon mo
+  // trong thi khong huu ich, thay ca cot mang xa hoi con lai bang khoang
+  // trong vo nghia.
+  const activeSocialLinks = SOCIAL_LINKS.filter(({ key }) => profile?.[key]);
+
   return (
-    <div className="sticky top-10 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 text-center">
+    <div className="sticky top-5 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 text-center">
       <Link
         href={`/u/${author.username}`}
         className="flex flex-col items-center gap-2"
@@ -135,7 +141,7 @@ export function ArticleStickyAuthorBar({
       </Link>
 
       {profile?.bio && (
-        <p className="font-content text-left text-[13px] leading-relaxed text-ink-muted">
+        <p className="font-content  text-[13px] text-center leading-relaxed text-ink-muted">
           {profile.bio}
         </p>
       )}
@@ -168,10 +174,10 @@ export function ArticleStickyAuthorBar({
         </div>
       )}
 
-      <div className="flex flex-col gap-0.5 border-t border-border pt-3">
-        {SOCIAL_LINKS.map(({ key, label, icon: Icon }) => {
-          const url = profile?.[key] as string | null | undefined;
-          if (url) {
+      {activeSocialLinks.length > 0 && (
+        <div className="flex flex-col gap-0.5 border-t border-border pt-3">
+          {activeSocialLinks.map(({ key, label, icon: Icon }) => {
+            const url = profile?.[key] as string;
             return (
               <a
                 key={key}
@@ -193,20 +199,9 @@ export function ArticleStickyAuthorBar({
                 />
               </a>
             );
-          }
-          return (
-            <span
-              key={key}
-              title="Icon mờ đi nếu tác giả chưa cập nhật"
-              className="flex cursor-not-allowed items-center gap-2.5 rounded-md px-1.5 py-1.5 text-left text-[13px] text-ink-faint/50"
-            >
-              <Icon size={14} strokeWidth={1.8} className="shrink-0" />
-              <span className="flex-1 truncate">{label}</span>
-              <ExternalLink size={12} strokeWidth={1.8} className="shrink-0" />
-            </span>
-          );
-        })}
-      </div>
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
         <div className="flex flex-col items-center gap-0.5">
