@@ -3,12 +3,14 @@ import Skeleton from "@/components/ui/skeleton";
 // Route-level Suspense fallback (Next tu boc page.tsx - toan bo page la 1
 // Server Component await Promise.all, nen suspend het ca trang cho toi khi
 // xong). Khop dung khung that: hero (dai ngan mobile / 70-30 desktop -
-// ArticlesHero.tsx), hang "Tác giả nổi bật" (CreatorRail.tsx), hang "Bộ sưu
-// tập đang được chú ý" (AttentionCollectionsRail.tsx - tile 166x205, DA doi
-// tu 86px), luoi "Bài viết mới nhất" (ArticlesPostGrid.tsx), roi den nhieu
-// hang "... theo tung nhom" (NewestSection.tsx, tile 212x~118 - aspect
-// 1.8 - so luong hang THAT phu thuoc bao nhieu nhom co bai, o day chi uoc
-// luong 2 hang cho khung skeleton).
+// ArticlesHero.tsx - KHONG con card tom tat ho so mobile duoi hero,
+// MobileProfileSummaryRow.tsx da xoa theo yeu cau nguoi dung), hang "Tác
+// giả nổi bật" (CreatorRail.tsx), hang "Bộ sưu tập đang được chú ý"
+// (AttentionCollectionsRail.tsx - tile 166x205, DA doi tu 86px), luoi "Bài
+// viết mới nhất" (ArticlesPostGrid.tsx), roi den nhieu hang "... theo tung
+// nhom" (NewestSection.tsx, tile 212x~118 - aspect 1.8 - so luong hang THAT
+// phu thuoc bao nhieu nhom co bai, o day chi uoc luong 2 hang cho khung
+// skeleton).
 export default function ArticlesLoading() {
   return (
     <div className="flex flex-col">
@@ -19,14 +21,6 @@ export default function ArticlesLoading() {
           <Skeleton className="h-full min-h-[100px] w-full rounded-2xl sm:col-span-2" />
           <Skeleton className="h-full min-h-[100px] w-full rounded-2xl" />
           <Skeleton className="h-full min-h-[100px] w-full rounded-2xl" />
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface p-4 lg:hidden">
-        <Skeleton className="size-10 shrink-0 rounded-full" />
-        <div className="min-w-0 flex-1">
-          <Skeleton className="h-3.5 w-32" />
-          <Skeleton className="mt-2 h-3 w-48" />
         </div>
       </div>
 

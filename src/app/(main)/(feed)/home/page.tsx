@@ -1,11 +1,9 @@
 import { auth } from "@/auth";
-import { getProfileByUsername } from "@/lib/api/users";
 import { getFeedCategoryTree } from "@/lib/api/feed-categories";
 import { listPostsAction } from "@/actions/discover/list-posts";
 import { listPublicCollectionsAction } from "@/actions/discover/collections/list-public-collections";
 import { normalizePost } from "@/lib/discover/normalize-post";
 import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
-import { MobileProfileSummaryRow } from "@/components/discover/articles-hub/MobileProfileSummaryRow";
 import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
 import { CreatorRail } from "@/components/discover/articles-hub/CreatorRail";
 import { AttentionCollectionsRail } from "@/components/discover/articles-hub/AttentionCollectionsRail";
@@ -28,11 +26,8 @@ export default async function ArticlesPage() {
   const username = session?.username ?? null;
   const writeHref = username ? `/workspace/${username}` : "/login";
 
-  const [rawPosts, mobileProfile, attentionCollections, categoryTree] = await Promise.all([
+  const [rawPosts, attentionCollections, categoryTree] = await Promise.all([
     listPostsAction({ limit: 48 }).catch(() => []),
-    // Dong tom tat ho so mobile (MobileProfileSummaryRow) - chi fetch khi da
-    // dang nhap, bo qua neu chua co session (khong bia du lieu).
-    username ? getProfileByUsername(username).catch(() => null) : Promise.resolve(null),
     // "Bộ sưu tập đang được chú ý" - top bo suu tap CONG KHAI theo so bai viet
     // that (sort "most-posts") - xem AttentionCollectionsRail.tsx.
     listPublicCollectionsAction({ scope: "all", sort: "most-posts", limit: 10 })
@@ -76,8 +71,6 @@ export default async function ArticlesPage() {
   return (
     <>
       <ArticlesHero writeHref={writeHref} />
-
-      {mobileProfile && <MobileProfileSummaryRow profile={mobileProfile} />}
 
       <SectionTitle
         icon={Users}
