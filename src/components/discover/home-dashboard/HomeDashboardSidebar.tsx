@@ -78,14 +78,19 @@ function SidebarBody({
   return (
     <>
       <div className="flex items-center gap-3 px-1">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#eef4ff] text-[#3b82f6]">
+        {/* shrink-0: khoa CUNG 36x36 - khong co dong nay, ten dai (vd
+            "Tuấn Anh Hoàng's Knowledge") se ep flexbox co luon khung icon
+            (khac vuong) lam icon la trong bi bop meo thay vi giu nguyen
+            hinh vuong. min-w-0 + truncate o cum ten ben canh de PHAN CHU
+            moi la thu tu cat bot khi qua dai, khong phai icon. */}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef4ff] text-[#3b82f6]">
           <Leaf size={21} aria-hidden="true" />
         </div>
-        <div>
-          <div className="text-[17px] font-bold tracking-tight">
+        <div className="min-w-0">
+          <div className="truncate text-[17px] font-bold tracking-tight">
             {displayName}&rsquo;s Knowledge
           </div>
-          <div className="text-[11px] text-slate-500">Write · Learn · Build · Grow</div>
+          <div className="truncate text-[11px] text-slate-500">Write · Learn · Build · Grow</div>
         </div>
       </div>
 

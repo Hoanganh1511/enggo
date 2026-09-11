@@ -14,6 +14,28 @@
   margin-inline: auto;
 }
 
+/* Safari iOS tu dong ZOOM CA TRANG khi focus vao input/textarea/select co
+   font-size < 16px (hanh vi cung cua he dieu hanh, khong phai bug rieng cua
+   app - muc dich goc la giup nguoi dung doc duoc chu qua nho, nhung ket qua
+   la giao dien bi phong to dot ngot moi lan cham vao 1 o nhap lieu). App nay
+   dung text-xs/text-sm (12-14px) cho RAT nhieu input (thanh tim kiem, o
+   binh luan, tieu de Compose...) - sua tung noi la khong xue, ep chung 1
+   luat toan cuc CHI o do rong mobile (KHONG dung cho desktop, tranh doi giao
+   dien noi khong can). !important can thiet o day de thang duoc moi class
+   Tailwind text-* dang gan tren tung input (muc dich la GHI DE CO CHU DICH,
+   khong phai lam bay). Fix dung: doi font-size, KHONG dong cham
+   maximum-scale/user-scalable o viewport meta (Next.js dung mac dinh, KHONG
+   tu them - tat zoom nguoi dung la anti-pattern accessibility, se chan luon
+   ca nhu cau zoom that su cua nguoi dung mat kem).
+*/
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 :root {
   /* He semantic token day du - bang mau trung tinh DEN/TRANG/XAM don gian
      (thay cho bang "Frozen mist" am + cam truoc day, theo yeu cau nguoi

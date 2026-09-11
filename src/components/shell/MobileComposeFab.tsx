@@ -16,7 +16,12 @@ import { useMobileFabBottomOffset } from "@/lib/use-mobile-fab-bottom-offset";
 export function MobileComposeFab() {
   const pathname = usePathname();
   const bottom = useMobileFabBottomOffset();
-  if (pathname === "/compose" || pathname === "/home") return null;
+  // startsWith("/compose") (khong phai so bang tuyet doi) - truoc day chi an
+  // dung "/compose" (tao bai moi), quen mat "/compose/[id]" (SUA bai) van
+  // con hien FAB nay du dang o thang trong trang compose, vua thua vua de
+  // dam vao nut fixed rieng cua trang do (xem nut "Đến phần cấu hình" trong
+  // Composer.tsx).
+  if (pathname.startsWith("/compose") || pathname === "/home") return null;
 
   return (
     <Link

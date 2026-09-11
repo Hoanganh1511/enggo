@@ -115,9 +115,10 @@ function CommentItem({
       <div className="min-w-0 flex-1">
         {/* font-content: ten nguoi binh luan + noi dung binh luan la NOI
             DUNG, dung Manrope - nut Tra loi/Thich/form gui ben duoi la UI,
-            KHONG boc. relative + overflow-hidden: neo cho spinner pending
-            (goc tren-trai) VA overlay nuoc dang luc xoa (::before/::after
-            cua .comment-delete-water, xem globals.css). */}
+            KHONG boc. relative + overflow-hidden: neo cho overlay nuoc dang
+            luc xoa (::before/::after cua .comment-delete-water, xem
+            globals.css) - spinner luc pending KHONG con o day nua, xem
+            hang gio/like/tra loi ben duoi (thay dung vi tri "Vừa xong..."). */}
         <div
           onAnimationEnd={() => comment.justConfirmed && onConfirmed(comment.id)}
           className={cn(
@@ -127,9 +128,6 @@ function CommentItem({
             comment.deleting && "comment-delete-water",
           )}
         >
-          {comment.pending && (
-            <LoadingSpinner size={12} className="absolute top-1.5 left-1.5 text-primary" />
-          )}
           <p className="text-sm font-semibold text-ink">{comment.author.name}</p>
           <p
             className={cn(
@@ -171,7 +169,15 @@ function CommentItem({
         </div>
 
         <div className="mt-1 flex items-center gap-3 px-1 text-xs text-ink-faint">
-          <span>{formatRelativeTime(comment.createdAt)}</span>
+          {/* Pending: thay dung vi tri "Vừa xong..." bang spinner (khong
+              them cot rieng, tranh hang bi lech) - het pending thi tro lai
+              binh thuong, "items-center" cua hang nay tu can giua spinner
+              theo truc doc voi cac nut ben canh. */}
+          {comment.pending ? (
+            <LoadingSpinner size={12} className="text-primary" />
+          ) : (
+            <span>{formatRelativeTime(comment.createdAt)}</span>
+          )}
           <button
             type="button"
             onClick={() => onToggleLike(comment.id)}

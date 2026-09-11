@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Image as ImageIcon,
   ImagePlus,
+  Settings2,
   WandSparkles,
   Sparkles,
   MessageSquare,
@@ -466,6 +467,25 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
 
   return (
     <main className="min-h-[calc(100dvh-var(--header-height))] bg-background px-5 py-5 text-ink">
+      {/* "Đến phần cấu hình" - duoi xl, khung Cai dat/AI (aside, xem duoi)
+          nam SAU toan bo than bai trong DOM (grid 1 cot), phai cuon qua het
+          bai (co the rat dai) moi toi noi - fixed goc duoi-phai, LUON bam
+          duoc bat ke dang cuon toi dau, khong chi luc o dau trang. Dat lam
+          FAB duy nhat o goc do tren trang compose (MobileComposeFab.tsx da
+          tu an tren "/compose"* de tranh de len nut nay). */}
+      <button
+        type="button"
+        onClick={() => {
+          setRightTab("publish");
+          asideRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        aria-label="Đến phần cấu hình bài viết"
+        className="fixed right-4 bottom-4 z-30 flex h-12 cursor-pointer items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-surface shadow-lg hover:opacity-90 xl:hidden"
+      >
+        <Settings2 className="h-4 w-4" />
+        Cấu hình
+      </button>
+
       <div className="mx-auto grid grid-cols-1 gap-5 3xl:max-w-[1500px] xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
