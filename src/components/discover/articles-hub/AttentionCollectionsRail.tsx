@@ -28,7 +28,7 @@ export function AttentionCollectionsRail({
         <Link
           key={c.id}
           href={`/collections/${c.id}`}
-          className="group relative h-[86px] min-w-[205px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
+          className="group relative h-[166px] min-w-[205px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)]"
         >
           {c.coverImageUrl ? (
             <Image
@@ -42,8 +42,11 @@ export function AttentionCollectionsRail({
               <Folder size={22} strokeWidth={1.6} />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/35 to-transparent" />
-          <div className="font-content relative flex h-full flex-col justify-center px-4 text-white">
+          {/* Scrim day tu duoi len - thay cho gradient ngang cu (che het nua
+              trai anh) - card cao hon nen can lo phan lon anh o phia TREN,
+              chi lam toi dan o day de chu van doc duoc. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+          <div className="font-content relative flex h-full flex-col justify-end px-4 pb-3 text-white">
             <span className="line-clamp-1 text-[14px] font-semibold">{c.title}</span>
             <span className="mt-1 line-clamp-1 text-[11px] text-white/75">
               {c.postCount} bài viết · {c.owner.name}
