@@ -11,15 +11,16 @@ import {
   type CreatorSummary,
 } from "@/components/discover/articles-hub/CreatorRail";
 import { TopicsRail } from "@/components/discover/articles-hub/TopicsRail";
+import { ArticlesPostGrid } from "@/components/discover/articles-hub/ArticlesPostGrid";
 import { MOCK_CATEGORY_TREE } from "@/components/discover/articles-hub/category-tree-mock";
-import { Flame, Users } from "lucide-react";
+import { Flame, Newspaper, Users } from "lucide-react";
 
 // /articles - port giao dien tu source knowledge-dashboard-note-knowledge-hub-style.zip
 // (ban goc tieng Nhat kieu Zenn.dev, da doi copy sang tieng Anh/Viet khop tone
 // con lai cua app - khong ship nguyen van tieng Nhat demo). Dung CHUNG sidebar
 // voi /home qua (feed)/layout.tsx (xem file do) - trang nay KHONG tu ve
 // sidebar rieng nua. Server Component thuan + 1 island client duy nhat
-// (NewestSection - tab loc theo linh vuc).
+// (ArticlesPostGrid - the bai dung framer-motion, xem file do).
 export default async function ArticlesPage() {
   const session = await auth();
   const username = session?.username ?? null;
@@ -68,6 +69,13 @@ export default async function ArticlesPage() {
         sub="Lĩnh vực hoạt động nhiều trong 7 ngày qua"
       />
       <TopicsRail categoryTree={categoryTree} />
+
+      <SectionTitle
+        icon={Newspaper}
+        title="Bài viết mới nhất"
+        sub="Cập nhật liên tục từ mọi lĩnh vực"
+      />
+      <ArticlesPostGrid posts={posts} />
     </>
   );
 }

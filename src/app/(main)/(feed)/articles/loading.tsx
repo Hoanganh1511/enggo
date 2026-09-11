@@ -4,7 +4,7 @@ import Skeleton from "@/components/ui/skeleton";
 // Server Component await Promise.all, nen suspend het ca trang cho toi khi
 // xong). Khop dung khung that: hero (dai ngan mobile / 70-30 desktop -
 // ArticlesHero.tsx), hang "Tác giả nổi bật" (CreatorRail.tsx), hang "Chủ đề
-// đang hot" (TopicsRail.tsx).
+// đang hot" (TopicsRail.tsx), luoi "Bài viết mới nhất" (ArticlesPostGrid.tsx).
 export default function ArticlesLoading() {
   return (
     <div className="flex flex-col">
@@ -46,6 +46,23 @@ export default function ArticlesLoading() {
       <div className="flex gap-3 overflow-hidden">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[86px] w-[205px] shrink-0 rounded-xl" />
+        ))}
+      </div>
+
+      <div className="mt-8 mb-4 flex items-center gap-2.5">
+        <Skeleton className="size-[18px] rounded-full" />
+        <Skeleton className="h-5 w-44" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="overflow-hidden rounded-xl border border-border bg-surface">
+            <Skeleton className="h-[135px] w-full rounded-none" />
+            <div className="p-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="mt-2 h-4 w-3/4" />
+              <Skeleton className="mt-3 h-3 w-1/2" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
