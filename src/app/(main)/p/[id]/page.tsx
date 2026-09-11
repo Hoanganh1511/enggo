@@ -3,7 +3,10 @@ import { getPostAction } from "@/actions/discover/get-post";
 import { listPostsAction } from "@/actions/discover/list-posts";
 import { getProfileByUsername } from "@/lib/api/users";
 import type { Post } from "@/content/home-feed-mock";
-import { getPostTitle, getPostImageUrl } from "@/components/discover/home-feed/post-display";
+import {
+  getPostTitle,
+  getPostImageUrl,
+} from "@/components/discover/home-feed/post-display";
 import { getPostContentText } from "@/lib/discover/article-content";
 import { ArticleHeader } from "@/components/article/ArticleHeader";
 import { ArticleTableOfContents } from "@/components/article/ArticleTableOfContents";
@@ -40,14 +43,6 @@ export default async function PostDetailPage({
   const post = await getPostAction(id).catch(() => null);
   if (!post) notFound();
 
-  // 3 fetch song song, DEU la du lieu THAT (khong con mock):
-  // - authorPosts: dung ca cho "bai truoc/sau cua tac gia" (ArticlePrevNextNav)
-  //   LAN "bai gan day cua tac gia" (ArticleRecommendations) - 1 lan fetch,
-  //   khong goi lai 2 lan cho cung 1 muc dich.
-  // - relatedPosts: cung category (chu de), dai dien cho "bai lien quan".
-  // - profile: lay bio/followerCount/isFollowing THAT cho ArticleAuthorCard
-  //   (Author tren Post chi co name/username/verified/avatarUrl, thieu may
-  //   truong nay).
   const [authorPosts, relatedPosts, profile] = await Promise.all([
     listPostsAction({ authorUsername: post.author.username, limit: 20 }).catch(
       () => [] as Post[],
@@ -60,27 +55,22 @@ export default async function PostDetailPage({
     getProfileByUsername(post.author.username).catch(() => null),
   ]);
 
-  // authorPosts sap createdAt desc (moi nhat truoc) - "prev" (bai cu hon) la
-  // phan tu SAU trong mang, "next" (bai moi hon) la phan tu TRUOC. Khong tim
-  // thay chinh post nay trong authorPosts (vd fetch bi cap limit) thi ca hai
-  // deu undefined, ArticlePrevNextNav tu an.
   const currentIndex = authorPosts.findIndex((p) => p.id === post.id);
-  const prev =
-    currentIndex >= 0 ? authorPosts[currentIndex + 1] : undefined;
-  const next =
-    currentIndex > 0 ? authorPosts[currentIndex - 1] : undefined;
+  const prev = currentIndex >= 0 ? authorPosts[currentIndex + 1] : undefined;
+  const next = currentIndex > 0 ? authorPosts[currentIndex - 1] : undefined;
 
   const moreFromAuthor = authorPosts
     .filter((p) => p.id !== post.id)
     .slice(0, 4)
     .map(toSummary);
   const related = relatedPosts
-    .filter((p) => p.id !== post.id && p.author.username !== post.author.username)
+    .filter(
+      (p) => p.id !== post.id && p.author.username !== post.author.username,
+    )
     .slice(0, 4)
     .map(toSummary);
 
   const content = getPostContentText(post);
-
   return (
     <div className="mx-auto flex w-full max-w-155 flex-col gap-6 px-4 py-6">
       <ArticleStickyAuthorBar
@@ -92,9 +82,13 @@ export default async function PostDetailPage({
       />
 
       <ArticleHeader post={post} />
+
       <ArticleTableOfContents content={content} />
       <ArticleBody post={post} />
-      <ArticleActionBar likes={post.stats.likes} commentCount={post.stats.comments} />
+      <ArticleActionBar
+        likes={post.stats.likes}
+        commentCount={post.stats.comments}
+      />
       <ArticleAuthorCard
         author={post.author}
         bio={profile?.bio}
@@ -109,7 +103,10 @@ export default async function PostDetailPage({
       {/* comments rong - chua co model/API Comment that cho Post (chi co
           stats.comments la SO DEM), xem ArticleComments.tsx/article-types.ts. */}
       <ArticleComments comments={[]} />
-      <ArticleRecommendations moreFromAuthor={moreFromAuthor} related={related} />
+      <ArticleRecommendations
+        moreFromAuthor={moreFromAuthor}
+        related={related}
+      />
     </div>
   );
 }
