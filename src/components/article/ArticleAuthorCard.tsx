@@ -5,12 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import type { Author } from "@/content/home-feed-mock";
+import type { UserProfileApiShape } from "@/lib/api/users";
 import {
   followUserAction,
   unfollowUserAction,
 } from "@/actions/discover/follow-user";
 import { formatCompact } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
+import { SOCIAL_LINKS } from "./article-social-links";
 
 // Ban "day du" cua tac gia - dat SAU than bai (khac dong tac gia GON tren
 // dau, ArticleHeader.tsx) vi day la luc doc gia da doc xong, nhieu kha nang
@@ -23,12 +25,18 @@ export function ArticleAuthorCard({
   author,
   bio,
   followerCount,
+  profile,
   isFollowing,
   isSelf,
 }: {
   author: Author;
   bio?: string | null;
   followerCount?: number;
+  // Rieng cho hang icon mang xa hoi - lay THANG tu UserProfileApiShape (xem
+  // article-social-links.ts), optional vi profile co the fetch loi (.catch
+  // (() => null) o page.tsx). bio/followerCount van truyen rieng nhu cu (2
+  // cho khac deu doc tu profile, khong doi API goi tu page.tsx).
+  profile?: UserProfileApiShape | null;
   isFollowing: boolean;
   isSelf: boolean;
 }) {
@@ -105,6 +113,38 @@ export function ArticleAuthorCard({
       {bio && (
         <p className="font-content text-sm leading-relaxed text-ink-muted">{bio}</p>
       )}
+
+      {/* Hang icon mang xa hoi - ngang, greyed + tooltip khi tac gia chua
+          dien (cung quy uoc voi ArticleStickyAuthorBar.tsx), theo mockup
+          card tac gia cua note.com nguoi dung gui. */}
+      <div className="flex items-center gap-1 border-t border-border pt-3">
+        {SOCIAL_LINKS.map(({ key, label, icon: Icon }) => {
+          const url = profile?.[key] as string | null | undefined;
+          if (url) {
+            return (
+              <a
+                key={key}
+                href={url}
+                target="_blank"
+                rel="noreferrer noopener"
+                title={label}
+                className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+              >
+                <Icon size={16} strokeWidth={1.8} />
+              </a>
+            );
+          }
+          return (
+            <span
+              key={key}
+              title="Icon mờ đi nếu tác giả chưa cập nhật"
+              className="grid size-8 shrink-0 cursor-not-allowed place-items-center rounded-full text-ink-faint/40"
+            >
+              <Icon size={16} strokeWidth={1.8} />
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

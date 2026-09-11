@@ -132,6 +132,7 @@ export default async function PostDetailPage({
           author={post.author}
           bio={profile?.bio}
           followerCount={profile?.followerCount}
+          profile={profile}
           isFollowing={profile?.isFollowing ?? false}
           isSelf={profile?.isSelf ?? false}
         />

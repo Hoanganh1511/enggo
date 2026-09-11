@@ -18,8 +18,12 @@ export function ArticleSidebar({
   related: PostSummary[];
 }) {
   return (
-    <div className="sticky top-20 flex flex-col gap-4">
-      <ArticleTableOfContents content={content} richHeadings={richHeadings} variant="sidebar" />
+    <div className="sticky top-10 flex flex-col gap-4">
+      <ArticleTableOfContents
+        content={content}
+        richHeadings={richHeadings}
+        variant="sidebar"
+      />
       <ArticleSidebarRelated items={related} />
     </div>
   );

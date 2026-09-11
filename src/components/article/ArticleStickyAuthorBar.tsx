@@ -10,9 +10,7 @@ import {
   FileText,
   MessageSquare,
   Plus,
-  Rss,
   Users,
-  X,
 } from "lucide-react";
 import type { Author } from "@/content/home-feed-mock";
 import type { UserProfileApiShape } from "@/lib/api/users";
@@ -23,27 +21,7 @@ import {
 import { createConversationAction } from "@/actions/chat/create-conversation";
 import { formatCompact } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
-import {
-  FacebookIcon,
-  InstagramIcon,
-  LinkedinIcon,
-  YoutubeIcon,
-} from "@/components/ui/social-icons";
-
-// Cac nen tang mang xa hoi hien trong card - lay THANG tu UserProfileApiShape
-// (career-tree-api, cung ten field voi EditProfileModal.tsx) nen khong can
-// mapper rieng. Icon mo + khong bam duoc + co tooltip khi tac gia CHUA dien
-// (url null) - thay vi an han di, cho nguoi xem biet nen tang nao co the co
-// nhung tac gia nay chua cap nhat, dung tinh than "Icon mờ đi nếu tác giả
-// chưa cập nhật" trong mockup.
-const SOCIAL_LINKS = [
-  { key: "twitterUrl", label: "X (Twitter)", icon: X },
-  { key: "facebookUrl", label: "Facebook", icon: FacebookIcon },
-  { key: "instagramUrl", label: "Instagram", icon: InstagramIcon },
-  { key: "youtubeUrl", label: "YouTube", icon: YoutubeIcon },
-  { key: "linkedinUrl", label: "LinkedIn", icon: LinkedinIcon },
-  { key: "rssUrl", label: "RSS", icon: Rss },
-] as const satisfies readonly { key: keyof UserProfileApiShape; label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }> }[];
+import { SOCIAL_LINKS } from "./article-social-links";
 
 // Card tac gia thu nho - DINH (sticky) o cot TRAI, doi dien voi ArticleSidebar
 // (Muc luc/Bai viet lien quan) o cot phai, theo yeu cau nguoi dung ("đổi vị
@@ -127,8 +105,11 @@ export function ArticleStickyAuthorBar({
   if (!visible) return null;
 
   return (
-    <div className="sticky top-20 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 text-center">
-      <Link href={`/u/${author.username}`} className="flex flex-col items-center gap-2">
+    <div className="sticky top-10 flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 text-center">
+      <Link
+        href={`/u/${author.username}`}
+        className="flex flex-col items-center gap-2"
+      >
         <Image
           src={author.avatarUrl}
           alt={author.name}
@@ -137,12 +118,20 @@ export function ArticleStickyAuthorBar({
           className="size-16 shrink-0 rounded-full object-cover"
         />
         <span className="flex min-w-0 items-center gap-1">
-          <span className="truncate text-sm font-semibold text-ink">{author.name}</span>
+          <span className="truncate text-sm font-semibold text-ink">
+            {author.name}
+          </span>
           {author.verified && (
-            <BadgeCheck size={13} strokeWidth={2.25} className="shrink-0 text-primary" />
+            <BadgeCheck
+              size={13}
+              strokeWidth={2.25}
+              className="shrink-0 text-primary"
+            />
           )}
         </span>
-        <span className="truncate text-xs text-ink-faint">@{author.username}</span>
+        <span className="truncate text-xs text-ink-faint">
+          @{author.username}
+        </span>
       </Link>
 
       {profile?.bio && (
@@ -191,9 +180,17 @@ export function ArticleStickyAuthorBar({
                 rel="noreferrer noopener"
                 className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5 text-left text-[13px] text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
               >
-                <Icon size={14} strokeWidth={1.8} className="shrink-0 text-ink-muted" />
+                <Icon
+                  size={14}
+                  strokeWidth={1.8}
+                  className="shrink-0 text-ink-muted"
+                />
                 <span className="flex-1 truncate">{label}</span>
-                <ExternalLink size={12} strokeWidth={1.8} className="shrink-0 text-ink-faint" />
+                <ExternalLink
+                  size={12}
+                  strokeWidth={1.8}
+                  className="shrink-0 text-ink-faint"
+                />
               </a>
             );
           }
@@ -213,18 +210,28 @@ export function ArticleStickyAuthorBar({
 
       <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
         <div className="flex flex-col items-center gap-0.5">
-          <span className="flex items-center gap-1 text-sm font-bold text-ink">
-            <FileText size={12} strokeWidth={2} className="text-ink-faint" />
+          <span className="flex items-center gap-1 text-sm font-bold text-ink font-content">
+            <FileText
+              size={13}
+              strokeWidth={2}
+              className="text-ink font-content"
+            />
             {formatCompact(profile?.postCount ?? 0)}
           </span>
-          <span className="text-[11px] text-ink-faint">Bài viết</span>
+          <span className="text-[11px] text-ink font-content">Bài viết</span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
-          <span className="flex items-center gap-1 text-sm font-bold text-ink">
-            <Users size={12} strokeWidth={2} className="text-ink-faint" />
+          <span className="flex items-center gap-1 text-sm font-bold text-ink font-content">
+            <Users
+              size={13}
+              strokeWidth={2}
+              className="text-ink font-content"
+            />
             {formatCompact(profile?.followerCount ?? 0)}
           </span>
-          <span className="text-[11px] text-ink-faint">Người theo dõi</span>
+          <span className="text-[11px] text-ink font-content">
+            Người theo dõi
+          </span>
         </div>
       </div>
     </div>
