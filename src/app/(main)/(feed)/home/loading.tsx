@@ -3,8 +3,9 @@ import Skeleton from "@/components/ui/skeleton";
 // Route-level Suspense fallback (Next tu boc page.tsx - toan bo page la 1
 // Server Component await Promise.all, nen suspend het ca trang cho toi khi
 // xong). Khop dung khung that: hero (dai ngan mobile / 70-30 desktop -
-// ArticlesHero.tsx), hang "Tác giả nổi bật" (CreatorRail.tsx), hang "Chủ đề
-// đang hot" (TopicsRail.tsx), luoi "Bài viết mới nhất" (ArticlesPostGrid.tsx).
+// ArticlesHero.tsx), hang "Tác giả nổi bật" (CreatorRail.tsx), hang "Bộ sưu
+// tập đang được chú ý" (AttentionCollectionsRail.tsx - cung kich thuoc tile
+// 86x205 nhu ban TopicsRail cu), luoi "Bài viết mới nhất" (ArticlesPostGrid.tsx).
 export default function ArticlesLoading() {
   return (
     <div className="flex flex-col">

@@ -8,6 +8,43 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-09-11 — Ảnh bìa bài viết tự nhiên "vỡ" sau vài giờ: cron dọn rác S3 xoá nhầm
+
+**Triệu chứng:** người dùng đăng bài, ảnh bìa hiển thị bình thường lúc đăng,
+vài giờ sau vào lại thì ảnh vỡ (icon lỗi + alt text đè lên vùng ảnh) — đúng
+dấu hiệu URL ảnh trả về 404, không phải lỗi hiển thị/CSS.
+
+**Nguyên nhân (backend `career-tree-api`, `upload.service.ts`
+`deleteOrphanedUploads`):** mọi ảnh trong app (chat, avatar/cover hồ sơ, ảnh
+bìa bài viết qua Composer, ảnh bìa bộ sưu tập qua CreateCollectionModal) đều
+upload qua CHUNG 1 endpoint/folder S3 `chat-images` — cron chạy mỗi giờ xoá
+object cũ hơn 60 phút nếu KHÔNG thấy tham chiếu trong DB, nhưng lúc viết job
+này chỉ đối chiếu với `Message.attachmentUrl`. Từng vá 1 lần cho avatar/cover
+hồ sơ (`User.avatarUrl`/`UserProfile.coverImageUrl`) sau khi gặp bug tương
+tự, nhưng khi thêm tính năng ảnh bìa bài viết (`Post.data.coverImage`, nằm
+trong cột JSON tự do, không phải cột riêng) và ảnh bìa bộ sưu tập
+(`PostCollection.coverImageUrl`) sau này lại QUÊN mở rộng danh sách đối
+chiếu — cùng 1 lớp bug lặp lại vì danh sách "nguồn tham chiếu hợp lệ" được
+liệt kê thủ công, không có gì nhắc khi thêm nguồn mới.
+
+**Hướng đã cân nhắc:**
+1. Thêm `PostCollection.coverImageUrl` vào danh sách, còn `Post.data` thì
+   liệt kê thủ công đúng các key đã biết (`coverImage`, `image.url`,
+   `images[].url`, `video.thumbnailUrl`). → Loại: `data` là JSON tự do theo
+   từng `kind`, liệt kê tay chắc chắn sẽ thiếu tiếp lần tới khi thêm
+   kind/field ảnh mới — đúng nguyên nhân gốc của bug này.
+2. **Chọn:** quét ĐỆ QUY toàn bộ string trong `Post.data` (mọi Post, mọi
+   kind) làm tập "URL có thể đang được dùng", coi bất kỳ string nào trùng
+   key S3 là "còn tham chiếu". Không cần biết field tên gì/nằm sâu bao nhiêu
+   cấp — an toàn hơn (thà quét dư, không bao giờ xoá nhầm) và không cần sửa
+   lại mỗi khi có kind/field ảnh mới.
+
+**Hệ quả cần biết:** object đã bị cron xoá TRƯỚC KHI fix này chạy thì mất
+thật, không tự phục hồi được — bài viết cũ bị vỡ ảnh phải tải lại ảnh bìa
+thủ công. Fix chỉ ngăn tái diễn từ bây giờ.
+
+---
+
 ## 2026-09-11 — Đổi chỗ URL `/home` ↔ `/articles`, giữ nguyên sidebar
 
 **Yêu cầu:** người dùng muốn nội dung đang ở `/articles` (hero + Tác giả nổi

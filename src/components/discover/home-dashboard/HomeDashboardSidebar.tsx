@@ -5,9 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BookOpen,
   Bookmark,
-  Compass,
   Folder,
   GitBranch,
   Hash,
@@ -38,22 +36,14 @@ type NavEntry =
   | { kind: "link"; icon: LucideIcon; label: string; href: string; match: (pathname: string) => boolean }
   | { kind: "coming-soon"; icon: LucideIcon; label: string };
 
+// Articles/Tracking (truoc day 2 link that o day) da BI KHOA HOAN TOAN theo
+// yeu cau nguoi dung - khong chi chan nguoi CHUA dang nhap ma chan LUON ca
+// nguoi da dang nhap (xem articles/layout.tsx, tracking/layout.tsx: redirect
+// ve /home VO DIEU KIEN, khong con check session nua). An HAN 2 muc nay khoi
+// sidebar (khong con o dang link LAN "coming-soon") thay vi de nguoi dung bam
+// vao roi bi bounce ra ngoai - trung thuc hon.
 const PRIMARY_NAV: NavEntry[] = [
   { kind: "link", icon: Home, label: "Home", href: "/home", match: (p) => p === "/home" },
-  {
-    kind: "link",
-    icon: BookOpen,
-    label: "Articles",
-    href: "/articles",
-    match: (p) => p === "/articles" || p.startsWith("/articles/"),
-  },
-  {
-    kind: "link",
-    icon: Compass,
-    label: "Tracking",
-    href: "/tracking",
-    match: (p) => p.startsWith("/tracking"),
-  },
   {
     kind: "link",
     icon: Folder,

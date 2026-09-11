@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { followUserAction, unfollowUserAction } from "@/actions/discover/follow-user";
 
-// Trich tu PersonCollectionsCard (RecentCollectionsSection.tsx) - dung CHUNG
-// cho moi noi can nut Theo dõi/Đang theo dõi toggle optimistic (card bo suu
-// tap tren /collections, danh sach nguoi tren /home). KHONG dong bo voi
+// Dung CHUNG cho moi noi can nut Theo dõi/Đang theo dõi toggle optimistic
+// (CollectionBrowseCard.tsx tren /collections). KHONG dong bo voi
 // ArticleStickyAuthorBar.tsx (co state rieng kem theo bio/social links, de
 // nguyen khong gop).
 export function useFollowToggle(username: string, initialIsFollowing: boolean) {

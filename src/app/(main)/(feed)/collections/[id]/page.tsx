@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Folder, Lock, Pencil } from "lucide-react";
+import { ArrowLeft, Folder, Lock } from "lucide-react";
 import { getCollectionDetailAction } from "@/actions/discover/collections/get-collection-detail";
 import { NoteCard } from "@/components/discover/home-feed/NoteCard";
+import { EditCollectionButton } from "@/components/collections/EditCollectionButton";
 import { formatRelativeTime } from "@/lib/format-time";
 import { ApiError } from "@/lib/api/client";
 
@@ -25,7 +26,7 @@ export default async function CollectionDetailPage({
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="w-full">
       <Link
         href="/collections"
         className="inline-flex items-center gap-1.5 text-sm text-[var(--muted)] transition-colors duration-150 ease-out hover:text-[var(--foreground)]"
@@ -75,17 +76,7 @@ export default async function CollectionDetailPage({
             <span>Cập nhật {formatRelativeTime(collection.updatedAt)}</span>
           </div>
         </div>
-        {collection.isOwner && (
-          <button
-            type="button"
-            title="Sắp có"
-            disabled
-            className="flex h-9 shrink-0 cursor-not-allowed items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 text-sm font-semibold text-[var(--muted)]"
-          >
-            <Pencil size={14} strokeWidth={2} />
-            Chỉnh sửa
-          </button>
-        )}
+        {collection.isOwner && <EditCollectionButton collection={collection} />}
       </div>
 
       {collection.posts.length === 0 ? (
@@ -96,13 +87,13 @@ export default async function CollectionDetailPage({
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {collection.posts.map((post) => (
             <NoteCard
               key={post.id}
               post={post}
               className="w-full"
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
             />
           ))}
         </div>

@@ -6,6 +6,7 @@ import { SimpleModal } from "@/components/ui/simple-modal";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { createCollectionAction } from "@/actions/discover/collections/create-collection";
+import { updateCollectionAction } from "@/actions/discover/collections/update-collection";
 import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
 import { getApiErrorMessage } from "@/lib/api/client";
 import type {
@@ -31,14 +32,24 @@ const TOPIC_OPTIONS: { value: CollectionTopic; label: string }[] = (
 // bộ sưu tập") va Composer.tsx (Panel "Thêm vào bộ sưu tập") - 2 noi goi
 // TRUYEN onCreated rieng (1 ben them vao danh sach hien thi, 1 ben chon
 // luon lam bo suu tap dang chon).
+//
+// Kiem "Chỉnh sửa" (collections/[id]/page.tsx) - dung LAI CHINH modal nay
+// thay vi viet rieng 1 form: truyen them `mode="edit"` + `collection` (ban
+// hien tai) de tien dien san form, doi nut/tieu de, va goi updateCollectionAction
+// thay vi createCollectionAction luc luu - onCreated van goi voi ban da cap
+// nhat (ten khong doi de KHONG phai sua lai 5 noi dang goi component nay).
 export function CreateCollectionModal({
   open,
   onOpenChange,
   onCreated,
+  mode = "create",
+  collection,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (collection: PostCollectionApiShape) => void;
+  mode?: "create" | "edit";
+  collection?: PostCollectionApiShape;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -57,6 +68,24 @@ export function CreateCollectionModal({
     setTopic("");
     setCoverImageUrl("");
     setError(null);
+  }
+
+  // Moi lan CHUYEN tu dong sang mo (o mode edit) - dien lai DUNG gia tri
+  // hien tai cua collection. Goi setState NGAY TRONG RENDER (khong qua
+  // useEffect) theo dung pattern "Adjusting state when a prop changes" cua
+  // React - component nay dung CHUNG giua cac lan mo/dong (khong remount) nen
+  // khong the dung useState initializer 1 lan duy nhat.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open && mode === "edit" && collection) {
+      setTitle(collection.title);
+      setDescription(collection.description ?? "");
+      setVisibility(collection.visibility);
+      setTopic(collection.topic ?? "");
+      setCoverImageUrl(collection.coverImageUrl ?? "");
+      setError(null);
+    }
   }
 
   async function handleCoverChange(file: File | undefined) {
@@ -90,18 +119,38 @@ export function CreateCollectionModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      const created = await createCollectionAction({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        coverImageUrl: coverImageUrl || undefined,
-        visibility,
-        topic: topic || undefined,
-      });
-      onCreated(created);
+      // Mode edit: gui description/coverImageUrl DUNG nguyen (ke ca rong) de
+      // nguoi dung xoa mo ta/anh bia di duoc that su - "|| undefined" (dung o
+      // nhanh tao moi) se khien PATCH bo qua field rong, hieu la "khong doi"
+      // thay vi "xoa", sai voi nut xoa anh bia (X) o duoi.
+      const result =
+        mode === "edit" && collection
+          ? await updateCollectionAction(collection.id, {
+              title: title.trim(),
+              description: description.trim(),
+              coverImageUrl,
+              visibility,
+              topic: topic || undefined,
+            })
+          : await createCollectionAction({
+              title: title.trim(),
+              description: description.trim() || undefined,
+              coverImageUrl: coverImageUrl || undefined,
+              visibility,
+              topic: topic || undefined,
+            });
+      onCreated(result);
       onOpenChange(false);
-      reset();
+      if (mode !== "edit") reset();
     } catch (err) {
-      setError(getApiErrorMessage(err, "Không tạo được bộ sưu tập, thử lại sau."));
+      setError(
+        getApiErrorMessage(
+          err,
+          mode === "edit"
+            ? "Không lưu được thay đổi, thử lại sau."
+            : "Không tạo được bộ sưu tập, thử lại sau.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -114,7 +163,7 @@ export function CreateCollectionModal({
         onOpenChange(next);
         if (!next) reset();
       }}
-      title="Tạo bộ sưu tập"
+      title={mode === "edit" ? "Chỉnh sửa bộ sưu tập" : "Tạo bộ sưu tập"}
     >
       <div className="flex flex-col gap-4">
         <div>
@@ -238,7 +287,13 @@ export function CreateCollectionModal({
             disabled={!title.trim() || isSubmitting}
             className="h-9 cursor-pointer rounded-md bg-ink px-3.5 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? "Đang tạo..." : "Tạo bộ sưu tập"}
+            {mode === "edit"
+              ? isSubmitting
+                ? "Đang lưu..."
+                : "Lưu thay đổi"
+              : isSubmitting
+                ? "Đang tạo..."
+                : "Tạo bộ sưu tập"}
           </button>
         </div>
       </div>

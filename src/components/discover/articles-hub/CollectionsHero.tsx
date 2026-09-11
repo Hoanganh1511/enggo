@@ -10,8 +10,11 @@ import { ArrowLeft } from "lucide-react";
 export function CollectionsHero() {
   return (
     <div>
+      {/* Quay lai /home (khong phai /articles nua) - /articles da khoa hoan
+          toan (redirect voi MOI tai khoan, xem articles/layout.tsx), tro ve
+          do se chi bi bounce tiep sang /home nen tro thang luon cho gon. */}
       <Link
-        href="/articles"
+        href="/home"
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-[var(--muted)] transition-colors duration-150 ease-out hover:text-[var(--foreground)]"
       >
         <ArrowLeft size={15} strokeWidth={2} />
