@@ -11,7 +11,6 @@ import {
   type CreatorSummary,
 } from "@/components/discover/articles-hub/CreatorRail";
 import { TopicsRail } from "@/components/discover/articles-hub/TopicsRail";
-import { NewestSection } from "@/components/discover/articles-hub/NewestSection";
 import { MOCK_CATEGORY_TREE } from "@/components/discover/articles-hub/category-tree-mock";
 import { Flame, Users } from "lucide-react";
 
@@ -69,8 +68,6 @@ export default async function ArticlesPage() {
         sub="Lĩnh vực hoạt động nhiều trong 7 ngày qua"
       />
       <TopicsRail categoryTree={categoryTree} />
-
-      <NewestSection />
     </>
   );
 }
