@@ -8,6 +8,8 @@ import {
   getPostImageUrl,
 } from "@/components/discover/home-feed/post-display";
 import { getPostContentText } from "@/lib/discover/article-content";
+import { renderTiptapHTML } from "@/lib/discover/render-tiptap-html";
+import { getPostExtensions } from "@/components/workspaces/post-extensions";
 import { ArticleHeader } from "@/components/article/ArticleHeader";
 import { ArticleTableOfContents } from "@/components/article/ArticleTableOfContents";
 import { ArticleBody } from "@/components/article/ArticleBody";
@@ -71,6 +73,16 @@ export default async function PostDetailPage({
     .map(toSummary);
 
   const content = getPostContentText(post);
+  // Bai dang qua Composer.tsx co richContent (JSON Tiptap THAT, giu nguyen
+  // heading/dinh dang - khac `content` o tren chi la doan tom tat ngan ≤600
+  // ky tu, khong phai than bai day du). Render 1 LAN DUY NHAT o day, dung
+  // chung cho ca ArticleBody (html) VA ArticleTableOfContents (headings) -
+  // dam bao id khop tuyet doi giua 2 noi (xem ghi chu trong
+  // render-tiptap-html.ts).
+  const rich =
+    post.kind === "text" && post.richContent
+      ? renderTiptapHTML(post.richContent, getPostExtensions())
+      : null;
   return (
     <div className="mx-auto flex w-full max-w-155 flex-col gap-6 px-4 py-6">
       <ArticleStickyAuthorBar
@@ -83,8 +95,8 @@ export default async function PostDetailPage({
 
       <ArticleHeader post={post} />
 
-      <ArticleTableOfContents content={content} />
-      <ArticleBody post={post} />
+      <ArticleTableOfContents content={content} richHeadings={rich?.headings} />
+      <ArticleBody post={post} richHtml={rich?.html} />
       <ArticleActionBar
         likes={post.stats.likes}
         commentCount={post.stats.comments}

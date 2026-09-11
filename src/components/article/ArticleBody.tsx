@@ -4,31 +4,26 @@ import {
   getPostContentText,
   parseContentLines,
 } from "@/lib/discover/article-content";
-import { renderTiptapHTML } from "@/lib/discover/render-tiptap-html";
-import { getPostExtensions, POST_PROSE_CLASS } from "@/components/workspaces/post-extensions";
+import { POST_PROSE_CLASS } from "@/components/workspaces/post-extensions";
 
-// Kind "text" co richContent (JSON Tiptap tu Composer.tsx Giai doan 1) -> render
-// HTML that (dung chung schema extension voi luc soan). Component nay la
-// Server Component (SSR, khong "use client") nen KHONG the dung generateHTML
-// cua "@tiptap/core" thang (doi window/document THAT, chi co trong browser) -
-// dung renderTiptapHTML() tu gia lap DOM bang happy-dom thay the (xem
-// docs/engineering-log.md 2026-09-10 - lý do khong dung goi "@tiptap/html" co
-// san). ArticleCard.tsx dung "@tiptap/core" ban goc vi no la "use client"
-// (co window that).
-// Bai cu hon (chua co richContent) hoac cac
-// kind con lai co van ban tho (image/gallery/video/file/link/resource/note) ->
-// tu parse heading/doan van tu content that (xem article-content.ts), khop id
-// voi ArticleTableOfContents.tsx. Kind KHONG co content dang van ban
-// (project-update/achievement/poll/career-update/...) -> fallback ve PostBody
-// co san (component nay da biet render dung dang rieng cua tung kind do,
-// khong can viet lai).
-export function ArticleBody({ post }: { post: Post }) {
-  if (post.kind === "text" && post.richContent) {
-    const html = renderTiptapHTML(post.richContent, getPostExtensions());
+// Kind "text" co richContent (JSON Tiptap tu Composer.tsx) -> render HTML
+// that (html da duoc render SAN o page.tsx qua renderTiptapHTML(), truyen
+// xuong day qua prop `richHtml` - CHUNG 1 lan goi voi ArticleTableOfContents
+// (dung `headings` tra ve cung luc), tranh goi renderTiptapHTML() 2 lan cho
+// cung 1 bai VA dam bao id heading trong HTML khop tuyet doi voi id trong
+// muc luc. Bai cu hon (chua co richContent) hoac cac kind con lai co van ban
+// tho (image/gallery/video/file/link/resource/note) -> tu parse heading/doan
+// van tu content that (xem article-content.ts), khop id voi
+// ArticleTableOfContents.tsx (nhanh content, khong phai nhanh richHeadings).
+// Kind KHONG co content dang van ban (project-update/achievement/poll/
+// career-update/...) -> fallback ve PostBody co san (component nay da biet
+// render dung dang rieng cua tung kind do, khong can viet lai).
+export function ArticleBody({ post, richHtml }: { post: Post; richHtml?: string }) {
+  if (richHtml) {
     return (
       <div
         className={POST_PROSE_CLASS}
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: richHtml }}
       />
     );
   }
