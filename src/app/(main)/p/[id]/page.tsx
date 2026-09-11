@@ -38,13 +38,12 @@ function toSummary(post: Post): PostSummary {
 
 // Trang chi tiet 1 Post THAT (khong con la "Article" mock rieng - da doi
 // huong lai, xem quyet dinh 2026-08-03 trong docs/engineering-log.md). Bo
-// cuc 2 cot tu lg+ (cot noi dung chinh max 620px de de doc + cot phu dinh
-// ben phai chua Muc luc/Bai viet lien quan, xem ArticleSidebar.tsx), 1 cot
-// tren mobile voi Muc luc thu gon inline + thanh hanh dong dinh duoi cung
-// (theo mockup nguoi dung gui). ArticleStickyAuthorBar dinh tren (sticky
-// top-0) hien THAY CHO ArticleAuthorCard trong luc nguoi doc cuon qua than
-// bai ma chua toi duoc card that o duoi - tu an khi card that (id
-// "article-author-card") vao viewport, xem component do.
+// cuc 3 cot tu lg+: cot TRAI dinh (ArticleStickyAuthorBar, chi hien khi cuon
+// qua card tac gia that o duoi) + cot GIUA noi dung chinh (max 620px de de
+// doc) + cot PHAI dinh (Muc luc/Bai viet lien quan, xem ArticleSidebar.tsx) -
+// 2 cot dinh doi xung nhau theo yeu cau nguoi dung. Tren mobile chi con 1
+// cot: Muc luc thu gon inline + thanh hanh dong dinh duoi cung (theo mockup
+// nguoi dung gui), khong co cot trai/phai (khong du cho).
 export default async function PostDetailPage({
   params,
 }: {
@@ -93,8 +92,14 @@ export default async function PostDetailPage({
       ? renderTiptapHTML(post.richContent, getPostExtensions())
       : null;
   return (
-    <div className="mx-auto flex w-full max-w-260 flex-col gap-8 px-4 py-6 pb-24 lg:flex-row lg:items-start lg:pb-6">
-      <div className="flex min-w-0 flex-1 flex-col gap-6 lg:max-w-155">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-6 pb-24 lg:flex-row lg:items-start lg:pb-6">
+      {/* Cot TRAI - CHI desktop, doi dien voi ArticleSidebar (Muc luc) o cot
+          phai theo yeu cau nguoi dung. Tu quyet dinh an/hien qua
+          IntersectionObserver (xem component), tra ve null luc chua can
+          hien nen khong can boc them dieu kien o day. Tren mobile KHONG hien
+          nua (khong co cho cho 1 cot rieng) - thanh hanh dong dinh duoi cung
+          da dam nhiem vai tro "luon thay duoc" o do roi. */}
+      <aside className="hidden w-56 shrink-0 lg:block">
         <ArticleStickyAuthorBar
           author={post.author}
           followerCount={profile?.followerCount}
@@ -102,7 +107,9 @@ export default async function PostDetailPage({
           isSelf={profile?.isSelf ?? false}
           authorCardId="article-author-card"
         />
+      </aside>
 
+      <div className="flex min-w-0 flex-1 flex-col gap-6 lg:max-w-155">
         <ArticleHeader post={post} />
 
         {/* Muc luc thu gon, inline ngay duoi tieu de - CHI mobile/tablet

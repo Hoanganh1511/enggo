@@ -12,26 +12,25 @@ import {
 import { formatCompact } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
 
-// Thanh ngang dinh duoi TopHeaderBar (fixed, KHONG phai sticky - xem ly do
-// ben duoi) - HIEN THI THAY CHO ArticleAuthorCard.tsx (card tac gia day du o
-// cuoi bai) trong luc nguoi doc dang cuon qua than bai ma CHUA cuon toi cho
-// thay duoc card that o duoi: dung IntersectionObserver quan sat chinh
-// element ArticleAuthorCard (qua id truyen vao) - khi card that xuat hien
-// trong viewport thi tu an thanh nay di (khong hien 2 noi cung luc).
+// Card tac gia thu nho - DINH (sticky) o cot TRAI, doi dien voi ArticleSidebar
+// (Muc luc/Bai viet lien quan) o cot phai, theo yeu cau nguoi dung ("đổi vị
+// trí sticky... sang trái đối diện với toc"). Truoc day la 1 thanh ngang
+// "fixed" troi tren dau trang (che ca thanh dieu huong header) - gio 2 cot
+// TRAI/PHAI deu la cot that trong bo cuc 3-cot cua page.tsx nen dung "sticky"
+// binh thuong duoc, khong can hack "fixed" nua. CHI hien tu lg+ (page.tsx
+// dung "hidden lg:block" tren aside boc ngoai) - tren mobile khong co cho
+// cho 1 cot rieng, thanh hanh dong dinh duoi cung (ArticleActionBar
+// sticky) da dam nhiem vai tro "luon thay duoc" o do roi.
 //
-// TAI SAO "fixed" CHU KHONG "sticky": thu voi "sticky top-0" truoc, boc
-// trong 1 wrapper "h-0" de luc an khong choan cho trong flex column cua
-// page.tsx - nhung sticky CAN khong gian THAT trong container cha de co
-// "cho" ma dinh lai, cha cao 0 khien no khong bao gio dinh duoc, chi troi
-// theo trang roi bien mat luc cuon (day chinh la bug da gap). Vi component
-// nay von da tu quyet dinh an/hien bang JS (IntersectionObserver) roi, "fixed"
-// (dinh thang vao viewport, hoan toan ra khoi flow - mount/unmount khong lam
-// xe layout ben duoi) don gian va chac chan hon nhieu so voi co ep "sticky"
-// hoat dong dung trong 1 flex column dong.
+// HIEN THI THAY CHO ArticleAuthorCard.tsx (card tac gia day du o cuoi bai)
+// trong luc nguoi doc dang cuon qua than bai ma CHUA cuon toi cho thay duoc
+// card that o duoi: dung IntersectionObserver quan sat chinh element
+// ArticleAuthorCard (qua id truyen vao) - khi card that xuat hien trong
+// viewport thi tu an card nay di (khong hien 2 noi cung luc).
 //
-// BIET TRUOC: thanh nay va ArticleAuthorCard.tsx deu tu quan state
+// BIET TRUOC: card nay va ArticleAuthorCard.tsx deu tu quan state
 // `following` RIENG - bam follow o 1 noi khong dong bo NGAY sang noi con
-// lai, nhung vi 2 noi khong bao gio hien CUNG LUC (thanh nay tu an khi card
+// lai, nhung vi 2 noi khong bao gio hien CUNG LUC (card nay tu an khi card
 // that hien ra) nen it kha nang nguoi dung thay ro su lech.
 export function ArticleStickyAuthorBar({
   author,
@@ -57,7 +56,7 @@ export function ArticleStickyAuthorBar({
 
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(!entry.isIntersecting),
-      { rootMargin: "-64px 0px 0px 0px" },
+      { rootMargin: "-96px 0px 0px 0px" },
     );
     observer.observe(target);
     return () => observer.disconnect();
@@ -80,57 +79,46 @@ export function ArticleStickyAuthorBar({
 
   if (!visible) return null;
 
-  // TopHeaderBar cao h-14 (3.5rem, xem main-content-area.tsx) - "top-14" dat
-  // thanh nay ngay duoi header. "left-1/2 -translate-x-1/2 max-w-155" tu
-  // canh giua trung voi cot noi dung cua page.tsx (fixed KHONG thua huong
-  // duoc mx-auto cua cha vi da ra khoi flow, phai tu canh giua lai).
   return (
-    <div className="fixed inset-x-0 top-14 z-20 flex justify-center px-4">
-      <div className="flex w-full max-w-155 items-center gap-3 rounded-b-lg border border-t-0 border-border bg-surface/95 px-4 py-2.5 shadow-md backdrop-blur-sm">
-        <Link
-          href={`/u/${author.username}`}
-          className="flex min-w-0 flex-1 items-center gap-2.5"
-        >
-          <Image
-            src={author.avatarUrl}
-            alt={author.name}
-            width={32}
-            height={32}
-            className="size-8 shrink-0 rounded-full object-cover"
-          />
-          <span className="flex min-w-0 flex-col">
-            <span className="flex items-center gap-1">
-              <span className="truncate text-sm font-semibold text-ink">
-                {author.name}
-              </span>
-              {author.verified && (
-                <BadgeCheck size={13} strokeWidth={2.25} className="shrink-0 text-primary" />
-              )}
-            </span>
-            {followerCount !== undefined && (
-              <span className="text-xs text-ink-faint">
-                {formatCompact(followerCount)} người theo dõi
-              </span>
-            )}
+    <div className="sticky top-20 flex flex-col items-center gap-3 rounded-lg border border-border bg-surface p-4 text-center shadow-sm">
+      <Link href={`/u/${author.username}`} className="flex flex-col items-center gap-2">
+        <Image
+          src={author.avatarUrl}
+          alt={author.name}
+          width={56}
+          height={56}
+          className="size-14 shrink-0 rounded-full object-cover"
+        />
+        <span className="flex min-w-0 items-center gap-1">
+          <span className="truncate text-sm font-semibold text-ink">
+            {author.name}
           </span>
-        </Link>
-
-        {!isSelf && (
-          <button
-            type="button"
-            onClick={handleToggleFollow}
-            disabled={pending}
-            className={cn(
-              "flex h-8 shrink-0 cursor-pointer items-center rounded-full px-3.5 text-sm font-semibold transition-colors duration-150 ease-out disabled:cursor-default disabled:opacity-70",
-              following
-                ? "bg-surface-muted text-ink hover:bg-hover-bg"
-                : "bg-primary text-white hover:bg-primary-hover",
-            )}
-          >
-            {following ? "Đang theo dõi" : "Theo dõi"}
-          </button>
+          {author.verified && (
+            <BadgeCheck size={13} strokeWidth={2.25} className="shrink-0 text-primary" />
+          )}
+        </span>
+        {followerCount !== undefined && (
+          <span className="text-xs text-ink-faint">
+            {formatCompact(followerCount)} người theo dõi
+          </span>
         )}
-      </div>
+      </Link>
+
+      {!isSelf && (
+        <button
+          type="button"
+          onClick={handleToggleFollow}
+          disabled={pending}
+          className={cn(
+            "flex h-9 w-full cursor-pointer items-center justify-center rounded-full text-sm font-semibold transition-colors duration-150 ease-out disabled:cursor-default disabled:opacity-70",
+            following
+              ? "bg-surface-muted text-ink hover:bg-hover-bg"
+              : "bg-primary text-white hover:bg-primary-hover",
+          )}
+        >
+          {following ? "Đang theo dõi" : "Theo dõi"}
+        </button>
+      )}
     </div>
   );
 }
