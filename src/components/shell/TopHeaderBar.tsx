@@ -251,11 +251,11 @@ const TopHeaderBar = () => {
             chiem cho trong header von da chat cum icon. */}
         {/* Nhom "split button": Link Viết bài + duong ke doc ngan cach +
             chevron mo popover 5 bai viet gan day (RecentPostsMenu.tsx) - 2
-            nua cung 1 khoi bg-black/90, chi bo tron 1 dau moi ben. */}
+            nua cung 1 mau #8F3F4D, chi bo tron 1 dau moi ben. */}
         <div className="ml-1 hidden items-stretch lg:flex">
           <Link
             href="/compose"
-            className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-l-sm bg-black/90 pr-3 pl-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+            className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-l-sm bg-[#8F3F4D] pr-3 pl-4 text-sm font-semibold text-surface transition-opacity duration-150 ease-out hover:opacity-90"
           >
             <SquarePen size={15} strokeWidth={2} />
             Viết bài

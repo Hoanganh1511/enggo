@@ -45,7 +45,7 @@ export function RecentPostsMenu() {
         <button
           type="button"
           title="Bài viết gần đây"
-          className="flex h-9 w-7 shrink-0 cursor-pointer items-center justify-center rounded-r-sm border-l border-white/20 bg-black/90 text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+          className="flex h-9 w-7 shrink-0 cursor-pointer items-center justify-center rounded-r-sm border-l border-white/20 bg-[#8F3F4D] text-surface transition-opacity duration-150 ease-out hover:opacity-90"
         >
           <ChevronDown
             size={14}
