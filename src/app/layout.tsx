@@ -7,6 +7,7 @@ import {
   Playfair_Display,
 } from "next/font/google";
 import "./globals.css";
+import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 
@@ -100,6 +101,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {/* <div className="absolute inset-0 -z-10 h-full w-full bg-[radial-gradient(125%_125%_at_50%_10%,_#fff_40%,_#475569_100%)]" /> */}
+        {/* Thanh loading dieu huong trang - dung dung "#18181b" (--primary
+            global, den) thay vi mau xanh mac dinh cua thu vien, khop tinh
+            than "trang den don gian" da chot cho toan app (xem globals.css
+            :root comment) - KHONG them mau accent moi. Tat spinner goc phai
+            + shadow phat sang (glow den tren nen trang ra vet xam mo, khong
+            hop voi phong cach toi gian) - chi giu 1 vach mong 3px o dinh. */}
+        <NextTopLoader color="#18181b" showSpinner={false} shadow={false} />
         <AuthSessionProvider>{children}</AuthSessionProvider>
         <Toaster />
       </body>
