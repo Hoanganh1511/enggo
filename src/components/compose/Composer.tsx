@@ -173,6 +173,32 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
     shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: { class: POST_PROSE_CLASS + " min-h-[230px]" },
+      // Dan (Ctrl+V) 1 anh THAT (vd screenshot copy tu ngoai) vao THAN BAI -
+      // truoc day khong co gi ca, Tiptap mac dinh chi hieu text/HTML tren
+      // clipboard, anh bi lang le bo qua (bao loi nguoi dung). Rieng KHONG
+      // dung lai uploadCoverImage() (ham do ep crop 2:1 + kich thuoc toi
+      // thieu - dung rieng cho anh BIA, se cat sai/tu choi nham anh noi dung
+      // thuong) - chi HEIC-convert roi upload thang, giong tinh than nut
+      // "Ảnh (URL)" nhung co upload that thay vi doi dan URL tay.
+      handlePaste: (_view, event) => {
+        const files = Array.from(event.clipboardData?.files ?? []);
+        const imageFile = files.find((f) => f.type.startsWith("image/"));
+        if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly paste binh thuong (text/HTML)
+        event.preventDefault();
+        void (async () => {
+          try {
+            const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
+            const formData = new FormData();
+            formData.append("file", uploadFile);
+            formData.append("kind", "image");
+            const uploaded = await uploadPostImageAction(formData);
+            editor?.chain().focus().setImage({ src: uploaded.url }).run();
+          } catch (err) {
+            setError(getApiErrorMessage(err, "Dán ảnh thất bại, thử lại sau."));
+          }
+        })();
+        return true; // da tu xu ly - chan Tiptap chen them noi dung thua tu clipboard (vd ten file).
+      },
     },
     onUpdate: () => scheduleAutosave(),
   });
