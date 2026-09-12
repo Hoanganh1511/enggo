@@ -129,6 +129,12 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
   const [error, setError] = useState<string | null>(null);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  // Dem so anh dan (paste) vao than bai CON DANG upload - can de CHAN dang/
+  // luu trong luc con dang cho (moi upload mat 1-2s, dan xong bam Luu NGAY
+  // se luu thieu anh vi editor.getJSON() luc do CHUA co node anh - bug that
+  // nguoi dung bao). Dem (khong phai boolean) vi co the dan nhieu anh gan
+  // nhau, chi cho phep luu khi TAT CA da xong.
+  const [pendingInlineImageUploads, setPendingInlineImageUploads] = useState(0);
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -185,6 +191,9 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
         const imageFile = files.find((f) => f.type.startsWith("image/"));
         if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly paste binh thuong (text/HTML)
         event.preventDefault();
+        // Tang dem TRUOC khi upload - canPublish (duoi) doc dem nay de CHAN
+        // dang/luu trong luc cho, tranh mat anh vi bam Luu qua nhanh.
+        setPendingInlineImageUploads((n) => n + 1);
         void (async () => {
           try {
             const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
@@ -195,6 +204,8 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
             editor?.chain().focus().setImage({ src: uploaded.url }).run();
           } catch (err) {
             setError(getApiErrorMessage(err, "Dán ảnh thất bại, thử lại sau."));
+          } finally {
+            setPendingInlineImageUploads((n) => n - 1);
           }
         })();
         return true; // da tu xu ly - chan Tiptap chen them noi dung thua tu clipboard (vd ten file).
@@ -209,7 +220,9 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
   // moi transaction, deps array se khong bao gio "on dinh" dung nghia.
   const editorText = editor?.getText().trim() ?? "";
   const words = editorText ? editorText.split(/\s+/).length : 0;
-  const canPublish = Boolean(editor && !editor.isEmpty && !isPosting);
+  const canPublish = Boolean(
+    editor && !editor.isEmpty && !isPosting && pendingInlineImageUploads === 0,
+  );
   const categoryLabel = KNOWLEDGE_WORLDS.flatMap((w) => w.topics).find(
     (t) => t.slug === categorySlug,
   )?.label;
@@ -517,6 +530,12 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3 text-sm text-ink-faint">
               <span>{words} chữ</span>
+              {/* Bao ro dang cho anh dan (paste) upload xong - KHONG chi im
+                  lang disable nut Luu/Dang, tranh nguoi dung tuong app "dung
+                  im"/loi roi bam lap lai hoac roi trang som. */}
+              {pendingInlineImageUploads > 0 && (
+                <span className="text-primary">Đang tải ảnh lên...</span>
+              )}
               {error && <span className="text-danger">{error}</span>}
             </div>
             <div className="flex gap-2">
@@ -537,13 +556,15 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
                 onClick={handlePublish}
                 className="cursor-pointer rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-surface transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isPosting
-                  ? isEditMode
-                    ? "Đang lưu..."
-                    : "Đang đăng..."
-                  : isEditMode
-                    ? "Lưu thay đổi"
-                    : "Đăng bài"}
+                {pendingInlineImageUploads > 0
+                  ? "Đang tải ảnh..."
+                  : isPosting
+                    ? isEditMode
+                      ? "Đang lưu..."
+                      : "Đang đăng..."
+                    : isEditMode
+                      ? "Lưu thay đổi"
+                      : "Đăng bài"}
               </button>
             </div>
           </div>
