@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BookOpen,
   Bookmark,
   Folder,
   GitBranch,
@@ -50,6 +51,13 @@ const PRIMARY_NAV: NavEntry[] = [
     label: "Collections",
     href: "/collections",
     match: (p) => p.startsWith("/collections"),
+  },
+  {
+    kind: "link",
+    icon: BookOpen,
+    label: "Series",
+    href: "/series",
+    match: (p) => p.startsWith("/series"),
   },
   { kind: "coming-soon", icon: GitBranch, label: "Roadmap" },
   { kind: "coming-soon", icon: Target, label: "Learning" },
