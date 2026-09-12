@@ -104,3 +104,135 @@ export function getContentSeriesEntry(
 ): Promise<ContentSeriesEntryPage> {
   return apiFetch<ContentSeriesEntryPage>(`/content-series/${slug}/entries/${entrySlug}`);
 }
+
+// ------------------------- Soan Series (admin, xem admin.guard.ts) -------------------------
+// Cac ham duoi day goi route GHI (POST/PATCH/DELETE), backend tu chan bang
+// AdminGuard - FE chi can gate HIEN THI trang qua getSelfStatus().isAdmin
+// (xem cac trang manage/**), khong can kiem tra lai o day.
+
+export type ContentSeriesInput = {
+  title?: string;
+  slug?: string;
+  description?: string;
+  authorName?: string;
+  authorAvatarUrl?: string;
+  emailCourseEnabled?: boolean;
+  emailCourseTitle?: string;
+  emailCourseDescription?: string;
+  stats?: ContentSeriesStat[];
+  installTabs?: ContentSeriesInstallTab[];
+  externalLinks?: ContentSeriesExternalLink[];
+  shareChannels?: string[];
+};
+
+export function createContentSeries(
+  input: ContentSeriesInput & { title: string; description: string; authorName: string },
+): Promise<ContentSeriesListItem> {
+  return apiFetch<ContentSeriesListItem>("/content-series", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateContentSeries(
+  slug: string,
+  input: ContentSeriesInput,
+): Promise<ContentSeriesListItem> {
+  return apiFetch<ContentSeriesListItem>(`/content-series/${slug}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteContentSeries(slug: string): Promise<void> {
+  return apiFetch<void>(`/content-series/${slug}`, { method: "DELETE" });
+}
+
+export type ContentSeriesCategoryInput = { title?: string; slug?: string; colorHex?: string };
+
+export function createContentSeriesCategory(
+  seriesSlug: string,
+  input: ContentSeriesCategoryInput & { title: string },
+): Promise<ContentSeriesCategory> {
+  return apiFetch<ContentSeriesCategory>(`/content-series/${seriesSlug}/categories`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateContentSeriesCategory(
+  seriesSlug: string,
+  categoryId: string,
+  input: ContentSeriesCategoryInput,
+): Promise<ContentSeriesCategory> {
+  return apiFetch<ContentSeriesCategory>(
+    `/content-series/${seriesSlug}/categories/${categoryId}`,
+    { method: "PATCH", body: JSON.stringify(input) },
+  );
+}
+
+export function deleteContentSeriesCategory(seriesSlug: string, categoryId: string): Promise<void> {
+  return apiFetch<void>(`/content-series/${seriesSlug}/categories/${categoryId}`, {
+    method: "DELETE",
+  });
+}
+
+export function moveContentSeriesCategory(
+  seriesSlug: string,
+  categoryId: string,
+  direction: "up" | "down",
+): Promise<ContentSeriesCategory> {
+  return apiFetch<ContentSeriesCategory>(
+    `/content-series/${seriesSlug}/categories/${categoryId}/move`,
+    { method: "POST", body: JSON.stringify({ direction }) },
+  );
+}
+
+export type ContentSeriesEntryInput = {
+  categoryId?: string;
+  title?: string;
+  slug?: string;
+  subtitle?: string;
+  icon?: string;
+  source?: string;
+  contentMarkdown?: string;
+  installTabs?: ContentSeriesInstallTab[];
+  faq?: ContentSeriesFaqItem[];
+  readTimeMinutes?: number;
+};
+
+export function createContentSeriesEntry(
+  seriesSlug: string,
+  input: ContentSeriesEntryInput & { categoryId: string; title: string; contentMarkdown: string },
+): Promise<ContentSeriesEntryDetail> {
+  return apiFetch<ContentSeriesEntryDetail>(`/content-series/${seriesSlug}/entries`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateContentSeriesEntry(
+  seriesSlug: string,
+  entryId: string,
+  input: ContentSeriesEntryInput,
+): Promise<ContentSeriesEntryDetail> {
+  return apiFetch<ContentSeriesEntryDetail>(`/content-series/${seriesSlug}/entries/${entryId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteContentSeriesEntry(seriesSlug: string, entryId: string): Promise<void> {
+  return apiFetch<void>(`/content-series/${seriesSlug}/entries/${entryId}`, { method: "DELETE" });
+}
+
+export function moveContentSeriesEntry(
+  seriesSlug: string,
+  entryId: string,
+  direction: "up" | "down",
+): Promise<ContentSeriesEntryDetail> {
+  return apiFetch<ContentSeriesEntryDetail>(
+    `/content-series/${seriesSlug}/entries/${entryId}/move`,
+    { method: "POST", body: JSON.stringify({ direction }) },
+  );
+}
