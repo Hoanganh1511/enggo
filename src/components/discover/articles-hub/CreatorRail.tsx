@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { followUserAction } from "@/actions/discover/follow-user";
 import { useIsMobileViewport } from "@/lib/use-is-mobile-viewport";
 import { cn } from "@/lib/utils";
@@ -88,29 +88,39 @@ function CreatorTile({
 
   const avatar = (
     <div className="relative">
-      {/* Dang theo doi (khong phai chinh minh) - vong tron nhap nhay CHAM
-          (2.4s, khac han "animate-ping" mac dinh cua Tailwind - qua nhanh/
-          gat mat khi 10+ avatar cung nhap nhay lien tuc trong 1 hang cuon)
-          bao "ban dang theo doi nguoi nay", KHONG can doc chu. */}
-      {following && !isSelf && (
-        <span
-          aria-hidden="true"
-          className="animate-creator-following-pulse absolute inset-0 rounded-full bg-emerald-500/60"
-        />
-      )}
+      {/* Dang theo doi (khong phai chinh minh) - hieu ung anim TRUOC la 1
+          vong tron phong to/mo dan (scale vuot ra ngoai avatar) - vua giong
+          "story ring" (Instagram/Facebook) gay hieu nham sai nghia, VUA bi
+          ScrollableRow (overflow-x-auto) tu ep overflow-y thanh hidden nen
+          cat cut phan tren/duoi cua vong tron luc no phinh ra. Doi sang
+          box-shadow INSET (nam HAN BEN TRONG khung avatar, khong bao gio
+          vuot qua bien - object nay VON DA co border-radius nen shadow tu
+          bo cong theo, tuyet doi khong bi ancestor overflow cat) - "tho"
+          nhe dan mo-ro cua vien xanh, doc hon han kieu vong tron ben ngoai. */}
       <Image
         src={creator.avatarUrl}
         alt={creator.name}
         width={48}
         height={48}
         className={cn(
-          "relative size-12 shrink-0 rounded-full object-cover shadow-sm",
-          following && !isSelf ? "border-2 border-emerald-500" : "border-2 border-white",
+          "relative size-12 shrink-0 rounded-full border-2 object-cover shadow-sm",
+          following && !isSelf
+            ? "animate-creator-following-glow border-emerald-500"
+            : "border-white",
         )}
       />
+      {/* Dang theo doi: 1 dau check TINH (khong anim) o dung vi tri dau "+"
+          cu - noi ro rang "ban dang theo doi", khong con la story ring nua. */}
+      {following && !isSelf && (
+        <span
+          aria-hidden="true"
+          className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-sm"
+        >
+          <Check size={11} strokeWidth={2.5} />
+        </span>
+      )}
       {/* Dau "+" theo doi nhanh - AN HAN neu la chinh minh (khong the tu
-          theo doi minh) HOAC da theo doi roi (thay bang vong nhap nhay o
-          tren). */}
+          theo doi minh) HOAC da theo doi roi (thay bang dau check o tren). */}
       {!following && !isSelf && (
         <button
           type="button"
