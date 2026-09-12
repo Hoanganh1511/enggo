@@ -115,3 +115,10 @@ export function updatePost(
     body: JSON.stringify({ ...(data ? { data } : {}), ...opts }),
   });
 }
+
+// Xoa vinh vien bai da dang (chi tac gia, 404 neu khong phai cua minh - xem
+// PostService.remove). Backend cascade xoa het like/comment/saved/collection
+// item lien quan, FE khong can don dep gi them.
+export function deletePost(id: string): Promise<void> {
+  return apiFetch<void>(`/posts/${id}`, { method: "DELETE" });
+}

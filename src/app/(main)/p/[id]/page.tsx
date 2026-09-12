@@ -145,6 +145,7 @@ export default async function PostDetailPage({
           initialSaved={post.savedByMe}
           commentCount={post.stats.comments}
           isOwner={post.isOwner ?? false}
+          visibility={post.visibility}
         />
 
         <ArticleAuthorCard

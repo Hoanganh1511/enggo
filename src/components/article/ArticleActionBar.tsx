@@ -2,16 +2,33 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bookmark, Check, Folder, Heart, Link2, MessageCircle, Pencil, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Bookmark,
+  Check,
+  Eye,
+  EyeOff,
+  Folder,
+  Heart,
+  Link2,
+  MessageCircle,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { formatCompact } from "@/lib/format-number";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { getCollectionMembershipAction } from "@/actions/discover/collections/get-collection-membership";
 import { addToCollectionAction } from "@/actions/discover/collections/add-to-collection";
 import { removeFromCollectionAction } from "@/actions/discover/collections/remove-from-collection";
 import { toggleLikePostAction } from "@/actions/discover/toggle-like-post";
 import { toggleSavePostAction } from "@/actions/discover/toggle-save-post";
+import { updatePostAction } from "@/actions/discover/update-post";
+import { deletePostAction } from "@/actions/discover/delete-post";
 import { CreateCollectionModal } from "@/components/collections/CreateCollectionModal";
 import type { CollectionMembership } from "@/lib/api/collections";
 
@@ -29,6 +46,7 @@ export function ArticleActionBar({
   initialSaved = false,
   commentCount,
   isOwner = false,
+  visibility,
 }: {
   postId?: string;
   initialLikes: number;
@@ -36,6 +54,7 @@ export function ArticleActionBar({
   initialSaved?: boolean;
   commentCount: number;
   isOwner?: boolean;
+  visibility?: "draft" | "public" | "limited";
 }) {
   const [liked, setLiked] = useState(initialLiked);
   const [likes, setLikes] = useState(initialLikes);
@@ -158,6 +177,7 @@ export function ArticleActionBar({
             Sửa bài
           </Link>
         )}
+        {isOwner && postId && <OwnerMoreMenu postId={postId} visibility={visibility} />}
         <button
           type="button"
           onClick={handleShare}
@@ -305,5 +325,96 @@ function AddToCollectionButton({ postId }: { postId: string }) {
         }}
       />
     </>
+  );
+}
+
+// Menu "..." rieng cho chu bai (Huy dang / Dang lai + Xoa vinh vien) - tach
+// khoi 2 nut chinh (Like/Luu/Sua bai) vi day la hanh dong ANH HUONG TOAN BAI
+// (an khoi feed hoac mat han), can 1 buoc bam THEM (mo popover) truoc khi
+// thuc hien, tranh bam nham. "Hủy đăng" chi doi visibility -> draft (dung
+// lai updatePostAction da co san, KHONG phai API rieng) - bai KHONG bi xoa,
+// chi an khoi feed/tim kiem (PostService.findAll da loc visibility=PUBLIC
+// cho nguoi khac). Xoa goi API DELETE that (PostService.remove, moi them).
+function OwnerMoreMenu({
+  postId,
+  visibility,
+}: {
+  postId: string;
+  visibility?: "draft" | "public" | "limited";
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const isDraft = visibility === "draft";
+
+  async function handleToggleVisibility() {
+    setPending(true);
+    try {
+      await updatePostAction(postId, undefined, { visibility: isDraft ? "public" : "draft" });
+      toast.success(isDraft ? "Đã đăng lại bài viết" : "Đã hủy đăng - bài chuyển về nháp");
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      toast.danger(getApiErrorMessage(err, "Không thực hiện được, thử lại sau."));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!window.confirm("Xoá vĩnh viễn bài viết này? Không thể hoàn tác.")) return;
+    setPending(true);
+    try {
+      await deletePostAction(postId);
+      toast.success("Đã xoá bài viết");
+      router.push("/home");
+    } catch (err) {
+      toast.danger(getApiErrorMessage(err, "Xoá thất bại, thử lại sau."));
+      setPending(false);
+    }
+  }
+
+  return (
+    <PopoverRoot open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Thêm tuỳ chọn"
+          title="Thêm tuỳ chọn"
+          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+        >
+          <MoreHorizontal size={17} strokeWidth={2} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        open={open}
+        align="end"
+        sideOffset={6}
+        className="z-50 w-52 overflow-hidden rounded-md border border-border bg-surface p-1.5 shadow-dropdown"
+      >
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleToggleVisibility}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-ink hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isDraft ? (
+            <Eye size={14} strokeWidth={1.8} />
+          ) : (
+            <EyeOff size={14} strokeWidth={1.8} />
+          )}
+          {isDraft ? "Đăng lại" : "Hủy đăng (về nháp)"}
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleDelete}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm text-danger hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Trash2 size={14} strokeWidth={1.8} />
+          Xoá bài viết
+        </button>
+      </PopoverContent>
+    </PopoverRoot>
   );
 }

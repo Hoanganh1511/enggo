@@ -3,13 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronDown, Eye, FileText, Pencil } from "lucide-react";
+import { ChevronDown, Eye, FileText, Pencil, Trash2 } from "lucide-react";
 import {
   PopoverRoot,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import { toast } from "@/lib/toast/toast-store";
+import { getApiErrorMessage } from "@/lib/api/client";
 import { listPostsAction } from "@/actions/discover/list-posts";
+import { deletePostAction } from "@/actions/discover/delete-post";
 import { getPostTitle } from "@/components/discover/home-feed/post-display";
 import { formatRelativeTime } from "@/lib/format-time";
 import type { Post } from "@/content/home-feed-mock";
@@ -28,12 +31,26 @@ function PostRow({
   post,
   open,
   onOpenChange,
+  onDeleted,
 }: {
   post: Post;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleted: (postId: string) => void;
 }) {
   const router = useRouter();
+
+  async function handleDelete() {
+    onOpenChange(false);
+    if (!window.confirm("Xoá vĩnh viễn bài viết này? Không thể hoàn tác.")) return;
+    try {
+      await deletePostAction(post.id);
+      toast.success("Đã xoá bài viết");
+      onDeleted(post.id);
+    } catch (err) {
+      toast.danger(getApiErrorMessage(err, "Xoá thất bại, thử lại sau."));
+    }
+  }
 
   return (
     <PopoverRoot open={open} onOpenChange={onOpenChange}>
@@ -80,6 +97,14 @@ function PostRow({
         >
           <Pencil size={13} strokeWidth={1.8} />
           Sửa bài
+        </button>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs text-danger transition-colors duration-150 ease-out hover:bg-hover-bg"
+        >
+          <Trash2 size={13} strokeWidth={1.8} />
+          Xoá bài
         </button>
       </PopoverContent>
     </PopoverRoot>
@@ -169,6 +194,9 @@ export function RecentPostsMenu() {
                 post={post}
                 open={openRowId === post.id}
                 onOpenChange={(rowOpen) => setOpenRowId(rowOpen ? post.id : null)}
+                onDeleted={(deletedId) =>
+                  setPosts((prev) => prev.filter((p) => p.id !== deletedId))
+                }
               />
             ))}
         </div>
