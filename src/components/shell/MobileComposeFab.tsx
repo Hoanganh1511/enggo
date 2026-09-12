@@ -13,6 +13,15 @@ import { useMobileFabBottomOffset } from "@/lib/use-mobile-fab-bottom-offset";
 // chong nhau cung 1 vi tri fixed). bottom dong (useMobileFabBottomOffset) -
 // tu day len cao hon o /p/[id] de khong bi ArticleActionBar (cum fixed
 // duoi cung, xem file do) de len.
+//
+// /messages CUNG an - khung soan tin + nut Gui nam O CUOI luong bo cuc binh
+// thuong (khong phai fixed), nen FAB fixed nay se de THANG len tren, cu the
+// la de dung vao nut Gui (yeu cau nguoi dung bao loi 2026-09-13). Chieu cao
+// khung soan CO GIAN theo noi dung go (textarea max-h-24), khac
+// ArticleActionBar (cao co dinh 56px) nen KHONG the tinh 1 offset co dinh
+// nhu o do - an han FAB la giai phap on dinh nhat, cung hop ly ve UX: dang
+// trong 1 cuoc tro chuyen toan man hinh thi "Viet bai" noi la thua, khong
+// giong /p/[id] (van con ngu canh doc bai can thao tac khac).
 export function MobileComposeFab() {
   const pathname = usePathname();
   const bottom = useMobileFabBottomOffset();
@@ -21,7 +30,12 @@ export function MobileComposeFab() {
   // con hien FAB nay du dang o thang trong trang compose, vua thua vua de
   // dam vao nut fixed rieng cua trang do (xem nut "Đến phần cấu hình" trong
   // Composer.tsx).
-  if (pathname.startsWith("/compose") || pathname === "/home") return null;
+  if (
+    pathname.startsWith("/compose") ||
+    pathname === "/home" ||
+    pathname === "/messages"
+  )
+    return null;
 
   return (
     <Link
