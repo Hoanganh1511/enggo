@@ -12,6 +12,13 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: "2026-09-12-big-update",
+    date: "2026-09-12",
+    title: "Big update: giao diện mới + hàng loạt tính năng",
+    description:
+      "Giao diện được làm mới toàn diện. Đã có: Bộ sưu tập bài viết, soạn bài viết, quản lý thông tin cá nhân, trang cá nhân, thích, bình luận, đã lưu, và chia sẻ bài viết.",
+  },
+  {
     id: "2026-08-22-group-chat",
     date: "2026-08-22",
     title: "Nhóm chat",
