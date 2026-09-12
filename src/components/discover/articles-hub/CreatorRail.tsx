@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Plus } from "lucide-react";
 import { followUserAction } from "@/actions/discover/follow-user";
 import { useIsMobileViewport } from "@/lib/use-is-mobile-viewport";
@@ -63,6 +64,8 @@ function CreatorTile({
   onOpenPreview: () => void;
   isMobile: boolean;
 }) {
+  const { data: session } = useSession();
+  const isSelf = session?.username === creator.username;
   const [following, setFollowing] = useState(creator.isFollowing ?? false);
   const [pending, setPending] = useState(false);
 
@@ -85,14 +88,30 @@ function CreatorTile({
 
   const avatar = (
     <div className="relative">
+      {/* Dang theo doi (khong phai chinh minh) - vong tron nhap nhay CHAM
+          (2.4s, khac han "animate-ping" mac dinh cua Tailwind - qua nhanh/
+          gat mat khi 10+ avatar cung nhap nhay lien tuc trong 1 hang cuon)
+          bao "ban dang theo doi nguoi nay", KHONG can doc chu. */}
+      {following && !isSelf && (
+        <span
+          aria-hidden="true"
+          className="animate-creator-following-pulse absolute inset-0 rounded-full bg-emerald-500/60"
+        />
+      )}
       <Image
         src={creator.avatarUrl}
         alt={creator.name}
         width={48}
         height={48}
-        className="size-12 shrink-0 rounded-full border-2 border-white object-cover shadow-sm"
+        className={cn(
+          "relative size-12 shrink-0 rounded-full object-cover shadow-sm",
+          following && !isSelf ? "border-2 border-emerald-500" : "border-2 border-white",
+        )}
       />
-      {!following && (
+      {/* Dau "+" theo doi nhanh - AN HAN neu la chinh minh (khong the tu
+          theo doi minh) HOAC da theo doi roi (thay bang vong nhap nhay o
+          tren). */}
+      {!following && !isSelf && (
         <button
           type="button"
           onClick={handleQuickFollow}

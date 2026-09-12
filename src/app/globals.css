@@ -394,6 +394,26 @@ body {
   animation: heart-like-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Vong tron "dang theo doi" quanh avatar trong CreatorRail.tsx - phong to
+   dan + mo dan (kieu radar ping), CHAM hon han utility "animate-ping" mac
+   dinh cua Tailwind (1s) - hang nay co the cuon 10+ avatar cung luc, ping
+   nhanh se nhap nhay hon loan, 2.4s + easing giong "ease-out" tu nhien hon
+   phu hop 1 trang thai THUONG TRUC (dang theo doi) thay vi 1 thong bao gap. */
+@keyframes creator-following-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70%,
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+.animate-creator-following-pulse {
+  animation: creator-following-pulse 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* Khoi tieu de/mo ta cua ArticlesHero.tsx - fade+truot nhe MOI LAN doi slide
    (key={active} tren cha ep remount lai, xem component) - bao "vua doi noi
    dung" thay vi nhay khung ngay lap tuc. */
