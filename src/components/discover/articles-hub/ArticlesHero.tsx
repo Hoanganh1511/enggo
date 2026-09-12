@@ -146,10 +146,17 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
 
   return (
     <>
-      {/* Mobile/tablet (<lg) - dai ngan gon, chi doi TAGLINE theo slide dang
-          xoay (khong du cho hien ca title/description day du nhu ban
-          desktop) - anh nen cung doi theo de dong bo cam giac "dang xoay". */}
-      <section className="relative flex h-16 items-center overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] sm:h-20 lg:hidden">
+      {/* Mobile/tablet (<lg) - CAO HON HAN ban truoc (h-16/h-20 -> h-48/h-56)
+          de thay ro anh nen tung slide, khong chi 1 dai mong bi gradient che
+          gan het. BO nut rieng (truoc day hardcode "Viết ngay" + PenLine cho
+          MOI slide, sai/gay nham voi 3 slide con lai von la AI/Bo suu tap/
+          Theo doi, khong phai viet bai) - ca THE la 1 <Link> lon, bam dau
+          cung dieu huong dung toi trang tinh nang cua slide do (giu nguyen
+          slide.getHref), khong mat kha nang bam nhu ban button nho truoc. */}
+      <Link
+        href={slide.getHref(writeHref)}
+        className="relative flex h-48 items-end overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] sm:h-56 lg:hidden"
+      >
         <Image
           key={slide.image}
           src={slide.image}
@@ -157,19 +164,28 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
           fill
           className="object-cover transition-opacity duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent" />
-        <div className="relative z-10 flex w-full items-center justify-between gap-3 px-4">
-          <p className="font-content line-clamp-2 text-[13px] font-semibold text-white sm:text-sm">
+        {/* Gradient tu DUOI len (khac ban cu trai-phai) - khop voi chu gio
+            dat o day (bottom-aligned), giong dung kieu FEATURE_TILES ben duoi. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 via-55% to-transparent" />
+        <div key={active} className="animate-hero-slide-in font-content relative z-10 w-full px-5 pb-5">
+          <p className="line-clamp-2 text-[16px] leading-snug font-semibold text-white">
             {slide.tagline}
           </p>
-          <Link
-            href={slide.getHref(writeHref)}
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-[13px] font-semibold text-[var(--foreground)] transition hover:-translate-y-px hover:shadow-md"
-          >
-            <PenLine size={13} aria-hidden="true" /> Viết ngay
-          </Link>
+          {/* Cham dot - them cho mobile (truoc chi co o ban desktop) de bao
+              "dang xoay nhieu slide" ro rang hon khi da bo nut. */}
+          <div className="mt-3 flex gap-1.5">
+            {HERO_SLIDES.map((s, i) => (
+              <span
+                key={s.image}
+                className={cn(
+                  "h-1 rounded-full transition-all duration-300",
+                  i === active ? "w-5 bg-white" : "w-1 bg-white/50",
+                )}
+              />
+            ))}
+          </div>
         </div>
-      </section>
+      </Link>
 
       <section className="hidden gap-4 xl:grid-cols-[7fr_3fr] lg:grid">
       <div className="relative min-h-[210px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] md:min-h-[238px]">
