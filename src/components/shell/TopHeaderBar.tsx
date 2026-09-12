@@ -289,8 +289,12 @@ function HeaderIconChip({
     >
       <Icon size={16} strokeWidth={2} />
       {badge && (
+        // h-4 min-w-4 (KHONG phai h-2 min-w-2 nhu truoc) - chu text-[10px]
+        // ben trong can toi thieu ~14-16px chieu cao moi vua khop, h-2 (8px)
+        // qua nho khien chu day tran ra ngoai khung tron, nhin nhu bi bop
+        // meo (bao loi nguoi dung).
         <span
-          className="absolute -top-1 -right-1 grid h-2 min-w-2 place-items-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-surface"
+          className="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold text-white ring-2 ring-surface"
           style={{ background: "var(--primary)" }}
         >
           {badge}

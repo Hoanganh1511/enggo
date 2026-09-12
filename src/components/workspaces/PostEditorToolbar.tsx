@@ -20,6 +20,8 @@ import {
   ImageIcon,
   CircleHelp,
   Table as TableIcon,
+  Rows3,
+  Columns3,
   TriangleAlert,
   OctagonAlert,
   Lightbulb,
@@ -160,6 +162,23 @@ export function PostEditorToolbar({
         onClick={addGlossaryHint}
       />
       <Btn label="Bảng" Icon={TableIcon} active={editor.isActive("table")} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
+      {/* Chi bam duoc khi con tro DANG O TRONG 1 bang - insertTable() o tren
+          chi tao bang co dinh 3x3, truoc day KHONG co cach nao them hang/cot
+          sau do (bao loi nguoi dung). addRowAfter/addColumnAfter la lenh co
+          san cua @tiptap/extension-table (prosemirror-tables), chi thieu nut
+          bam. */}
+      <Btn
+        label="Thêm hàng"
+        Icon={Rows3}
+        disabled={!editor.can().addRowAfter()}
+        onClick={() => editor.chain().focus().addRowAfter().run()}
+      />
+      <Btn
+        label="Thêm cột"
+        Icon={Columns3}
+        disabled={!editor.can().addColumnAfter()}
+        onClick={() => editor.chain().focus().addColumnAfter().run()}
+      />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />
