@@ -12,6 +12,13 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    id: "2026-09-13-series",
+    date: "2026-09-13",
+    title: "Series - chuỗi bài/kỹ năng nhiều phần",
+    description:
+      "Mục Series mới trong sidebar: chuỗi bài chia theo category, đọc lần lượt có mục lục, điều hướng bài trước/sau, cài đặt (install widget) và FAQ cho từng bài.",
+  },
+  {
     id: "2026-09-12-big-update",
     date: "2026-09-12",
     title: "Big update: giao diện mới + hàng loạt tính năng",
