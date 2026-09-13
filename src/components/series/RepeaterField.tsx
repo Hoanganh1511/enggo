@@ -56,16 +56,22 @@ export function RepeaterField<T>({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* KHONG animate `height`/dung `overflow-hidden` o day - tung se lam
+          vay (height:0 -> auto) nhung no CLIP mat dropdown cua
+          PostLinkAutocomplete (khong dung Portal nhu PopoverContent, chi la
+          1 div absolute BEN TRONG hang) khien cac hang bi de/che len nhau -
+          nguoi dung bao loi. Chi dung opacity/y/scale (khong dong cham chieu
+          cao) + `layout` de framer-motion tu FLIP vi tri cac hang con lai,
+          van muot ma ma khong can clip gi ca. */}
       <AnimatePresence initial={false}>
         {items.map((item, index) => (
           <motion.div
             key={keys[index]}
             layout
-            initial={{ opacity: 0, height: 0, y: -6 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -6 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
           >
             <div className="flex items-start gap-2 rounded-lg border border-border p-2.5">
               <div className="min-w-0 flex-1">
