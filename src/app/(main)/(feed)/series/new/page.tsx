@@ -10,7 +10,7 @@ export default async function NewSeriesPage() {
   if (!status.isAdmin) notFound();
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="w-full">
       <h1 className="text-[22px] font-bold text-ink">Tạo Series mới</h1>
       <div className="mt-6">
         <SeriesForm />

@@ -20,7 +20,7 @@ export default async function SeriesListPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="w-full">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-extrabold tracking-tight text-ink">Series</h1>

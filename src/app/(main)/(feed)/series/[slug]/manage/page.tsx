@@ -24,7 +24,7 @@ export default async function SeriesManagePage({
   if (!series) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl pb-20">
+    <div className="w-full pb-20">
       <Link
         href={`/series/${slug}`}
         className="mb-4 flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"

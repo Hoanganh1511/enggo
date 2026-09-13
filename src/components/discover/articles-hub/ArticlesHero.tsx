@@ -187,7 +187,7 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
         </div>
       </Link>
 
-      <section className="hidden gap-4 xl:grid-cols-[7fr_3fr] lg:grid">
+      <section className="hidden gap-4 xl:grid-cols-[6fr_4fr] lg:grid">
       <div className="relative min-h-[210px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] md:min-h-[238px]">
         <Image
           key={slide.image}
@@ -245,7 +245,7 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
         {FEATURE_TILES.map((tile) => (
           <div
             key={tile.image}
-            className={`group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-transform duration-200 ease-out hover:-translate-y-0.5 ${tile.className ?? ""}`}
+            className={`group relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-card)] transition-transform duration-200 ease-out hover:-translate-y-0.5 ${tile.className ?? ""}`}
           >
             {/* Lop 1: anh nen thuan tuy. */}
             <Image

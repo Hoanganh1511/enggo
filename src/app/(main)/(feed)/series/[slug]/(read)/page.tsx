@@ -19,7 +19,7 @@ export default async function SeriesOverviewPage({
   if (!series) notFound();
 
   return (
-    <div className="max-w-3xl pb-20">
+    <div className="w-full pb-20">
       <h1 className="text-[30px] font-extrabold tracking-tight text-ink">{series.title}</h1>
       <div className="mt-3">
         <DocsMarkdown markdown={series.description} />

@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import { UserRound } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { createContentSeriesAction } from "@/actions/discover/content-series/create-content-series";
 import { updateContentSeriesAction } from "@/actions/discover/content-series/update-content-series";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
+import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
+import { PostLinkAutocomplete } from "@/components/series/PostLinkAutocomplete";
+import { SeriesLivePreview } from "@/components/series/SeriesLivePreview";
 import type {
   ContentSeriesOverview,
   ContentSeriesStat,
@@ -28,16 +34,28 @@ const labelClass = "mb-1 block text-[13px] font-medium text-ink";
 // Form Cap 1 (Thong tin chung Series) - dung chung cho ca tao moi va sua, xem
 // SeriesCreateForm/SeriesInfoPanel goi component nay. Repeater cho
 // stats/installTabs/externalLinks dung chung RepeaterField.tsx.
+//
+// Bo cuc 2 cot: form ben trai + SeriesLivePreview ben phai (sticky, tu update
+// theo TUNG state ben tren - React re-render 2 ben CUNG 1 lan nen "đồng bộ"
+// la mac dinh, khong can co che dong bo rieng) - yeu cau nguoi dung "biết cụ
+// thể điền cái này sẽ hiển thị tương ứng ở đâu".
 export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const isEdit = Boolean(initial);
   const [saving, setSaving] = useState(false);
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  // Sua: giu ten/avatar da luu (co the la 1 ten nhom nhu "Career Tree Team",
+  // khong nhat thiet la 1 tai khoan that) va cho sua tay lai. Tao moi: LUON
+  // la tai khoan dang dang nhap - "Tác giả thì lấy luôn tài khoản hiện tại
+  // khi tạo" - khong hien input, khoi phai go lai ten/avatar co san.
   const [authorName, setAuthorName] = useState(initial?.authorName ?? "");
   const [authorAvatarUrl, setAuthorAvatarUrl] = useState(initial?.authorAvatarUrl ?? "");
+  const effectiveAuthorName = isEdit ? authorName : (session?.user?.name ?? "");
+  const effectiveAuthorAvatarUrl = isEdit ? authorAvatarUrl : (session?.user?.image ?? "");
   const [emailCourseEnabled, setEmailCourseEnabled] = useState(
     initial?.emailCourseEnabled ?? false,
   );
@@ -64,8 +82,8 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !authorName.trim()) {
-      toast.danger("Điền đủ Tiêu đề, Mô tả, Tác giả trước đã.");
+    if (!title.trim() || !description.trim() || !effectiveAuthorName.trim()) {
+      toast.danger("Điền đủ Tiêu đề, Mô tả trước đã (cần đăng nhập để lấy tác giả).");
       return;
     }
     setSaving(true);
@@ -74,8 +92,8 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
         title,
         slug: slug.trim() || undefined,
         description,
-        authorName,
-        authorAvatarUrl: authorAvatarUrl.trim() || undefined,
+        authorName: effectiveAuthorName,
+        authorAvatarUrl: effectiveAuthorAvatarUrl.trim() || undefined,
         emailCourseEnabled,
         emailCourseTitle: emailCourseTitle.trim() || undefined,
         emailCourseDescription: emailCourseDescription.trim() || undefined,
@@ -101,214 +119,243 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div>
-        <label className={labelClass}>Tiêu đề *</label>
-        <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
-      </div>
-      <div>
-        <label className={labelClass}>Slug</label>
-        <input
-          className={inputClass}
-          value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-          placeholder="tự sinh từ tiêu đề nếu để trống"
-        />
-      </div>
-      <div>
-        <label className={labelClass}>Mô tả * (hỗ trợ markdown: **đậm**, `code`, [link](url))</label>
-        <textarea
-          className={`${inputClass} min-h-24 resize-y`}
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="flex flex-col gap-8 lg:flex-row">
+      <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-col gap-6">
         <div>
-          <label className={labelClass}>Tên tác giả *</label>
+          <label className={labelClass}>Tiêu đề *</label>
+          <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>Slug</label>
           <input
             className={inputClass}
-            value={authorName}
-            onChange={(e) => setAuthorName(e.target.value)}
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            placeholder="tự sinh từ tiêu đề nếu để trống"
           />
         </div>
         <div>
-          <label className={labelClass}>Avatar tác giả (URL)</label>
-          <input
-            className={inputClass}
-            value={authorAvatarUrl}
-            onChange={(e) => setAuthorAvatarUrl(e.target.value)}
+          <label className={labelClass}>
+            Mô tả * (hỗ trợ markdown: **đậm**, `code`, [link](url))
+          </label>
+          <textarea
+            className={`${inputClass} min-h-24 resize-y`}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
-      </div>
 
-      <div>
-        <label className="mb-2 block text-[13px] font-semibold text-ink">Stats Bar</label>
-        <RepeaterField
-          items={stats}
-          onChange={setStats}
-          newItem={(): ContentSeriesStat => ({ label: "", value: "" })}
-          addLabel="Thêm stat"
-          renderRow={(item, update, remove) => (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+        <div>
+          <label className={labelClass}>Tác giả</label>
+          {isEdit ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <input
                 className={inputClass}
-                placeholder="Label"
-                value={item.label}
-                onChange={(e) => update({ label: e.target.value })}
+                placeholder="Tên tác giả"
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
               />
               <input
                 className={inputClass}
-                placeholder="Value"
-                value={item.value}
-                onChange={(e) => update({ value: e.target.value })}
+                placeholder="Avatar (URL)"
+                value={authorAvatarUrl}
+                onChange={(e) => setAuthorAvatarUrl(e.target.value)}
               />
-              <input
-                className={inputClass}
-                placeholder="Icon (lucide, vd Star)"
-                value={item.icon ?? ""}
-                onChange={(e) => update({ icon: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Link (tuỳ chọn)"
-                value={item.link ?? ""}
-                onChange={(e) => update({ link: e.target.value })}
-              />
-              <RemoveRowButton onClick={remove} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 rounded-lg border border-border bg-surface-muted px-3 py-2">
+              {effectiveAuthorAvatarUrl ? (
+                <Image
+                  src={effectiveAuthorAvatarUrl}
+                  alt=""
+                  width={28}
+                  height={28}
+                  className="size-7 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface text-ink-faint">
+                  <UserRound size={15} />
+                </div>
+              )}
+              <span className="text-[13px] text-ink">
+                {effectiveAuthorName || "Đang tải tài khoản..."}
+              </span>
+              <span className="ml-auto text-[11px] text-ink-faint">tài khoản hiện tại</span>
             </div>
           )}
-        />
-      </div>
+        </div>
 
-      <div>
-        <label className="mb-2 block text-[13px] font-semibold text-ink">
-          Install Methods (mặc định của Series)
-        </label>
-        <RepeaterField
-          items={installTabs}
-          onChange={setInstallTabs}
-          newItem={(): ContentSeriesInstallTab => ({ label: "", command: "" })}
-          addLabel="Thêm install tab"
-          renderRow={(item, update, remove) => (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-start gap-2">
-                <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
-                  <input
-                    className={inputClass}
-                    placeholder="Tab label (vd All agents)"
-                    value={item.label}
-                    onChange={(e) => update({ label: e.target.value })}
-                  />
-                  <input
-                    className={`${inputClass} font-mono`}
-                    placeholder="Command"
-                    value={item.command}
-                    onChange={(e) => update({ command: e.target.value })}
-                  />
-                </div>
+        <div>
+          <label className="mb-2 block text-[13px] font-semibold text-ink">Stats Bar</label>
+          <RepeaterField
+            items={stats}
+            onChange={setStats}
+            newItem={(): ContentSeriesStat => ({ label: "", value: "" })}
+            addLabel="Thêm stat"
+            renderRow={(item, update, remove) => (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_1fr_1fr_auto]">
+                <SeriesIconPicker value={item.icon} onChange={(name) => update({ icon: name })} />
+                <input
+                  className={inputClass}
+                  placeholder="Label"
+                  value={item.label}
+                  onChange={(e) => update({ label: e.target.value })}
+                />
+                <input
+                  className={inputClass}
+                  placeholder="Value"
+                  value={item.value}
+                  onChange={(e) => update({ value: e.target.value })}
+                />
+                <PostLinkAutocomplete
+                  className={inputClass}
+                  placeholder="Link (tuỳ chọn) - gõ để tìm bài viết của bạn"
+                  value={item.link ?? ""}
+                  onChange={(link) => update({ link })}
+                />
                 <RemoveRowButton onClick={remove} />
               </div>
-              <input
-                className={inputClass}
-                placeholder="Ghi chú (tuỳ chọn)"
-                value={item.note ?? ""}
-                onChange={(e) => update({ note: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Link tham khảo (tuỳ chọn)"
-                value={item.link ?? ""}
-                onChange={(e) => update({ link: e.target.value })}
-              />
-            </div>
-          )}
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-[13px] font-semibold text-ink">External Links</label>
-        <RepeaterField
-          items={externalLinks}
-          onChange={setExternalLinks}
-          newItem={(): ContentSeriesExternalLink => ({ label: "", url: "" })}
-          addLabel="Thêm link"
-          renderRow={(item, update, remove) => (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
-              <input
-                className={inputClass}
-                placeholder="Label"
-                value={item.label}
-                onChange={(e) => update({ label: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="URL"
-                value={item.url}
-                onChange={(e) => update({ url: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Icon (lucide, vd Github)"
-                value={item.icon ?? ""}
-                onChange={(e) => update({ icon: e.target.value })}
-              />
-              <RemoveRowButton onClick={remove} />
-            </div>
-          )}
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block text-[13px] font-semibold text-ink">Share Channels</label>
-        <div className="flex flex-wrap gap-3">
-          {SHARE_CHANNEL_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-1.5 text-[13px]">
-              <input
-                type="checkbox"
-                checked={shareChannels.includes(opt.value)}
-                onChange={() => toggleShareChannel(opt.value)}
-              />
-              {opt.label}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border p-4">
-        <label className="flex items-center gap-2 text-[13px] font-semibold text-ink">
-          <input
-            type="checkbox"
-            checked={emailCourseEnabled}
-            onChange={(e) => setEmailCourseEnabled(e.target.checked)}
+            )}
           />
-          Email Course
-        </label>
-        {emailCourseEnabled && (
-          <div className="mt-3 flex flex-col gap-3">
-            <input
-              className={inputClass}
-              placeholder="Tiêu đề CTA"
-              value={emailCourseTitle}
-              onChange={(e) => setEmailCourseTitle(e.target.value)}
-            />
-            <textarea
-              className={`${inputClass} min-h-16 resize-y`}
-              placeholder="Mô tả"
-              value={emailCourseDescription}
-              onChange={(e) => setEmailCourseDescription(e.target.value)}
-            />
-          </div>
-        )}
-      </div>
+        </div>
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="cursor-pointer self-start rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-surface transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo Series"}
-      </button>
-    </form>
+        <div>
+          <label className="mb-2 block text-[13px] font-semibold text-ink">
+            Install Methods (mặc định của Series)
+          </label>
+          <RepeaterField
+            items={installTabs}
+            onChange={setInstallTabs}
+            newItem={(): ContentSeriesInstallTab => ({ label: "", command: "" })}
+            addLabel="Thêm install tab"
+            renderRow={(item, update, remove) => (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+                    <input
+                      className={inputClass}
+                      placeholder="Tab label (vd All agents)"
+                      value={item.label}
+                      onChange={(e) => update({ label: e.target.value })}
+                    />
+                    <input
+                      className={`${inputClass} font-mono`}
+                      placeholder="Command"
+                      value={item.command}
+                      onChange={(e) => update({ command: e.target.value })}
+                    />
+                  </div>
+                  <RemoveRowButton onClick={remove} />
+                </div>
+                <input
+                  className={inputClass}
+                  placeholder="Ghi chú (tuỳ chọn)"
+                  value={item.note ?? ""}
+                  onChange={(e) => update({ note: e.target.value })}
+                />
+                <input
+                  className={inputClass}
+                  placeholder="Link tham khảo (tuỳ chọn)"
+                  value={item.link ?? ""}
+                  onChange={(e) => update({ link: e.target.value })}
+                />
+              </div>
+            )}
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-[13px] font-semibold text-ink">External Links</label>
+          <RepeaterField
+            items={externalLinks}
+            onChange={setExternalLinks}
+            newItem={(): ContentSeriesExternalLink => ({ label: "", url: "" })}
+            addLabel="Thêm link"
+            renderRow={(item, update, remove) => (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_1fr_auto]">
+                <SeriesIconPicker value={item.icon} onChange={(name) => update({ icon: name })} />
+                <input
+                  className={inputClass}
+                  placeholder="Label"
+                  value={item.label}
+                  onChange={(e) => update({ label: e.target.value })}
+                />
+                <input
+                  className={inputClass}
+                  placeholder="URL"
+                  value={item.url}
+                  onChange={(e) => update({ url: e.target.value })}
+                />
+                <RemoveRowButton onClick={remove} />
+              </div>
+            )}
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-[13px] font-semibold text-ink">Share Channels</label>
+          <div className="flex flex-wrap gap-3">
+            {SHARE_CHANNEL_OPTIONS.map((opt) => (
+              <label key={opt.value} className="flex items-center gap-1.5 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={shareChannels.includes(opt.value)}
+                  onChange={() => toggleShareChannel(opt.value)}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border p-4">
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+            <input
+              type="checkbox"
+              checked={emailCourseEnabled}
+              onChange={(e) => setEmailCourseEnabled(e.target.checked)}
+            />
+            Email Course
+          </label>
+          {emailCourseEnabled && (
+            <div className="mt-3 flex flex-col gap-3">
+              <input
+                className={inputClass}
+                placeholder="Tiêu đề CTA"
+                value={emailCourseTitle}
+                onChange={(e) => setEmailCourseTitle(e.target.value)}
+              />
+              <textarea
+                className={`${inputClass} min-h-16 resize-y`}
+                placeholder="Mô tả"
+                value={emailCourseDescription}
+                onChange={(e) => setEmailCourseDescription(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={saving}
+          className="cursor-pointer self-start rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-surface transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo Series"}
+        </button>
+      </form>
+
+      <div className="w-full shrink-0 lg:sticky lg:top-6 lg:h-fit lg:w-105">
+        <SeriesLivePreview
+          title={title}
+          description={description}
+          stats={stats}
+          installTabs={installTabs}
+          externalLinks={externalLinks}
+          emailCourseEnabled={emailCourseEnabled}
+          emailCourseTitle={emailCourseTitle}
+          emailCourseDescription={emailCourseDescription}
+        />
+      </div>
+    </div>
   );
 }
