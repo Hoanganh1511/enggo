@@ -41,20 +41,25 @@ function CategoryNode({
 
   return (
     <div>
+      {/* Ten category PHAI noi bat hon entry con ben duoi (chu dam, mau dam -
+          text-ink) de nhin vao thay ngay cap bac cha/con - truoc day dung
+          chu nho/in hoa/mau nhat (text-ink-faint) nen LAT NGUOC do dam nhat:
+          entry con (font thuong) lai noi bat hon ten nhom cha, gay kho phan
+          biet cau truc (yeu cau nguoi dung). */}
       <p
-        className="flex items-center gap-1.5 px-2.5 text-[11px] font-semibold tracking-wide text-ink-faint uppercase"
+        className="flex items-center gap-1.5 px-2.5 text-[13px] font-bold text-ink"
         style={{ paddingLeft: `${10 + depth * 12}px` }}
       >
         {category.colorHex && (
           <span
-            className="inline-block size-1.5 shrink-0 rounded-full"
+            className="inline-block size-2 shrink-0 rounded-full"
             style={{ backgroundColor: category.colorHex }}
             aria-hidden="true"
           />
         )}
         {category.title}
       </p>
-      <div className="mt-1.5 flex flex-col gap-0.5">
+      <div className="mt-2 flex flex-col gap-0.5">
         {entries.map((entry) => {
           const href = `/series/${seriesSlug}/${entry.slug}`;
           const active = pathname === href;
@@ -117,7 +122,7 @@ export function SeriesSidebar({
   for (const list of entriesByCategory.values()) list.sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
-    <nav className="flex flex-col gap-5">
+    <nav className="flex flex-col gap-6">
       {roots.map((root) => (
         <CategoryNode
           key={root.id}
