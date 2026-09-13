@@ -41,13 +41,15 @@ function CategoryNode({
 
   return (
     <div>
-      {/* Ten category PHAI noi bat hon entry con ben duoi (chu dam, mau dam -
-          text-ink) de nhin vao thay ngay cap bac cha/con - truoc day dung
-          chu nho/in hoa/mau nhat (text-ink-faint) nen LAT NGUOC do dam nhat:
-          entry con (font thuong) lai noi bat hon ten nhom cha, gay kho phan
-          biet cau truc (yeu cau nguoi dung). */}
+      {/* Ten category van noi bat hon entry con ben duoi de thay ngay cap
+          bac cha/con, nhung KHONG dung font-bold/text-ink (qua dam, chenh
+          lech gay gat voi entry - yeu cau nguoi dung "đừng bold đậm, cho
+          font size nhỏ đi, nhẹ nhàng phân cấp"): chi con size nho hon 1 chut
+          (12px, dong bo voi entry) + font-semibold (vua du de tach lop, khong
+          dam nhu font-bold) + mau text-ink-muted (nhat hon text-ink nhung
+          van dam hon text-ink-faint cua entry). */}
       <p
-        className="flex items-center gap-1.5 px-2.5 text-[13px] font-bold text-ink"
+        className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-ink-muted"
         style={{ paddingLeft: `${10 + depth * 12}px` }}
       >
         {category.colorHex && (
