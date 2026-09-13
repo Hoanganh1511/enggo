@@ -76,13 +76,26 @@ function CategoryNode({
               key={entry.id}
               href={href}
               className={cn(
-                "truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
+                "relative truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
                 active
-                  ? "bg-primary-soft font-medium text-primary"
+                  ? "font-medium text-[#8F3F4D]"
                   : "text-[rgba(20,22,26,0.62)] hover:bg-hover-bg hover:text-[rgba(20,22,26,0.85)]",
               )}
               style={{ paddingLeft: `${18 + depth * 12}px` }}
             >
+              {/* Thanh chi bao active - THAY cho nen xanh --primary-soft cu
+                  (yeu cau nguoi dung: khong dung mau xanh nua). Dung dung mau
+                  #8F3F4D cua nut "Viết bài" tren header (xem TopHeaderBar.tsx)
+                  de dong bo 1 "accent" duy nhat cho hanh dong/trang thai dang
+                  chon xuyen suot app. left-0 CO DINH (khong theo paddingLeft
+                  thut le tung depth) - bam sat mep trai CA hang, dung quy uoc
+                  active-indicator quen thuoc cua sidebar dang cay. */}
+              {active && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-0 bottom-0 left-0 w-0.5 rounded-full bg-[#8F3F4D]"
+                />
+              )}
               {entry.icon && <span className="mr-1.5">{entry.icon}</span>}
               {entry.title}
             </Link>
