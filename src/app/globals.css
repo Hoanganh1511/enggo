@@ -230,6 +230,22 @@
   --shadow-hover: 0 8px 24px rgba(16, 24, 40, 0.08);
 }
 
+/* Font RIENG cho khu vuc Series (/series/**, xem series/layout.tsx) - theo
+   thiet ke nguoi dung dua ra: Heading/Body/Nav deu Inter (chi khac WEIGHT qua
+   cac class font-bold/font-medium... da co san trong code), Code dung
+   JetBrains Mono. Khai bao `font-family` THANG (khong chi doi bien --font-sans)
+   vi font-family la thuoc tinh KE THUA - text KHONG dung class .font-* nao ca
+   (vd h1/p thuong) chi ke thua gia tri da TINH SAN tu <body> (IBM Plex Mono),
+   doi rieng bien --font-sans o day se KHONG anh huong nguoc len cac phan tu do.
+   --font-content/--font-mono van can ghi de RIENG vi 2 class .font-content/
+   .font-mono tu doc lai var() ngay tai noi dung, se lay dung gia tri gan nhat
+   (cua khu vuc nay) thay vi gia tri goc o :root. */
+.series-scope {
+  font-family: var(--font-inter);
+  --font-content: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -242,7 +258,7 @@
      trong @theme tu dong co utility cung ten). Ap truc tiep tren tung cum
      text noi dung, xem cac component da doi (PostCard, post-bodies,
      ArticleDetailPanel, DocsMarkdown, DiaryEntrySlides, ArticleComments...). */
-  --font-content: var(--font-dm-sans);
+  --font-content: var(--font-be-vietnam-pro);
 
   /* Doi mac dinh cua Tailwind (1rem/16px) xuong 14px theo yeu cau nguoi
      dung - CHI anh huong noi nao dung class "text-base" that su (khong dung

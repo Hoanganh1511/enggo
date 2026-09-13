@@ -108,7 +108,7 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
         </div>
 
         {/* font-content: vung NOI DUNG (breadcrumb chu de/than bai/thong tin
-            tac gia+thoi gian) dung DM Sans, khac --font-sans mac dinh (Plex
+            tac gia+thoi gian) dung Be Vietnam Pro, khac --font-sans mac dinh (Plex
             Mono, danh cho UI/dieu huong - menu 3 cham/ActionBar ben ngoai
             vung nay khong boc). */}
         <div className="font-content contents">
@@ -226,7 +226,7 @@ const PostCard = ({ post, variant = "timeline" }: PostCardProps) => {
           </div>
 
           {/* font-content: vung NOI DUNG (breadcrumb + than bai) dung
-              DM Sans - xem nhanh variant="card" o tren cho quy uoc chi tiet. */}
+              Be Vietnam Pro - xem nhanh variant="card" o tren cho quy uoc chi tiet. */}
           <div className="font-content">
             {post.topic && (
               <div className="mt-0.5">

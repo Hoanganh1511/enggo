@@ -23,7 +23,7 @@ export function SeriesStatsBar({
 
   return (
     // font-content: stat value/label + label link ngoai la NOI DUNG (thong
-    // tin hien thi), dung DM Sans thay --font-sans mac dinh (UI/dieu huong) -
+    // tin hien thi), dung Be Vietnam Pro thay --font-sans mac dinh (UI/dieu huong) -
     // rieng icon lucide khong bi anh huong boi font-family nen khong can tru.
     <div className="font-content mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
       {stats.map((stat) => {

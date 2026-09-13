@@ -207,7 +207,7 @@ export function ArticlesHero({ writeHref }: { writeHref: string }) {
           key={active}
           className="animate-hero-slide-in relative z-10 flex min-h-[238px] max-w-[520px] flex-col justify-center px-5 py-5 sm:px-7 sm:py-6 md:px-10"
         >
-          {/* font-content: tieu de + mo ta la NOI DUNG, dung DM Sans - 1 nut
+          {/* font-content: tieu de + mo ta la NOI DUNG, dung Be Vietnam Pro - 1 nut
               CTA ben duoi la UI, khong boc. */}
           <h1 className="font-content text-[32px] leading-[1.14] font-bold tracking-[-.03em] text-white md:text-[42px]">
             {slide.title}

@@ -29,29 +29,36 @@ export default async function SeriesLayout({
   if (!series) notFound();
 
   return (
+    // Sidebar mau KHAC noi dung ben phai (bg-surface-muted vs bg-surface mac
+    // dinh cua content) - yeu cau nguoi dung, khop mockup. `<aside>` KHONG dat
+    // h-fit de tu gian theo align-items:stretch mac dinh cua flex row cha
+    // (min-h-full), cho khoi mau phu HET chieu cao trang; phan nav ben trong
+    // moi la <div sticky> (dinh khi cuon), tach rieng khoi khoi mau ngoai.
     <div className="flex min-h-full gap-8">
-      <aside className="sticky top-6 hidden h-fit w-60 shrink-0 lg:block">
-        <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
-          <Link
-            href="/series"
-            className="flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-          >
-            <ArrowLeft size={13} />
-            Tất cả series
-          </Link>
-          {status.isAdmin && (
+      <aside className="hidden w-64 shrink-0 rounded-xl bg-surface-muted lg:block">
+        <div className="sticky top-6 p-5">
+          <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
             <Link
-              href={`/series/${slug}/manage`}
-              aria-label="Quản lý series"
-              title="Quản lý series"
-              className="text-ink-faint hover:text-ink"
+              href="/series"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
             >
-              <Settings size={14} />
+              <ArrowLeft size={13} />
+              Tất cả series
             </Link>
-          )}
+            {status.isAdmin && (
+              <Link
+                href={`/series/${slug}/manage`}
+                aria-label="Quản lý series"
+                title="Quản lý series"
+                className="text-ink-faint hover:text-ink"
+              >
+                <Settings size={14} />
+              </Link>
+            )}
+          </div>
+          <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
+          <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
         </div>
-        <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
-        <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
       </aside>
 
       <div className="min-w-0 flex-1">{children}</div>

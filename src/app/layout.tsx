@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import {
   IBM_Plex_Mono,
-  DM_Sans,
+  Be_Vietnam_Pro,
   Geist_Mono,
   Noto_Serif,
   Playfair_Display,
+  Inter,
+  JetBrains_Mono,
 } from "next/font/google";
 import "./globals.css";
 import NextTopLoader from "nextjs-toploader";
@@ -24,19 +26,25 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 // Font cho NOI DUNG (khac component/dieu huong) - tieu de bai/tai lieu, than
 // bai, mo ta, binh luan, cac thong tin hien thi... noi chung MOI cho khong
-// phai nut/nhan/tab/sidebar dieu huong deu dung DM Sans thay vi
+// phai nut/nhan/tab/sidebar dieu huong deu dung Be Vietnam Pro thay vi
 // --font-plex-mono (font chinh, chi danh cho UI/dieu huong). Ap qua class
 // tien ich .font-content (xem globals.css --font-content) tren tung cum text
-// noi dung, KHONG doi --font-sans mac dinh (se keo theo ca UI). Doi tu
-// Manrope sang DM Sans theo yeu cau nguoi dung.
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
+// noi dung, KHONG doi --font-sans mac dinh (se keo theo ca UI).
+//
+// Da doi qua 2 lan: Manrope -> DM Sans -> Be Vietnam Pro. DM Sans BI LOI
+// tieng Viet - next/font/google chi cho subset "latin"/"latin-ext" voi font
+// nay (KHONG co "vietnamese"), va "latin-ext" (Latin Extended-A, danh cho
+// tieng Trung/Dong Au) KHONG bao gom khoi Latin Extended Additional
+// (U+1EA0-1EF9) ma tieng Viet dung cho cac nguyen am co dau to hop (ệ/ị/ẵ/ộ/
+// ử...) - nhung ky tu do bi fallback sang font khac, chu nhin lech/khong
+// dong bo voi phan con lai. Be Vietnam Pro co subset "vietnamese" THAT (thiet
+// ke rieng cho tieng Viet), kieu dang geometric-humanist gan giong DM Sans
+// (tron, hien dai, de doc) nen giu duoc tinh than yeu cau ban dau ma khong
+// con loi.
+const beVietnamPro = Be_Vietnam_Pro({
+  variable: "--font-be-vietnam-pro",
   weight: ["400", "500", "600", "700", "800"],
-  // DM Sans KHONG co subset "vietnamese" rieng tren Google Fonts (khac
-  // Manrope truoc day) - dung "latin-ext" (Latin Extended, bao gom phan lon
-  // to hop dau tieng Viet) de van hien dung dau, cung cach da lam voi
-  // Playfair Display o duoi.
-  subsets: ["latin", "latin-ext"],
+  subsets: ["vietnamese", "latin"],
 });
 
 const geistMono = Geist_Mono({
@@ -68,10 +76,30 @@ const playfairDisplay = Playfair_Display({
   weight: ["600"],
   style: ["italic"],
   // Playfair Display KHONG co subset "vietnamese" rieng tren Google Fonts
-  // (khac Noto Serif/DM Sans o tren) - dung "latin-ext" (Latin Extended,
+  // (khac Noto Serif/Be Vietnam Pro o tren) - dung "latin-ext" (Latin Extended,
   // bao gom phan lon to hop dau tieng Viet) de van co glyph day du cho cum
   // "cả cuộc đời" thay vi rong subset.
   subsets: ["latin", "latin-ext"],
+});
+
+// Rieng cho khu vuc Series (/series/**, xem series-scope trong globals.css) -
+// theo thiet ke rieng nguoi dung dua ra cho module nay (Heading/Body/Nav deu
+// Inter, chi khac o WEIGHT co san qua cac class font-bold/font-medium... da
+// dung san trong code, KHONG doi font toan app - Inter tung bi thay boi IBM
+// Plex Mono truoc day theo 1 yeu cau RIENG, van giu nguyen ngoai pham vi Series).
+const inter = Inter({
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700", "800"],
+  subsets: ["vietnamese", "latin"],
+});
+
+// Code trong khu vuc Series (command cai dat, source badge...) - JetBrains
+// Mono theo thiet ke, thay the --font-mono mac dinh (Geist Mono) CHI trong
+// pham vi .series-scope.
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  weight: ["400", "500"],
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -93,7 +121,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexMono.variable} ${dmSans.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} h-full antialiased`}
+      className={`${ibmPlexMono.variable} ${beVietnamPro.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning CHI o body, KHONG lan xuong children - can
           thiet vi mot so extension trinh duyet (vd ColorZilla) tu chen

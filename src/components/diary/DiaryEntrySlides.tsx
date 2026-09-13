@@ -91,7 +91,7 @@ export function DiaryEntrySlides({
             >
               <div className="flex items-start justify-between gap-2">
                 {/* font-content: ngay/tieu de/noi dung entry la NOI DUNG doc
-                    lai, dung DM Sans - menu Sua/Xoa ben canh la UI. */}
+                    lai, dung Be Vietnam Pro - menu Sua/Xoa ben canh la UI. */}
                 <div className="font-content flex items-center gap-1.5 text-xs font-medium text-ink-faint">
                   <CalendarDays size={13} style={{ color: ACCENT }} />
                   {formatDate(entry.entryDate)}

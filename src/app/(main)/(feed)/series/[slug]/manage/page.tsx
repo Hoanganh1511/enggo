@@ -27,7 +27,7 @@ export default async function SeriesManagePage({
     <div className="w-full pb-20">
       <Link
         href={`/series/${slug}`}
-        className="mb-4 flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
+        className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
       >
         <ArrowLeft size={13} />
         Xem trang công khai

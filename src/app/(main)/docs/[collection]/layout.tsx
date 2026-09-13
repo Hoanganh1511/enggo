@@ -56,7 +56,7 @@ export default async function DocsCollectionLayout({
       <aside className="sticky top-6 hidden h-fit w-56 shrink-0 lg:block">
         <Link
           href="/docs"
-          className="mb-4 flex items-center gap-1.5 px-2.5 text-xs font-medium text-ink-faint hover:text-ink"
+          className="mb-4 inline-flex items-center gap-1.5 px-2.5 text-xs font-medium text-ink-faint hover:text-ink"
         >
           <ArrowLeft size={13} />
           Tất cả tài liệu

@@ -6,7 +6,7 @@
 // 2 noi cung style cho DUNG 1 bo the HTML chuan (h1/h2/p/ul/code/pre...) nen
 // hop ly de trung noi dung - chi khac o CHO import, khong khac o Y NGHIA.
 export const DOCS_PROSE_CLASS =
-  // font-content: noi dung tai lieu doc lau dung DM Sans thay --font-sans
+  // font-content: noi dung tai lieu doc lau dung Be Vietnam Pro thay --font-sans
   // mac dinh (UI/dieu huong) - [&_code]/[&_pre] ben duoi van font-mono rieng
   // (quy uoc code luon monospace, khong lien quan rule content/UI nay).
   "font-content max-w-none text-[15px] leading-[1.75] text-ink focus:outline-none " +

@@ -29,10 +29,10 @@ export function SeriesIconPicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-9 w-24 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-surface px-2 text-[12px] text-ink-muted hover:bg-hover-bg"
+          className="flex h-9 w-28 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2 text-[12px] text-ink-muted hover:bg-hover-bg"
         >
-          <SeriesIconGlyph name={value} size={15} />
-          {value || "Chọn icon"}
+          <SeriesIconGlyph name={value} size={15} className="shrink-0" />
+          <span className="min-w-0 flex-1 truncate text-left">{value || "Chọn icon"}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent

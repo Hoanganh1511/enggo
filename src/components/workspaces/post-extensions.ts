@@ -180,7 +180,7 @@ export const OVERVIEW_PROSE_CLASS =
 // Class prose dung chung - style cho moi loai block (heading/list/table/
 // callout/code/image...). Ap cho ca EditorContent (soan) va vung render doc.
 export const POST_PROSE_CLASS =
-  // font-content: noi dung tai lieu/bai viet dung DM Sans thay --font-sans
+  // font-content: noi dung tai lieu/bai viet dung Be Vietnam Pro thay --font-sans
   // mac dinh (UI/dieu huong) - [&_code]/[&_pre] ben duoi van font-mono rieng.
   "font-content max-w-none text-[15px] leading-[1.75] text-ink focus:outline-none " +
   "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:text-[30px] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:tracking-tight " +
