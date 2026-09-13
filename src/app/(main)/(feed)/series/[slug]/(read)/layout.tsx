@@ -38,7 +38,7 @@ export default async function SeriesLayout({
     // khong dinh sat canh) chuyen vao BEN TRONG tung nua (sidebar/content) o
     // day thay vi o ngoai.
     <div className="-mx-4 -my-6 flex min-h-[calc(100%+3rem)] sm:-mx-6 lg:-mx-10">
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-muted lg:block">
+      <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
         <div className="sticky top-0 p-6">
           <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
             <Link
