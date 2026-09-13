@@ -236,3 +236,29 @@ export function moveContentSeriesEntry(
     { method: "POST", body: JSON.stringify({ direction }) },
   );
 }
+
+// Keo tha (che do "Sắp xếp", xem SeriesTreeManager.tsx) - FE tu tinh thu tu
+// cuoi cung (arrayMove) roi gui nguyen 1 mang id, thay vi goi move up/down
+// nhieu lan.
+export function reorderContentSeriesCategories(
+  seriesSlug: string,
+  orderedIds: string[],
+): Promise<ContentSeriesCategory[]> {
+  return apiFetch<ContentSeriesCategory[]>(`/content-series/${seriesSlug}/categories/reorder`, {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
+  });
+}
+
+// Keo tha entry - CHI trong pham vi 1 category (xem comment
+// reorderEntriesInCategory o backend ve ly do khong gop chung toan Series).
+export function reorderContentSeriesEntriesInCategory(
+  seriesSlug: string,
+  categoryId: string,
+  orderedIds: string[],
+): Promise<ContentSeriesEntrySummary[]> {
+  return apiFetch<ContentSeriesEntrySummary[]>(
+    `/content-series/${seriesSlug}/categories/${categoryId}/entries/reorder`,
+    { method: "POST", body: JSON.stringify({ orderedIds }) },
+  );
+}
