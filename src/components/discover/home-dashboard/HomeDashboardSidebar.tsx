@@ -109,7 +109,7 @@ function SidebarBody({
         </div>
       </div> */}
 
-      <nav className="mt-9 space-y-1" aria-label="Điều hướng chính">
+      <nav className=" space-y-1" aria-label="Điều hướng chính">
         {PRIMARY_NAV.map((entry) => {
           if (entry.kind === "coming-soon") {
             // Chua co trang that - disabled trung thuc thay vi dan toi 1
