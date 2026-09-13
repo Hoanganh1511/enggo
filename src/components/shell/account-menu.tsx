@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import {
-  BookText,
   ChevronDown,
   Settings,
   SunMoon,
@@ -126,12 +125,6 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
             icon={User}
             label="Profile"
             href={username ? `/u/${username}` : undefined}
-            onNavigate={() => setOpen(false)}
-          />
-          <MenuRow
-            icon={BookText}
-            label="Workspace"
-            href={username ? `/workspace/${username}` : undefined}
             onNavigate={() => setOpen(false)}
           />
           <MenuRow

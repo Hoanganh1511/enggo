@@ -62,8 +62,8 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { getPostExtensions, POST_PROSE_CLASS } from "@/components/workspaces/post-extensions";
-import { PostEditorToolbar } from "@/components/workspaces/PostEditorToolbar";
+import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-extensions";
+import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
 
 type PublishVisibility = "draft" | "public" | "limited";
 type RightTab = "publish" | "ai";

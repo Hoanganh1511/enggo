@@ -393,22 +393,18 @@ export type ApiObjective = {
 // Ban rut gon cho danh sach (khong keo `content`).
 export type ApiDocumentSummary = Omit<ApiDocument, "content">;
 
-// 1 luot hoi/dap voi Tro ly AI cua workspace - client giu nguyen mang nay
-// (khong luu DB) va gui lai het moi lan hoi tiep de giu ngu canh nhieu luot.
+// 1 luot hoi/dap voi Tro ly AI cua bai dang (Composer.tsx tab "Trợ lý AI",
+// xem post-assistant module o backend) - client giu nguyen mang nay (khong
+// luu DB) va gui lai het moi lan hoi tiep de giu ngu canh nhieu luot.
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
-// He thong thong bao - phuc vu luong yeu cau cong tac nhom kien thuc va
-// follow (xem NotificationService o backend). `collabId` dung de FE goi
-// thang endpoint duyet/tu choi tu chinh dropdown thong bao (tab "Yêu cầu"),
-// KHONG phai 1 quan he Prisma that (xem comment trong schema.prisma).
-export type ApiNotificationType =
-  | "GROUP_COLLAB_REQUESTED"
-  | "GROUP_COLLAB_APPROVED"
-  | "GROUP_COLLAB_REJECTED"
-  | "FOLLOW";
+// He thong thong bao - truoc day con phuc vu luong "yeu cau cong tac nhom
+// kien thuc" (3 loai GROUP_COLLAB_*, kem group/collabId) da bo cung tinh
+// nang Workspace/KnowledgeGroup (2026-09-14). Gio chi con FOLLOW.
+export type ApiNotificationType = "FOLLOW";
 
 export type ApiNotification = {
   id: string;
@@ -419,13 +415,6 @@ export type ApiNotification = {
     name: string;
     avatarUrl: string | null;
   } | null;
-  group: {
-    id: string;
-    name: string;
-    workspaceId: string;
-    ownerUsername: string | null;
-  } | null;
-  collabId: string | null;
   read: boolean;
   createdAt: string;
 };

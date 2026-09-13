@@ -123,14 +123,11 @@ export function getSelfStatus(): Promise<{
   );
 }
 
-// Hoan tat/bo qua modal chao mung - CO firstChapterTitle se tao that 1
-// Workspace + 1 KnowledgeGroup dau tien, xem UserService.completeOnboarding.
-export function completeOnboarding(dto: {
-  goal?: string;
-  firstChapterTitle?: string;
-}): Promise<{ workspaceId: string | null; groupId: string | null }> {
-  return apiFetch<{ workspaceId: string | null; groupId: string | null }>(
-    "/users/me/onboarding",
-    { method: "POST", body: JSON.stringify(dto) },
-  );
+// Hoan tat/bo qua modal chao mung - chi luu goal + onboardedAt, khong con
+// tao Workspace/KnowledgeGroup nao (tinh nang do da bi bo, 2026-09-14).
+export function completeOnboarding(dto: { goal?: string }): Promise<void> {
+  return apiFetch<void>("/users/me/onboarding", {
+    method: "POST",
+    body: JSON.stringify(dto),
+  });
 }

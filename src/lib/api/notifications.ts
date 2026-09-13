@@ -1,15 +1,14 @@
 import { apiFetch } from "./client";
 import type { ApiNotification, ApiNotificationPage } from "./types";
 
-export type NotificationFilter = "all" | "requests";
-
+// Truoc day co filter "requests" (yeu cau cong tac nhom kien thuc, da bo
+// cung tinh nang Workspace/KnowledgeGroup 2026-09-14) - gio chi con 1 danh
+// sach FOLLOW duy nhat.
 export function listNotifications(
-  filter: NotificationFilter = "all",
   cursor?: string,
   limit?: number,
 ): Promise<ApiNotificationPage> {
   const params = new URLSearchParams();
-  if (filter === "requests") params.set("filter", "requests");
   if (cursor) params.set("cursor", cursor);
   if (limit) params.set("limit", String(limit));
   const qs = params.toString();

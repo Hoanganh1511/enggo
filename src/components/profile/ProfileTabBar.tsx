@@ -3,13 +3,11 @@
 import Link from "next/link";
 import {
   Bookmark,
-  BriefcaseBusiness,
   FileText,
   Folder,
   Heart,
   History,
   Home,
-  ListVideo,
   type LucideIcon,
 } from "lucide-react";
 import { useProfileContext } from "./profile-context";
@@ -31,18 +29,6 @@ function buildTabs(username: string): TabItem[] {
   return [
     { key: "home", label: "Trang chủ", icon: Home, href: base },
     { key: "posts", label: "Bài đăng", icon: FileText, href: `${base}/posts` },
-    {
-      key: "workspace",
-      label: "Workspace",
-      icon: BriefcaseBusiness,
-      href: `/workspace/${username}`,
-    },
-    {
-      key: "playlists",
-      label: "Danh sách phát",
-      icon: ListVideo,
-      href: `${base}/playlists`,
-    },
     {
       key: "collections",
       label: "Bộ sưu tập",

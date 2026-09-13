@@ -1,5 +1,5 @@
 // Class prose CHO RIENG trang /docs - COPY tu POST_PROSE_CLASS
-// (components/workspaces/post-extensions.ts) thay vi import truc tiep, vi
+// (components/compose/post-extensions.ts) thay vi import truc tiep, vi
 // file do import ca cay extension Tiptap (`Node` tu @tiptap/react...) o cap
 // module - keo theo no vao 1 Server Component (DocsMarkdown.tsx) lam build
 // loi ("Node.create is not a function") luc Next.js "collect page data".

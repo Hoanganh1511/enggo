@@ -4,7 +4,7 @@ import {
   getPostContentText,
   parseContentLines,
 } from "@/lib/discover/article-content";
-import { POST_PROSE_CLASS } from "@/components/workspaces/post-extensions";
+import { POST_PROSE_CLASS } from "@/components/compose/post-extensions";
 
 // Kind "text" co richContent (JSON Tiptap tu Composer.tsx) -> render HTML
 // that (html da duoc render SAN o page.tsx qua renderTiptapHTML(), truyen

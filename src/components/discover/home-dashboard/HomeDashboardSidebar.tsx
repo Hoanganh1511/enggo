@@ -87,12 +87,10 @@ const PRIMARY_NAV: NavEntry[] = [
 function SidebarBody({
   pathname,
   displayName,
-  username,
   onNavigate,
 }: {
   pathname: string;
   displayName: string;
-  username: string | undefined;
   onNavigate?: () => void;
 }) {
   return (
@@ -167,14 +165,6 @@ function SidebarBody({
           <Settings size={18} aria-hidden="true" />
           Settings
         </Link>
-        <Link
-          href={username ? `/workspace/${username}` : "/home"}
-          onClick={onNavigate}
-          className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[14px] text-slate-600 hover:bg-slate-50"
-        >
-          <Target size={18} aria-hidden="true" />
-          Workspace
-        </Link>
       </nav>
 
       <div className="mt-auto px-1 pb-1 text-[13px] leading-5 text-slate-400">
@@ -199,16 +189,11 @@ function SidebarBody({
 export function HomeDashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const username = session?.username;
   const displayName = session?.user?.name ?? "Bạn";
 
   return (
     <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
-      <SidebarBody
-        pathname={pathname}
-        displayName={displayName}
-        username={username}
-      />
+      <SidebarBody pathname={pathname} displayName={displayName} />
     </aside>
   );
 }
@@ -220,7 +205,6 @@ export function HomeDashboardSidebar() {
 export function DashboardSidebarDrawer() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const username = session?.username;
   const displayName = session?.user?.name ?? "Bạn";
   const drawerOpen = useDashboardSidebarDrawerStore((s) => s.open);
   const setDrawerOpen = useDashboardSidebarDrawerStore((s) => s.setOpen);
@@ -257,7 +241,6 @@ export function DashboardSidebarDrawer() {
             <SidebarBody
               pathname={pathname}
               displayName={displayName}
-              username={username}
               onNavigate={() => setDrawerOpen(false)}
             />
           </motion.div>

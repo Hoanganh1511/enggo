@@ -9,7 +9,7 @@ import {
 } from "@/components/discover/home-feed/post-display";
 import { getPostContentText } from "@/lib/discover/article-content";
 import { renderTiptapHTML } from "@/lib/discover/render-tiptap-html";
-import { getPostExtensions } from "@/components/workspaces/post-extensions";
+import { getPostExtensions } from "@/components/compose/post-extensions";
 import { ArticleHeader } from "@/components/article/ArticleHeader";
 import { ArticleTableOfContents } from "@/components/article/ArticleTableOfContents";
 import { ArticleSidebar } from "@/components/article/ArticleSidebar";

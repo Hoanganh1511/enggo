@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { GroupIconGlyph } from "@/components/workspaces/group-icons";
+import { GroupIconGlyph } from "./group-icons";
 import type { ApiJourneyGroup } from "@/lib/api/types";
 
 // Bang mau xoay theo index - PHONG DUNG 5 tong mau (nen gradient + ribbon)

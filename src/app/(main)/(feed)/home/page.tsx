@@ -25,7 +25,9 @@ import type { Author } from "@/content/home-feed-mock";
 export default async function ArticlesPage() {
   const session = await auth();
   const username = session?.username ?? null;
-  const writeHref = username ? `/workspace/${username}` : "/login";
+  // Truoc day tro toi /workspace/[username] - da xoa cung tinh nang
+  // Workspace (2026-09-14), gio dan thang toi trang soan bai that.
+  const writeHref = username ? "/compose" : "/login";
 
   const [rawPosts, attentionCollections, categoryTree] = await Promise.all([
     listPostsAction({ limit: 48 }).catch(() => []),

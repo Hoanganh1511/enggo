@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   ChevronLeft,
   Compass,
-  Feather,
   GraduationCap,
   Sparkles,
   Target,
@@ -18,13 +16,13 @@ import { completeOnboardingAction } from "@/actions/users/complete-onboarding";
 import { toast } from "@/lib/toast/toast-store";
 import type { LucideIcon } from "lucide-react";
 
-// Modal chao mung 3 buoc cho user MOI (chua co onboardedAt) tren /home - port
-// 1-1 UI/UX/animation tu demo nguoi dung dua (cung tong kem/serif/cam
-// #d95b16 voi JourneyHero.tsx - dung lai dung ky thuat inline style cho
-// gradient/clip-path/skew). Khac demo: goi API THAT o 2 diem —
-// dong som (X) chi danh dau da onboard, hoan tat buoc 3 TAO THAT 1
-// Workspace + 1 KnowledgeGroup dau tien (xem UserService.completeOnboarding
-// o backend) roi dieu huong thang vao do.
+// Modal chao mung 2 buoc cho user MOI (chua co onboardedAt) tren /home - port
+// UI/UX/animation tu demo nguoi dung dua (cung tong kem/serif/cam #d95b16
+// voi JourneyHero.tsx - dung lai dung ky thuat inline style cho
+// gradient/clip-path/skew). Truoc day co them buoc 3 "dat ten chuong dau
+// tien" TAO THAT 1 Workspace + 1 KnowledgeGroup roi dieu huong vao do - da bo
+// cung tinh nang Workspace/KnowledgeGroup (2026-09-14), gio hoan tat ngay
+// sau khi chon goal o buoc 2 (chi luu goal, khong con tao gi ca).
 const GOAL_CHOICES: {
   value: string;
   title: string;
@@ -60,56 +58,31 @@ const GOAL_CHOICES: {
 const ORANGE = "#d95b16";
 
 export function WelcomeOnboardingModal({
-  username,
   name,
 }: {
   username: string;
   name: string;
 }) {
-  const router = useRouter();
   const [open, setOpen] = useState(true);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [goal, setGoal] = useState<string | null>(null);
-  const [chapterTitle, setChapterTitle] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Dong som (X, hoac bam ra ngoai) - chi danh dau da onboard, KHONG tao
-  // Workspace/KnowledgeGroup rong nao (chua co ten chuong). Chay nen, khong
-  // chan UI - nguoi dung da thay modal dong ngay.
+  // Dong som (X, hoac bam ra ngoai) - chi danh dau da onboard.
   function skip() {
     setOpen(false);
     void completeOnboardingAction({ goal: goal ?? undefined });
   }
 
   async function handleSubmit() {
-    const title = chapterTitle.trim();
-    if (!title || submitting) return;
+    if (submitting) return;
     setSubmitting(true);
     try {
-      const result = await completeOnboardingAction({
-        goal: goal ?? undefined,
-        firstChapterTitle: title,
-      });
-      // CHI dong modal (setOpen(false)) khi da co du id de dieu huong -
-      // truoc day dong modal VO DIEU KIEN ngay sau khi request thanh cong,
-      // nen neu workspaceId/groupId vi ly do gi do rong thi modal da dong
-      // ma khong dieu huong di dau - nhin nhu "bam khong co phan hoi gi".
-      if (result.workspaceId && result.groupId) {
-        router.push(
-          `/workspace/${username}/${result.workspaceId}/group/${result.groupId}`,
-        );
-      } else {
-        // API tra ve thanh cong nhung thieu id (khong nen xay ra voi
-        // firstChapterTitle da gui) - bao loi ro thay vi im lang "khong
-        // dieu huong" nhu truoc.
-        toast.danger("Tạo chương đầu tiên thất bại, thử lại sau.");
-        setSubmitting(false);
-        return;
-      }
+      await completeOnboardingAction({ goal: goal ?? undefined });
       setOpen(false);
     } catch (err) {
       console.error("completeOnboarding failed", err);
-      toast.danger("Tạo chương đầu tiên thất bại, thử lại sau.");
+      toast.danger("Có lỗi xảy ra, thử lại sau.");
       setSubmitting(false);
     }
   }
@@ -352,88 +325,7 @@ export function WelcomeOnboardingModal({
                       </button>
                       <button
                         type="button"
-                        disabled={goal === null}
-                        onClick={() => setStep(3)}
-                        className="flex min-h-11.25 items-center justify-center gap-2.25 rounded-[10px] px-5 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
-                        style={{
-                          background: ORANGE,
-                          boxShadow: "0 9px 22px rgba(217,91,22,.25)",
-                        }}
-                      >
-                        Tiếp tục <ArrowRight size={16} />
-                      </button>
-                    </div>
-                  </motion.section>
-                )}
-
-                {step === 3 && (
-                  <motion.section
-                    key="s3"
-                    className="flex w-full flex-col items-center pt-10.5"
-                    initial={{ opacity: 0, x: 25 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -25 }}
-                  >
-                    <small
-                      className="text-[9px] font-extrabold"
-                      style={{ color: ORANGE, letterSpacing: "0.2em" }}
-                    >
-                      TRANG ĐẦU TIÊN
-                    </small>
-                    <div
-                      className="my-3 grid size-15.5 place-items-center rounded-full border"
-                      style={{
-                        background: "#fff0e3",
-                        borderColor: "#f1c9ab",
-                        color: ORANGE,
-                      }}
-                    >
-                      <Feather size={25} />
-                    </div>
-                    <h2
-                      className="text-[32px] leading-[1]"
-                      style={{
-                        fontFamily: "var(--font-serif-book)",
-                        fontWeight: 500,
-                        letterSpacing: "-0.03em",
-                        color: "#342b23",
-                      }}
-                    >
-                      Hãy đặt tên cho
-                      <br />
-                      <span style={{ color: ORANGE }}>chương đầu tiên.</span>
-                    </h2>
-                    <p
-                      className="mt-3 text-[13px]"
-                      style={{ color: "#8d7968" }}
-                    >
-                      Không cần hoàn hảo. Chỉ cần là điều bạn muốn bắt đầu.
-                    </p>
-                    <textarea
-                      autoFocus
-                      value={chapterTitle}
-                      onChange={(e) => setChapterTitle(e.target.value)}
-                      placeholder="Ví dụ: Một khởi đầu mới..."
-                      rows={2}
-                      className="mt-6 w-full max-w-130 resize-none rounded-xl border px-4 py-3.5 text-[13px] outline-none transition-shadow duration-200 ease-out"
-                      style={{
-                        borderColor: "#dfd2c5",
-                        background: "#fffdf9",
-                        color: "#342b23",
-                      }}
-                    />
-                    <div className="mt-5 flex w-full max-w-130 items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => setStep(2)}
-                        className="flex items-center gap-0.75 text-[12px]"
-                        style={{ color: "#897667" }}
-                      >
-                        <ChevronLeft size={16} /> Quay lại
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!chapterTitle.trim() || submitting}
+                        disabled={goal === null || submitting}
                         onClick={handleSubmit}
                         className="flex min-h-11.25 items-center justify-center gap-2.25 rounded-[10px] px-5 text-[13px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
                         style={{
@@ -441,7 +333,7 @@ export function WelcomeOnboardingModal({
                           boxShadow: "0 9px 22px rgba(217,91,22,.25)",
                         }}
                       >
-                        {submitting ? "Đang tạo..." : "Viết chương đầu"}
+                        {submitting ? "Đang lưu..." : "Bắt đầu"}
                         <ArrowRight size={16} />
                       </button>
                     </div>
@@ -450,7 +342,7 @@ export function WelcomeOnboardingModal({
               </AnimatePresence>
 
               <div className="mt-auto flex gap-1.5 pt-6">
-                {[1, 2, 3].map((n) => (
+                {[1, 2].map((n) => (
                   <span
                     key={n}
                     className="h-0.75 rounded-full transition-all duration-300 ease-out"
