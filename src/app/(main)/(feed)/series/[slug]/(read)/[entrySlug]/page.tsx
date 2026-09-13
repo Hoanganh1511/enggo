@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getContentSeriesEntryAction } from "@/actions/discover/content-series/get-content-series-entry";
+import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
@@ -8,99 +10,236 @@ import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesWhereThisFits } from "@/components/series/SeriesWhereThisFits";
 import { SeriesEntryPagination } from "@/components/series/SeriesEntryPagination";
+import { FadeIn } from "@/components/series/SeriesSkeleton";
+import {
+  EntryHeaderSkeleton,
+  EntryBodySkeleton,
+  EntryTocSkeleton,
+  EntryExtrasSkeleton,
+  EntryWhereFitsSkeleton,
+} from "@/components/series/series-skeletons";
 
-// Trang 1 Entry (dac ta muc 2.2) - TOC + "Where this fits" tai su dung
-// component da co cua module Docs/Series (xem comment tung import), giu bo
-// cuc 2 cot noi dung/TOC giong docs/[collection]/[article]/page.tsx.
+type EntryDataPromise = Promise<ContentSeriesEntryPage | null>;
+
+// Batch 1 (Progressive Loading, xem comment o SeriesEntryPage duoi) -
+// breadcrumb + tieu de/subtitle + source badge, phan QUAN TRONG NHAT nen len
+// truoc, KHONG cho doi cung luc voi than bai (co the nang hon vi con phai
+// render markdown).
+async function EntryHeader({
+  dataPromise,
+  slug,
+}: {
+  dataPromise: EntryDataPromise;
+  slug: string;
+}) {
+  const data = await dataPromise;
+  if (!data) notFound();
+  const { series, entry, totalCount } = data;
+  const positionIndex = entry.orderIndex + 1;
+
+  return (
+    <FadeIn>
+      <p className="font-content text-[13px] text-ink-faint">
+        <Link href={`/series/${slug}`} className="hover:text-ink hover:underline">
+          {series.title}
+        </Link>
+        {" · "}
+        {String(positionIndex).padStart(2, "0")} / {String(totalCount).padStart(2, "0")}
+        {" · "}
+        {entry.readTimeMinutes} phút đọc
+      </p>
+
+      <div className="font-content mt-2 flex items-start gap-2.5">
+        {entry.icon && <span className="mt-0.5 text-2xl">{entry.icon}</span>}
+        <div>
+          <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">{entry.title}</h1>
+          {entry.subtitle && <p className="mt-1 text-[15px] text-ink-faint">{entry.subtitle}</p>}
+        </div>
+      </div>
+
+      {entry.source && (
+        <span className="mt-3 inline-block rounded-md bg-surface-muted px-2 py-1 font-mono text-[12px] text-ink-faint">
+          {entry.source}
+        </span>
+      )}
+    </FadeIn>
+  );
+}
+
+// Batch 2 - than bai (DocsMarkdown, kha tinh toan de render voi bai dai) +
+// FAQ (di ngay theo, van la NOI DUNG CHINH nen giu cung tang voi than bai).
+async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
+  const data = await dataPromise;
+  if (!data) notFound();
+  const { entry } = data;
+
+  return (
+    <FadeIn>
+      <div className="mt-6">
+        <DocsMarkdown markdown={entry.contentMarkdown} />
+      </div>
+
+      {entry.faq && entry.faq.length > 0 && (
+        <div className="font-content mt-8 border-t border-border pt-6">
+          <h2 className="mb-3 text-[18px] font-semibold text-ink">Câu hỏi thường gặp</h2>
+          <div className="flex flex-col gap-4">
+            {entry.faq.map((item) => (
+              <div key={item.question}>
+                <p className="font-semibold text-ink">{item.question}</p>
+                <div className="mt-1 text-[14px] text-ink-muted">
+                  <DocsMarkdown markdown={item.answer} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </FadeIn>
+  );
+}
+
+// Batch 2 - "On This Page" (aside phai) - tinh tu CHINH noi dung than bai
+// (extractDocsToc), nen cung tang voi EntryBody la hop ly (khong the co
+// truoc noi dung).
+async function EntryToc({ dataPromise }: { dataPromise: EntryDataPromise }) {
+  const data = await dataPromise;
+  if (!data) notFound();
+  const toc = extractDocsToc(data.entry.contentMarkdown);
+
+  return (
+    <FadeIn>
+      <DocsToc toc={toc} />
+    </FadeIn>
+  );
+}
+
+// Batch 3 - Cai dat/Chia se/Prev-Next: nhom "phu", it quan trong nhat, dat
+// SAU CUNG trong article - dung tinh than Carbon "chi skeleton phan cau truc
+// chinh, phan phu tai sau".
+async function EntryExtras({
+  dataPromise,
+  slug,
+}: {
+  dataPromise: EntryDataPromise;
+  slug: string;
+}) {
+  const data = await dataPromise;
+  if (!data) notFound();
+  const { series, entry, prev, next, totalCount } = data;
+  const installTabs = entry.installTabs ?? series.installTabs;
+  const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
+
+  return (
+    <FadeIn>
+      {installTabs.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
+          <SeriesInstallWidget tabs={installTabs} />
+        </div>
+      )}
+
+      <div className="mt-8">
+        <SeriesShareButtons channels={series.shareChannels} url={entryUrl} title={entry.title} />
+      </div>
+
+      {totalCount > 1 && (
+        <SeriesEntryPagination
+          seriesSlug={slug}
+          prev={prev}
+          current={{ title: entry.title }}
+          next={next}
+        />
+      )}
+    </FadeIn>
+  );
+}
+
+// Batch 3 - "Where this fits" (aside phai, duoi TOC) - cung tang "phu" voi
+// EntryExtras.
+async function EntryWhereFits({ dataPromise }: { dataPromise: EntryDataPromise }) {
+  const data = await dataPromise;
+  if (!data) notFound();
+
+  return (
+    <FadeIn>
+      <SeriesWhereThisFits categories={data.series.categories} activeCategoryId={data.entry.categoryId} />
+    </FadeIn>
+  );
+}
+
+// Trang 1 Entry (dac ta muc 2.2) - Progressive Loading + Skeleton States
+// (yeu cau nguoi dung 2026-09-14, xem docs/engineering-log.md): 1 Promise
+// DUY NHAT (KHONG await o day) truyen xuong 5 nhanh Suspense doc lap
+// (Header/Body/Toc/Extras/WhereFits) - ca 5 await CHUNG 1 instance (chi 1
+// request that toi backend, KHONG goi lai action nhieu lan) nhung moi nhanh
+// co Suspense + skeleton fallback RIENG (xem series-skeletons.tsx), cho phep
+// React stream tung chunk doc lap thay vi doi TOAN BO trang render xong roi
+// moi tra ve. Thu tu Suspense trong JSX = thu tu uu tien hien thi: Batch 1
+// (Header, quan trong nhat) -> Batch 2 (Body+Toc, noi dung chinh) -> Batch 3
+// (Extras+WhereFits, phu). notFound() goi rieng trong TUNG nhanh (thay vi 1
+// lan o dau ham) - Next.js cho phep goi tu Server Component nam sau Suspense.
 export default async function SeriesEntryPage({
   params,
 }: {
   params: Promise<{ slug: string; entrySlug: string }>;
 }) {
   const { slug, entrySlug } = await params;
-  const data = await getContentSeriesEntryAction(slug, entrySlug).catch(() => null);
-  if (!data) notFound();
-  const { series, entry, prev, next, totalCount } = data;
-
-  const toc = extractDocsToc(entry.contentMarkdown);
-  const positionIndex = entry.orderIndex + 1;
-  const installTabs = entry.installTabs ?? series.installTabs;
-  const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entrySlug}`;
+  const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(() => null);
 
   return (
     <div className="flex gap-8">
       <article className="min-w-0 flex-1 pb-20">
-        {/* font-content: breadcrumb + tieu de/subtitle la NOI DUNG - source
-            badge ngay duoi CO CHU DICH giu font-mono (giong 1 duong dan repo),
-            KHONG boc chung vao day. */}
-        <p className="font-content text-[13px] text-ink-faint">
-          <Link href={`/series/${slug}`} className="hover:text-ink hover:underline">
-            {series.title}
-          </Link>
-          {" · "}
-          {String(positionIndex).padStart(2, "0")} / {String(totalCount).padStart(2, "0")}
-          {" · "}
-          {entry.readTimeMinutes} phút đọc
-        </p>
+        <Suspense
+          fallback={
+            <FadeIn>
+              <EntryHeaderSkeleton />
+            </FadeIn>
+          }
+        >
+          <EntryHeader dataPromise={dataPromise} slug={slug} />
+        </Suspense>
 
-        <div className="font-content mt-2 flex items-start gap-2.5">
-          {entry.icon && <span className="mt-0.5 text-2xl">{entry.icon}</span>}
-          <div>
-            <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">{entry.title}</h1>
-            {entry.subtitle && <p className="mt-1 text-[15px] text-ink-faint">{entry.subtitle}</p>}
-          </div>
-        </div>
+        <Suspense
+          fallback={
+            <FadeIn>
+              <EntryBodySkeleton />
+            </FadeIn>
+          }
+        >
+          <EntryBody dataPromise={dataPromise} />
+        </Suspense>
 
-        {entry.source && (
-          <span className="mt-3 inline-block rounded-md bg-surface-muted px-2 py-1 font-mono text-[12px] text-ink-faint">
-            {entry.source}
-          </span>
-        )}
-
-        <div className="mt-6">
-          <DocsMarkdown markdown={entry.contentMarkdown} />
-        </div>
-
-        {entry.faq && entry.faq.length > 0 && (
-          <div className="font-content mt-8 border-t border-border pt-6">
-            <h2 className="mb-3 text-[18px] font-semibold text-ink">Câu hỏi thường gặp</h2>
-            <div className="flex flex-col gap-4">
-              {entry.faq.map((item) => (
-                <div key={item.question}>
-                  <p className="font-semibold text-ink">{item.question}</p>
-                  <div className="mt-1 text-[14px] text-ink-muted">
-                    <DocsMarkdown markdown={item.answer} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {installTabs.length > 0 && (
-          <div className="mt-8">
-            <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
-            <SeriesInstallWidget tabs={installTabs} />
-          </div>
-        )}
-
-        <div className="mt-8">
-          <SeriesShareButtons channels={series.shareChannels} url={entryUrl} title={entry.title} />
-        </div>
-
-        {totalCount > 1 && (
-          <SeriesEntryPagination
-            seriesSlug={slug}
-            prev={prev}
-            current={{ title: entry.title }}
-            next={next}
-          />
-        )}
+        <Suspense
+          fallback={
+            <FadeIn>
+              <EntryExtrasSkeleton />
+            </FadeIn>
+          }
+        >
+          <EntryExtras dataPromise={dataPromise} slug={slug} />
+        </Suspense>
       </article>
 
       <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 xl:flex">
-        <DocsToc toc={toc} />
-        <SeriesWhereThisFits categories={series.categories} activeCategoryId={entry.categoryId} />
+        <Suspense
+          fallback={
+            <FadeIn>
+              <EntryTocSkeleton />
+            </FadeIn>
+          }
+        >
+          <EntryToc dataPromise={dataPromise} />
+        </Suspense>
+
+        <Suspense
+          fallback={
+            <FadeIn>
+              <EntryWhereFitsSkeleton />
+            </FadeIn>
+          }
+        >
+          <EntryWhereFits dataPromise={dataPromise} />
+        </Suspense>
       </aside>
     </div>
   );

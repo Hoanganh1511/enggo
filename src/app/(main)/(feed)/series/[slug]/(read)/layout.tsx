@@ -1,9 +1,12 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Settings } from "lucide-react";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
+import { FadeIn } from "@/components/series/SeriesSkeleton";
+import { SidebarSkeleton } from "@/components/series/series-skeletons";
 
 // Layout dung chung cho toan bo 1 Series (Overview + moi Entry) - sidebar
 // trai (cay category/entry) o day de KHONG remount khi chuyen qua lai giua
@@ -14,6 +17,47 @@ import { SeriesSidebar } from "@/components/series/SeriesSidebar";
 // ngoai nhom nay nen sidebar chinh bi dong mat, chi con lai sidebar RIENG cua
 // Series (cay category/entry, khac chuc nang). (feed)/layout.tsx da lo san
 // padding ngoai (py-6 lg:pl-61 + container px-4/6/10) nen o day KHONG lap lai.
+// Noi dung THAT cua sidebar (can 2 fetch: series overview + status admin) -
+// tach rieng khoi SeriesLayout de boc trong <Suspense> (Batch 1 - Progressive
+// Loading, xem docs/engineering-log.md 2026-09-14): chrome tinh cua <aside>
+// (nen mau, sticky, khung) hien NGAY, chi phan THAT SU can du lieu moi cho
+// SidebarSkeleton thay the trong luc cho. notFound() goi o day (thay vi o
+// SeriesLayout) VAN hoat dong dung - Next.js cho phep notFound() tu bat ky
+// Server Component nao trong cay, ke ca nam sau 1 Suspense boundary.
+async function SeriesSidebarPanel({ slug }: { slug: string }) {
+  const [series, status] = await Promise.all([
+    getContentSeriesOverviewAction(slug).catch(() => null),
+    getSelfStatusAction(),
+  ]);
+  if (!series) notFound();
+
+  return (
+    <FadeIn>
+      <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
+        <Link
+          href="/series"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
+        >
+          <ArrowLeft size={13} />
+          Tất cả series
+        </Link>
+        {status.isAdmin && (
+          <Link
+            href={`/series/${slug}/manage`}
+            aria-label="Quản lý series"
+            title="Quản lý series"
+            className="text-ink-faint hover:text-ink"
+          >
+            <Settings size={14} />
+          </Link>
+        )}
+      </div>
+      <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
+      <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
+    </FadeIn>
+  );
+}
+
 export default async function SeriesLayout({
   children,
   params,
@@ -22,11 +66,6 @@ export default async function SeriesLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [series, status] = await Promise.all([
-    getContentSeriesOverviewAction(slug).catch(() => null),
-    getSelfStatusAction(),
-  ]);
-  if (!series) notFound();
 
   return (
     // Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang
@@ -50,27 +89,15 @@ export default async function SeriesLayout({
     >
       <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
         <div className="sticky top-0 p-6">
-          <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
-            <Link
-              href="/series"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-            >
-              <ArrowLeft size={13} />
-              Tất cả series
-            </Link>
-            {status.isAdmin && (
-              <Link
-                href={`/series/${slug}/manage`}
-                aria-label="Quản lý series"
-                title="Quản lý series"
-                className="text-ink-faint hover:text-ink"
-              >
-                <Settings size={14} />
-              </Link>
-            )}
-          </div>
-          <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
-          <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
+          <Suspense
+            fallback={
+              <FadeIn>
+                <SidebarSkeleton />
+              </FadeIn>
+            }
+          >
+            <SeriesSidebarPanel slug={slug} />
+          </Suspense>
         </div>
       </aside>
 
