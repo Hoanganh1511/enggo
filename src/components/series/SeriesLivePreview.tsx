@@ -52,7 +52,10 @@ export function SeriesLivePreview({
         Xem trước trang Series
       </p>
       <motion.div layout className="rounded-xl border border-border bg-surface p-6">
-        <motion.h1 layout="position" className="text-[24px] font-extrabold tracking-tight text-ink">
+        <motion.h1
+          layout="position"
+          className="font-content text-[24px] font-extrabold tracking-tight text-ink"
+        >
           {title.trim() || "Tiêu đề Series..."}
         </motion.h1>
         <motion.div layout className="mt-3">
@@ -73,7 +76,7 @@ export function SeriesLivePreview({
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="mt-8 overflow-hidden"
             >
-              <h2 className="mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
+              <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
               <SeriesInstallWidget tabs={installTabs} />
             </motion.div>
           )}

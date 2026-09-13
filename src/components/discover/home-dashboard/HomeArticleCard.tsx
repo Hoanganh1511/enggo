@@ -36,7 +36,7 @@ export function HomeArticleCard({ post, index }: { post: NormalizedPost; index: 
           </span>
         </div>
         {/* font-content: tieu de/mo ta/thong tin bai la NOI DUNG, dung
-            Manrope thay --font-sans mac dinh (UI/dieu huong). */}
+            DM Sans thay --font-sans mac dinh (UI/dieu huong). */}
         <div className="font-content p-4">
           <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 capitalize">
             {topicLabel}

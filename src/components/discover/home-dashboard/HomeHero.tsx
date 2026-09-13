@@ -38,7 +38,7 @@ export function HomeHero({ writeHref, workspaceHref }: { writeHref: string; work
       />
       <div className="relative z-[1] max-w-[590px] px-5 pt-8 sm:px-8 sm:pt-10 lg:px-10 lg:pt-12">
         {/* font-content: dong gioi thieu/tieu de/mo ta la NOI DUNG, dung
-            Manrope - 2 nut CTA ben duoi la UI, khong boc. */}
+            DM Sans - 2 nut CTA ben duoi la UI, khong boc. */}
         <div className="font-content mb-3 text-[14px] text-slate-600">
           A personal knowledge platform
         </div>

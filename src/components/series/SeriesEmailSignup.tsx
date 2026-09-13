@@ -26,11 +26,15 @@ export function SeriesEmailSignup({
 
   return (
     <div className="rounded-xl border border-border bg-surface-muted p-5">
-      <div className="flex items-center gap-2">
-        <Mail size={16} className="text-primary" aria-hidden="true" />
-        <h3 className="text-[15px] font-semibold text-ink">{title}</h3>
+      {/* font-content: tieu de/mo ta CTA la NOI DUNG - form nhap email/nut
+          Dang ky ben duoi la UI, KHONG boc. */}
+      <div className="font-content">
+        <div className="flex items-center gap-2">
+          <Mail size={16} className="text-primary" aria-hidden="true" />
+          <h3 className="text-[15px] font-semibold text-ink">{title}</h3>
+        </div>
+        <p className="mt-1.5 text-[13px] text-ink-faint">{description}</p>
       </div>
-      <p className="mt-1.5 text-[13px] text-ink-faint">{description}</p>
       {submitted ? (
         <p className="mt-3 text-[13px] font-medium text-primary">
           Đã ghi nhận! Cảm ơn bạn đã quan tâm.

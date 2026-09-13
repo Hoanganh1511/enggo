@@ -30,7 +30,10 @@ export default async function SeriesEntryPage({
   return (
     <div className="flex gap-8">
       <article className="min-w-0 flex-1 pb-20">
-        <p className="text-[13px] text-ink-faint">
+        {/* font-content: breadcrumb + tieu de/subtitle la NOI DUNG - source
+            badge ngay duoi CO CHU DICH giu font-mono (giong 1 duong dan repo),
+            KHONG boc chung vao day. */}
+        <p className="font-content text-[13px] text-ink-faint">
           <Link href={`/series/${slug}`} className="hover:text-ink hover:underline">
             {series.title}
           </Link>
@@ -40,7 +43,7 @@ export default async function SeriesEntryPage({
           {entry.readTimeMinutes} phút đọc
         </p>
 
-        <div className="mt-2 flex items-start gap-2.5">
+        <div className="font-content mt-2 flex items-start gap-2.5">
           {entry.icon && <span className="mt-0.5 text-2xl">{entry.icon}</span>}
           <div>
             <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">{entry.title}</h1>
@@ -59,7 +62,7 @@ export default async function SeriesEntryPage({
         </div>
 
         {entry.faq && entry.faq.length > 0 && (
-          <div className="mt-8 border-t border-border pt-6">
+          <div className="font-content mt-8 border-t border-border pt-6">
             <h2 className="mb-3 text-[18px] font-semibold text-ink">Câu hỏi thường gặp</h2>
             <div className="flex flex-col gap-4">
               {entry.faq.map((item) => (
@@ -76,7 +79,7 @@ export default async function SeriesEntryPage({
 
         {installTabs.length > 0 && (
           <div className="mt-8">
-            <h2 className="mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
+            <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
             <SeriesInstallWidget tabs={installTabs} />
           </div>
         )}

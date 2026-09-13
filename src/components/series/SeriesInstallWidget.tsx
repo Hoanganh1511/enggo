@@ -60,7 +60,9 @@ export function SeriesInstallWidget({ tabs }: { tabs: ContentSeriesInstallTab[] 
         </button>
       </div>
       {(active.note || active.link) && (
-        <div className="px-4 py-2.5 text-[13px] text-ink-faint">
+        // font-content: ghi chu huong dan la NOI DUNG - nut tab phia tren va
+        // command (code, font-mono rieng) KHONG doi.
+        <div className="font-content px-4 py-2.5 text-[13px] text-ink-faint">
           {active.note}
           {active.link && (
             <a href={active.link} target="_blank" rel="noreferrer" className="ml-1 text-primary hover:underline">

@@ -28,7 +28,7 @@ export function ArticleHeader({ post }: { post: Post }) {
       )}
 
       {/* font-content: mo ta + thong tin bai/tac gia la NOI DUNG, dung
-          Manrope thay --font-sans mac dinh (UI/dieu huong). Rieng tieu de
+          DM Sans thay --font-sans mac dinh (UI/dieu huong). Rieng tieu de
           (h1) dung Noto Serif qua var(--font-serif-book) - truoc chi dung
           cho khu "hanh trinh cuon sach" (JourneyHero...), theo yeu cau
           nguoi dung gio dung THEM cho tieu de bai viet chi tiet. */}

@@ -114,7 +114,7 @@ function CommentItem({
       />
       <div className="min-w-0 flex-1">
         {/* font-content: ten nguoi binh luan + noi dung binh luan la NOI
-            DUNG, dung Manrope - nut Tra loi/Thich/form gui ben duoi la UI,
+            DUNG, dung DM Sans - nut Tra loi/Thich/form gui ben duoi la UI,
             KHONG boc. relative + overflow-hidden: neo cho overlay nuoc dang
             luc xoa (::before/::after cua .comment-delete-water, xem
             globals.css) - spinner luc pending KHONG con o day nua, xem

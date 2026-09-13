@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import {
   IBM_Plex_Mono,
-  Manrope,
+  DM_Sans,
   Geist_Mono,
   Noto_Serif,
   Playfair_Display,
@@ -24,14 +24,19 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 // Font cho NOI DUNG (khac component/dieu huong) - tieu de bai/tai lieu, than
 // bai, mo ta, binh luan, cac thong tin hien thi... noi chung MOI cho khong
-// phai nut/nhan/tab/sidebar dieu huong deu dung Manrope thay vi
+// phai nut/nhan/tab/sidebar dieu huong deu dung DM Sans thay vi
 // --font-plex-mono (font chinh, chi danh cho UI/dieu huong). Ap qua class
 // tien ich .font-content (xem globals.css --font-content) tren tung cum text
-// noi dung, KHONG doi --font-sans mac dinh (se keo theo ca UI).
-const manrope = Manrope({
-  variable: "--font-manrope",
+// noi dung, KHONG doi --font-sans mac dinh (se keo theo ca UI). Doi tu
+// Manrope sang DM Sans theo yeu cau nguoi dung.
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   weight: ["400", "500", "600", "700", "800"],
-  subsets: ["vietnamese", "latin"],
+  // DM Sans KHONG co subset "vietnamese" rieng tren Google Fonts (khac
+  // Manrope truoc day) - dung "latin-ext" (Latin Extended, bao gom phan lon
+  // to hop dau tieng Viet) de van hien dung dau, cung cach da lam voi
+  // Playfair Display o duoi.
+  subsets: ["latin", "latin-ext"],
 });
 
 const geistMono = Geist_Mono({
@@ -88,7 +93,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexMono.variable} ${manrope.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} h-full antialiased`}
+      className={`${ibmPlexMono.variable} ${dmSans.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning CHI o body, KHONG lan xuong children - can
           thiet vi mot so extension trinh duyet (vd ColorZilla) tu chen

@@ -242,7 +242,7 @@
      trong @theme tu dong co utility cung ten). Ap truc tiep tren tung cum
      text noi dung, xem cac component da doi (PostCard, post-bodies,
      ArticleDetailPanel, DocsMarkdown, DiaryEntrySlides, ArticleComments...). */
-  --font-content: var(--font-manrope);
+  --font-content: var(--font-dm-sans);
 
   /* Doi mac dinh cua Tailwind (1rem/16px) xuong 14px theo yeu cau nguoi
      dung - CHI anh huong noi nao dung class "text-base" that su (khong dung

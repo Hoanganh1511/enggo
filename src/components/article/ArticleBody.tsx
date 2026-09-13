@@ -40,7 +40,7 @@ export function ArticleBody({ post, richHtml }: { post: Post; richHtml?: string 
   const lines = parseContentLines(content);
 
   return (
-    // font-content: than bai la NOI DUNG doc lau, dung Manrope thay
+    // font-content: than bai la NOI DUNG doc lau, dung DM Sans thay
     // --font-sans mac dinh (UI/dieu huong) - xem globals.css --font-content.
     <div className="font-content flex flex-col gap-4">
       {lines.map((line, i) => {

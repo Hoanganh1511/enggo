@@ -22,7 +22,10 @@ export function SeriesStatsBar({
   if (stats.length === 0 && externalLinks.length === 0) return null;
 
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
+    // font-content: stat value/label + label link ngoai la NOI DUNG (thong
+    // tin hien thi), dung DM Sans thay --font-sans mac dinh (UI/dieu huong) -
+    // rieng icon lucide khong bi anh huong boi font-family nen khong can tru.
+    <div className="font-content mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
       {stats.map((stat) => {
         const Icon = resolveIcon(stat.icon);
         const content = (

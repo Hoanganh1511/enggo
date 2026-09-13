@@ -22,7 +22,9 @@ export default async function SeriesListPage() {
   return (
     <div className="w-full">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        {/* font-content: tieu de trang + mo ta la NOI DUNG - nut "New Series"
+            ben canh la UI, KHONG boc. */}
+        <div className="font-content">
           <h1 className="text-[26px] font-extrabold tracking-tight text-ink">Series</h1>
           <p className="mt-1.5 text-[14px] text-ink-faint">
             Các chuỗi bài/khoá kỹ năng nhiều phần - đọc theo đúng thứ tự để đi từ cơ bản đến nâng cao.
@@ -51,7 +53,7 @@ export default async function SeriesListPage() {
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                   <BookOpen size={18} aria-hidden="true" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="font-content min-w-0 flex-1">
                   <p className="truncate font-semibold text-ink">{series.title}</p>
                   <p className="mt-0.5 line-clamp-2 text-[13px] text-ink-faint">
                     {stripMarkdown(series.description)}

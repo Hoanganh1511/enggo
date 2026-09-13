@@ -20,7 +20,11 @@ export default async function SeriesOverviewPage({
 
   return (
     <div className="w-full pb-20">
-      <h1 className="text-[30px] font-extrabold tracking-tight text-ink">{series.title}</h1>
+      {/* font-content: tieu de Series la NOI DUNG (DocsMarkdown/SeriesStatsBar
+          da tu boc font-content rieng ben trong). */}
+      <h1 className="font-content text-[30px] font-extrabold tracking-tight text-ink">
+        {series.title}
+      </h1>
       <div className="mt-3">
         <DocsMarkdown markdown={series.description} />
       </div>
@@ -29,7 +33,7 @@ export default async function SeriesOverviewPage({
 
       {series.installTabs.length > 0 && (
         <div className="mt-8">
-          <h2 className="mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
+          <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
           <SeriesInstallWidget tabs={series.installTabs} />
         </div>
       )}

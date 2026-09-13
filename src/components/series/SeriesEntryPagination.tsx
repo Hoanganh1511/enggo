@@ -26,7 +26,7 @@ export function SeriesEntryPagination({
           <span className="flex items-center gap-1 text-[11px] font-medium text-ink-faint uppercase">
             <ArrowLeft size={12} /> Previous skill
           </span>
-          <span className="truncate text-[14px] font-medium text-ink">{prev.title}</span>
+          <span className="font-content truncate text-[14px] font-medium text-ink">{prev.title}</span>
         </Link>
       ) : (
         <div />
@@ -34,7 +34,7 @@ export function SeriesEntryPagination({
 
       <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border p-4 text-center">
         <span className="text-[11px] font-medium text-ink-faint uppercase">You are here</span>
-        <span className="truncate text-[14px] font-medium text-ink">{current.title}</span>
+        <span className="font-content truncate text-[14px] font-medium text-ink">{current.title}</span>
       </div>
 
       {next ? (
@@ -45,7 +45,7 @@ export function SeriesEntryPagination({
           <span className="flex items-center gap-1 text-[11px] font-medium text-ink-faint uppercase">
             Next skill <ArrowRight size={12} />
           </span>
-          <span className="truncate text-[14px] font-medium text-ink">{next.title}</span>
+          <span className="font-content truncate text-[14px] font-medium text-ink">{next.title}</span>
         </Link>
       ) : (
         <div />
