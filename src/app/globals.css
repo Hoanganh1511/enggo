@@ -125,8 +125,20 @@
   --icon-hover: var(--ink);
   --icon-active: var(--primary);
 
-  --shadow-panel-base: 0 20px 48px rgba(0, 0, 0, 0.12);
-  --shadow-dropdown-base: 0 8px 24px rgba(0, 0, 0, 0.1);
+  /* [2026-09-14] Doi tu do bong (blur) sang RING 1px bang mau border - theo
+     huong "phang" cua AI Hero token set (xem docs/ai-hero-design-tokens.md,
+     nguoi dung xac nhan "bỏ shadow, thay bằng border"). Doi GIA TRI cua bien
+     (khong doi TEN) de moi component dang dung shadow-[var(--shadow-panel)]/
+     shadow-[var(--shadow-dropdown)] tu dong nhan dang ring moi, khong can sua
+     tung file (38 file dang dung 2 bien nay). --shadow-panel dung border-strong
+     (ro net hon, vi panel/overlay lon can tach biet manh voi nen phia sau);
+     --shadow-dropdown dung border thuong (dropdown nho, thuong da nam gan
+     1 be mat khac roi, khong can vien qua manh). */
+  --shadow-panel-base: 0 0 0 1px var(--border-strong);
+  --shadow-dropdown-base: 0 0 0 1px var(--border);
+  /* Focus ring GIU NGUYEN (mau brand --primary) - day la tin hieu accessibility
+     (focus-visible), khac ban chat voi "shadow do sau" o tren, doi sang xam
+     trung tinh se lam giam do noi bat can thiet cua focus indicator. */
   --shadow-focus-base: 0 0 0 3px
     color-mix(in srgb, var(--primary) 20%, transparent);
 
@@ -226,8 +238,13 @@
   --success: #16a34a;
   --warning: #d97706;
   --danger: #dc2626;
-  --shadow-card: 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-hover: 0 8px 24px rgba(16, 24, 40, 0.08);
+  /* [2026-09-14] Cung huong "phang" voi --shadow-panel/--shadow-dropdown o
+     :root (xem comment tren) - the/card trong khu Home Dashboard + Articles
+     Hub (AttentionCollectionsRail/NewestSeriesRail/CreatorRail...) da co san
+     border rieng trong className, --shadow-hover chi con lam VIEN DAM HON
+     luc hover (ring border-strong) thay vi noi len bang do bong. */
+  --shadow-card: none;
+  --shadow-hover: 0 0 0 1px var(--border-strong);
 }
 
 /* Font RIENG cho khu vuc Series (/series/**, xem series/layout.tsx) - theo
