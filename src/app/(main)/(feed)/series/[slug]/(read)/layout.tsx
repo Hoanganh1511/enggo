@@ -30,14 +30,24 @@ export default async function SeriesLayout({
 
   return (
     // Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang
-    // trong quanh no) - yeu cau nguoi dung, khop mockup. FeedMainArea.tsx (cha)
+    // trong quanh no) - yeu cau nguoi dung, khop mockup. (feed)/layout.tsx (cha)
     // co san 1 lop padding (py-6 + px-4/6/10) boc quanh MOI trang trong nhom
     // (feed) - o day dung margin AM KHOP CHINH XAC tung gia tri do de "tran"
     // ra het phan padding ay, thay vi lam 1 khoi mau code lo lung co padding
     // xung quanh (nhu ban truoc, nguoi dung bao sai). Padding THAT (cho chu
     // khong dinh sat canh) chuyen vao BEN TRONG tung nua (sidebar/content) o
     // day thay vi o ngoai.
-    <div className="-mx-4 -my-6 flex min-h-[calc(100%+3rem)] sm:-mx-6 lg:-mx-10">
+    //
+    // min-h dua tren VIEWPORT (100vh - chieu cao header) thay vi "min-h-full"
+    // (% cua parent - chinh no lai chi cao bang NOI DUNG, vd trang co it chu
+    // thi hang flex nay cung ngan theo, lam khoi mau bi "cut ngun" giua trang
+    // thay vi day het 1 man hinh - nguoi dung bao loi). Dam bao LUON it nhat
+    // day 1 viewport, cao hon the neu noi dung dai hon (min-height van cho
+    // gian ra binh thuong).
+    <div
+      className="-mx-4 -my-6 flex sm:-mx-6 lg:-mx-10"
+      style={{ minHeight: "calc(100vh - var(--header-height))" }}
+    >
       <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
         <div className="sticky top-0 p-6">
           <div className="mb-4 flex items-center justify-between gap-2 px-2.5">

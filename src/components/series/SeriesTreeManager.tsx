@@ -89,32 +89,46 @@ export function SeriesTreeManager({
     setRenameColor(cat.colorHex ?? "");
   }
 
-  function handleCategoryDragEnd(event: DragEndEvent) {
+  // 1 DndContext DUY NHAT cho toan bo cay (category + moi category 1
+  // SortableContext entry rieng, LONG NHAU o BEN TRONG cung 1 DndContext -
+  // dnd-kit KHONG ho tro nhieu <DndContext> long nhau, lam vay se lam sensor
+  // cua context ngoai "nuot" pointer event truoc, khien context trong khong
+  // bao gio nhan duoc drag that (bug da bao: keo tha khong doi vi tri). Phan
+  // biet category/entry qua `data.current.type` gan luc goi useSortable.
+  function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = sortedCategories.findIndex((c) => c.id === active.id);
-    const newIndex = sortedCategories.findIndex((c) => c.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const newOrder = arrayMove(sortedCategories, oldIndex, newIndex).map((c) => c.id);
-    run(
-      () => reorderContentSeriesCategoriesAction(seriesSlug, newOrder),
-      "Sắp xếp category thất bại",
-    );
-  }
+    const activeData = active.data.current as
+      | { type: "category" }
+      | { type: "entry"; categoryId: string }
+      | undefined;
+    if (!activeData) return;
 
-  function handleEntryDragEnd(
-    categoryId: string,
-    catEntries: ContentSeriesEntrySummary[],
-    event: DragEndEvent,
-  ) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (activeData.type === "category") {
+      const oldIndex = sortedCategories.findIndex((c) => c.id === active.id);
+      const newIndex = sortedCategories.findIndex((c) => c.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+      const newOrder = arrayMove(sortedCategories, oldIndex, newIndex).map((c) => c.id);
+      run(
+        () => reorderContentSeriesCategoriesAction(seriesSlug, newOrder),
+        "Sắp xếp category thất bại",
+      );
+      return;
+    }
+
+    // Entry - CHI cho tha trong CUNG category (backend reorderEntriesInCategory
+    // chi hoan doi orderIndex GIUA cac entry cua chinh category do) - bo qua
+    // neu keo qua vi tri thuoc category khac.
+    const overData = over.data.current as { type: "category" } | { type: "entry"; categoryId: string } | undefined;
+    if (overData?.type !== "entry" || overData.categoryId !== activeData.categoryId) return;
+
+    const catEntries = sortedEntries.filter((e) => e.categoryId === activeData.categoryId);
     const oldIndex = catEntries.findIndex((e) => e.id === active.id);
     const newIndex = catEntries.findIndex((e) => e.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const newOrder = arrayMove(catEntries, oldIndex, newIndex).map((e) => e.id);
     run(
-      () => reorderContentSeriesEntriesInCategoryAction(seriesSlug, categoryId, newOrder),
+      () => reorderContentSeriesEntriesInCategoryAction(seriesSlug, activeData.categoryId, newOrder),
       "Sắp xếp entry thất bại",
     );
   }
@@ -142,7 +156,7 @@ export function SeriesTreeManager({
         </button>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={sortedCategories.map((c) => c.id)}
           strategy={verticalListSortingStrategy}
@@ -152,7 +166,12 @@ export function SeriesTreeManager({
               const catEntries = sortedEntries.filter((e) => e.categoryId === cat.id);
               const isRenaming = renamingId === cat.id;
               return (
-                <SortableCategoryShell key={cat.id} id={cat.id} disabled={!sortMode || isRenaming}>
+                <SortableShell
+                  key={cat.id}
+                  id={cat.id}
+                  data={{ type: "category" }}
+                  disabled={!sortMode || isRenaming}
+                >
                   {(dragHandleProps) => (
                     <div className="rounded-xl border border-border p-4">
                       <div className="flex items-center justify-between gap-2">
@@ -267,18 +286,18 @@ export function SeriesTreeManager({
                         )}
                       </div>
 
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={(e) => handleEntryDragEnd(cat.id, catEntries, e)}
+                      <SortableContext
+                        items={catEntries.map((e) => e.id)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        <SortableContext
-                          items={catEntries.map((e) => e.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="mt-3 flex flex-col gap-1">
+                        <div className="mt-3 flex flex-col gap-1">
                             {catEntries.map((entry, entryIndexInCat) => (
-                              <SortableEntryShell key={entry.id} id={entry.id} disabled={!sortMode}>
+                              <SortableShell
+                                key={entry.id}
+                                id={entry.id}
+                                data={{ type: "entry", categoryId: cat.id }}
+                                disabled={!sortMode}
+                              >
                                 {(entryDragHandleProps) => (
                                   <div className="flex items-center gap-2 rounded-md py-1.5 pr-1 pl-2 hover:bg-hover-bg">
                                     {sortMode && (
@@ -349,20 +368,19 @@ export function SeriesTreeManager({
                                     </button>
                                   </div>
                                 )}
-                              </SortableEntryShell>
+                              </SortableShell>
                             ))}
-                            <Link
-                              href={`/series/${seriesSlug}/manage/entries/new?categoryId=${cat.id}`}
-                              className="mt-1 flex items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-[12px] font-medium text-primary hover:bg-primary-soft"
-                            >
-                              <Plus size={13} /> Entry mới
-                            </Link>
-                          </div>
-                        </SortableContext>
-                      </DndContext>
+                          <Link
+                            href={`/series/${seriesSlug}/manage/entries/new?categoryId=${cat.id}`}
+                            className="mt-1 flex items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-[12px] font-medium text-primary hover:bg-primary-soft"
+                          >
+                            <Plus size={13} /> Entry mới
+                          </Link>
+                        </div>
+                      </SortableContext>
                     </div>
                   )}
-                </SortableCategoryShell>
+                </SortableShell>
               );
             })}
           </div>
@@ -394,47 +412,25 @@ export function SeriesTreeManager({
   );
 }
 
-// Render-prop shell dung chung cho category/entry - `useSortable` PHAI goi
-// trong 1 component that (khong the goi truc tiep trong .map() cua component
-// cha, vi pham Rules of Hooks). `disabled` (khi khong o sortMode, hoac dang
-// doi ten category) tat han vi tri "sortable" cua item nay - dnd-kit khong
-// tinh no vao va cham/hoan doi vi tri, tranh giu 1 draggable "an" gay lech vi
-// tri khi khong o che do sap xep.
-function SortableCategoryShell({
-  id,
-  disabled,
-  children,
-}: {
-  id: string;
-  disabled: boolean;
-  children: (handleProps: {
-    attributes: ReturnType<typeof useSortable>["attributes"];
-    listeners: ReturnType<typeof useSortable>["listeners"];
-    setActivatorNodeRef: ReturnType<typeof useSortable>["setActivatorNodeRef"];
-  }) => React.ReactNode;
-}) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id, disabled });
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-      }}
-    >
-      {children({ attributes, listeners, setActivatorNodeRef })}
-    </div>
-  );
-}
+// Render-prop shell dung chung cho CA category lan entry - `useSortable`
+// PHAI goi trong 1 component that (khong the goi truc tiep trong .map() cua
+// component cha, vi pham Rules of Hooks). `data` gan vao useSortable de
+// handleDragEnd (o component cha) phan biet duoc item vua tha la category
+// hay entry (va entry thuoc category nao) - ca 2 loai giờ chia se 1 DndContext
+// DUY NHAT (xem comment handleDragEnd). `disabled` (khi khong o sortMode,
+// hoac dang doi ten category) tat han vi tri "sortable" cua item nay - dnd-kit
+// khong tinh no vao va cham/hoan doi vi tri, tranh giu 1 draggable "an" gay
+// lech vi tri khi khong o che do sap xep.
+type SortableItemData = { type: "category" } | { type: "entry"; categoryId: string };
 
-function SortableEntryShell({
+function SortableShell({
   id,
+  data,
   disabled,
   children,
 }: {
   id: string;
+  data: SortableItemData;
   disabled: boolean;
   children: (handleProps: {
     attributes: ReturnType<typeof useSortable>["attributes"];
@@ -443,7 +439,7 @@ function SortableEntryShell({
   }) => React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id, disabled });
+    useSortable({ id, data, disabled });
   return (
     <div
       ref={setNodeRef}

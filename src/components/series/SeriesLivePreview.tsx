@@ -47,11 +47,18 @@ export function SeriesLivePreview({
   emailCourseDescription: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface-muted/40 p-4">
-      <p className="mb-3 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
+    // "Nổi lên khỏi nền" (yeu cau nguoi dung) - bo border/nen phang cu, dung
+    // shadow-2xl + ring mong (thay border cung mau nen, tranh vien "dinh" vao
+    // nen lam mat cam giac noi) de tao chieu sau that su, giong 1 the vat ly
+    // dat LEN TREN trang chu khong phai 1 khung ke ben canh.
+    <div className="p-1">
+      <p className="mb-3 px-1 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
         Xem trước trang Series
       </p>
-      <motion.div layout className="rounded-xl border border-border bg-surface p-6">
+      <motion.div
+        layout
+        className="rounded-2xl bg-surface p-6 shadow-2xl shadow-black/8 ring-1 ring-black/5"
+      >
         <motion.h1
           layout="position"
           className="font-content text-[24px] font-extrabold tracking-tight text-ink"
