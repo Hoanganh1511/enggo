@@ -4,6 +4,7 @@ import { MobileComposeFab } from "@/components/shell/MobileComposeFab";
 import { ScrollToTopButton } from "@/components/shell/ScrollToTopButton";
 import { DashboardSidebarDrawer } from "@/components/discover/home-dashboard/HomeDashboardSidebar";
 import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
+import { NavTransitionOverlay } from "@/components/shell/NavTransitionOverlay";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 import { AvatarBootstrap } from "@/components/providers/AvatarBootstrap";
 
@@ -36,6 +37,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             /articles nua) de nut hamburger o TopHeaderBar hoat dong dong bo
             tren MOI trang. */}
         <DashboardSidebarDrawer />
+        <NavTransitionOverlay />
         <MainContentArea>{children}</MainContentArea>
       </div>
     </>

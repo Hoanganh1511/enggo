@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import type { ContentSeriesListItem } from "@/lib/api/content-series";
+import { SeriesCardLink } from "@/components/series/SeriesCardLink";
 import { ScrollableRow } from "./ScrollableRow";
 
 // "Series mới nhất" tren /home. Ban dau lam theo mau "注目キーワード" (Yahoo
@@ -28,7 +28,7 @@ export function NewestSeriesRail({ series }: { series: ContentSeriesListItem[] }
           .filter((i): i is string => Boolean(i))
           .slice(0, 4);
         return (
-          <Link
+          <SeriesCardLink
             key={s.id}
             href={`/series/${s.slug}`}
             className="min-w-[220px] max-w-[220px] rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3.5 transition hover:border-[var(--border-strong)]"
@@ -52,7 +52,7 @@ export function NewestSeriesRail({ series }: { series: ContentSeriesListItem[] }
             <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--muted)]">
               {s.description}
             </p>
-          </Link>
+          </SeriesCardLink>
         );
       })}
     </ScrollableRow>

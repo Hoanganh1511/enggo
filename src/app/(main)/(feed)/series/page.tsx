@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BookOpen, ChevronRight, Plus, Settings } from "lucide-react";
 import { listContentSeriesAction } from "@/actions/discover/content-series/list-content-series";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
+import { SeriesCardLink } from "@/components/series/SeriesCardLink";
 
 // The danh sach chi hien PLAIN TEXT (line-clamp 2 dong) - bo cu phap markdown
 // tho (**bold**/`code`/[link](url)) thay vi render HTML that (qua nang cho 1
@@ -49,7 +50,7 @@ export default async function SeriesListPage() {
               key={series.id}
               className="flex items-center gap-4 rounded-xl border border-border p-4 transition-colors duration-150 ease-out hover:bg-hover-bg"
             >
-              <Link href={`/series/${series.slug}`} className="flex min-w-0 flex-1 items-center gap-4">
+              <SeriesCardLink href={`/series/${series.slug}`} className="flex min-w-0 flex-1 items-center gap-4">
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
                   <BookOpen size={18} aria-hidden="true" />
                 </div>
@@ -60,7 +61,7 @@ export default async function SeriesListPage() {
                   </p>
                   <p className="mt-1 text-[12px] text-ink-faint">{series._count.entries} bài</p>
                 </div>
-              </Link>
+              </SeriesCardLink>
               {status.isAdmin && (
                 <Link
                   href={`/series/${series.slug}/manage`}

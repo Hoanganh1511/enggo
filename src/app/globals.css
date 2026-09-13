@@ -50,7 +50,7 @@
      --notification (xanh/vang/do) CUNG giu nguyen - la mau ngu nghia
      (thanh cong/canh bao/loi), doi sang xam se lam mat kha nang phan biet
      trang thai chi qua mau, khong phai "mau chu dao" trang tri. */
-  --background: #ffffff;
+  --background: #f1f2f5;
   --background-secondary: #f4f4f5;
   --foreground: #171717;
   --active: var(--primary);
@@ -384,7 +384,6 @@
   --color-header-background: var(--header-background);
   --color-card-background: var(--card-background);
 }
-
 
 body {
   color: var(--foreground);
@@ -809,7 +808,11 @@ body {
 }
 @keyframes comment-confirm-flash {
   0% {
-    background-color: color-mix(in srgb, var(--primary) 30%, var(--surface-muted));
+    background-color: color-mix(
+      in srgb,
+      var(--primary) 30%,
+      var(--surface-muted)
+    );
   }
   100% {
     background-color: var(--surface-muted);

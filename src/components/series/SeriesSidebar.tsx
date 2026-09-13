@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { ContentSeriesCategory, ContentSeriesEntrySummary } from "@/lib/api/content-series";
+import type {
+  ContentSeriesCategory,
+  ContentSeriesEntrySummary,
+} from "@/lib/api/content-series";
 
 // Nav trai cho 1 Series - dung cay TU danh sach PHANG (category + entry, ca
 // 2 deu kem parentId/categoryId) thay vi server tra san cay long nhau, cung
@@ -17,7 +20,8 @@ function buildCategoryTree(categories: ContentSeriesCategory[]) {
     list.push(cat);
     byParent.set(cat.parentId, list);
   }
-  for (const list of byParent.values()) list.sort((a, b) => a.orderIndex - b.orderIndex);
+  for (const list of byParent.values())
+    list.sort((a, b) => a.orderIndex - b.orderIndex);
   return byParent;
 }
 
@@ -46,10 +50,12 @@ function CategoryNode({
           lech gay gat voi entry - yeu cau nguoi dung "đừng bold đậm, cho
           font size nhỏ đi, nhẹ nhàng phân cấp"): chi con size nho hon 1 chut
           (12px, dong bo voi entry) + font-semibold (vua du de tach lop, khong
-          dam nhu font-bold) + mau text-ink-muted (nhat hon text-ink nhung
-          van dam hon text-ink-faint cua entry). */}
+          dam nhu font-bold). Mau rgba(20,22,26,.62) THEO YEU CAU RIENG cho
+          sidebar Series nay (khac --ink-muted token chung cua app) - dung
+          CHUNG mau nay voi entry ben duoi de ca 2 cap deu cung 1 "tong" nhat,
+          chi khac o do dam font-weight/size. */}
       <p
-        className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-ink-muted"
+        className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-[rgba(20,22,26,0.62)]"
         style={{ paddingLeft: `${10 + depth * 12}px` }}
       >
         {category.colorHex && (
@@ -70,10 +76,10 @@ function CategoryNode({
               key={entry.id}
               href={href}
               className={cn(
-                "truncate rounded-md py-1.5 pr-2 text-[13px] transition-colors duration-150 ease-out",
+                "truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
                 active
                   ? "bg-primary-soft font-medium text-primary"
-                  : "text-ink-faint hover:bg-hover-bg hover:text-ink-muted",
+                  : "text-[rgba(20,22,26,0.62)] hover:bg-hover-bg hover:text-[rgba(20,22,26,0.85)]",
               )}
               style={{ paddingLeft: `${18 + depth * 12}px` }}
             >
@@ -121,7 +127,8 @@ export function SeriesSidebar({
     list.push(entry);
     entriesByCategory.set(entry.categoryId, list);
   }
-  for (const list of entriesByCategory.values()) list.sort((a, b) => a.orderIndex - b.orderIndex);
+  for (const list of entriesByCategory.values())
+    list.sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
     <nav className="flex flex-col gap-6">
