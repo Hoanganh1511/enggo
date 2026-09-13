@@ -106,14 +106,7 @@ export function SeriesTreeManager({
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: cat.colorHex ?? "var(--color-border-strong)" }}
-                    aria-hidden="true"
-                  />
-                  <p className="font-semibold text-ink">{cat.title}</p>
-                </div>
+                <p className="font-semibold text-ink">{cat.title}</p>
               )}
 
               {!isRenaming && (
