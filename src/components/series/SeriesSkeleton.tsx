@@ -9,16 +9,30 @@ import { cn } from "@/lib/utils";
 // pagination) - dung framer-motion (khong phai @keyframes CSS thuan nhu
 // Skeleton mac dinh o components/ui/skeleton.tsx) THEO YEU CAU RIENG cho khu
 // vuc nay: 1 dai sang (gradient trang mo) QUET NGANG lien tuc qua khoi mau
-// nen (bg-surface-muted), thay vi chi mo/dam (pulse) don gian - "shimmer"
-// kinh dien cua skeleton screen (Facebook/LinkedIn...).
+// nen, thay vi chi mo/dam (pulse) don gian - "shimmer" kinh dien cua skeleton
+// screen (Facebook/LinkedIn...).
+//
+// [2026-09-14 fix] Ban DAU dung bg-surface-muted (#f4f4f5) lam nen khoi - qua
+// gan mau nen thuc te cua CA sidebar Series (#f5f6f8) LAN trang doc (trang),
+// khien tung thanh skeleton RIENG LE gan nhu VO HINH, nhap het vao 1 khoi mau
+// xam nhat duy nhat (nguoi dung bao "trông vỡ hết layout" - thuc chat la loi
+// TUONG PHAN, khong phai loi cau truc). Doi sang rgba(20,22,26,.08) + vien
+// rgba(20,22,26,.06) - CUNG "tong" mau rgba(20,22,26,*) da dung cho text
+// SeriesSidebar.tsx (dong bo 1 bang mau cho toan khu vuc Series) nhung du dam
+// de noi ro RANH GIOI tung thanh tren MOI nen sang (trang/#f5f6f8/#fafaf9).
 export function SeriesSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("relative overflow-hidden rounded-md bg-surface-muted", className)}>
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-md border border-[rgba(20,22,26,0.06)] bg-[rgba(20,22,26,0.08)]",
+        className,
+      )}
+    >
       <motion.div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent)",
+            "linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)",
         }}
         initial={{ x: "-100%" }}
         animate={{ x: "100%" }}
