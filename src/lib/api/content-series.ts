@@ -21,6 +21,11 @@ export type ContentSeriesListItem = {
   createdAt: string;
   updatedAt: string;
   _count: { entries: number };
+  // Kem theo tu findAll() (backend) - dung cho the Series o /series VA rail
+  // "Series mới nhất" o /home (mosaic icon tu vai entry dau, xem
+  // NewestSeriesRail.tsx). Sap xep san theo orderIndex.
+  categories: ContentSeriesCategory[];
+  entries: ContentSeriesEntrySummary[];
 };
 
 export type ContentSeriesCategory = {

@@ -2,15 +2,17 @@ import { auth } from "@/auth";
 import { getFeedCategoryTree } from "@/lib/api/feed-categories";
 import { listPostsAction } from "@/actions/discover/list-posts";
 import { listPublicCollectionsAction } from "@/actions/discover/collections/list-public-collections";
+import { listContentSeriesAction } from "@/actions/discover/content-series/list-content-series";
 import { getFollowingAction } from "@/actions/discover/follow-user";
 import { normalizePost } from "@/lib/discover/normalize-post";
 import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
 import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
 import { CreatorRail, type CreatorSummary } from "@/components/discover/articles-hub/CreatorRail";
 import { AttentionCollectionsRail } from "@/components/discover/articles-hub/AttentionCollectionsRail";
+import { NewestSeriesRail } from "@/components/discover/articles-hub/NewestSeriesRail";
 import { NewestSection } from "@/components/discover/articles-hub/NewestSection";
 import { ArticlesPostGrid } from "@/components/discover/articles-hub/ArticlesPostGrid";
-import { Flame, Newspaper, Users } from "lucide-react";
+import { BookOpen, Flame, Newspaper, Users } from "lucide-react";
 import type { Author } from "@/content/home-feed-mock";
 
 // /home - port giao dien tu source knowledge-dashboard-note-knowledge-hub-style.zip
@@ -29,12 +31,17 @@ export default async function ArticlesPage() {
   // Workspace (2026-09-14), gio dan thang toi trang soan bai that.
   const writeHref = username ? "/compose" : "/login";
 
-  const [rawPosts, attentionCollections, categoryTree] = await Promise.all([
+  const [rawPosts, attentionCollections, newestSeries, categoryTree] = await Promise.all([
     listPostsAction({ limit: 48 }).catch(() => []),
     // "Bộ sưu tập đang được chú ý" - top bo suu tap CONG KHAI theo so bai viet
     // that (sort "most-posts") - xem AttentionCollectionsRail.tsx.
     listPublicCollectionsAction({ scope: "all", sort: "most-posts", limit: 10 })
       .then((r) => r.items)
+      .catch(() => []),
+    // "Series mới nhất" - listContentSeries() da sort createdAt desc san o
+    // backend (xem findAll()), chi can cat 10 the dau - xem NewestSeriesRail.tsx.
+    listContentSeriesAction()
+      .then((items) => items.slice(0, 10))
       .catch(() => []),
     // Cay nhom chu de nghe nghiep - dung de xep hang cho NewestSection ben
     // duoi (moi nhom 1 hang), KHONG phai de hien TopicsRail (da xoa han).
@@ -102,6 +109,15 @@ export default async function ArticlesPage() {
         sub="Nhiều bài viết nhất từ cộng đồng"
       />
       <AttentionCollectionsRail collections={attentionCollections} />
+
+      <SectionTitle
+        icon={BookOpen}
+        title="Series mới nhất"
+        sub="Chuỗi bài học nhiều phần"
+        actionHref="/series"
+        actionLabel="Xem tất cả"
+      />
+      <NewestSeriesRail series={newestSeries} />
 
       <SectionTitle
         icon={Newspaper}

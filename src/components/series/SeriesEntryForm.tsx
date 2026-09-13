@@ -8,6 +8,7 @@ import { createContentSeriesEntryAction } from "@/actions/discover/content-serie
 import { updateContentSeriesEntryAction } from "@/actions/discover/content-series/update-content-series-entry";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
+import { SelectMenu } from "@/components/ui/select-menu";
 import type {
   ContentSeriesCategory,
   ContentSeriesEntryDetail,
@@ -99,17 +100,12 @@ export function SeriesEntryForm({
       <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-col gap-5">
         <div>
           <label className={labelClass}>Category *</label>
-          <select
-            className={inputClass}
+          <SelectMenu
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-          >
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.title}
-              </option>
-            ))}
-          </select>
+            onChange={setCategoryId}
+            options={categories.map((cat) => ({ value: cat.id, label: cat.title }))}
+            placeholder="Chọn category"
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr]">
