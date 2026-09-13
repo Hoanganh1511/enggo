@@ -29,14 +29,17 @@ export default async function SeriesLayout({
   if (!series) notFound();
 
   return (
-    // Sidebar mau KHAC noi dung ben phai (bg-surface-muted vs bg-surface mac
-    // dinh cua content) - yeu cau nguoi dung, khop mockup. `<aside>` KHONG dat
-    // h-fit de tu gian theo align-items:stretch mac dinh cua flex row cha
-    // (min-h-full), cho khoi mau phu HET chieu cao trang; phan nav ben trong
-    // moi la <div sticky> (dinh khi cuon), tach rieng khoi khoi mau ngoai.
-    <div className="flex min-h-full gap-8">
-      <aside className="hidden w-64 shrink-0 rounded-xl bg-surface-muted lg:block">
-        <div className="sticky top-6 p-5">
+    // Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang
+    // trong quanh no) - yeu cau nguoi dung, khop mockup. FeedMainArea.tsx (cha)
+    // co san 1 lop padding (py-6 + px-4/6/10) boc quanh MOI trang trong nhom
+    // (feed) - o day dung margin AM KHOP CHINH XAC tung gia tri do de "tran"
+    // ra het phan padding ay, thay vi lam 1 khoi mau code lo lung co padding
+    // xung quanh (nhu ban truoc, nguoi dung bao sai). Padding THAT (cho chu
+    // khong dinh sat canh) chuyen vao BEN TRONG tung nua (sidebar/content) o
+    // day thay vi o ngoai.
+    <div className="-mx-4 -my-6 flex min-h-[calc(100%+3rem)] sm:-mx-6 lg:-mx-10">
+      <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-muted lg:block">
+        <div className="sticky top-0 p-6">
           <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
             <Link
               href="/series"
@@ -61,7 +64,7 @@ export default async function SeriesLayout({
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">{children}</div>
     </div>
   );
 }
