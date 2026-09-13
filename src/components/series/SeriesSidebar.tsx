@@ -32,6 +32,7 @@ function CategoryNode({
   entriesByCategory,
   seriesSlug,
   pathname,
+  onNavigate,
 }: {
   category: ContentSeriesCategory;
   depth: number;
@@ -39,6 +40,7 @@ function CategoryNode({
   entriesByCategory: Map<string, ContentSeriesEntrySummary[]>;
   seriesSlug: string;
   pathname: string;
+  onNavigate?: () => void;
 }) {
   const children = byParent.get(category.id) ?? [];
   const entries = entriesByCategory.get(category.id) ?? [];
@@ -75,6 +77,7 @@ function CategoryNode({
             <Link
               key={entry.id}
               href={href}
+              onClick={onNavigate}
               className={cn(
                 "relative truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
                 active
@@ -113,6 +116,7 @@ function CategoryNode({
               entriesByCategory={entriesByCategory}
               seriesSlug={seriesSlug}
               pathname={pathname}
+              onNavigate={onNavigate}
             />
           ))}
         </div>
@@ -125,10 +129,12 @@ export function SeriesSidebar({
   seriesSlug,
   categories,
   entries,
+  onNavigate,
 }: {
   seriesSlug: string;
   categories: ContentSeriesCategory[];
   entries: ContentSeriesEntrySummary[];
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const byParent = buildCategoryTree(categories);
@@ -154,6 +160,7 @@ export function SeriesSidebar({
           entriesByCategory={entriesByCategory}
           seriesSlug={seriesSlug}
           pathname={pathname}
+          onNavigate={onNavigate}
         />
       ))}
     </nav>

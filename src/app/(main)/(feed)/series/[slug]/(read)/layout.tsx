@@ -4,6 +4,7 @@ import { ArrowLeft, Settings } from "lucide-react";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
+import { SeriesMobileTopBar, SeriesSidebarDrawer } from "@/components/series/SeriesMobileNav";
 
 // Layout dung chung cho toan bo 1 Series (Overview + moi Entry) - sidebar
 // trai (cay category/entry) o day de KHONG remount khi chuyen qua lai giua
@@ -42,52 +43,70 @@ export default async function SeriesLayout({
   if (!series) notFound();
 
   return (
-    // Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang
-    // trong quanh no) - yeu cau nguoi dung, khop mockup. (feed)/layout.tsx (cha)
-    // co san 1 lop padding (py-6 + px-4/6/10) boc quanh MOI trang trong nhom
-    // (feed) - o day dung margin AM KHOP CHINH XAC tung gia tri do de "tran"
-    // ra het phan padding ay, thay vi lam 1 khoi mau code lo lung co padding
-    // xung quanh (nhu ban truoc, nguoi dung bao sai). Padding THAT (cho chu
-    // khong dinh sat canh) chuyen vao BEN TRONG tung nua (sidebar/content) o
-    // day thay vi o ngoai.
-    //
-    // min-h dua tren VIEWPORT (100vh - chieu cao header) thay vi "min-h-full"
-    // (% cua parent - chinh no lai chi cao bang NOI DUNG, vd trang co it chu
-    // thi hang flex nay cung ngan theo, lam khoi mau bi "cut ngun" giua trang
-    // thay vi day het 1 man hinh - nguoi dung bao loi). Dam bao LUON it nhat
-    // day 1 viewport, cao hon the neu noi dung dai hon (min-height van cho
-    // gian ra binh thuong).
-    <div
-      className="-mx-4 -my-6 flex sm:-mx-6 lg:-mx-10"
-      style={{ minHeight: "calc(100vh - var(--header-height))" }}
-    >
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
-        <div className="sticky top-0 p-6">
-          <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
-            <Link
-              href="/series"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-            >
-              <ArrowLeft size={13} />
-              Tất cả series
-            </Link>
-            {status.isAdmin && (
-              <Link
-                href={`/series/${slug}/manage`}
-                aria-label="Quản lý series"
-                title="Quản lý series"
-                className="text-ink-faint hover:text-ink"
-              >
-                <Settings size={14} />
-              </Link>
-            )}
-          </div>
-          <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
-          <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
-        </div>
-      </aside>
+    <>
+      {/* Duoi lg: <aside> ben duoi AN HOAN TOAN, thanh nay thay the - giu lai
+          link back + ten series + gear admin + 1 nut mo SeriesSidebarDrawer
+          (cay category/entry that, xem SeriesMobileNav.tsx) - truoc day
+          KHONG co gi thay the tren mobile (lo responsive that su, khong phai
+          suy doan). Tran sat mep NGANG + mep TREN (cung cong thuc margin am
+          voi div ben duoi) de bam dung vien tren cua vung noi dung, KHONG
+          dung lg:-mx-10 (vo nghia vi chinh thanh nay da lg:hidden). */}
+      <SeriesMobileTopBar slug={slug} seriesTitle={series.title} isAdmin={status.isAdmin} />
+      <SeriesSidebarDrawer
+        slug={slug}
+        seriesTitle={series.title}
+        isAdmin={status.isAdmin}
+        categories={series.categories}
+        entries={series.entries}
+      />
 
-      <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">{children}</div>
-    </div>
+      {/* Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang
+          trong quanh no) - yeu cau nguoi dung, khop mockup. (feed)/layout.tsx (cha)
+          co san 1 lop padding (py-6 + px-4/6/10) boc quanh MOI trang trong nhom
+          (feed) - o day dung margin AM KHOP CHINH XAC tung gia tri do de "tran"
+          ra het phan padding ay, thay vi lam 1 khoi mau code lo lung co padding
+          xung quanh (nhu ban truoc, nguoi dung bao sai). Padding THAT (cho chu
+          khong dinh sat canh) chuyen vao BEN TRONG tung nua (sidebar/content) o
+          day thay vi o ngoai.
+
+          min-h dua tren VIEWPORT (100vh - chieu cao header) thay vi "min-h-full"
+          (% cua parent - chinh no lai chi cao bang NOI DUNG, vd trang co it chu
+          thi hang flex nay cung ngan theo, lam khoi mau bi "cut ngun" giua trang
+          thay vi day het 1 man hinh - nguoi dung bao loi). Dam bao LUON it nhat
+          day 1 viewport, cao hon the neu noi dung dai hon (min-height van cho
+          gian ra binh thuong). */}
+      <div
+        className="-mx-4 -my-6 flex sm:-mx-6 lg:-mx-10"
+        style={{ minHeight: "calc(100vh - var(--header-height))" }}
+      >
+        <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
+          <div className="sticky top-0 p-6">
+            <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
+              <Link
+                href="/series"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
+              >
+                <ArrowLeft size={13} />
+                Tất cả series
+              </Link>
+              {status.isAdmin && (
+                <Link
+                  href={`/series/${slug}/manage`}
+                  aria-label="Quản lý series"
+                  title="Quản lý series"
+                  className="text-ink-faint hover:text-ink"
+                >
+                  <Settings size={14} />
+                </Link>
+              )}
+            </div>
+            <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
+            <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
+          </div>
+        </aside>
+
+        <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">{children}</div>
+      </div>
+    </>
   );
 }
