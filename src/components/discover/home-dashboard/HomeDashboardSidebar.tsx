@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -7,6 +8,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BookOpen,
   Bookmark,
+  ChevronLeft,
+  ChevronRight,
   Folder,
   GitBranch,
   Hash,
@@ -20,6 +23,19 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
+import { useDashboardSidebarCollapseStore } from "@/stores/dashboard-sidebar-collapse-store";
+
+// Trang chi tiet Series (Overview/Entry, xem [slug]/(read)/layout.tsx) tu ve
+// them 1 sidebar RIENG (SeriesSidebar.tsx) - 2 sidebar cung luc se chat qua
+// nhieu dien tich, nen sidebar CHINH nay tu thu gon khi vao day (yeu cau
+// nguoi dung). "/series/[slug]/manage/**" va "/series/new" KHONG tinh la
+// "trang chi tiet" o day - 2 nhom do KHONG mount SeriesSidebar (nam ngoai
+// nhom route (read), xem manage/page.tsx) nen khong can thu gon lam gi.
+function isSeriesDetailPath(pathname: string): boolean {
+  if (!pathname.startsWith("/series/") || pathname === "/series/new") return false;
+  const segments = pathname.slice("/series/".length).split("/").filter(Boolean);
+  return segments[1] !== "manage";
+}
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -185,11 +201,53 @@ export function HomeDashboardSidebar() {
   const { data: session } = useSession();
   const username = session?.username;
   const displayName = session?.user?.name ?? "Bạn";
+  const collapsed = useDashboardSidebarCollapseStore((s) => s.collapsed);
+  const setCollapsed = useDashboardSidebarCollapseStore((s) => s.setCollapsed);
+  const toggleCollapsed = useDashboardSidebarCollapseStore((s) => s.toggle);
+
+  // Chi tu dong thu gon/mo lai LUC CHUYEN TIEP vao/ra trang chi tiet Series
+  // (khong ep lai moi lan doi entry BEN TRONG cung khu vuc do) - nguoi dung
+  // van bam nut toggle de ghi de trong luc dang o do, chi khi RA KHOI han
+  // khu vuc Series chi tiet moi tu dong mo lai.
+  const wasInSeriesDetail = useRef(false);
+  useEffect(() => {
+    const inSeriesDetail = isSeriesDetailPath(pathname);
+    if (inSeriesDetail !== wasInSeriesDetail.current) {
+      setCollapsed(inSeriesDetail);
+      wasInSeriesDetail.current = inSeriesDetail;
+    }
+  }, [pathname, setCollapsed]);
 
   return (
-    <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-[244px] border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
-      <SidebarBody pathname={pathname} displayName={displayName} username={username} />
-    </aside>
+    <>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 flex-col border-r border-[#edf0f4] bg-white px-5 py-6 transition-transform duration-200 ease-out lg:flex",
+          collapsed && "-translate-x-full",
+        )}
+      >
+        <SidebarBody pathname={pathname} displayName={displayName} username={username} />
+      </aside>
+
+      {/* Nut thu gon/mo rong - bam duoc CA khi sidebar dang hien (de thu gon)
+          LAN khi da an (de mo lai), tu truot theo canh phai cua sidebar qua
+          transition-[left] cung toc do voi -translate-x-full o tren, dam bao
+          2 chuyen dong khop nhau. CHI hien tu lg tro len, cung dieu kien voi
+          <aside> - duoi lg da co drawer + hamburger rieng, khong lien quan. */}
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+        title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+        style={{ top: "calc(var(--header-height) + 20px)" }}
+        className={cn(
+          "fixed z-30 hidden size-6 cursor-pointer items-center justify-center rounded-full border border-[#edf0f4] bg-white text-slate-400 shadow-sm transition-[left] duration-200 ease-out hover:text-slate-600 lg:flex",
+          collapsed ? "left-2" : "left-58",
+        )}
+      >
+        {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+      </button>
+    </>
   );
 }
 
