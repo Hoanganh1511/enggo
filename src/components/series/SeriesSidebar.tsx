@@ -68,7 +68,14 @@ function EntryLink({
                 : "font-normal text-(--sidebar-item-color)",
             ),
       )}
-      style={{ paddingLeft: `${18 + depth * 12}px` }}
+      // Entry THANG duoi category goc (depth 0) - paddingLeft CO DINH bang
+      // DUNG category cha (10px, xem CategoryNode) - yeu cau nguoi dung:
+      // "Các bài ngay liền sau cate cũng không để thụt padding left cộng
+      // thêm. Giữ giống tỉ lệ dóng xuống của cate" - khong con "18px" nhu
+      // truoc (tung la 1 khoang thut nho co y, gio bo di de dong hang THANG
+      // CANH). Entry long trong accordion (depth>0) VAN thut vao (24px) -
+      // day la truong hop CAN phan biet cap, khac voi truong hop tren.
+      style={{ paddingLeft: isNested ? "24px" : "10px" }}
     >
       {/* Active - nen xam nhat trung tinh rgba(20,22,26,0.06), rounded-lg
           (yeu cau nguoi dung: "Thay đổi hẳn active... giờ chỉ để màu nền là
@@ -139,12 +146,24 @@ function CategoryNode({
       type="button"
       onClick={() => onToggle(category.id)}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[14px] leading-5 font-normal hover:bg-hover-bg",
+        // text-[13px] - dong bo VOI CHINH cac entry no chua (yeu cau nguoi
+        // dung sau khi xem anh chup: "cái title accordion để cùng font size
+        // với mấy cái kia") - uu tien phan hoi truc tiep tren giao dien nay
+        // hon token spec ly thuyet ban dau (14px), vi day la 1 accordion HEP
+        // pham vi (chi 1 nhom con + 2 entry ben trong), dong bo font-size
+        // VOI CHINH NOI DUNG no dang bao boc quan trong hon so khop tuyet
+        // doi voi "anchor" 14px chung toan sidebar.
+        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] leading-5 font-normal hover:bg-hover-bg",
         hasActiveEntry
           ? "text-(--sidebar-item-parent-active-color)"
           : "text-(--sidebar-item-color)",
       )}
-      style={{ paddingLeft: `${10 + depth * 12}px` }}
+      // paddingLeft CO DINH (khong nhan them depth * 12) - yeu cau nguoi
+      // dung: "accordion không để thụt vào đâu nhé. Chỉ có các bài trong
+      // accordion mới bắt đầu tăng padding left thôi" - ban than hang
+      // accordion thang HANG voi category goc, chi ENTRY o BEN TRONG no moi
+      // thut le (xem EntryLink, van nhan depth * 12 nhu cu).
+      style={{ paddingLeft: "10px" }}
     >
       {category.colorHex && (
         <span
