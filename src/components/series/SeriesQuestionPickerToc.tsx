@@ -15,7 +15,11 @@ import type { QuestionPickerTocItem } from "@/lib/docs/question-picker-toc";
 // can lai sau). Hover NHE (chi doi nen mo, KHONG doi mau vien nhu ban truoc
 // - "hiệu ứng khi hover vào cũng nhẹ nhàng thôi"). Them icon ChevronDown o
 // CUOI box (yeu cau nguoi dung: "chưa có icon mũi tên xuống ở cuối box").
-export function SeriesQuestionPickerToc({ items }: { items: QuestionPickerTocItem[] }) {
+export function SeriesQuestionPickerToc({
+  items,
+}: {
+  items: QuestionPickerTocItem[];
+}) {
   if (items.length < 2) return null;
 
   return (
@@ -30,12 +34,17 @@ export function SeriesQuestionPickerToc({ items }: { items: QuestionPickerTocIte
             {String(i + 1).padStart(2, "0")}
           </span>
           <span
-            className="min-w-0 flex-1 truncate text-[16px] font-medium"
-            style={{ color: "rgb(20, 22, 26)" }}
+            className="min-w-0 flex-1 truncate text-[16px] "
+            style={{ color: "rgba(20, 22, 26,0.86)" }}
           >
             {item.question}
           </span>
-          <ChevronDown size={14} strokeWidth={2} className="shrink-0 text-ink-faint" aria-hidden="true" />
+          <ChevronDown
+            size={14}
+            strokeWidth={2}
+            className="shrink-0 text-ink-faint"
+            aria-hidden="true"
+          />
         </Link>
       ))}
     </div>
