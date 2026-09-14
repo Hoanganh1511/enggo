@@ -17,12 +17,23 @@ export function SeriesFocusSidebar({ children }: { children: React.ReactNode }) 
   return (
     <>
       {focusModeActive && (
+        // left CO DIEU KIEN theo `collapsed` - luc THU GON, <aside> bi an
+        // (lg:hidden ben duoi) nen vung noi dung bat dau tu sat mep trai,
+        // "left-4" dat nut noi 16px canh mep do la dung. Nhung luc DA MO
+        // (collapsed=false), <aside> quay lai chiem 256px (w-64) dau tien -
+        // van giu "left-4" se lam nut CHONG LEN chinh tieu de/noi dung cua
+        // sidebar (bug nguoi dung bao, kem anh chup). Doi sang
+        // "left-[272px]" (256 + 16) de nut luon noi DUNG 16px SAU MEP PHAI
+        // cua sidebar, du no dang hien hay an.
         <button
           type="button"
           onClick={toggleSidebar}
           aria-label={collapsed ? "Mở mục lục series" : "Thu gọn mục lục series"}
           title={collapsed ? "Mở mục lục series" : "Thu gọn mục lục series"}
-          className="fixed top-6 left-4 z-30 hidden size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink-muted shadow-md transition-colors duration-150 ease-out hover:text-ink lg:flex"
+          className={cn(
+            "fixed top-6 z-30 hidden size-10 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink-muted shadow-md transition-colors duration-150 ease-out hover:text-ink lg:flex",
+            collapsed ? "left-4" : "left-68",
+          )}
         >
           <Menu size={17} strokeWidth={2} aria-hidden="true" />
         </button>

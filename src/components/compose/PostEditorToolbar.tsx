@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
-import type { CalloutVariant } from "./post-extensions";
+import type { CalloutVariant, QuestionPickerItem } from "./post-extensions";
 
 function Btn({
   label,
@@ -173,12 +173,31 @@ export function PostEditorToolbar({
       .run();
   };
 
-  // Chen "TOC 4-box cau hoi" (bien the khac Muc luc dang so o tren - o day
-  // nguoi soan TU GO cau hoi/mo ta, khong quet H2 tu dong, xem
-  // question-picker-view.tsx). Dung attrs mac dinh cua node (4 cau hoi mau)
-  // luon, khong can truyen items o day.
+  // Chen "TOC 4-box cau hoi" - quet H2 GIONG insertToc() o tren (yeu cau
+  // nguoi dung sau khi so sanh voi "On this page": "chỉ bắt theo h2 thôi
+  // nhé" - moi box = 1 heading H2, khong con go tay tu do nua). Khac
+  // insertToc o cho: MOI box con lay them doan VAN BAN NGAY SAU heading do
+  // (block ke tiep, thuong la 1 paragraph) lam "description" hien ra khi mo
+  // box - neu khong co doan van nao theo sau (2 heading H2 lien tiep, hoac
+  // H2 cuoi cung khong co gi phia sau) thi description de trong.
   const insertQuestionPicker = () => {
-    editor.chain().focus().insertContent({ type: "questionPicker" }).run();
+    const items: QuestionPickerItem[] = [];
+    let pendingQuestion: string | null = null;
+    editor.state.doc.forEach((node) => {
+      if (node.type.name === "heading" && node.attrs.level === 2) {
+        if (pendingQuestion !== null) items.push({ question: pendingQuestion, description: "" });
+        pendingQuestion = node.textContent;
+      } else if (pendingQuestion !== null && node.textContent.trim()) {
+        items.push({ question: pendingQuestion, description: node.textContent.trim() });
+        pendingQuestion = null;
+      }
+    });
+    if (pendingQuestion !== null) items.push({ question: pendingQuestion, description: "" });
+    if (items.length === 0) {
+      toast.danger("Chưa có tiêu đề Heading 2 nào trong bài để tạo TOC dạng box.");
+      return;
+    }
+    editor.chain().focus().insertContent({ type: "questionPicker", attrs: { items } }).run();
   };
 
   return (
@@ -244,7 +263,7 @@ export function PostEditorToolbar({
       <Btn label="Go deeper" Icon={Asterisk} onClick={insertGoDeeper} />
       <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />
       <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
-      <Btn label="TOC dạng 4 câu hỏi" Icon={LayoutGrid} onClick={insertQuestionPicker} />
+      <Btn label="TOC dạng box (theo H2)" Icon={LayoutGrid} onClick={insertQuestionPicker} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />

@@ -366,24 +366,27 @@ export const CuratedList = Node.create({
 
 export type QuestionPickerItem = { question: string; description: string };
 
+// Fallback CHI dung khi bam nut nhung KHONG con H2 nao trong bai (hiem gap -
+// insertQuestionPicker() trong PostEditorToolbar.tsx bao loi truoc, khong
+// cho chen rong - xem duoi).
 const DEFAULT_QUESTION_PICKER_ITEMS: QuestionPickerItem[] = [
   { question: "Câu hỏi 1", description: "" },
-  { question: "Câu hỏi 2", description: "" },
-  { question: "Câu hỏi 3", description: "" },
-  { question: "Câu hỏi 4", description: "" },
 ];
 
-// "TOC dang 4-box cau hoi" - bien the KHAC voi TocBlock (danh so H2), day la
-// 1 GRID cau hoi (do nguoi dung chon, khong tu dong theo heading) - moi o la
-// 1 <details> RIENG (KHONG dung chung 1 panel duoi grid nhu anh mau nguoi
-// dung gui) de ban RENDER TINH (renderHTML, khi Post doc qua
-// renderTiptapHTML - xem ArticleBody.tsx/docs/engineering-log.md 2026-09-10)
-// van "bam mo/dong" duoc BANG HTML/CSS THUAN, KHONG can JS/NodeView nao chay
-// (giu dung tinh than TocBlock/CuratedList: NodeView React CHI phuc vu luc
-// SOAN, ban doc tinh phai tu hoat dong doc lap). Danh doi da chon: noi dung
-// mo ra NAM NGAY DUOI cau hoi cua chinh no (trong long the), khac anh mau co
-// 1 panel rieng ben duoi CA grid dung chung cho ca 4 - don gian hon nhieu ma
-// van dung dung tinh nang "bam 1 cau hoi de xem noi dung tuong ung".
+// "TOC dang box theo H2" - bien the KHAC voi TocBlock (list so 01/02/03), o
+// day la 1 GRID cau hoi/card dang <details> co the bam mo/dong. Item TU
+// DONG QUET tu heading H2 trong bai (giong TocBlock, xem insertQuestionPicker()
+// trong PostEditorToolbar.tsx) - yeu cau nguoi dung sau khi so sanh voi "On
+// this page": "chỉ bắt theo h2 thôi nhé" (truoc do nguoi soan phai TU GO tay
+// tung cau hoi, khong lien quan gi heading that trong bai). Ban RENDER TINH
+// (renderHTML, khi Post doc qua renderTiptapHTML - xem ArticleBody.tsx/
+// docs/engineering-log.md 2026-09-10) van "bam mo/dong" duoc BANG HTML/CSS
+// THUAN, KHONG can JS/NodeView nao chay (giu dung tinh than TocBlock/
+// CuratedList: NodeView React CHI phuc vu luc SOAN, ban doc tinh phai tu
+// hoat dong doc lap). Danh doi da chon: noi dung mo ra NAM NGAY DUOI cau
+// hoi cua chinh no (trong long the), khac anh mau tham khao ban dau co 1
+// panel rieng ben duoi CA grid dung chung - don gian hon nhieu ma van dung
+// dung tinh nang "bam 1 muc de xem noi dung tuong ung".
 export const QuestionPicker = Node.create({
   name: "questionPicker",
   group: "block",
@@ -445,23 +448,45 @@ export const QuestionPicker = Node.create({
   addNodeView() {
     return ReactNodeViewRenderer(QuestionPickerView);
   },
-  // Markdown fallback (xem comment addStorage cua Callout o tren) - xuong
-  // cap thanh cac tieu de H4 (cau hoi) + mo ta ben duoi, mat het grid/collapse
-  // trang tri.
+  // Markdown serialize - KHAC HAN cach lam cua Callout/GoDeeper/TocBlock o
+  // tren (xuong cap thanh text thuong): o day ghi THANG doan HTML <details>
+  // (giong het renderHTML ben tren) vao chuoi markdown, vi Series Entry
+  // (contentMarkdown) doc qua DocsMarkdown.tsx (react-markdown +
+  // rehype-raw) - CAN giu nguyen giao dien grid/collapse THAT su tren ca 2
+  // pipeline (Post qua renderTiptapHTML() LAN Series qua DocsMarkdown), yeu
+  // cau nguoi dung sau khi thay ban dau chi xuong cap con text ("Vẫn chưa
+  // thấy cái TOC dạng box... Tôi bảo 2 lần rồi"). An toan de nhung HTML tho
+  // vi noi dung Series/docs CHI admin moi soan duoc (AdminGuard ben
+  // content-series.service.ts), khong phai input nguoi dung thuong.
   addStorage() {
     return {
       markdown: {
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
           const items = (node.attrs.items ?? []) as QuestionPickerItem[];
-          items.forEach((item, i) => {
-            state.write(`**${String(i + 1).padStart(2, "0")}. ${item.question}**`);
-            state.ensureNewLine();
-            if (item.description) {
-              state.write(item.description);
-              state.ensureNewLine();
-            }
-            state.ensureNewLine();
-          });
+          const escapeHtml = (s: string) =>
+            s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          const cardsHtml = items
+            .map((item, i) => {
+              const openAttr = i === 0 ? " open" : "";
+              const description = item.description
+                ? `<p class="question-picker-description">${escapeHtml(item.description)}</p>`
+                : "";
+              return (
+                `<details class="question-picker-item"${openAttr}>` +
+                `<summary class="question-picker-summary">` +
+                `<span class="question-picker-index">${String(i + 1).padStart(2, "0")}</span>` +
+                `<span class="question-picker-question">${escapeHtml(item.question)}</span>` +
+                `<svg class="question-picker-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>` +
+                `</summary>${description}</details>`
+              );
+            })
+            .join("");
+          // Blank dong truoc/sau (ensureNewLine x2 + closeBlock) - BAT BUOC de
+          // CommonMark nhan dien day la 1 "HTML block" doc lap (type 6), khong
+          // bi gop lan vao 1 paragraph van ban ben canh roi bi escape mat.
+          state.ensureNewLine();
+          state.write(`<div data-question-picker>${cardsHtml}</div>`);
+          state.ensureNewLine();
           state.closeBlock(node);
         },
       },

@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { DOCS_PROSE_CLASS } from "@/lib/docs/docs-prose";
 import { slugifyHeading } from "@/lib/docs/docs-toc";
 
@@ -34,7 +35,16 @@ export function DocsMarkdown({ markdown }: { markdown: string }) {
 
   return (
     <div className={DOCS_PROSE_CLASS}>
+      {/* rehypeRaw - cho phep cac khoi HTML tho (vd <div data-question-picker>
+          do QuestionPicker.addStorage() ghi ra, xem post-extensions.ts) di
+          qua NGUYEN VEN thay vi bi escape thanh text - react-markdown mac
+          dinh KHONG render HTML tho neu thieu plugin nay. An toan vi noi
+          dung Series/docs CHI admin soan duoc (AdminGuard), khong phai input
+          nguoi dung thuong - yeu cau nguoi dung: "Vẫn chưa thấy cái TOC dạng
+          box... Tôi bảo 2 lần rồi" (truoc do QuestionPicker chi xuong cap
+          thanh text thuong o day, mat het giao dien box/collapse). */}
       <ReactMarkdown
+        rehypePlugins={[rehypeRaw]}
         components={{
           h2: ({ children }) => <h2 id={headingId(children)}>{children}</h2>,
           h3: ({ children }) => <h3 id={headingId(children)}>{children}</h3>,

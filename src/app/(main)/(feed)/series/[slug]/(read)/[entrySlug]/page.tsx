@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Clock } from "lucide-react";
 import { getContentSeriesEntryAction } from "@/actions/discover/content-series/get-content-series-entry";
 import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
@@ -41,27 +42,40 @@ async function EntryHeader({
 
   return (
     <FadeIn>
-      <p className="font-content text-[13px] text-ink-faint">
-        {/* "Series" them vao DAU breadcrumb - thay the cho link "Tất cả
-            series" da bo khoi sidebar (yeu cau nguoi dung: "Thay cho phần
-            Tất cả series để back về thì thêm Series vào đầu tiên của
-            breadcrumb"). */}
-        <Link href="/series" className="hover:text-ink hover:underline">
-          Series
-        </Link>
-        {"  ·  "}
-        <Link
-          href={`/series/${slug}`}
-          className="hover:text-ink hover:underline"
-        >
-          {series.title}
-        </Link>
-        {"  ·  "}
-        {String(positionIndex).padStart(2, "0")} /{" "}
-        {String(totalCount).padStart(2, "0")}
-        {" · "}
-        {entry.readTimeMinutes} phút đọc
-      </p>
+      {/* Tach ro 2 nhom: breadcrumb (Series / Tieu de series - dieu huong
+          duoc, mau dam hon) VA metadata (vi tri/thoi gian doc - CHI thong
+          tin, khong bam duoc, mau nhat hon + 1 vach doc ngan cach ro voi
+          breadcrumb) - yeu cau nguoi dung: "Breadcrumb chưa phân cách nhìn
+          có sự rõ rệt. lẫn lộn cả thời gian đọc vào đây" (truoc do CA 4 phan
+          dung chung 1 mau/1 kieu dau cham "·" nhu nhau, nhin thanh 1 chuoi
+          phang khong phan tach). */}
+      <div className="font-content flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-ink-muted">
+          <Link href="/series" className="hover:text-ink hover:underline">
+            Series
+          </Link>
+          <span className="text-ink-faint" aria-hidden="true">
+            /
+          </span>
+          <Link
+            href={`/series/${slug}`}
+            className="hover:text-ink hover:underline"
+          >
+            {series.title}
+          </Link>
+        </nav>
+        <span className="h-3 w-px bg-border" aria-hidden="true" />
+        <span className="flex items-center gap-1.5 tabular-nums text-ink-faint">
+          <span>
+            {String(positionIndex).padStart(2, "0")} /{" "}
+            {String(totalCount).padStart(2, "0")}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock size={11} strokeWidth={2} aria-hidden="true" />
+            {entry.readTimeMinutes} phút đọc
+          </span>
+        </span>
+      </div>
 
       {/* entry.icon KHONG hien o day - CHI dung trong SeriesSidebar.tsx (yeu
           cau nguoi dung: "icon chỉ hiện trên sidebar thôi, không liên quan
