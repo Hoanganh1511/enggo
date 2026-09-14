@@ -146,7 +146,12 @@ export function RecentPostsMenu() {
         <button
           type="button"
           title="Bài viết gần đây"
-          className="flex h-9 w-7 shrink-0 cursor-pointer items-center justify-center rounded-r-sm border-l border-white/20 bg-[#8F3F4D] text-surface transition-opacity duration-150 ease-out hover:opacity-90"
+          // bg doi tu #8F3F4D sang rgb(245,196,81) (yeu cau nguoi dung: doi
+          // het cac cho dung mau do dam do sang mau nay) - border-black/15
+          // (thay border-white/20 cu, vi nen gio SANG nen can duong ke TOI
+          // hon moi thay ro) + text-ink (thay text-surface/trang, tuong
+          // phan qua kem tren nen vang sang).
+          className="flex h-9 w-7 shrink-0 cursor-pointer items-center justify-center rounded-r-sm border-l border-black/15 bg-[rgb(245,196,81)] text-ink transition-opacity duration-150 ease-out hover:opacity-90"
         >
           <ChevronDown
             size={14}

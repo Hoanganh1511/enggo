@@ -39,7 +39,7 @@ export function SeriesIconPicker({
         open={open}
         align="start"
         sideOffset={6}
-        className="z-50 w-64 overflow-hidden rounded-md border border-border bg-surface p-2 shadow-dropdown"
+        className="z-50 w-72 overflow-hidden rounded-md border border-border bg-surface p-2 shadow-dropdown"
       >
         <div className="mb-1.5 flex h-8 items-center gap-1.5 rounded-md border border-border bg-input-bg px-2.5">
           <Search size={12} strokeWidth={1.9} className="text-ink-faint" />
@@ -50,9 +50,13 @@ export function SeriesIconPicker({
             className="min-w-0 flex-1 bg-transparent text-[12px] text-ink outline-none placeholder:text-ink-faint"
           />
         </div>
-        <div className="grid max-h-40 grid-cols-7 gap-1 overflow-y-auto">
+        {/* max-h tang len (160px -> 256px) vi danh sach icon vua mo rong rat
+            nhieu (yeu cau nguoi dung: "ít icon quá... thật nhiều vào") - van
+            scroll duoc ben trong, chi cho xem duoc nhieu hang hon truoc khi
+            phai cuon. */}
+        <div className="grid max-h-64 grid-cols-8 gap-1 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="col-span-7 py-3 text-center text-[11px] text-ink-faint">
+            <p className="col-span-8 py-3 text-center text-[11px] text-ink-faint">
               Không tìm thấy icon.
             </p>
           ) : (

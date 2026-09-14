@@ -751,10 +751,11 @@ body {
 
 /* Hieu ung "nuoc dang" luc XOA binh luan (ArticleComments.tsx) - GIONG
    .cover-water-fill ve ky thuat (::before khoi nuoc + ::after dai song, tai
-   dung texture cua .poll-wave) nhung mau do #8F3F4D (khop mau nut "Viết bài"
-   o TopHeaderBar.tsx, theo dung yeu cau) va chi dang MOT LAN (khong lap vo
-   han - comment bien mat khoi DOM ngay sau khi API xoa xong + animation
-   chay het, khong con ly do lap lai). */
+   dung texture cua .poll-wave) khop mau accent chung voi nut "Viết bài" o
+   TopHeaderBar.tsx (rgb(245,196,81) - doi tu #8F3F4D theo yeu cau nguoi
+   dung: "Đổi tất cả những chỗ mà dùng cái màu đỏ đậm đậm sang màu này") va
+   chi dang MOT LAN (khong lap vo han - comment bien mat khoi DOM ngay sau
+   khi API xoa xong + animation chay het, khong con ly do lap lai). */
 .comment-delete-water {
   position: relative;
   overflow: hidden;
@@ -769,7 +770,7 @@ body {
 .comment-delete-water::before {
   bottom: 0;
   top: 100%;
-  background: #8f3f4d;
+  background: rgb(245, 196, 81);
   animation: comment-delete-water-rise 900ms ease-in forwards;
 }
 .comment-delete-water::after {

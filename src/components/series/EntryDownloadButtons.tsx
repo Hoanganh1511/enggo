@@ -118,8 +118,9 @@ export function EntryDownloadButtons({
 
       {/* Switch rieng (khong dung lai Toggle chung o SettingsControls.tsx -
           ban do to hon va mau xanh --primary, lac tong voi khu Series dang
-          dung 1 accent duy nhat #8F3F4D cho moi trang thai active/nut chinh,
-          xem SeriesSidebar.tsx/TopHeaderBar.tsx "Viết bài"). Kich thuoc nho
+          dung 1 accent duy nhat rgb(245,196,81) cho moi trang thai active/
+          nut chinh - doi tu #8F3F4D theo yeu cau nguoi dung, xem
+          RecentPostsMenu.tsx/TopHeaderBar.tsx "Viết bài"). Kich thuoc nho
           gon hon (h-5 w-9) khop voi 2 nut Tai PDF/Markdown ben canh. */}
       <label className="ml-1 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-muted select-none">
         <button
@@ -129,7 +130,7 @@ export function EntryDownloadButtons({
           aria-label="Focus mode"
           onClick={toggleFocusMode}
           className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ease-out ${
-            focusModeActive ? "bg-[#8F3F4D]" : "bg-ink-disabled"
+            focusModeActive ? "bg-[rgb(245,196,81)]" : "bg-ink-disabled"
           }`}
         >
           <span

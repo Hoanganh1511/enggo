@@ -194,7 +194,7 @@ function CategoryNode({
     // 12px, moi cap con lai (nhom con/entry) deu xoay quanh anchor 14px
     // (yeu cau nguoi dung ve he token, xem comment CategoryNode/EntryLink).
     <p
-      className="flex items-center gap-1.5 px-2.5 font-mono text-[12px] leading-4 font-medium text-(--sidebar-section-color)"
+      className="flex items-center gap-1.5 px-2.5 font-mono text-[11px] leading-4 font-medium text-(--sidebar-section-color)"
       style={{ paddingLeft: `${10 + depth * 12}px` }}
     >
       {category.colorHex && (
