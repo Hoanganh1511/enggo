@@ -24,10 +24,11 @@ export function SeriesNextEntryBanner({
     // p-6 lg:p-10") - CHI dung trong pham vi component nay (khong dung chung
     // o noi khac) nen bake thang vao day cho gon, khong can 1 div boc rieng
     // moi lan goi.
-    <Link
-      href={`/series/${seriesSlug}/${next.slug}`}
-      className="group -mx-6 mt-10 flex items-center justify-between gap-6 border-t border-b border-border bg-surface-muted px-6 py-8 transition-colors duration-150 ease-out hover:bg-hover-bg lg:-mx-10 lg:px-10"
-    >
+    // div THUONG (khong phai <Link>) - CHI nut tron mui ten ben duoi moi
+    // nhan click/dieu huong (yeu cau nguoi dung: "Chỉ nhận event khi click
+    // đúng button icon mũi tên thôi nhé") - truoc do CA vung boc ngoai la 1
+    // <Link>, click bat ky dau trong bang deu dieu huong.
+    <div className="group -mx-6 mt-10 flex items-center justify-between gap-6 border-t border-b border-border bg-surface-muted px-6 py-8 lg:-mx-10 lg:px-10">
       <div className="min-w-0">
         <p className="font-mono text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
           Next{categoryTitle ? ` · ${categoryTitle}` : ""}
@@ -41,9 +42,13 @@ export function SeriesNextEntryBanner({
           </p>
         )}
       </div>
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform duration-150 ease-out group-hover:translate-x-0.5">
+      <Link
+        href={`/series/${seriesSlug}/${next.slug}`}
+        aria-label={`Bài tiếp theo: ${next.navTitle || next.title}`}
+        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink text-white transition-transform duration-150 ease-out hover:translate-x-0.5"
+      >
         <ArrowRight size={18} strokeWidth={2} aria-hidden="true" />
-      </span>
-    </Link>
+      </Link>
+    </div>
   );
 }

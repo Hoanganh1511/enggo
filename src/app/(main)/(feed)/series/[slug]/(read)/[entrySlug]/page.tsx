@@ -7,6 +7,7 @@ import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
+import { extractQuestionPickerToc } from "@/lib/docs/question-picker-toc";
 import {
   EntryDownloadButtons,
   ENTRY_CONTENT_ID,
@@ -14,6 +15,7 @@ import {
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
+import { SeriesQuestionPickerToc } from "@/components/series/SeriesQuestionPickerToc";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
   EntryHeaderSkeleton,
@@ -112,9 +114,17 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
   const data = await dataPromise;
   if (!data) notFound();
   const { entry } = data;
+  // TU DONG quet H2 -> grid box "nhay nhanh" toi section (yeu cau nguoi
+  // dung: "chỉ bắt theo h2 thôi" + "4 button toc đâu... bắt theo h2 đâu" -
+  // KHONG con la 1 cong cu phai chen tay qua Composer nua, tu xuat hien tren
+  // MOI Entry co >=2 heading H2 - xem SeriesQuestionPickerToc.tsx (component
+  // tu an neu <2 muc).
+  const questionPickerItems = extractQuestionPickerToc(entry.contentMarkdown);
 
   return (
     <FadeIn>
+      <SeriesQuestionPickerToc items={questionPickerItems} />
+
       <div id={ENTRY_CONTENT_ID} className="mt-6">
         <DocsMarkdown markdown={entry.contentMarkdown} />
       </div>
