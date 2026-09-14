@@ -48,29 +48,18 @@ function EntryLink({
       href={href}
       onClick={onNavigate}
       className={cn(
-        "relative truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
+        "truncate rounded-lg py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
         active
-          ? "bg-[rgba(143,63,77,0.08)] font-medium text-[#8F3F4D]"
+          ? "bg-[rgba(20,22,26,0.06)] font-medium text-content-text"
           : "text-content-text hover:bg-hover-bg hover:text-[rgba(20,22,26,0.92)]",
       )}
       style={{ paddingLeft: `${18 + depth * 12}px` }}
     >
-      {/* Active: nen NHAT cung tong mau #8F3F4D (rgba(143,63,77,.08) - theo
-          yeu cau nguoi dung, tham khao 1 sidebar ngoai co nen day sau muc
-          dang chon) CONG voi thanh chi bao trai - truoc day CHI co thanh chi
-          bao + doi mau chu, khong co nen. Van giu dung 1 accent #8F3F4D (mau
-          nut "Viết bài" tren header, xem TopHeaderBar.tsx) - KHONG quay lai
-          nen xanh --primary-soft cu (yeu cau nguoi dung truoc day: khong
-          dung mau xanh nua) dung tinh than "nen mau nhat" nhung van dung
-          tong mau da chot. left-0 CO DINH (khong theo paddingLeft thut le
-          tung depth) - bam sat mep trai CA hang, dung quy uoc
-          active-indicator quen thuoc cua sidebar dang cay. */}
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute top-0 bottom-0 left-0 w-0.5 rounded-full bg-[#8F3F4D]"
-        />
-      )}
+      {/* Active - DOI HAN sang chi 1 nen xam nhat trung tinh
+          rgba(20,22,26,0.06), rounded-lg (yeu cau nguoi dung: "Thay đổi hẳn
+          active... giờ chỉ để màu nền là rgba trên thôi") - BO HET accent
+          #8F3F4D truoc do (ca nen tint mau lan thanh chi bao trai lan doi
+          mau chu), khong con giu lai gi tu phien ban cu. */}
       {entry.icon && (
         <SeriesIconGlyph
           name={entry.icon}

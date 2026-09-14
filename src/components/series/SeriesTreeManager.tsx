@@ -30,6 +30,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -406,59 +407,26 @@ export function SeriesTreeManager({
 
           {!isRenaming && (
             <div className="flex shrink-0 items-center gap-1">
-              {movingCategoryId === cat.id ? (
-                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-primary">
-                  <Loader2 size={11} className="animate-spin" aria-hidden="true" />
-                  Đang chuyển...
-                </span>
-              ) : (
-                rootCategories.length > 1 && (
-                  <div className="relative flex items-center">
-                    <FolderInput
-                      size={11}
-                      className="pointer-events-none absolute left-1.5 text-ink-faint"
-                      aria-hidden="true"
-                    />
-                    {/* Chuyen nhom con nay sang lam con cua 1 category GOC KHAC
-                        (yeu cau nguoi dung: "dịch chuyển cả cục accordion...
-                        từ Explore kéo xuống Security"). Select native (khong
-                        dung SelectMenu de gon, vi day la thao tac phu, it
-                        dung) - luon reset ve placeholder sau khi chon xong
-                        (value="" moi lan, khong "dinh" vao lua chon vua roi
-                        vi category da CHUYEN DI, khong con nam trong danh
-                        sach nhom con nay nua). */}
-                    <select
-                      value=""
-                      disabled={busy}
-                      onChange={(e) => {
-                        const targetParentId = e.target.value;
-                        if (!targetParentId) return;
-                        setMovingCategoryId(cat.id);
-                        run(
-                          () =>
-                            moveContentSeriesCategoryToParentAction(
-                              seriesSlug,
-                              cat.id,
-                              targetParentId,
-                            ),
-                          "Chuyển nhóm con thất bại",
-                        ).finally(() => setMovingCategoryId(null));
-                      }}
-                      aria-label="Chuyển nhóm con sang category gốc khác"
-                      className="cursor-pointer rounded-md border border-border bg-surface py-1 pr-1.5 pl-5 text-[11px] text-ink-faint hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <option value="">Chuyển đến...</option>
-                      {rootCategories
-                        .filter((root) => root.id !== cat.parentId)
-                        .map((root) => (
-                          <option key={root.id} value={root.id}>
-                            {root.title}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                )
-              )}
+              {/* Chuyen nhom con nay sang lam con cua 1 category GOC KHAC
+                  (yeu cau nguoi dung: "dịch chuyển cả cục accordion... từ
+                  Explore kéo xuống Security"). Dropdown TU VE qua
+                  MoveCategoryToParentDropdown (component THAT o cuoi file,
+                  dung PopoverRoot/hooks hop le) - KHONG dung the <select>
+                  mac dinh cua trinh duyet (yeu cau nguoi dung: "select mặc
+                  định rất xấu", xem docs/engineering-log.md). */}
+              <MoveCategoryToParentDropdown
+                options={rootCategories.filter((root) => root.id !== cat.parentId)}
+                disabled={busy}
+                moving={movingCategoryId === cat.id}
+                onSelect={(targetParentId) => {
+                  setMovingCategoryId(cat.id);
+                  run(
+                    () =>
+                      moveContentSeriesCategoryToParentAction(seriesSlug, cat.id, targetParentId),
+                    "Chuyển nhóm con thất bại",
+                  ).finally(() => setMovingCategoryId(null));
+                }}
+              />
               <button
                 type="button"
                 disabled={busy || siblingIndex === 0}
@@ -772,6 +740,88 @@ export function SeriesTreeManager({
         </button>
       </div>
     </div>
+  );
+}
+
+// Dropdown "Chuyển đến..." (doi cha cua 1 nhom con sang category goc khac) -
+// tach thanh component THAT rieng o day (top-level, NGOAI than
+// SeriesTreeManager) vi can goi useState (open) HOP LE - renderChildCategoryBlock
+// o tren la 1 HAM THUONG goi trong .map(), khong phai component, khong duoc
+// goi hook truc tiep trong do (vi pham Rules of Hooks). Dat o TOP-LEVEL (khong
+// phai dinh nghia trong than 1 component khac) de giu NGUYEN function
+// identity qua moi lan render cha - tranh dung y het bug remount da tranh o
+// renderEntriesList/renderChildCategoryBlock (xem comment cac ham do).
+//
+// Dung PopoverRoot/PopoverTrigger/PopoverContent (droplist tu ve, chung
+// animation framer-motion voi moi dropdown khac trong app - xem popover.tsx,
+// quy uoc CLAUDE.md) THAY VI the <select> mac dinh cua trinh duyet - yeu cau
+// nguoi dung sau khi thay: "select mặc định rất xấu".
+function MoveCategoryToParentDropdown({
+  options,
+  disabled,
+  moving,
+  onSelect,
+}: {
+  options: ContentSeriesCategory[];
+  disabled: boolean;
+  moving: boolean;
+  onSelect: (parentId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (moving) {
+    return (
+      <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-primary">
+        <Loader2 size={11} className="animate-spin" aria-hidden="true" />
+        Đang chuyển...
+      </span>
+    );
+  }
+  // Chi 1 category goc duy nhat (chinh la cha hien tai) - khong co dich nao
+  // khac de chuyen den, an han dropdown thay vi hien 1 dropdown rong vo nghia.
+  if (options.length === 0) return null;
+
+  return (
+    <PopoverRoot open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          aria-label="Chuyển nhóm con sang category gốc khác"
+          className="flex shrink-0 cursor-pointer items-center gap-1 rounded-md border border-border bg-surface px-2 py-1 text-[11px] text-ink-faint hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <FolderInput size={11} aria-hidden="true" />
+          Chuyển đến
+          <ChevronDown
+            size={11}
+            className={cn("transition-transform duration-150 ease-out", open && "rotate-180")}
+            aria-hidden="true"
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        open={open}
+        align="start"
+        sideOffset={4}
+        className="z-50 min-w-36 overflow-hidden rounded-md border border-border bg-surface shadow-dropdown"
+      >
+        <div className="max-h-56 overflow-y-auto p-1">
+          {options.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onSelect(cat.id);
+              }}
+              className="flex w-full cursor-pointer items-center truncate rounded-md px-2.5 py-1.5 text-left text-[12px] text-ink-muted hover:bg-hover-bg"
+            >
+              {cat.title}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </PopoverRoot>
   );
 }
 
