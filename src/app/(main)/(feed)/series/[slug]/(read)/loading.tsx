@@ -16,25 +16,29 @@ import {
 // gay cam giac nhay/loi). Sidebar that tu layout.tsx se tu hien (hoac trong
 // (main)/layout.tsx da co san khung, khong can fallback rieng) - o day CHI
 // con skeleton cho phan noi dung/TOC (thu that su thay doi theo tung Entry).
+// KHONG boc them "-mx-4 -my-6" o day (khac ban truoc) - do la thu thuat
+// RIENG cua layout.tsx (huy padding CUA FeedMainArea, xem comment o do), con
+// loading.tsx nay chi lap vao {children} nam BEN TRONG the div noi dung DA
+// CO padding rieng cua layout.tsx (p-6 lg:p-10) - lap lai -my-6 o day khien
+// no bi "hut" LEN, LECH khoi vi tri that cua noi dung that (page.tsx/
+// [entrySlug]/page.tsx khong boc gi them ca, chi render truc tiep) => ho ra 1
+// khe giua header va noi dung ma nguoi dung bao. Sua bang cach bo het lop boc
+// thua, chi con dung cau truc "flex gap-8" khop y het noi dung that.
 export default function SeriesReadLoading() {
   return (
-    <div className="-mx-4 -my-6 flex sm:-mx-6 lg:-mx-10">
-      <div className="min-w-0 flex-1 bg-[#FAFBFC] p-6 lg:p-10">
-        <div className="flex gap-8">
-          <div className="min-w-0 flex-1">
-            <FadeIn>
-              <EntryHeaderSkeleton />
-            </FadeIn>
-            <FadeIn>
-              <EntryBodySkeleton />
-            </FadeIn>
-          </div>
-          <div className="hidden h-fit w-56 shrink-0 xl:block">
-            <FadeIn>
-              <EntryTocSkeleton />
-            </FadeIn>
-          </div>
-        </div>
+    <div className="flex gap-8">
+      <div className="min-w-0 flex-1">
+        <FadeIn>
+          <EntryHeaderSkeleton />
+        </FadeIn>
+        <FadeIn>
+          <EntryBodySkeleton />
+        </FadeIn>
+      </div>
+      <div className="hidden h-fit w-56 shrink-0 xl:block">
+        <FadeIn>
+          <EntryTocSkeleton />
+        </FadeIn>
       </div>
     </div>
   );

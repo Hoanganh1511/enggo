@@ -123,31 +123,36 @@ export function SeriesEntryForm({
           />
         </div>
 
+        <div>
+          <label className={labelClass}>Tiêu đề *</label>
+          <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+
+        {/* Icon di CHUNG voi Tên hiển thị sidebar (khong con o canh Tieu de) -
+            yeu cau nguoi dung: "phần chọn icon là cho tên hiển thị trong
+            sidebar" - icon nay CHI xuat hien canh navTitle trong
+            SeriesSidebar.tsx (xem EntryLink), khong lien quan gi Tieu de
+            chinh/H1 tren trang, nen gom chung 1 nhom cho dung ngu canh. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr]">
           <div>
             <label className={labelClass}>Icon</label>
             <SeriesIconPicker value={icon} onChange={setIcon} />
           </div>
           <div>
-            <label className={labelClass}>Tiêu đề *</label>
-            <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+            <label className={labelClass}>
+              Tên hiển thị trong sidebar (tuỳ chọn)
+            </label>
+            <input
+              className={inputClass}
+              placeholder="Để trống = dùng chung Tiêu đề"
+              value={navTitle}
+              onChange={(e) => setNavTitle(e.target.value)}
+            />
           </div>
         </div>
-
-        <div>
-          <label className={labelClass}>
-            Tên hiển thị trong sidebar (tuỳ chọn)
-          </label>
-          <input
-            className={inputClass}
-            placeholder="Để trống = dùng chung Tiêu đề"
-            value={navTitle}
-            onChange={(e) => setNavTitle(e.target.value)}
-          />
-          <p className="mt-1 text-[11px] text-ink-faint">
-            Sidebar hẹp nên có thể muốn 1 tên ngắn gọn hơn Tiêu đề chính trên trang.
-          </p>
-        </div>
+        <p className="-mt-3 text-[11px] text-ink-faint">
+          Sidebar hẹp nên có thể muốn 1 tên ngắn gọn hơn Tiêu đề chính trên trang.
+        </p>
 
         <div>
           <label className={labelClass}>Slug</label>

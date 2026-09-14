@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
@@ -11,17 +11,14 @@ import { SeriesEmailSignup } from "@/components/series/SeriesEmailSignup";
 // markdown khac, component do da doc lap voi "docs" (chi nhan 1 chuoi
 // markdown) nen dung duoc cho ca Series.
 //
-// Nguyen tac MOI (yeu cau nguoi dung: "khi mà truy cập vào một seri cụ thể,
-// nó sẽ dẫn vào trang map. Chứ không phải trang theo tiêu đề của seri") -
-// /series/[slug] gio LUON redirect sang Entry DAU TIEN (orderIndex nho nhat,
-// `entries` da sap xep san tu findOverview() ben backend) thay vi tu render
-// trang tong quan nay. Series MOI tao tu co san Entry "map" o orderIndex 0
-// (xem createSeries() ben content-series.service.ts) nen se dan dung vao do;
-// Series CU (tao truoc khi co nguyen tac nay) van hoat dong binh thuong -
-// redirect toi bat ky entry dau tien nao no dang co, khong bat buoc phai ten
-// "map". Series CHUA co Entry nao (moi tao thu cong qua API, hoac vua xoa
-// het) thi KHONG co gi de redirect toi - hien lai trang tong quan nay nhu cu
-// (fallback, tranh vong lap redirect ve chinh no).
+// [2026-09-14] DA THU auto-redirect sang Entry dau tien (yeu cau nguoi dung
+// "dẫn vào trang map, không phải trang theo tiêu đề") nhung gay crash that
+// tren production (Vercel bao "This page couldn't load" - loi ket noi/mang,
+// KHONG phai 404/loi Next.js binh thuong => nghi ngo function bi crash/treo
+// o tang server, chua ro nguyen nhan chinh xac vi khong xem duoc log server
+// that). DA REVERT ve render tong quan nhu cu de KHONG con chan nguoi dung
+// truy cap Series - se lam lai auto-redirect sau khi xac dinh duoc nguyen
+// nhan that qua Vercel function logs.
 export default async function SeriesOverviewPage({
   params,
 }: {
@@ -30,16 +27,6 @@ export default async function SeriesOverviewPage({
   const { slug } = await params;
   const series = await getContentSeriesOverviewAction(slug).catch(() => null);
   if (!series) notFound();
-
-  // Guard firstEntry.slug rong/thieu (du KHONG nen xay ra binh thuong - slug
-  // luon duoc slugify() sinh ra khi tao Entry) - redirect toi 1 URL rong
-  // ("/series/slug/") co the bi trinh duyet/Next hieu nham la CHINH trang
-  // nay, gay VONG LAP redirect vo han (ERR_TOO_MANY_REDIRECTS). An toan hon
-  // la rot xuong render trang tong quan nhu cu trong truong hop hiem nay.
-  const firstEntry = series.entries[0];
-  if (firstEntry?.slug) {
-    redirect(`/series/${slug}/${firstEntry.slug}`);
-  }
 
   return (
     <div className="w-full pb-20">

@@ -33,12 +33,18 @@ function EntryLink({
   seriesSlug,
   pathname,
   depth,
+  emphasized,
   onNavigate,
 }: {
   entry: ContentSeriesEntrySummary;
   seriesSlug: string;
   pathname: string;
   depth: number;
+  // true khi entry nay nam trong nhanh category GOC ten "Explore" - yeu cau
+  // nguoi dung: "Active ở phần Explore cần làm riêng như này nhé. Khác với
+  // phần dưới" (kem 2 anh doi chieu: 1 pill NEN DEN chu TRANG cho Explore,
+  // khac han nen xam nhat #06 dung cho moi category con lai).
+  emphasized?: boolean;
   onNavigate?: () => void;
 }) {
   const href = `/series/${seriesSlug}/${entry.slug}`;
@@ -50,7 +56,8 @@ function EntryLink({
   // anchor. Everything else is differentiation around 14px"). Active dung
   // CHUNG 1 mau/weight ("--sidebar-item-active", #27292D/500) o CA 2 cap -
   // chi DOI MAU/WEIGHT, KHONG doi kich thuoc chu luc active (giu dung
-  // font-size goc cua cap do).
+  // font-size goc cua cap do) - TRU nhanh "Explore" (emphasized) dung 1 bo
+  // mau rieng han, xem duoi.
   const isNested = depth > 0;
   return (
     <Link
@@ -60,7 +67,9 @@ function EntryLink({
         "truncate rounded-lg py-1.5 pr-2 leading-5 transition-colors duration-150 ease-out",
         isNested ? "text-[13px]" : "text-[14px]",
         active
-          ? "bg-[rgba(20,22,26,0.06)] font-medium text-(--sidebar-item-active-color)"
+          ? emphasized
+            ? "bg-ink font-semibold text-white"
+            : "bg-[rgba(20,22,26,0.06)] font-medium text-(--sidebar-item-active-color)"
           : cn(
               "hover:bg-hover-bg",
               isNested
@@ -77,16 +86,19 @@ function EntryLink({
       // day la truong hop CAN phan biet cap, khac voi truong hop tren.
       style={{ paddingLeft: isNested ? "24px" : "10px" }}
     >
-      {/* Active - nen xam nhat trung tinh rgba(20,22,26,0.06), rounded-lg
-          (yeu cau nguoi dung: "Thay đổi hẳn active... giờ chỉ để màu nền là
-          rgba trên thôi") CONG voi mau/weight tu he token
-          --sidebar-item-active-color (yeu cau nguoi dung: "Đồng thời để font
-          medium cho cái active"). */}
+      {/* Active: 2 bien the -
+          1) emphasized (nhanh "Explore"): pill nen DEN (bg-ink) + chu/icon
+             TRANG - rieng biet han, khop anh mau nguoi dung gui.
+          2) con lai: nen xam nhat rgba(20,22,26,0.06) + mau/weight tu token
+             --sidebar-item-active-color (nhu truoc gio). */}
       {entry.icon && (
         <SeriesIconGlyph
           name={entry.icon}
           size={14}
-          className="mr-1.5 inline align-[-2px] text-(--sidebar-icon-color)"
+          className={cn(
+            "mr-1.5 inline align-[-2px]",
+            active && emphasized ? "text-white" : "text-(--sidebar-icon-color)",
+          )}
         />
       )}
       {entry.navTitle || entry.title}
@@ -112,6 +124,7 @@ function CategoryNode({
   onNavigate,
   openIds,
   onToggle,
+  emphasized: emphasizedFromParent,
 }: {
   category: ContentSeriesCategory;
   depth: number;
@@ -122,11 +135,25 @@ function CategoryNode({
   onNavigate?: () => void;
   openIds: Set<string>;
   onToggle: (id: string) => void;
+  // Truyen xuong tu category GOC (depth 0) cho nhanh con - CHI category GOC
+  // moi TU TINH gia tri nay (theo TEN "Explore"), cac cap con ke thua nguyen
+  // ve TRUE/FALSE cua nhanh cha, khong tu tinh lai theo ten rieng cua chinh
+  // no (yeu cau nguoi dung: active rieng cho CA NHANH Explore, khong chi 1
+  // category don le).
+  emphasized?: boolean;
 }) {
   const children = byParent.get(category.id) ?? [];
   const entries = entriesByCategory.get(category.id) ?? [];
   const isAccordion = depth > 0;
   const open = !isAccordion || openIds.has(category.id);
+  // "Explore" la nhanh dieu huong CHINH/dac biet (yeu cau nguoi dung, kem 2
+  // anh doi chieu Explore vs cac category khac) - CHI category GOC (depth 0)
+  // tu xac dinh qua TEN, nhom con thua ke gia tri nay tu cha (xem prop
+  // emphasized o tren).
+  const emphasized =
+    depth === 0
+      ? category.title.trim().toLowerCase() === "explore"
+      : (emphasizedFromParent ?? false);
   // Nhom con (accordion) dang CHUA entry active ben trong - doi mau sang
   // "--sidebar-item-parent-active-color" (dam hon nhom con binh thuong)
   // GIU NGUYEN weight 400 (khong bold nhu chinh entry active) - dung tinh
@@ -223,6 +250,7 @@ function CategoryNode({
               seriesSlug={seriesSlug}
               pathname={pathname}
               depth={depth}
+              emphasized={emphasized}
               onNavigate={onNavigate}
             />
           ))}
@@ -245,6 +273,7 @@ function CategoryNode({
                   onNavigate={onNavigate}
                   openIds={openIds}
                   onToggle={onToggle}
+                  emphasized={emphasized}
                 />
               ))}
             </div>

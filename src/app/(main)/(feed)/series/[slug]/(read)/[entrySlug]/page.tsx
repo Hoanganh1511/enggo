@@ -66,7 +66,7 @@ async function EntryHeader({
           />
         )}
         <div>
-          <h1 className="text-[2.125rem] my-6 font-extrabold text-ink sm:text-[30px]">
+          <h1 className="text-[30px] sm:text-[2.125rem]  my-6 font-extrabold text-ink">
             {entry.title}
           </h1>
           {entry.subtitle && (
