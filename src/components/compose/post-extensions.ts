@@ -9,6 +9,7 @@ import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { CuratedListView } from "./curated-list-view";
+import { QuestionPickerView } from "./question-picker-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -363,6 +364,111 @@ export const CuratedList = Node.create({
   },
 });
 
+export type QuestionPickerItem = { question: string; description: string };
+
+const DEFAULT_QUESTION_PICKER_ITEMS: QuestionPickerItem[] = [
+  { question: "Câu hỏi 1", description: "" },
+  { question: "Câu hỏi 2", description: "" },
+  { question: "Câu hỏi 3", description: "" },
+  { question: "Câu hỏi 4", description: "" },
+];
+
+// "TOC dang 4-box cau hoi" - bien the KHAC voi TocBlock (danh so H2), day la
+// 1 GRID cau hoi (do nguoi dung chon, khong tu dong theo heading) - moi o la
+// 1 <details> RIENG (KHONG dung chung 1 panel duoi grid nhu anh mau nguoi
+// dung gui) de ban RENDER TINH (renderHTML, khi Post doc qua
+// renderTiptapHTML - xem ArticleBody.tsx/docs/engineering-log.md 2026-09-10)
+// van "bam mo/dong" duoc BANG HTML/CSS THUAN, KHONG can JS/NodeView nao chay
+// (giu dung tinh than TocBlock/CuratedList: NodeView React CHI phuc vu luc
+// SOAN, ban doc tinh phai tu hoat dong doc lap). Danh doi da chon: noi dung
+// mo ra NAM NGAY DUOI cau hoi cua chinh no (trong long the), khac anh mau co
+// 1 panel rieng ben duoi CA grid dung chung cho ca 4 - don gian hon nhieu ma
+// van dung dung tinh nang "bam 1 cau hoi de xem noi dung tuong ung".
+export const QuestionPicker = Node.create({
+  name: "questionPicker",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      items: {
+        default: DEFAULT_QUESTION_PICKER_ITEMS,
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-items") ?? "[]") as QuestionPickerItem[];
+          } catch {
+            return DEFAULT_QUESTION_PICKER_ITEMS;
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-question-picker]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const items = (node.attrs.items ?? []) as QuestionPickerItem[];
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-question-picker": "", contenteditable: "false" }),
+      ...items.map((item, i) => [
+        "details",
+        { class: "question-picker-item", ...(i === 0 ? { open: "" } : {}) },
+        [
+          "summary",
+          { class: "question-picker-summary" },
+          ["span", { class: "question-picker-index" }, String(i + 1).padStart(2, "0")],
+          ["span", { class: "question-picker-question" }, item.question],
+          [
+            "svg",
+            {
+              class: "question-picker-chevron",
+              viewBox: "0 0 24 24",
+              width: "14",
+              height: "14",
+              fill: "none",
+              stroke: "currentColor",
+              "stroke-width": "2",
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+            },
+            ["path", { d: "m6 9 6 6 6-6" }],
+          ],
+        ],
+        ...(item.description
+          ? [["p", { class: "question-picker-description" }, item.description]]
+          : []),
+      ]),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(QuestionPickerView);
+  },
+  // Markdown fallback (xem comment addStorage cua Callout o tren) - xuong
+  // cap thanh cac tieu de H4 (cau hoi) + mo ta ben duoi, mat het grid/collapse
+  // trang tri.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const items = (node.attrs.items ?? []) as QuestionPickerItem[];
+          items.forEach((item, i) => {
+            state.write(`**${String(i + 1).padStart(2, "0")}. ${item.question}**`);
+            state.ensureNewLine();
+            if (item.description) {
+              state.write(item.description);
+              state.ensureNewLine();
+            }
+            state.ensureNewLine();
+          });
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
 // them rieng trong PostEditor).
@@ -392,6 +498,7 @@ export function getPostExtensions(): Extensions {
     GoDeeper,
     TocBlock,
     CuratedList,
+    QuestionPicker,
   ];
 }
 
@@ -487,4 +594,18 @@ export const POST_PROSE_CLASS =
   "[&_.curated-list-thumb]:size-14 [&_.curated-list-thumb]:shrink-0 [&_.curated-list-thumb]:overflow-hidden [&_.curated-list-thumb]:rounded-lg [&_.curated-list-thumb]:bg-surface-muted [&_.curated-list-thumb_img]:size-full [&_.curated-list-thumb_img]:object-cover " +
   "[&_.curated-list-badge]:inline-block [&_.curated-list-badge]:rounded [&_.curated-list-badge]:border [&_.curated-list-badge]:border-border [&_.curated-list-badge]:px-1.5 [&_.curated-list-badge]:py-0.5 [&_.curated-list-badge]:font-mono [&_.curated-list-badge]:text-[10px] [&_.curated-list-badge]:font-semibold [&_.curated-list-badge]:tracking-wide [&_.curated-list-badge]:text-ink-faint " +
   "[&_.curated-list-title]:mt-1 [&_.curated-list-title]:text-[14px] [&_.curated-list-title]:font-bold [&_.curated-list-title]:text-ink [&_.curated-list-title]:no-underline " +
-  "[&_.curated-list-excerpt]:text-[12.5px] [&_.curated-list-excerpt]:text-ink-faint [&_.curated-list-excerpt]:no-underline";
+  "[&_.curated-list-excerpt]:text-[12.5px] [&_.curated-list-excerpt]:text-ink-faint [&_.curated-list-excerpt]:no-underline " +
+  // "TOC 4-box cau hoi" (QuestionPicker) - ban render TINH (<details> thuan,
+  // khong NodeView, xem comment QuestionPicker) - grid 2 cot, moi o tu
+  // bam mo/dong qua <summary>, ::-webkit-details-marker an di de dung rieng
+  // chevron SVG (xoay 180deg khi [open]).
+  "[&_div[data-question-picker]]:my-5 [&_div[data-question-picker]]:grid [&_div[data-question-picker]]:grid-cols-1 [&_div[data-question-picker]]:gap-2 sm:[&_div[data-question-picker]]:grid-cols-2 " +
+  "[&_.question-picker-item]:rounded-xl [&_.question-picker-item]:border [&_.question-picker-item]:border-border [&_.question-picker-item]:px-3.5 " +
+  "[&_.question-picker-item[open]]:bg-surface-muted " +
+  "[&_.question-picker-summary]:flex [&_.question-picker-summary]:cursor-pointer [&_.question-picker-summary]:list-none [&_.question-picker-summary]:items-center [&_.question-picker-summary]:gap-2.5 [&_.question-picker-summary]:py-3 [&_.question-picker-summary]:select-none " +
+  "[&_.question-picker-summary::-webkit-details-marker]:hidden [&_.question-picker-summary::marker]:content-none " +
+  "[&_.question-picker-index]:font-mono [&_.question-picker-index]:text-[12px] [&_.question-picker-index]:text-ink-faint " +
+  "[&_.question-picker-question]:flex-1 [&_.question-picker-question]:text-[14.5px] [&_.question-picker-question]:font-semibold [&_.question-picker-question]:text-ink " +
+  "[&_.question-picker-chevron]:shrink-0 [&_.question-picker-chevron]:text-ink-faint [&_.question-picker-chevron]:transition-transform [&_.question-picker-chevron]:duration-150 " +
+  "[&_.question-picker-item[open]_.question-picker-chevron]:rotate-180 " +
+  "[&_.question-picker-description]:mb-3.5 [&_.question-picker-description]:text-[13.5px] [&_.question-picker-description]:text-ink-muted";

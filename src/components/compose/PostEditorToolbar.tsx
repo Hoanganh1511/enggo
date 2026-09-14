@@ -30,6 +30,7 @@ import {
   Asterisk,
   ListTree,
   GalleryVerticalEnd,
+  LayoutGrid,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -172,6 +173,14 @@ export function PostEditorToolbar({
       .run();
   };
 
+  // Chen "TOC 4-box cau hoi" (bien the khac Muc luc dang so o tren - o day
+  // nguoi soan TU GO cau hoi/mo ta, khong quet H2 tu dong, xem
+  // question-picker-view.tsx). Dung attrs mac dinh cua node (4 cau hoi mau)
+  // luon, khong can truyen items o day.
+  const insertQuestionPicker = () => {
+    editor.chain().focus().insertContent({ type: "questionPicker" }).run();
+  };
+
   return (
     <div
       className={cn(
@@ -235,6 +244,7 @@ export function PostEditorToolbar({
       <Btn label="Go deeper" Icon={Asterisk} onClick={insertGoDeeper} />
       <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />
       <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
+      <Btn label="TOC dạng 4 câu hỏi" Icon={LayoutGrid} onClick={insertQuestionPicker} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />
