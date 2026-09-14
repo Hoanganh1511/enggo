@@ -13,7 +13,6 @@ import {
 import { SeriesIconGlyph } from "@/components/series/series-icon-options";
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
-import { SeriesWhereThisFits } from "@/components/series/SeriesWhereThisFits";
 import { SeriesEntryPagination } from "@/components/series/SeriesEntryPagination";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
@@ -21,7 +20,6 @@ import {
   EntryBodySkeleton,
   EntryTocSkeleton,
   EntryExtrasSkeleton,
-  EntryWhereFitsSkeleton,
 } from "@/components/series/series-skeletons";
 
 type EntryDataPromise = Promise<ContentSeriesEntryPage | null>;
@@ -68,11 +66,13 @@ async function EntryHeader({
           />
         )}
         <div>
-          <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">
+          <h1 className="text-[2.125rem] my-6 font-extrabold text-ink sm:text-[30px]">
             {entry.title}
           </h1>
           {entry.subtitle && (
-            <p className="mt-1 text-[15px] text-ink-faint">{entry.subtitle}</p>
+            <p className="mt-1 text-[18.5px] text-ink-faint">
+              {entry.subtitle}
+            </p>
           )}
         </div>
       </div>
@@ -187,27 +187,8 @@ async function EntryExtras({
   );
 }
 
-// Batch 3 - "Where this fits" (aside phai, duoi TOC) - cung tang "phu" voi
-// EntryExtras.
-async function EntryWhereFits({
-  dataPromise,
-}: {
-  dataPromise: EntryDataPromise;
-}) {
-  const data = await dataPromise;
-  if (!data) notFound();
-
-  return (
-    <FadeIn>
-      <SeriesWhereThisFits
-        categories={data.series.categories}
-        activeCategoryId={data.entry.categoryId}
-      />
-    </FadeIn>
-  );
-}
-
-// Batch 3 - Share icon GON duoi "Where this fits" (aside phai) - yeu cau
+// Batch 3 - Share icon GON o aside phai (duoi TOC, sau khi bo "Where this
+// fits" theo yeu cau nguoi dung) - yeu cau
 // nguoi dung "bên dưới toc bên phải bổ sung thêm link socials để share bài
 // viết luôn". Tinh entryUrl LAP LAI y het EntryExtras (khong tach chung ham
 // vi 2 nhanh Suspense doc lap, moi nhanh chi await 1 lan chinh dataPromise -
@@ -324,16 +305,6 @@ export default async function SeriesEntryPage({
             }
           >
             <EntryToc dataPromise={dataPromise} />
-          </Suspense>
-
-          <Suspense
-            fallback={
-              <FadeIn>
-                <EntryWhereFitsSkeleton />
-              </FadeIn>
-            }
-          >
-            <EntryWhereFits dataPromise={dataPromise} />
           </Suspense>
 
           <Suspense fallback={null}>

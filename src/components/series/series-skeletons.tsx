@@ -83,14 +83,3 @@ export function EntryExtrasSkeleton() {
     </div>
   );
 }
-
-// Batch 3 - "Where this fits" (aside ben phai, duoi TOC).
-export function EntryWhereFitsSkeleton() {
-  return (
-    <div className="flex flex-col gap-2">
-      <SeriesSkeleton className="h-2.5 w-24" />
-      <SeriesSkeleton className="h-3 w-full" />
-      <SeriesSkeleton className="h-3 w-4/5" />
-    </div>
-  );
-}

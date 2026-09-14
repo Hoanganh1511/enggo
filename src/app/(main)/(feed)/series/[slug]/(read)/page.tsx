@@ -31,8 +31,13 @@ export default async function SeriesOverviewPage({
   const series = await getContentSeriesOverviewAction(slug).catch(() => null);
   if (!series) notFound();
 
+  // Guard firstEntry.slug rong/thieu (du KHONG nen xay ra binh thuong - slug
+  // luon duoc slugify() sinh ra khi tao Entry) - redirect toi 1 URL rong
+  // ("/series/slug/") co the bi trinh duyet/Next hieu nham la CHINH trang
+  // nay, gay VONG LAP redirect vo han (ERR_TOO_MANY_REDIRECTS). An toan hon
+  // la rot xuong render trang tong quan nhu cu trong truong hop hiem nay.
   const firstEntry = series.entries[0];
-  if (firstEntry) {
+  if (firstEntry?.slug) {
     redirect(`/series/${slug}/${firstEntry.slug}`);
   }
 
