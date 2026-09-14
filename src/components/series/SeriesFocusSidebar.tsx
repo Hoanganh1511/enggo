@@ -27,7 +27,16 @@ export function SeriesFocusSidebar({ children }: { children: React.ReactNode }) 
           <Menu size={17} strokeWidth={2} aria-hidden="true" />
         </button>
       )}
-      <div className={cn(focusModeActive && collapsed && "lg:hidden")}>{children}</div>
+      {/* flex (khong phai div thuong) - QUAN TRONG: lop boc nay chen giua
+          <aside> that va hang flex ngoai cung (layout.tsx), lam <aside> KHONG
+          con la flex-item TRUC TIEP nua nen mat luon "align-items: stretch"
+          mac dinh (truoc day <aside> tu cao BANG cot noi dung ben canh dung
+          co che nay, khong can h-full rieng) - nen gay nen mau xam cua sidebar
+          bi "cut cut" ngang chung noi dung cua no, khong keo dai het trang
+          nhu cot noi dung dai hon (nguoi dung bao loi). Bon "flex" o day de
+          lop boc tu stretch <aside> con TRONG NO len bang chinh chieu cao cua
+          no (da duoc outer flex stretch dung), khoi phuc lai hanh vi cu. */}
+      <div className={cn("flex", focusModeActive && collapsed && "lg:hidden")}>{children}</div>
     </>
   );
 }

@@ -170,6 +170,31 @@ async function EntryWhereFits({ dataPromise }: { dataPromise: EntryDataPromise }
   );
 }
 
+// Batch 3 - Share icon GON duoi "Where this fits" (aside phai) - yeu cau
+// nguoi dung "bên dưới toc bên phải bổ sung thêm link socials để share bài
+// viết luôn". Tinh entryUrl LAP LAI y het EntryExtras (khong tach chung ham
+// vi 2 nhanh Suspense doc lap, moi nhanh chi await 1 lan chinh dataPromise -
+// tach ham rieng se phai truyen them tham so khong dang, trong khi phep tinh
+// nay cuc re).
+async function EntrySidebarShare({ dataPromise, slug }: { dataPromise: EntryDataPromise; slug: string }) {
+  const data = await dataPromise;
+  if (!data) notFound();
+  const { series, entry } = data;
+  const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
+  if (series.shareChannels.length === 0) return null;
+
+  return (
+    <FadeIn>
+      <div className="border-t border-border pt-4">
+        <p className="font-content mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
+          Share
+        </p>
+        <SeriesShareButtons channels={series.shareChannels} url={entryUrl} title={entry.title} compact />
+      </div>
+    </FadeIn>
+  );
+}
+
 // Trang 1 Entry (dac ta muc 2.2) - Progressive Loading + Skeleton States
 // (yeu cau nguoi dung 2026-09-14, xem docs/engineering-log.md): 1 Promise
 // DUY NHAT (KHONG await o day) truyen xuong 5 nhanh Suspense doc lap
@@ -190,7 +215,10 @@ export default async function SeriesEntryPage({
   const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(() => null);
 
   return (
-    <div className="flex gap-8">
+    // gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
+    // khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex cha
+    // se thanh khoang cach thua qua muc.
+    <div className="flex gap-6">
       <article className="min-w-0 flex-1 pb-20">
         <Suspense
           fallback={
@@ -201,6 +229,10 @@ export default async function SeriesEntryPage({
         >
           <EntryHeader dataPromise={dataPromise} slug={slug} />
         </Suspense>
+
+        {/* Duong ke ngang tach tieu de/mo ta khoi than bai - yeu cau nguoi
+            dung, khop mockup tham khao. */}
+        <hr className="my-6 border-border" />
 
         <Suspense
           fallback={
@@ -223,7 +255,10 @@ export default async function SeriesEntryPage({
         </Suspense>
       </article>
 
-      <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 xl:flex">
+      {/* Duong ke doc tach cot TOC ben phai - yeu cau nguoi dung. pl-8 (thay
+          vi dua vao gap-8 cua flex cha) de co khoang trong GIUA duong ke va
+          chu, khong bam sat vien. */}
+      <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 border-l border-border pl-8 xl:flex">
         <Suspense
           fallback={
             <FadeIn>
@@ -242,6 +277,10 @@ export default async function SeriesEntryPage({
           }
         >
           <EntryWhereFits dataPromise={dataPromise} />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <EntrySidebarShare dataPromise={dataPromise} slug={slug} />
         </Suspense>
       </aside>
     </div>

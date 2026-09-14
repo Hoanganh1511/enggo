@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "@/lib/api/client";
 import { createContentSeriesEntryAction } from "@/actions/discover/content-series/create-content-series-entry";
 import { updateContentSeriesEntryAction } from "@/actions/discover/content-series/update-content-series-entry";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
+import { SeriesEntryEditor } from "@/components/series/SeriesEntryEditor";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { SelectMenu } from "@/components/ui/select-menu";
 import type {
@@ -150,7 +151,7 @@ export function SeriesEntryForm({
 
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <label className={labelClass}>Nội dung (markdown) *</label>
+            <label className={labelClass}>Nội dung *</label>
             <span className="text-[12px] text-ink-faint">
               Read time: {readTimeOverride ?? estimateReadTime(contentMarkdown)} phút
               <button
@@ -173,11 +174,7 @@ export function SeriesEntryForm({
               )}
             </span>
           </div>
-          <textarea
-            className={`${inputClass} min-h-64 resize-y font-mono text-[13px]`}
-            value={contentMarkdown}
-            onChange={(e) => setContentMarkdown(e.target.value)}
-          />
+          <SeriesEntryEditor value={contentMarkdown} onChange={setContentMarkdown} />
         </div>
 
         <div className="rounded-xl border border-border p-4">

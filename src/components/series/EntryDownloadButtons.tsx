@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
-import { Toggle } from "@/components/settings/SettingsControls";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
 
 // Id cua khoi noi dung THAT (DocsMarkdown render trong EntryBody, xem
@@ -117,8 +116,28 @@ export function EntryDownloadButtons({
         Tải Markdown
       </button>
 
-      <label className="ml-1 flex cursor-pointer items-center gap-2 text-[12.5px] font-medium text-ink-muted">
-        <Toggle checked={focusModeActive} onChange={toggleFocusMode} label="Focus mode" />
+      {/* Switch rieng (khong dung lai Toggle chung o SettingsControls.tsx -
+          ban do to hon va mau xanh --primary, lac tong voi khu Series dang
+          dung 1 accent duy nhat #8F3F4D cho moi trang thai active/nut chinh,
+          xem SeriesSidebar.tsx/TopHeaderBar.tsx "Viết bài"). Kich thuoc nho
+          gon hon (h-5 w-9) khop voi 2 nut Tai PDF/Markdown ben canh. */}
+      <label className="ml-1 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-muted select-none">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={focusModeActive}
+          aria-label="Focus mode"
+          onClick={toggleFocusMode}
+          className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ease-out ${
+            focusModeActive ? "bg-[#8F3F4D]" : "bg-ink-disabled"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform duration-150 ease-out ${
+              focusModeActive ? "translate-x-4" : "translate-x-0"
+            }`}
+          />
+        </button>
         Focus mode
       </label>
     </div>
