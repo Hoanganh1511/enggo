@@ -34,7 +34,7 @@ export function SeriesQuestionPickerToc({
             {String(i + 1).padStart(2, "0")}
           </span>
           <span
-            className="min-w-0 flex-1 truncate text-[16px] "
+            className="min-w-0 flex-1 truncate text-[14.5px] "
             style={{ color: "rgba(20, 22, 26,0.86)" }}
           >
             {item.question}
