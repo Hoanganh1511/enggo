@@ -6,7 +6,10 @@ import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
-import { EntryDownloadButtons, ENTRY_CONTENT_ID } from "@/components/series/EntryDownloadButtons";
+import {
+  EntryDownloadButtons,
+  ENTRY_CONTENT_ID,
+} from "@/components/series/EntryDownloadButtons";
 import { SeriesIconGlyph } from "@/components/series/series-icon-options";
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
@@ -42,26 +45,42 @@ async function EntryHeader({
   return (
     <FadeIn>
       <p className="font-content text-[13px] text-ink-faint">
-        <Link href={`/series/${slug}`} className="hover:text-ink hover:underline">
+        <Link
+          href={`/series/${slug}`}
+          className="hover:text-ink hover:underline"
+        >
           {series.title}
         </Link>
-        {" · "}
-        {String(positionIndex).padStart(2, "0")} / {String(totalCount).padStart(2, "0")}
+        {"  ·  "}
+        {String(positionIndex).padStart(2, "0")} /{" "}
+        {String(totalCount).padStart(2, "0")}
         {" · "}
         {entry.readTimeMinutes} phút đọc
       </p>
 
       <div className="font-content mt-2 flex items-start gap-2.5">
         {entry.icon && (
-          <SeriesIconGlyph name={entry.icon} size={26} strokeWidth={1.7} className="mt-0.5 shrink-0 text-ink-faint" />
+          <SeriesIconGlyph
+            name={entry.icon}
+            size={26}
+            strokeWidth={1.7}
+            className="mt-0.5 shrink-0 text-ink-faint"
+          />
         )}
         <div>
-          <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">{entry.title}</h1>
-          {entry.subtitle && <p className="mt-1 text-[15px] text-ink-faint">{entry.subtitle}</p>}
+          <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">
+            {entry.title}
+          </h1>
+          {entry.subtitle && (
+            <p className="mt-1 text-[15px] text-ink-faint">{entry.subtitle}</p>
+          )}
         </div>
       </div>
 
-      <EntryDownloadButtons title={entry.title} contentMarkdown={entry.contentMarkdown} />
+      <EntryDownloadButtons
+        title={entry.title}
+        contentMarkdown={entry.contentMarkdown}
+      />
 
       {entry.source && (
         <span className="mt-3 inline-block rounded-md bg-surface-muted px-2 py-1 font-mono text-[12px] text-ink-faint">
@@ -87,7 +106,9 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
 
       {entry.faq && entry.faq.length > 0 && (
         <div className="font-content mt-8 border-t border-border pt-6">
-          <h2 className="mb-3 text-[18px] font-semibold text-ink">Câu hỏi thường gặp</h2>
+          <h2 className="mb-3 text-[18px] font-semibold text-ink">
+            Câu hỏi thường gặp
+          </h2>
           <div className="flex flex-col gap-4">
             {entry.faq.map((item) => (
               <div key={item.question}>
@@ -139,13 +160,19 @@ async function EntryExtras({
     <FadeIn>
       {installTabs.length > 0 && (
         <div className="mt-8">
-          <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">Cài đặt</h2>
+          <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">
+            Cài đặt
+          </h2>
           <SeriesInstallWidget tabs={installTabs} />
         </div>
       )}
 
       <div className="mt-8">
-        <SeriesShareButtons channels={series.shareChannels} url={entryUrl} title={entry.title} />
+        <SeriesShareButtons
+          channels={series.shareChannels}
+          url={entryUrl}
+          title={entry.title}
+        />
       </div>
 
       {totalCount > 1 && (
@@ -162,13 +189,20 @@ async function EntryExtras({
 
 // Batch 3 - "Where this fits" (aside phai, duoi TOC) - cung tang "phu" voi
 // EntryExtras.
-async function EntryWhereFits({ dataPromise }: { dataPromise: EntryDataPromise }) {
+async function EntryWhereFits({
+  dataPromise,
+}: {
+  dataPromise: EntryDataPromise;
+}) {
   const data = await dataPromise;
   if (!data) notFound();
 
   return (
     <FadeIn>
-      <SeriesWhereThisFits categories={data.series.categories} activeCategoryId={data.entry.categoryId} />
+      <SeriesWhereThisFits
+        categories={data.series.categories}
+        activeCategoryId={data.entry.categoryId}
+      />
     </FadeIn>
   );
 }
@@ -179,7 +213,13 @@ async function EntryWhereFits({ dataPromise }: { dataPromise: EntryDataPromise }
 // vi 2 nhanh Suspense doc lap, moi nhanh chi await 1 lan chinh dataPromise -
 // tach ham rieng se phai truyen them tham so khong dang, trong khi phep tinh
 // nay cuc re).
-async function EntrySidebarShare({ dataPromise, slug }: { dataPromise: EntryDataPromise; slug: string }) {
+async function EntrySidebarShare({
+  dataPromise,
+  slug,
+}: {
+  dataPromise: EntryDataPromise;
+  slug: string;
+}) {
   const data = await dataPromise;
   if (!data) notFound();
   const { series, entry } = data;
@@ -192,7 +232,12 @@ async function EntrySidebarShare({ dataPromise, slug }: { dataPromise: EntryData
         <p className="font-content mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
           Share
         </p>
-        <SeriesShareButtons channels={series.shareChannels} url={entryUrl} title={entry.title} compact />
+        <SeriesShareButtons
+          channels={series.shareChannels}
+          url={entryUrl}
+          title={entry.title}
+          compact
+        />
       </div>
     </FadeIn>
   );
@@ -215,7 +260,9 @@ export default async function SeriesEntryPage({
   params: Promise<{ slug: string; entrySlug: string }>;
 }) {
   const { slug, entrySlug } = await params;
-  const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(() => null);
+  const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(
+    () => null,
+  );
 
   return (
     <div className="pb-20">

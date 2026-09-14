@@ -13,7 +13,20 @@ export function FeedMainArea({ children }: { children: React.ReactNode }) {
 
   return (
     <main className={cn("relative z-10 py-6", !focusModeActive && "lg:pl-61")}>
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-10">{children}</div>
+      {/* lg:pl-16 (thay vi lg:pl-10 mac dinh) khi Focus mode - nhuong cho nut
+          tron toggle sidebar CO DINH cua SeriesFocusSidebar.tsx (fixed
+          top-6 left-4, size-10 => choan toi ~left:56px) de KHONG bi noi
+          dung (vd breadcrumb dau trang Series Entry) de len tren - yeu cau
+          nguoi dung sau khi thay bi de: "tăng thêm padding left cho phần
+          chính để không bị đè nút collapse lên". */}
+      <div
+        className={cn(
+          "mx-auto w-full px-4 sm:px-6 lg:pr-10",
+          focusModeActive ? "lg:pl-16" : "lg:pl-10",
+        )}
+      >
+        {children}
+      </div>
     </main>
   );
 }
