@@ -27,9 +27,13 @@ import {
   Lightbulb,
   Undo2,
   Redo2,
+  Asterisk,
+  ListTree,
+  GalleryVerticalEnd,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast/toast-store";
 import type { CalloutVariant } from "./post-extensions";
 
 function Btn({
@@ -123,6 +127,51 @@ export function PostEditorToolbar({
     }
   };
 
+  // Chen "Go deeper" - luon chen MOI (khong toggle/wrap nhu Callout, vi
+  // content la inline khong phai block nen khong the toggleWrap len tren).
+  // Dien san chu "Go deeper: " de nguoi dung go tiep/chen link ngay sau.
+  const insertGoDeeper = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "goDeeper",
+        content: [{ type: "text", text: "Go deeper: " }],
+      })
+      .run();
+  };
+
+  // Chen Muc luc dang so - quet TOAN BO doc de lay heading H2 THEO DUNG THU
+  // TU xuat hien, luu lai thanh snapshot (xem TocBlock trong post-extensions.ts
+  // ve ly do khong tinh "song"). Bao loi ro rang neu chua co H2 nao, tranh
+  // chen 1 khoi rong vo nghia.
+  const insertToc = () => {
+    const items: { text: string }[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === "heading" && node.attrs.level === 2) {
+        items.push({ text: node.textContent });
+      }
+    });
+    if (items.length === 0) {
+      toast.danger("Chưa có tiêu đề Heading 2 nào trong bài để tạo mục lục.");
+      return;
+    }
+    editor.chain().focus().insertContent({ type: "tocBlock", attrs: { items } }).run();
+  };
+
+  // Chen "Đọc thêm" - 4 o trong, tung o tu chon bai qua modal (xem
+  // curated-list-view.tsx).
+  const insertCuratedList = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "curatedList",
+        attrs: { items: [null, null, null, null] },
+      })
+      .run();
+  };
+
   return (
     <div
       className={cn(
@@ -179,6 +228,10 @@ export function PostEditorToolbar({
         disabled={!editor.can().addColumnAfter()}
         onClick={() => editor.chain().focus().addColumnAfter().run()}
       />
+      <Divider />
+      <Btn label="Go deeper" Icon={Asterisk} onClick={insertGoDeeper} />
+      <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />
+      <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />

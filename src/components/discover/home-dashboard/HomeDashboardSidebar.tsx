@@ -20,6 +20,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
+import { useFocusModeStore } from "@/stores/focus-mode-store";
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -190,6 +191,11 @@ export function HomeDashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const displayName = session?.user?.name ?? "Bạn";
+  // Focus mode (doc Entry trong Series, xem focus-mode-store.ts) - an han
+  // sidebar chinh cua app luon, cung voi TopHeaderBar.tsx + padding lg:pl-61
+  // danh cho no (xem FeedMainArea.tsx).
+  const focusModeActive = useFocusModeStore((s) => s.active);
+  if (focusModeActive) return null;
 
   return (
     <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">

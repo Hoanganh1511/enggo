@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Bell, Menu, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
+import { useFocusModeStore } from "@/stores/focus-mode-store";
 import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
@@ -144,8 +145,20 @@ const TopHeaderBar = () => {
         : String(unreadCount)
       : undefined;
 
+  // Focus mode (doc Entry trong Series) - an header hoan toan. Tu tat khi
+  // dieu huong ra khoi /series (khong lam nguoi dung "mac ket" focus mode o
+  // trang khac). Dat SAU moi hook khac phia tren (khong return null truoc do)
+  // de socket/badge/unread-count van chay binh thuong ngam ben duoi, chi UI
+  // header la an di.
+  const focusModeActive = useFocusModeStore((s) => s.active);
+  const setFocusModeActive = useFocusModeStore((s) => s.setActive);
+  useEffect(() => {
+    if (!pathname.startsWith("/series")) setFocusModeActive(false);
+  }, [pathname, setFocusModeActive]);
+  if (focusModeActive) return null;
+
   return (
-    <header className="grid h-[var(--header-height)] shrink-0 grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 border-b border-border bg-surface px-3 sm:gap-4 sm:px-5">
+    <header className="grid h-[var(--header-height)] shrink-0 grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 border-b border-border bg-[#FAFBFC] px-3 sm:gap-4 sm:px-5">
       {/* Cum trai. Mobile: nut hamburger MO DRAWER sidebar (dong bo tren
           MOI trang, khong rieng /home & /articles nua - truoc day trang
           khac hien logo icon-only o day, gio thong nhat het thanh nut mo

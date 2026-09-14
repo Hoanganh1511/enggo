@@ -4,6 +4,7 @@ import { ArrowLeft, Settings } from "lucide-react";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
+import { SeriesFocusSidebar } from "@/components/series/SeriesFocusSidebar";
 import {
   SeriesMobileTopBar,
   SeriesSidebarDrawer,
@@ -86,37 +87,39 @@ export default async function SeriesLayout({
         className="-mx-4 -my-6 flex sm:-mx-6 lg:-mx-10"
         style={{ minHeight: "calc(100vh - var(--header-height))" }}
       >
-        <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
-          <div className="sticky top-0 p-[18px]">
-            <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
-              <Link
-                href="/series"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-              >
-                <ArrowLeft size={13} />
-                Tất cả series
-              </Link>
-              {status.isAdmin && (
+        <SeriesFocusSidebar>
+          <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
+            <div className="sticky top-0 p-[18px]">
+              <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
                 <Link
-                  href={`/series/${slug}/manage`}
-                  aria-label="Quản lý series"
-                  title="Quản lý series"
-                  className="text-ink-faint hover:text-ink"
+                  href="/series"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
                 >
-                  <Settings size={14} />
+                  <ArrowLeft size={13} />
+                  Tất cả series
                 </Link>
-              )}
+                {status.isAdmin && (
+                  <Link
+                    href={`/series/${slug}/manage`}
+                    aria-label="Quản lý series"
+                    title="Quản lý series"
+                    className="text-ink-faint hover:text-ink"
+                  >
+                    <Settings size={14} />
+                  </Link>
+                )}
+              </div>
+              <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">
+                {series.title}
+              </p>
+              <SeriesSidebar
+                seriesSlug={slug}
+                categories={series.categories}
+                entries={series.entries}
+              />
             </div>
-            <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">
-              {series.title}
-            </p>
-            <SeriesSidebar
-              seriesSlug={slug}
-              categories={series.categories}
-              entries={series.entries}
-            />
-          </div>
-        </aside>
+          </aside>
+        </SeriesFocusSidebar>
 
         <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">{children}</div>
       </div>

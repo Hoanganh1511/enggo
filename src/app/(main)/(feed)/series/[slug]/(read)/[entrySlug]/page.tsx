@@ -6,6 +6,7 @@ import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
+import { EntryDownloadButtons, ENTRY_CONTENT_ID } from "@/components/series/EntryDownloadButtons";
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesWhereThisFits } from "@/components/series/SeriesWhereThisFits";
@@ -57,6 +58,8 @@ async function EntryHeader({
         </div>
       </div>
 
+      <EntryDownloadButtons title={entry.title} contentMarkdown={entry.contentMarkdown} />
+
       {entry.source && (
         <span className="mt-3 inline-block rounded-md bg-surface-muted px-2 py-1 font-mono text-[12px] text-ink-faint">
           {entry.source}
@@ -75,7 +78,7 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
 
   return (
     <FadeIn>
-      <div className="mt-6">
+      <div id={ENTRY_CONTENT_ID} className="mt-6">
         <DocsMarkdown markdown={entry.contentMarkdown} />
       </div>
 

@@ -1,4 +1,5 @@
 import { Node, mergeAttributes, type Extensions } from "@tiptap/core";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TaskList from "@tiptap/extension-task-list";
@@ -7,6 +8,7 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { GlossaryHint } from "./glossary-hint-extension";
+import { CuratedListView } from "./curated-list-view";
 
 export type CalloutVariant = "info" | "warn" | "danger" | "success";
 
@@ -119,6 +121,160 @@ export const Callout = Node.create({
   },
 });
 
+// "Go deeper" - 1 dong goi y doc them (dang the/card vien tron, icon vuong
+// hoa van soc cheo + dau "*" ben trai, noi dung ben phai) - dua theo mockup
+// nguoi dung gui. Content CHI la inline (text/link, xem yeu cau "Nội dung có
+// thể gồm cả text cả link") - KHONG cho block con (khong giong Callout).
+export const GoDeeper = Node.create({
+  name: "goDeeper",
+  group: "block",
+  content: "inline*",
+  parseHTML() {
+    return [{ tag: "div[data-go-deeper]", contentElement: "div.go-deeper-body" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-go-deeper": "" }),
+      ["div", { class: "go-deeper-icon", contenteditable: "false" }, "*"],
+      ["div", { class: "go-deeper-body" }, 0],
+    ];
+  },
+});
+
+// Muc luc dang so (bien the cua "table of contents") - danh so 01/02/03...
+// THEO DUNG THU TU xuat hien cua cac heading H2 trong bai, TAI THOI DIEM
+// CHEN (xem insertToc() trong PostEditorToolbar.tsx) - luu lai thanh SNAPSHOT
+// trong attrs `items` thay vi tinh lai "song" moi lan render. Chon huong nay
+// (khac GlossaryHint dung ReactNodeViewRenderer) vi node nay can hien THAT
+// GIONG NHAU o ca luc soan LAN luc doc tinh qua renderTiptapHTML() (xem
+// ArticleBody.tsx/docs/engineering-log.md 2026-09-10) - 1 NodeView React se
+// KHONG chay trong duong render tinh do, gay lech giao dien 2 noi. Danh doi:
+// neu sua tieu de H2 sau khi da chen muc luc, phai xoa chen lai moi cap nhat
+// (khong tu dong "song" theo noi dung) - chap nhan duoc cho 1 khoi tham khao
+// nhanh, dung tinh than "chup nhanh luc chen" nhu OG-image tinh cua ArticleCard.
+export const TocBlock = Node.create({
+  name: "tocBlock",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      items: {
+        default: [] as { text: string }[],
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-items") ?? "[]") as { text: string }[];
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-toc-block]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const items = (node.attrs.items ?? []) as { text: string }[];
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-toc-block": "", contenteditable: "false" }),
+      ["p", { class: "toc-block-title" }, "Mục lục"],
+      ...items.map((item, i) => [
+        "div",
+        { class: "toc-block-item" },
+        ["span", { class: "toc-block-index" }, String(i + 1).padStart(2, "0")],
+        ["span", { class: "toc-block-text" }, item.text],
+        [
+          "svg",
+          {
+            class: "toc-block-chevron",
+            viewBox: "0 0 24 24",
+            width: "14",
+            height: "14",
+            fill: "none",
+            stroke: "currentColor",
+            "stroke-width": "2",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+          },
+          ["path", { d: "m6 9 6 6 6-6" }],
+        ],
+      ]),
+    ];
+  },
+});
+
+export type CuratedListItem = {
+  postId: string;
+  title: string;
+  excerpt: string;
+  imageUrl: string | null;
+  kind: "article" | "video";
+};
+
+// "Đọc thêm" dang 4 the ngang (mockup nguoi dung gui) - moi o luu SNAPSHOT
+// (postId/title/excerpt/imageUrl/kind) cua 1 Post THAT tai thoi diem chon,
+// khong fetch lai luc render (giong tinh than TocBlock o tren) - vua tranh
+// phai goi API luc doc bai, vua bao dam hien dung y het luc tac gia da thay
+// khi chon (neu bai goc bi sua/xoa sau nay, the van hien snapshot cu thay vi
+// vo/loi). Rieng luc SOAN (NodeView, editable=true) moi can tuong tac chon
+// bai qua modal - xem CuratedItemPickerModal.tsx.
+export const CuratedList = Node.create({
+  name: "curatedList",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      items: {
+        default: [null, null, null, null] as (CuratedListItem | null)[],
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-items") ?? "[]") as (CuratedListItem | null)[];
+          } catch {
+            return [null, null, null, null];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-curated-list]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const items = ((node.attrs.items ?? []) as (CuratedListItem | null)[]).filter(
+      (i): i is CuratedListItem => Boolean(i),
+    );
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-curated-list": "", contenteditable: "false" }),
+      ...items.map((item) => [
+        "a",
+        { class: "curated-list-item", href: `/p/${item.postId}` },
+        [
+          "div",
+          { class: "curated-list-thumb" },
+          ...(item.imageUrl ? [["img", { src: item.imageUrl, alt: "" }]] : []),
+        ],
+        [
+          "div",
+          { class: "curated-list-body" },
+          ["span", { class: "curated-list-badge" }, item.kind === "video" ? "VIDEO" : "ARTICLE"],
+          ["p", { class: "curated-list-title" }, item.title],
+          ["p", { class: "curated-list-excerpt" }, item.excerpt],
+        ],
+      ]),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(CuratedListView);
+  },
+});
+
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
 // them rieng trong PostEditor).
@@ -145,6 +301,9 @@ export function getPostExtensions(): Extensions {
     TableKit.configure({ table: { resizable: true } }),
     Callout,
     GlossaryHint,
+    GoDeeper,
+    TocBlock,
+    CuratedList,
   ];
 }
 
@@ -217,4 +376,27 @@ export const POST_PROSE_CLASS =
   "[&_div[data-callout][data-variant='danger']]:border-danger/40 [&_div[data-callout][data-variant='danger']]:bg-danger/10 [&_div[data-callout][data-variant='danger']_.callout-header]:text-danger " +
   "[&_div[data-callout][data-variant='success']]:border-success/40 [&_div[data-callout][data-variant='success']]:bg-success/10 [&_div[data-callout][data-variant='success']_.callout-header]:text-success " +
   // Placeholder (khi soan, block dau rong)
-  "[&_p.is-editor-empty:first-child::before]:text-ink-faint [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none";
+  "[&_p.is-editor-empty:first-child::before]:text-ink-faint [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none " +
+  // "Go deeper" - icon vuong hoa van soc cheo (repeating-linear-gradient) +
+  // dau "*" o giua, noi dung ben phai. CHI ap dung cho ban render TINH
+  // (renderHTML cua GoDeeper) - luc soan node nay KHONG co NodeView rieng nen
+  // dung THANG 1 schema/style nay ca 2 noi (khac Callout deu la div thuan).
+  "[&_div[data-go-deeper]]:my-4 [&_div[data-go-deeper]]:flex [&_div[data-go-deeper]]:items-center [&_div[data-go-deeper]]:gap-3 [&_div[data-go-deeper]]:rounded-xl [&_div[data-go-deeper]]:border [&_div[data-go-deeper]]:border-border [&_div[data-go-deeper]]:p-3 " +
+  "[&_.go-deeper-icon]:flex [&_.go-deeper-icon]:size-10 [&_.go-deeper-icon]:shrink-0 [&_.go-deeper-icon]:items-center [&_.go-deeper-icon]:justify-center [&_.go-deeper-icon]:rounded-lg [&_.go-deeper-icon]:bg-[repeating-linear-gradient(45deg,var(--border)_0,var(--border)_1px,transparent_1px,transparent_6px)] [&_.go-deeper-icon]:text-[18px] [&_.go-deeper-icon]:font-bold [&_.go-deeper-icon]:text-ink-faint " +
+  "[&_.go-deeper-body]:text-[14px] [&_.go-deeper-body]:text-ink " +
+  // TOC dang so - 01/02/03 muted mono + tieu de + chevron trang tri (khong
+  // tuong tac, xem comment TocBlock ve ly do chon snapshot tinh).
+  "[&_div[data-toc-block]]:my-5 [&_div[data-toc-block]]:rounded-xl [&_div[data-toc-block]]:border [&_div[data-toc-block]]:border-border [&_div[data-toc-block]]:p-1.5 " +
+  "[&_.toc-block-title]:px-3 [&_.toc-block-title]:py-1.5 [&_.toc-block-title]:text-[11px] [&_.toc-block-title]:font-semibold [&_.toc-block-title]:tracking-wide [&_.toc-block-title]:text-ink-faint [&_.toc-block-title]:uppercase " +
+  "[&_.toc-block-item]:flex [&_.toc-block-item]:items-center [&_.toc-block-item]:gap-3 [&_.toc-block-item]:rounded-lg [&_.toc-block-item]:border [&_.toc-block-item]:border-border [&_.toc-block-item]:px-3 [&_.toc-block-item]:py-2.5 [&_.toc-block-item+.toc-block-item]:mt-1.5 " +
+  "[&_.toc-block-index]:font-mono [&_.toc-block-index]:text-[12px] [&_.toc-block-index]:text-ink-faint " +
+  "[&_.toc-block-text]:flex-1 [&_.toc-block-text]:text-[14px] [&_.toc-block-text]:font-semibold [&_.toc-block-text]:text-ink " +
+  "[&_.toc-block-chevron]:shrink-0 [&_.toc-block-chevron]:text-ink-faint " +
+  // "Đọc thêm" (CuratedList) - ban render TINH (luc doc, khong co NodeView) -
+  // moi item la 1 the <a> that, khac ban soan (curated-list-view.tsx dung
+  // Tailwind rieng qua className, khong qua cac class nay).
+  "[&_a.curated-list-item]:my-2.5 [&_a.curated-list-item]:flex [&_a.curated-list-item]:items-center [&_a.curated-list-item]:gap-3 [&_a.curated-list-item]:rounded-xl [&_a.curated-list-item]:border [&_a.curated-list-item]:border-border [&_a.curated-list-item]:p-3 [&_a.curated-list-item]:no-underline [&_a.curated-list-item]:hover:border-border-strong " +
+  "[&_.curated-list-thumb]:size-14 [&_.curated-list-thumb]:shrink-0 [&_.curated-list-thumb]:overflow-hidden [&_.curated-list-thumb]:rounded-lg [&_.curated-list-thumb]:bg-surface-muted [&_.curated-list-thumb_img]:size-full [&_.curated-list-thumb_img]:object-cover " +
+  "[&_.curated-list-badge]:inline-block [&_.curated-list-badge]:rounded [&_.curated-list-badge]:border [&_.curated-list-badge]:border-border [&_.curated-list-badge]:px-1.5 [&_.curated-list-badge]:py-0.5 [&_.curated-list-badge]:font-mono [&_.curated-list-badge]:text-[10px] [&_.curated-list-badge]:font-semibold [&_.curated-list-badge]:tracking-wide [&_.curated-list-badge]:text-ink-faint " +
+  "[&_.curated-list-title]:mt-1 [&_.curated-list-title]:text-[14px] [&_.curated-list-title]:font-bold [&_.curated-list-title]:text-ink [&_.curated-list-title]:no-underline " +
+  "[&_.curated-list-excerpt]:text-[12.5px] [&_.curated-list-excerpt]:text-ink-faint [&_.curated-list-excerpt]:no-underline";
