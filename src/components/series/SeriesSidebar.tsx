@@ -297,7 +297,7 @@ export function SeriesSidebar({
   }
 
   return (
-    <nav className="flex flex-col gap-6">
+    <nav className="flex flex-col gap-[26px]">
       {roots.map((root) => (
         <CategoryNode
           key={root.id}
