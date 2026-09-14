@@ -10,7 +10,6 @@ import {
   EntryDownloadButtons,
   ENTRY_CONTENT_ID,
 } from "@/components/series/EntryDownloadButtons";
-import { SeriesIconGlyph } from "@/components/series/series-icon-options";
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesEntryPagination } from "@/components/series/SeriesEntryPagination";
@@ -56,25 +55,18 @@ async function EntryHeader({
         {entry.readTimeMinutes} phút đọc
       </p>
 
-      <div className="font-content mt-2 flex items-start gap-2.5">
-        {entry.icon && (
-          <SeriesIconGlyph
-            name={entry.icon}
-            size={26}
-            strokeWidth={1.7}
-            className="mt-0.5 shrink-0 text-ink-faint"
-          />
+      {/* entry.icon KHONG hien o day - CHI dung trong SeriesSidebar.tsx (yeu
+          cau nguoi dung: "icon chỉ hiện trên sidebar thôi, không liên quan
+          gì vào trong title, subtitle của bài viết"). */}
+      <div className="font-content mt-2">
+        <h1 className="text-[30px] sm:text-[2.125rem]  my-6 font-extrabold text-ink">
+          {entry.title}
+        </h1>
+        {entry.subtitle && (
+          <p className="mt-1 text-[18.5px] text-ink-faint">
+            {entry.subtitle}
+          </p>
         )}
-        <div>
-          <h1 className="text-[30px] sm:text-[2.125rem]  my-6 font-extrabold text-ink">
-            {entry.title}
-          </h1>
-          {entry.subtitle && (
-            <p className="mt-1 text-[18.5px] text-ink-faint">
-              {entry.subtitle}
-            </p>
-          )}
-        </div>
       </div>
 
       <EntryDownloadButtons
