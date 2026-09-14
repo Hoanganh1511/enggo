@@ -42,6 +42,14 @@ async function EntryHeader({
   return (
     <FadeIn>
       <p className="font-content text-[13px] text-ink-faint">
+        {/* "Series" them vao DAU breadcrumb - thay the cho link "Tất cả
+            series" da bo khoi sidebar (yeu cau nguoi dung: "Thay cho phần
+            Tất cả series để back về thì thêm Series vào đầu tiên của
+            breadcrumb"). */}
+        <Link href="/series" className="hover:text-ink hover:underline">
+          Series
+        </Link>
+        {"  ·  "}
         <Link
           href={`/series/${slug}`}
           className="hover:text-ink hover:underline"

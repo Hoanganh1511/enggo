@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Settings } from "lucide-react";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
-import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
 import { SeriesFocusSidebar } from "@/components/series/SeriesFocusSidebar";
 import {
@@ -40,30 +37,22 @@ export default async function SeriesLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [series, status] = await Promise.all([
-    getContentSeriesOverviewAction(slug).catch(() => null),
-    getSelfStatusAction(),
-  ]);
+  const series = await getContentSeriesOverviewAction(slug).catch(() => null);
   if (!series) notFound();
 
   return (
     <>
       {/* Duoi lg: <aside> ben duoi AN HOAN TOAN, thanh nay thay the - giu lai
-          link back + ten series + gear admin + 1 nut mo SeriesSidebarDrawer
-          (cay category/entry that, xem SeriesMobileNav.tsx) - truoc day
-          KHONG co gi thay the tren mobile (lo responsive that su, khong phai
-          suy doan). Tran sat mep NGANG + mep TREN (cung cong thuc margin am
-          voi div ben duoi) de bam dung vien tren cua vung noi dung, KHONG
-          dung lg:-mx-10 (vo nghia vi chinh thanh nay da lg:hidden). */}
-      <SeriesMobileTopBar
-        slug={slug}
-        seriesTitle={series.title}
-        isAdmin={status.isAdmin}
-      />
+          ten series + 1 nut mo SeriesSidebarDrawer (cay category/entry that,
+          xem SeriesMobileNav.tsx) - truoc day KHONG co gi thay the tren
+          mobile (lo responsive that su, khong phai suy doan). Tran sat mep
+          NGANG + mep TREN (cung cong thuc margin am voi div ben duoi) de bam
+          dung vien tren cua vung noi dung, KHONG dung lg:-mx-10 (vo nghia vi
+          chinh thanh nay da lg:hidden). */}
+      <SeriesMobileTopBar seriesTitle={series.title} />
       <SeriesSidebarDrawer
         slug={slug}
         seriesTitle={series.title}
-        isAdmin={status.isAdmin}
         categories={series.categories}
         entries={series.entries}
       />
@@ -90,25 +79,13 @@ export default async function SeriesLayout({
         <SeriesFocusSidebar>
           <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
             <div className="sticky top-0 p-[18px]">
-              <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
-                <Link
-                  href="/series"
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-                >
-                  <ArrowLeft size={13} />
-                  Tất cả series
-                </Link>
-                {status.isAdmin && (
-                  <Link
-                    href={`/series/${slug}/manage`}
-                    aria-label="Quản lý series"
-                    title="Quản lý series"
-                    className="text-ink-faint hover:text-ink"
-                  >
-                    <Settings size={14} />
-                  </Link>
-                )}
-              </div>
+              {/* Link "Tất cả series" + nut gear Quan ly - DA BO (yeu cau
+                  nguoi dung: "Tất cả series và nút settings không cho hiện ở
+                  đây nữa"). Duong ve series LIST gio nam trong breadcrumb
+                  cua tung Entry ("Series" - xem EntryHeader trong
+                  [entrySlug]/page.tsx); sua Series chuyen han sang trang
+                  Quan ly profile (chua lam trong scope nay - chi bo nut o
+                  day, chua them entry point moi). */}
               <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">
                 {series.title}
               </p>

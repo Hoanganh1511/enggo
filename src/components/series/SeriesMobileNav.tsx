@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ListTree, Settings, X } from "lucide-react";
+import { ArrowLeft, ListTree, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ContentSeriesCategory, ContentSeriesEntrySummary } from "@/lib/api/content-series";
 import { SeriesSidebar } from "./SeriesSidebar";
@@ -10,7 +10,6 @@ import { useSeriesSidebarDrawerStore } from "@/stores/series-sidebar-drawer-stor
 type Props = {
   slug: string;
   seriesTitle: string;
-  isAdmin: boolean;
   categories: ContentSeriesCategory[];
   entries: ContentSeriesEntrySummary[];
 };
@@ -27,7 +26,7 @@ type Props = {
 //   drawer truot tu trai, cung ky thuat AnimatePresence + backdrop voi
 //   DashboardSidebarDrawer.tsx (nav chinh cua app) de dong bo UX 2 loai
 //   drawer trong cung 1 app.
-export function SeriesMobileTopBar({ slug, seriesTitle, isAdmin }: Omit<Props, "categories" | "entries">) {
+export function SeriesMobileTopBar({ seriesTitle }: Omit<Props, "slug" | "categories" | "entries">) {
   const toggle = useSeriesSidebarDrawerStore((s) => s.toggle);
 
   return (
@@ -42,32 +41,22 @@ export function SeriesMobileTopBar({ slug, seriesTitle, isAdmin }: Omit<Props, "
       <p className="min-w-0 flex-1 truncate text-center text-[13px] font-semibold text-ink">
         {seriesTitle}
       </p>
-      <div className="flex shrink-0 items-center gap-1">
-        {isAdmin && (
-          <Link
-            href={`/series/${slug}/manage`}
-            aria-label="Quản lý series"
-            title="Quản lý series"
-            className="flex size-7 items-center justify-center text-ink-faint hover:text-ink"
-          >
-            <Settings size={14} />
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label="Mục lục series"
-          title="Mục lục series"
-          className="flex size-7 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink"
-        >
-          <ListTree size={16} />
-        </button>
-      </div>
+      {/* Nut gear "Quản lý series" - DA BO (yeu cau nguoi dung: sua Series
+          chuyen han sang trang Quan ly profile, khong con truy cap tu day). */}
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label="Mục lục series"
+        title="Mục lục series"
+        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink"
+      >
+        <ListTree size={16} />
+      </button>
     </div>
   );
 }
 
-export function SeriesSidebarDrawer({ slug, seriesTitle, isAdmin, categories, entries }: Props) {
+export function SeriesSidebarDrawer({ slug, seriesTitle, categories, entries }: Props) {
   const open = useSeriesSidebarDrawerStore((s) => s.open);
   const setOpen = useSeriesSidebarDrawerStore((s) => s.setOpen);
 
@@ -109,16 +98,8 @@ export function SeriesSidebarDrawer({ slug, seriesTitle, isAdmin, categories, en
               </button>
             </div>
             <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{seriesTitle}</p>
-            {isAdmin && (
-              <Link
-                href={`/series/${slug}/manage`}
-                onClick={() => setOpen(false)}
-                className="mb-4 inline-flex items-center gap-1.5 px-2.5 text-xs font-medium text-ink-faint hover:text-ink"
-              >
-                <Settings size={13} />
-                Quản lý series
-              </Link>
-            )}
+            {/* Link "Quản lý series" - DA BO (cung ly do voi SeriesMobileTopBar
+                o tren). */}
             <SeriesSidebar
               seriesSlug={slug}
               categories={categories}
