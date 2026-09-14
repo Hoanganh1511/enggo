@@ -1,8 +1,9 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Clock } from "lucide-react";
+import { Clock, Pencil, Settings } from "lucide-react";
 import { getContentSeriesEntryAction } from "@/actions/discover/content-series/get-content-series-entry";
+import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
@@ -271,6 +272,53 @@ async function EntrySidebarShare({
   );
 }
 
+// Batch 3 - Cum nut doc "Sua Entry"/"Quan ly Series" bam sat MEP PHAI man
+// hinh, CHI hien voi admin (yeu cau nguoi dung: "nếu là tác giả của series
+// thì thêm cụm button layout dọc bám sát màn hình bên phải") - Series
+// KHONG co field lien ket toi 1 User cu the (chi `authorName` la CHUOI TEXT
+// tu do, khong phai FK) nen "tác giả" o day anh xa dung theo QUYEN admin da
+// dung xuyen suot module nay (AdminGuard ben backend, giong het cach nut
+// gear "Quản lý series" TRUOC DAY tung gate - da bo khoi sidebar/mobile nav
+// theo yeu cau rieng khac, gio quay lai duoi dang cum nut noi nay). Fixed
+// (khong sticky) - bam theo VIEWPORT chu khong theo vi tri cuon trong trang.
+async function EntryAuthorRail({
+  dataPromise,
+  slug,
+}: {
+  dataPromise: EntryDataPromise;
+  slug: string;
+}) {
+  const [data, status] = await Promise.all([dataPromise, getSelfStatusAction()]);
+  if (!data || !status.isAdmin) return null;
+  const { entry } = data;
+
+  return (
+    // Nut co CHU (khong chi icon) - de/de nhan ra hon (yeu cau nguoi dung
+    // sau khi khong ro nut nao la "edit series": "cho button edit series
+    // vào đấy, dẫn thẳng tới bài hiện tại luôn để edit cũng dc"). "Sửa bài
+    // này" dan THANG toi trang sua CHINH Entry dang xem (dung y het "edit
+    // series" nguoi dung mo ta - danh cho sua NHANH bai hien tai); "Quản lý
+    // series" moi la trang day du (tab Thong tin chung/Cau truc/Vung nguy
+    // hiem, xem SeriesManagePage).
+    <div className="fixed top-1/2 right-4 z-30 hidden -translate-y-1/2 flex-col gap-1.5 rounded-2xl border border-border bg-surface p-1.5 shadow-md lg:flex">
+      <Link
+        href={`/series/${slug}/manage/entries/${entry.slug}`}
+        className="flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium whitespace-nowrap text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+      >
+        <Pencil size={14} strokeWidth={2} aria-hidden="true" />
+        Sửa bài này
+      </Link>
+      <Link
+        href={`/series/${slug}/manage`}
+        className="flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium whitespace-nowrap text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+      >
+        <Settings size={14} strokeWidth={2} aria-hidden="true" />
+        Quản lý series
+      </Link>
+    </div>
+  );
+}
+
 // Trang 1 Entry (dac ta muc 2.2) - Progressive Loading + Skeleton States
 // (yeu cau nguoi dung 2026-09-14, xem docs/engineering-log.md): 1 Promise
 // DUY NHAT (KHONG await o day) truyen xuong 5 nhanh Suspense doc lap
@@ -372,6 +420,12 @@ export default async function SeriesEntryPage({
           EntryNextBanner/SeriesNextEntryBanner.tsx). */}
       <Suspense fallback={<EntryNextBannerSkeleton />}>
         <EntryNextBanner dataPromise={dataPromise} slug={slug} />
+      </Suspense>
+
+      {/* Fixed, khong phu thuoc vi tri trong luong trang - Suspense fallback
+          null (khong quan trong, khong can skeleton rieng). */}
+      <Suspense fallback={null}>
+        <EntryAuthorRail dataPromise={dataPromise} slug={slug} />
       </Suspense>
     </div>
   );
