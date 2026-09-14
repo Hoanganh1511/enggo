@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
@@ -10,6 +10,18 @@ import { SeriesEmailSignup } from "@/components/series/SeriesEmailSignup";
 // mo ta (rich text: **bold**/link/inline code) thay vi viet lai 1 renderer
 // markdown khac, component do da doc lap voi "docs" (chi nhan 1 chuoi
 // markdown) nen dung duoc cho ca Series.
+//
+// Nguyen tac MOI (yeu cau nguoi dung: "khi mà truy cập vào một seri cụ thể,
+// nó sẽ dẫn vào trang map. Chứ không phải trang theo tiêu đề của seri") -
+// /series/[slug] gio LUON redirect sang Entry DAU TIEN (orderIndex nho nhat,
+// `entries` da sap xep san tu findOverview() ben backend) thay vi tu render
+// trang tong quan nay. Series MOI tao tu co san Entry "map" o orderIndex 0
+// (xem createSeries() ben content-series.service.ts) nen se dan dung vao do;
+// Series CU (tao truoc khi co nguyen tac nay) van hoat dong binh thuong -
+// redirect toi bat ky entry dau tien nao no dang co, khong bat buoc phai ten
+// "map". Series CHUA co Entry nao (moi tao thu cong qua API, hoac vua xoa
+// het) thi KHONG co gi de redirect toi - hien lai trang tong quan nay nhu cu
+// (fallback, tranh vong lap redirect ve chinh no).
 export default async function SeriesOverviewPage({
   params,
 }: {
@@ -18,6 +30,11 @@ export default async function SeriesOverviewPage({
   const { slug } = await params;
   const series = await getContentSeriesOverviewAction(slug).catch(() => null);
   if (!series) notFound();
+
+  const firstEntry = series.entries[0];
+  if (firstEntry) {
+    redirect(`/series/${slug}/${firstEntry.slug}`);
+  }
 
   return (
     <div className="w-full pb-20">

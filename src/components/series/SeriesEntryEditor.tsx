@@ -52,7 +52,17 @@ export function SeriesEntryEditor({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
+    // KHONG dung overflow-hidden o day (khac ban truoc) - PostEditorToolbar
+    // (non-bare) tu khai bao "sticky top-0" de bam theo vung cuon THAT cua
+    // app (MainContentArea.tsx, overflow-auto - xem comment o do). Nhung
+    // overflow:hidden tren BAT KY to tien nao cung TU DONG bien to tien do
+    // thanh 1 "scroll container" theo dung dac ta CSS, khien sticky bi GIOI
+    // HAN bam trong pham vi chinh no (cao bang toan bo editor, gom ca noi
+    // dung dai) thay vi bam theo cua so cuon THAT ben ngoai - day chinh la
+    // ly do toolbar "không bám theo màn hình" nguoi dung bao. Mat goc bo
+    // tron o day (chi con o toolbar/EditorContent tu style rieng) la danh
+    // doi chap nhan duoc de sticky hoat dong dung.
+    <div className="rounded-lg border border-border bg-surface">
       <PostEditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>

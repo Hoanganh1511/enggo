@@ -178,7 +178,10 @@ export function PostEditorToolbar({
         "flex flex-wrap items-center gap-0.5",
         bare
           ? "px-0 py-0"
-          : "sticky top-0 z-10 border-b border-border bg-surface/95 px-1 py-1.5 backdrop-blur-sm",
+          : // rounded-t-lg them vao - to tien (SeriesEntryEditor.tsx) da bo
+            // overflow-hidden (pha sticky), nen goc tren cua toolbar khong
+            // con duoc "cat" ho boi cha nua, phai tu bo tron lay chinh no.
+            "sticky top-0 z-10 rounded-t-lg border-b border-border bg-surface/95 px-1 py-1.5 backdrop-blur-sm",
       )}
     >
       <Btn label="Tiêu đề 1" Icon={Heading1} active={editor.isActive("heading", { level: 1 })} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} />
