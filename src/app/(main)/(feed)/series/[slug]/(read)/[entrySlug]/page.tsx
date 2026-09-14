@@ -371,27 +371,40 @@ export default async function SeriesEntryPage({
           cha se thanh khoang cach thua qua muc. pt-6 - khoang cach SAU hr
           (xem comment pb-6 o tren). */}
       <div className="flex gap-6 pt-6">
-        <article className="min-w-0 flex-1">
-          <Suspense
-            fallback={
-              <FadeIn>
-                <EntryBodySkeleton />
-              </FadeIn>
-            }
-          >
-            <EntryBody dataPromise={dataPromise} />
-          </Suspense>
+        {/* Boc article + EntryNextBanner CHUNG 1 cot (flex-1) - yeu cau
+            nguoi dung: banner "Next" truoc day la sibling NGOAI ca hang
+            flex nay nen tran qua CA cot TOC ben phai ("nó vào đến hết phần
+            thân thôi được không... không gian riêng cho cột toc bên phải").
+            Gio banner nam TRONG cung cot voi article (khong con la sibling
+            cua <aside>) nen tu dong DUNG DUNG o mep phai cua article, KHONG
+            lan qua khoang gap-6 + <aside> nua. */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <article className="min-w-0">
+            <Suspense
+              fallback={
+                <FadeIn>
+                  <EntryBodySkeleton />
+                </FadeIn>
+              }
+            >
+              <EntryBody dataPromise={dataPromise} />
+            </Suspense>
 
-          <Suspense
-            fallback={
-              <FadeIn>
-                <EntryExtrasSkeleton />
-              </FadeIn>
-            }
-          >
-            <EntryExtras dataPromise={dataPromise} slug={slug} />
+            <Suspense
+              fallback={
+                <FadeIn>
+                  <EntryExtrasSkeleton />
+                </FadeIn>
+              }
+            >
+              <EntryExtras dataPromise={dataPromise} slug={slug} />
+            </Suspense>
+          </article>
+
+          <Suspense fallback={<EntryNextBannerSkeleton />}>
+            <EntryNextBanner dataPromise={dataPromise} slug={slug} />
           </Suspense>
-        </article>
+        </div>
 
         {/* Duong ke doc tach cot TOC ben phai - yeu cau nguoi dung. pl-8
             (thay vi dua vao gap-8 cua flex cha) de co khoang trong GIUA
@@ -414,13 +427,6 @@ export default async function SeriesEntryPage({
           </Suspense>
         </aside>
       </div>
-
-      {/* Full-width, NGOAI hang flex article+aside o tren (yeu cau nguoi
-          dung: 1 vung RIENG tran het chieu rong cho Entry ke tiep, xem
-          EntryNextBanner/SeriesNextEntryBanner.tsx). */}
-      <Suspense fallback={<EntryNextBannerSkeleton />}>
-        <EntryNextBanner dataPromise={dataPromise} slug={slug} />
-      </Suspense>
 
       {/* Fixed, khong phu thuoc vi tri trong luong trang - Suspense fallback
           null (khong quan trong, khong can skeleton rieng). */}

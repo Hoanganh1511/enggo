@@ -84,7 +84,7 @@ export function EntryExtrasSkeleton() {
 // tran het chieu rong (xem [entrySlug]/page.tsx).
 export function EntryNextBannerSkeleton() {
   return (
-    <div className="-mx-6 mt-10 flex items-center justify-between gap-6 border-t border-b border-border bg-surface-muted px-6 py-8 lg:-mx-10 lg:px-10">
+    <div className="-ml-6 mt-10 flex items-center justify-between gap-6 border-t border-b border-border bg-surface-muted py-8 pr-6 pl-6 lg:-ml-10 lg:pl-10">
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <SeriesSkeleton className="h-2.5 w-24" />
         <SeriesSkeleton className="h-5 w-2/5" />
