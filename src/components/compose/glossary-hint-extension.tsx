@@ -56,4 +56,17 @@ export const GlossaryHint = Node.create({
   addNodeView() {
     return ReactNodeViewRenderer(GlossaryHintView);
   },
+  // Markdown fallback (dung khi SeriesEntryEditor.tsx luu ra markdown qua
+  // tiptap-markdown - xem comment tuong tu o Callout trong post-extensions.ts)
+  // - xuong cap thanh (giai thich) trong ngoac, mat icon "?" trang tri.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: { write: (s?: string) => void }, node: { attrs: Record<string, unknown> }) => {
+          const explanation = ((node.attrs.explanation as string) ?? "").trim();
+          if (explanation) state.write(` _(${explanation})_`);
+        },
+      },
+    };
+  },
 });

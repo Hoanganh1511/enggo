@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SeriesIconGlyph } from "./series-icon-options";
 import type {
   ContentSeriesCategory,
   ContentSeriesEntrySummary,
@@ -27,6 +28,65 @@ function buildCategoryTree(categories: ContentSeriesCategory[]) {
   return byParent;
 }
 
+function EntryLink({
+  entry,
+  seriesSlug,
+  pathname,
+  depth,
+  onNavigate,
+}: {
+  entry: ContentSeriesEntrySummary;
+  seriesSlug: string;
+  pathname: string;
+  depth: number;
+  onNavigate?: () => void;
+}) {
+  const href = `/series/${seriesSlug}/${entry.slug}`;
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={cn(
+        "relative truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
+        active
+          ? "bg-[rgba(143,63,77,0.08)] font-medium text-[#8F3F4D]"
+          : "text-content-text hover:bg-hover-bg hover:text-[rgba(20,22,26,0.92)]",
+      )}
+      style={{ paddingLeft: `${18 + depth * 12}px` }}
+    >
+      {/* Active: nen NHAT cung tong mau #8F3F4D (rgba(143,63,77,.08) - theo
+          yeu cau nguoi dung, tham khao 1 sidebar ngoai co nen day sau muc
+          dang chon) CONG voi thanh chi bao trai - truoc day CHI co thanh chi
+          bao + doi mau chu, khong co nen. Van giu dung 1 accent #8F3F4D (mau
+          nut "Viết bài" tren header, xem TopHeaderBar.tsx) - KHONG quay lai
+          nen xanh --primary-soft cu (yeu cau nguoi dung truoc day: khong
+          dung mau xanh nua) dung tinh than "nen mau nhat" nhung van dung
+          tong mau da chot. left-0 CO DINH (khong theo paddingLeft thut le
+          tung depth) - bam sat mep trai CA hang, dung quy uoc
+          active-indicator quen thuoc cua sidebar dang cay. */}
+      {active && (
+        <span
+          aria-hidden="true"
+          className="absolute top-0 bottom-0 left-0 w-0.5 rounded-full bg-[#8F3F4D]"
+        />
+      )}
+      {entry.icon && (
+        <SeriesIconGlyph name={entry.icon} size={12} className="mr-1.5 inline align-[-1px]" />
+      )}
+      {entry.navTitle || entry.title}
+    </Link>
+  );
+}
+
+// CHU Y: chi CATEGORY CON (depth > 0, tuc co parentId - nguoi dung tao qua
+// "+ Thêm nhóm con" trong trang Quan ly, xem SeriesTreeManager.tsx) moi la
+// ACCORDION bam dong/mo duoc. Category GOC (depth 0) VAN la nhan tinh nhu
+// truoc gio, entry ben duoi LUON hien het - sua lai sau khi hieu SAI y nguoi
+// dung 1 lan ("không phải là biến cái cấp đầu thành accordion... sau cái
+// cate đó, tôi có thể thêm bài viết thẳng HOẶC chọn tạo 1 accordion"): accordion
+// la 1 LUA CHON THEM trong long 1 category goc, khong phai ban than category
+// goc.
 function CategoryNode({
   category,
   depth,
@@ -50,98 +110,83 @@ function CategoryNode({
 }) {
   const children = byParent.get(category.id) ?? [];
   const entries = entriesByCategory.get(category.id) ?? [];
-  const open = openIds.has(category.id);
+  const isAccordion = depth > 0;
+  const open = !isAccordion || openIds.has(category.id);
+
+  const header = isAccordion ? (
+    <button
+      type="button"
+      onClick={() => onToggle(category.id)}
+      className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold text-content-text hover:bg-hover-bg"
+      style={{ paddingLeft: `${10 + depth * 12}px` }}
+    >
+      <ChevronRight
+        size={12}
+        strokeWidth={2.2}
+        className={cn("shrink-0 transition-transform duration-150 ease-out", open && "rotate-90")}
+        aria-hidden="true"
+      />
+      {category.colorHex && (
+        <span
+          className="inline-block size-2 shrink-0 rounded-full"
+          style={{ backgroundColor: category.colorHex }}
+          aria-hidden="true"
+        />
+      )}
+      <span className="min-w-0 flex-1 truncate text-left">{category.title}</span>
+    </button>
+  ) : (
+    // Category goc - nhan TINH (khong bam duoc), giu dung dang cu truoc khi
+    // co accordion: chi to/mau khac entry, khong co chevron.
+    <p
+      className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-content-text"
+      style={{ paddingLeft: `${10 + depth * 12}px` }}
+    >
+      {category.colorHex && (
+        <span
+          className="inline-block size-2 shrink-0 rounded-full"
+          style={{ backgroundColor: category.colorHex }}
+          aria-hidden="true"
+        />
+      )}
+      {category.title}
+    </p>
+  );
 
   return (
     <div>
-      {/* Category gio la 1 hang ACCORDION bam duoc (truoc day chi la nhan
-          tinh, entry ben duoi LUON hien het) - yeu cau nguoi dung "thêm 1 cấp
-          nữa" (tham khao 1 sidebar ngoai: chi category dang chua Entry active
-          moi tu mo san, con lai thu gon). Chevron xoay 90deg khi mo (khong
-          doi component rieng cho 2 huong). Van giu dung tong mau/size chu nhu
-          truoc (--content-text, 12px font-semibold) - CHI them hanh vi
-          bam+chevron, khong doi cam giac thi giac cap category. */}
-      <button
-        type="button"
-        onClick={() => onToggle(category.id)}
-        className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold text-content-text hover:bg-hover-bg"
-        style={{ paddingLeft: `${10 + depth * 12}px` }}
-      >
-        <ChevronRight
-          size={12}
-          strokeWidth={2.2}
-          className={cn("shrink-0 transition-transform duration-150 ease-out", open && "rotate-90")}
-          aria-hidden="true"
-        />
-        {category.colorHex && (
-          <span
-            className="inline-block size-2 shrink-0 rounded-full"
-            style={{ backgroundColor: category.colorHex }}
-            aria-hidden="true"
-          />
-        )}
-        <span className="min-w-0 flex-1 truncate text-left">{category.title}</span>
-      </button>
+      {header}
 
-      {open && (
-        <div className="mt-1 flex flex-col gap-0.5">
-          {entries.map((entry) => {
-            const href = `/series/${seriesSlug}/${entry.slug}`;
-            const active = pathname === href;
-            return (
-              <Link
-                key={entry.id}
-                href={href}
-                onClick={onNavigate}
-                className={cn(
-                  "relative truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
-                  active
-                    ? "bg-[rgba(143,63,77,0.08)] font-medium text-[#8F3F4D]"
-                    : "text-content-text hover:bg-hover-bg hover:text-[rgba(20,22,26,0.92)]",
-                )}
-                style={{ paddingLeft: `${28 + depth * 12}px` }}
-              >
-                {/* Active: nen NHAT cung tong mau #8F3F4D (rgba(143,63,77,.08) -
-                    theo yeu cau nguoi dung, tham khao 1 sidebar ngoai co nen day
-                    sau muc dang chon) CONG voi thanh chi bao trai - truoc day
-                    CHI co thanh chi bao + doi mau chu, khong co nen. Van giu
-                    dung 1 accent #8F3F4D (mau nut "Viết bài" tren header, xem
-                    TopHeaderBar.tsx) - KHONG quay lai nen xanh --primary-soft cu
-                    (yeu cau nguoi dung truoc day: khong dung mau xanh nua) dung
-                    tinh than "nen mau nhat" nhung van dung tong mau da chot.
-                    left-0 CO DINH (khong theo paddingLeft thut le tung depth) -
-                    bam sat mep trai CA hang, dung quy uoc active-indicator quen
-                    thuoc cua sidebar dang cay. */}
-                {active && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute top-0 bottom-0 left-0 w-0.5 rounded-full bg-[#8F3F4D]"
-                  />
-                )}
-                {entry.icon && <span className="mr-1.5">{entry.icon}</span>}
-                {entry.title}
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      {open && children.length > 0 && (
-        <div className="mt-1 flex flex-col gap-1">
-          {children.map((child) => (
-            <CategoryNode
-              key={child.id}
-              category={child}
-              depth={depth + 1}
-              byParent={byParent}
-              entriesByCategory={entriesByCategory}
+      {open && (entries.length > 0 || children.length > 0) && (
+        <div className={cn("flex flex-col gap-0.5", isAccordion ? "mt-1" : "mt-2")}>
+          {entries.map((entry) => (
+            <EntryLink
+              key={entry.id}
+              entry={entry}
               seriesSlug={seriesSlug}
               pathname={pathname}
+              depth={depth}
               onNavigate={onNavigate}
-              openIds={openIds}
-              onToggle={onToggle}
             />
           ))}
+          {children.length > 0 && (
+            <div className={cn("flex flex-col gap-1", entries.length > 0 && "mt-2")}>
+              {children.map((child) => (
+                <CategoryNode
+                  key={child.id}
+                  category={child}
+                  depth={depth + 1}
+                  byParent={byParent}
+                  entriesByCategory={entriesByCategory}
+                  seriesSlug={seriesSlug}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                  openIds={openIds}
+                  onToggle={onToggle}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -172,9 +217,10 @@ export function SeriesSidebar({
   for (const list of entriesByCategory.values())
     list.sort((a, b) => a.orderIndex - b.orderIndex);
 
-  // Category dang chua Entry active (theo pathname hien tai) - tu mo san
-  // accordion cua no, giong tinh than mockup nguoi dung gui (chi nhom chua
-  // trang dang xem moi bung mo, con lai thu gon).
+  // Category CON (accordion, depth>0) dang chua Entry active - tu mo san,
+  // giu tinh than mockup nguoi dung gui (nhom chua trang dang xem moi bung
+  // mo, con lai thu gon). Category GOC (depth 0) KHONG can trong danh sach
+  // nay nua vi luon hien san (khong con la accordion).
   const activeCategoryId =
     entries.find((e) => `/series/${seriesSlug}/${e.slug}` === pathname)?.categoryId ?? null;
 
@@ -206,7 +252,7 @@ export function SeriesSidebar({
   }
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-6">
       {roots.map((root) => (
         <CategoryNode
           key={root.id}

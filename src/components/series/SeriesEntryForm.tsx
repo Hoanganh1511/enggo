@@ -8,6 +8,7 @@ import { createContentSeriesEntryAction } from "@/actions/discover/content-serie
 import { updateContentSeriesEntryAction } from "@/actions/discover/content-series/update-content-series-entry";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { SeriesEntryEditor } from "@/components/series/SeriesEntryEditor";
+import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { SelectMenu } from "@/components/ui/select-menu";
 import type {
@@ -48,6 +49,7 @@ export function SeriesEntryForm({
     initial?.categoryId ?? defaultCategoryId ?? categories[0]?.id ?? "",
   );
   const [title, setTitle] = useState(initial?.title ?? "");
+  const [navTitle, setNavTitle] = useState(initial?.navTitle ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [icon, setIcon] = useState(initial?.icon ?? "");
   const [subtitle, setSubtitle] = useState(initial?.subtitle ?? "");
@@ -72,6 +74,10 @@ export function SeriesEntryForm({
       const payload = {
         categoryId,
         title,
+        // Mode edit: gui nguyen (ke ca rong) de xoa duoc that su, quay ve
+        // dung `title` mac dinh - giong tinh than coverImageUrl trong
+        // SeriesForm.tsx/CreateCollectionModal.tsx.
+        navTitle: isEdit ? navTitle.trim() : navTitle.trim() || undefined,
         slug: slug.trim() || undefined,
         subtitle: subtitle.trim() || undefined,
         icon: icon.trim() || undefined,
@@ -110,19 +116,29 @@ export function SeriesEntryForm({
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr]">
-          <div className="sm:w-20">
+          <div>
             <label className={labelClass}>Icon</label>
-            <input
-              className={inputClass}
-              placeholder="✨"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-            />
+            <SeriesIconPicker value={icon} onChange={setIcon} />
           </div>
           <div>
             <label className={labelClass}>Tiêu đề *</label>
             <input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
+        </div>
+
+        <div>
+          <label className={labelClass}>
+            Tên hiển thị trong sidebar (tuỳ chọn)
+          </label>
+          <input
+            className={inputClass}
+            placeholder="Để trống = dùng chung Tiêu đề"
+            value={navTitle}
+            onChange={(e) => setNavTitle(e.target.value)}
+          />
+          <p className="mt-1 text-[11px] text-ink-faint">
+            Sidebar hẹp nên có thể muốn 1 tên ngắn gọn hơn Tiêu đề chính trên trang.
+          </p>
         </div>
 
         <div>

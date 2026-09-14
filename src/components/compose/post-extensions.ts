@@ -10,6 +10,20 @@ import { TableKit } from "@tiptap/extension-table";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { CuratedListView } from "./curated-list-view";
 
+// tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
+// bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
+// MarkdownSerializerState) chi de addStorage() ben duoi co kieu ro rang thay
+// vi `any` tran lan, KHONG phai import that (khong co goi de import).
+type TiptapNode = { attrs: Record<string, unknown>; textContent: string };
+type MarkdownSerializerState = {
+  write: (content?: string) => void;
+  ensureNewLine: () => void;
+  closeBlock: (node: TiptapNode) => void;
+  renderContent: (node: TiptapNode) => void;
+  renderInline: (node: TiptapNode) => void;
+  wrapBlock: (delim: string, firstDelim: string | null, node: TiptapNode, f: () => void) => void;
+};
+
 export type CalloutVariant = "info" | "warn" | "danger" | "success";
 
 // Nhan hien thi cho tung chu de callout - 3 chu de CHINH nguoi dung tao duoc
@@ -119,6 +133,31 @@ export const Callout = Node.create({
       ["div", { class: "callout-body" }, 0],
     ];
   },
+  // Serialize ve Markdown (dung khi SeriesEntryEditor.tsx - editor Entry
+  // Series - luu ra STRING markdown qua tiptap-markdown, package KHONG tu
+  // biet render 1 node LA cua app nhu Callout nen se BO QUA/loi neu khong
+  // khai bao rieng o day. Composer.tsx (Post) KHONG dung Markdown extension
+  // nen KHONG doc toi storage nay - hoan toan an toan them vao, chi la 1 lop
+  // "du phong" khi node nay xuat hien trong 1 tai lieu co serialize markdown.
+  // Xuong cap thanh 1 blockquote co nhan chu de o dong dau (mat rieng
+  // mau/icon, giu lai NOI DUNG that).
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const variant =
+            (node.attrs.variant as CalloutVariant) in CALLOUT_LABELS
+              ? (node.attrs.variant as CalloutVariant)
+              : "info";
+          state.wrapBlock("> ", null, node, () => {
+            state.write(`**${CALLOUT_LABELS[variant]}**`);
+            state.ensureNewLine();
+            state.renderContent(node);
+          });
+        },
+      },
+    };
+  },
 });
 
 // "Go deeper" - 1 dong goi y doc them (dang the/card vien tron, icon vuong
@@ -139,6 +178,19 @@ export const GoDeeper = Node.create({
       ["div", { class: "go-deeper-icon", contenteditable: "false" }, "*"],
       ["div", { class: "go-deeper-body" }, 0],
     ];
+  },
+  // Markdown fallback (xem comment addStorage cua Callout o tren) - xuong
+  // cap thanh 1 dong van ban thuong, mat icon "*" trang tri, giu lai
+  // text/link that su.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          state.renderInline(node);
+          state.closeBlock(node);
+        },
+      },
+    };
   },
 });
 
@@ -204,6 +256,24 @@ export const TocBlock = Node.create({
         ],
       ]),
     ];
+  },
+  // Markdown fallback (xem comment addStorage cua Callout o tren) - xuong
+  // cap thanh 1 danh sach so (khong con giao dien chevron/khung rieng).
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const items = (node.attrs.items ?? []) as { text: string }[];
+          state.write("**Mục lục**");
+          state.ensureNewLine();
+          items.forEach((item, i) => {
+            state.write(`${i + 1}. ${item.text}`);
+            state.ensureNewLine();
+          });
+          state.closeBlock(node);
+        },
+      },
+    };
   },
 });
 
@@ -272,6 +342,24 @@ export const CuratedList = Node.create({
   },
   addNodeView() {
     return ReactNodeViewRenderer(CuratedListView);
+  },
+  // Markdown fallback (xem comment addStorage cua Callout o tren) - xuong
+  // cap thanh danh sach link, mat the/anh/badge trang tri.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const items = ((node.attrs.items ?? []) as (CuratedListItem | null)[]).filter(
+            (i): i is CuratedListItem => Boolean(i),
+          );
+          items.forEach((item) => {
+            state.write(`- [${item.title}](/p/${item.postId})`);
+            state.ensureNewLine();
+          });
+          state.closeBlock(node);
+        },
+      },
+    };
   },
 });
 

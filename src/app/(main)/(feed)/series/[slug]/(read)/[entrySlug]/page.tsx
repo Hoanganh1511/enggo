@@ -7,6 +7,7 @@ import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
 import { EntryDownloadButtons, ENTRY_CONTENT_ID } from "@/components/series/EntryDownloadButtons";
+import { SeriesIconGlyph } from "@/components/series/series-icon-options";
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesWhereThisFits } from "@/components/series/SeriesWhereThisFits";
@@ -51,7 +52,9 @@ async function EntryHeader({
       </p>
 
       <div className="font-content mt-2 flex items-start gap-2.5">
-        {entry.icon && <span className="mt-0.5 text-2xl">{entry.icon}</span>}
+        {entry.icon && (
+          <SeriesIconGlyph name={entry.icon} size={26} strokeWidth={1.7} className="mt-0.5 shrink-0 text-ink-faint" />
+        )}
         <div>
           <h1 className="text-[26px] font-extrabold text-ink sm:text-[30px]">{entry.title}</h1>
           {entry.subtitle && <p className="mt-1 text-[15px] text-ink-faint">{entry.subtitle}</p>}
@@ -215,74 +218,82 @@ export default async function SeriesEntryPage({
   const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(() => null);
 
   return (
-    // gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
-    // khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex cha
-    // se thanh khoang cach thua qua muc.
-    <div className="flex gap-6">
-      <article className="min-w-0 flex-1 pb-20">
-        <Suspense
-          fallback={
-            <FadeIn>
-              <EntryHeaderSkeleton />
-            </FadeIn>
-          }
-        >
-          <EntryHeader dataPromise={dataPromise} slug={slug} />
-        </Suspense>
+    <div className="pb-20">
+      <Suspense
+        fallback={
+          <FadeIn>
+            <EntryHeaderSkeleton />
+          </FadeIn>
+        }
+      >
+        <EntryHeader dataPromise={dataPromise} slug={slug} />
+      </Suspense>
 
-        {/* Duong ke ngang tach tieu de/mo ta khoi than bai - yeu cau nguoi
-            dung, khop mockup tham khao. */}
-        <hr className="my-6 border-border" />
+      {/* Duong ke ngang tach tieu de/mo ta khoi than bai - yeu cau nguoi
+          dung, khop mockup tham khao. Nam NGOAI hang flex 2 cot ben duoi (het
+          chieu rong ca article LAN aside) - truoc day nam TRONG <article>
+          nen TOC/aside ben phai bat dau ngay tu dinh trang (ngang hang
+          breadcrumb), khong khop vi tri bat dau THAT cua than bai (nguoi
+          dung bao loi). */}
+      <hr className="my-6 border-border" />
 
-        <Suspense
-          fallback={
-            <FadeIn>
-              <EntryBodySkeleton />
-            </FadeIn>
-          }
-        >
-          <EntryBody dataPromise={dataPromise} />
-        </Suspense>
+      {/* gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
+          khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
+          cha se thanh khoang cach thua qua muc. */}
+      <div className="flex gap-6">
+        <article className="min-w-0 flex-1">
+          <Suspense
+            fallback={
+              <FadeIn>
+                <EntryBodySkeleton />
+              </FadeIn>
+            }
+          >
+            <EntryBody dataPromise={dataPromise} />
+          </Suspense>
 
-        <Suspense
-          fallback={
-            <FadeIn>
-              <EntryExtrasSkeleton />
-            </FadeIn>
-          }
-        >
-          <EntryExtras dataPromise={dataPromise} slug={slug} />
-        </Suspense>
-      </article>
+          <Suspense
+            fallback={
+              <FadeIn>
+                <EntryExtrasSkeleton />
+              </FadeIn>
+            }
+          >
+            <EntryExtras dataPromise={dataPromise} slug={slug} />
+          </Suspense>
+        </article>
 
-      {/* Duong ke doc tach cot TOC ben phai - yeu cau nguoi dung. pl-8 (thay
-          vi dua vao gap-8 cua flex cha) de co khoang trong GIUA duong ke va
-          chu, khong bam sat vien. */}
-      <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 border-l border-border pl-8 xl:flex">
-        <Suspense
-          fallback={
-            <FadeIn>
-              <EntryTocSkeleton />
-            </FadeIn>
-          }
-        >
-          <EntryToc dataPromise={dataPromise} />
-        </Suspense>
+        {/* Duong ke doc tach cot TOC ben phai - yeu cau nguoi dung. pl-8
+            (thay vi dua vao gap-8 cua flex cha) de co khoang trong GIUA
+            duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
+            vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
+            trang nua) roi dinh lai o do khi cuon xuong. */}
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 border-l border-border pl-8 xl:flex">
+          <Suspense
+            fallback={
+              <FadeIn>
+                <EntryTocSkeleton />
+              </FadeIn>
+            }
+          >
+            <EntryToc dataPromise={dataPromise} />
+          </Suspense>
 
-        <Suspense
-          fallback={
-            <FadeIn>
-              <EntryWhereFitsSkeleton />
-            </FadeIn>
-          }
-        >
-          <EntryWhereFits dataPromise={dataPromise} />
-        </Suspense>
+          <Suspense
+            fallback={
+              <FadeIn>
+                <EntryWhereFitsSkeleton />
+              </FadeIn>
+            }
+          >
+            <EntryWhereFits dataPromise={dataPromise} />
+          </Suspense>
 
-        <Suspense fallback={null}>
-          <EntrySidebarShare dataPromise={dataPromise} slug={slug} />
-        </Suspense>
-      </aside>
+          <Suspense fallback={null}>
+            <EntrySidebarShare dataPromise={dataPromise} slug={slug} />
+          </Suspense>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -43,6 +43,10 @@ export type ContentSeriesEntrySummary = {
   slug: string;
   orderIndex: number;
   title: string;
+  // Ten hien thi RIENG trong sidebar - null/rong = dung `title` (xem
+  // SeriesSidebar.tsx: `entry.navTitle || entry.title`). Tach khoi `title`
+  // (H1 tren trang doc) - yeu cau nguoi dung "tùy chỉnh title ở 2 vị trí".
+  navTitle: string | null;
   subtitle: string | null;
   icon: string | null;
   categoryId: string;
@@ -80,6 +84,7 @@ export type ContentSeriesEntryDetail = {
   slug: string;
   orderIndex: number;
   title: string;
+  navTitle: string | null;
   subtitle: string | null;
   icon: string | null;
   source: string | null;
@@ -158,7 +163,14 @@ export function deleteContentSeries(slug: string): Promise<void> {
   return apiFetch<void>(`/content-series/${slug}`, { method: "DELETE" });
 }
 
-export type ContentSeriesCategoryInput = { title?: string; slug?: string; colorHex?: string };
+export type ContentSeriesCategoryInput = {
+  title?: string;
+  slug?: string;
+  colorHex?: string;
+  // Category CHA - tao 1 "nhom con" (accordion, xem SeriesSidebar.tsx) ben
+  // trong 1 category goc. CHI dung luc TAO (khong doi cha sau khi da tao).
+  parentId?: string;
+};
 
 export function createContentSeriesCategory(
   seriesSlug: string,
@@ -201,6 +213,7 @@ export function moveContentSeriesCategory(
 export type ContentSeriesEntryInput = {
   categoryId?: string;
   title?: string;
+  navTitle?: string;
   slug?: string;
   subtitle?: string;
   icon?: string;

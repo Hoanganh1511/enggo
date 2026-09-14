@@ -118,7 +118,7 @@
      SeriesSidebar.tsx) - tach khoi --ink-muted (dung cho UI/dieu huong) vi
      truoc day cac noi nay dung rgba(20,22,26,x) roi rac tung file, khong co
      ten bien chung. */
-  --content-text: rgba(20, 22, 26, 0.8);
+  --content-text: rgba(20, 22, 26, 0.62);
 
   --border: #e4e4e7;
   --border-subtle: color-mix(in srgb, #e4e4e7 55%, white);

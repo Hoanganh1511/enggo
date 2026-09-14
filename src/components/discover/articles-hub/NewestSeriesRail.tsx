@@ -1,6 +1,7 @@
 import { BookOpen } from "lucide-react";
 import type { ContentSeriesListItem } from "@/lib/api/content-series";
 import { SeriesCardLink } from "@/components/series/SeriesCardLink";
+import { SeriesIconGlyph } from "@/components/series/series-icon-options";
 import { ScrollableRow } from "./ScrollableRow";
 
 // "Series mới nhất" tren /home. Ban dau lam theo mau "注目キーワード" (Yahoo
@@ -39,9 +40,9 @@ export function NewestSeriesRail({ series }: { series: ContentSeriesListItem[] }
                 {s._count.entries} phần
               </span>
               {icons.length > 0 && (
-                <span className="flex items-center gap-0.5 text-[13px]" aria-hidden="true">
+                <span className="flex items-center gap-1 text-[var(--muted)]" aria-hidden="true">
                   {icons.map((icon, i) => (
-                    <span key={i}>{icon}</span>
+                    <SeriesIconGlyph key={i} name={icon} size={12} strokeWidth={1.8} />
                   ))}
                 </span>
               )}
