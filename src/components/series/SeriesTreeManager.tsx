@@ -7,6 +7,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  FolderInput,
   GripVertical,
   ListOrdered,
   Loader2,
@@ -36,6 +37,7 @@ import { createContentSeriesCategoryAction } from "@/actions/discover/content-se
 import { updateContentSeriesCategoryAction } from "@/actions/discover/content-series/update-content-series-category";
 import { deleteContentSeriesCategoryAction } from "@/actions/discover/content-series/delete-content-series-category";
 import { moveContentSeriesCategoryAction } from "@/actions/discover/content-series/move-content-series-category";
+import { moveContentSeriesCategoryToParentAction } from "@/actions/discover/content-series/move-content-series-category-to-parent";
 import { reorderContentSeriesCategoriesAction } from "@/actions/discover/content-series/reorder-content-series-categories";
 import { deleteContentSeriesEntryAction } from "@/actions/discover/content-series/delete-content-series-entry";
 import { moveContentSeriesEntryAction } from "@/actions/discover/content-series/move-content-series-entry";
@@ -85,6 +87,12 @@ export function SeriesTreeManager({
   // trải nghiệm đang đặt dấu hỏi kỳ lạ" khi tha xong. Hien 1 spinner RO RANG
   // ngay canh nut "Sắp xếp" trong luc cho server luu.
   const [dragBusy, setDragBusy] = useState(false);
+  // Rieng cho thao tac "Chuyển nhóm con sang category gốc khác" (yeu cau
+  // nguoi dung: "dịch chuyển cả cục accordion... từ Explore kéo xuống
+  // Security") - luu ID category CON dang chuyen de hien spinner + nhan
+  // "Đang chuyển..." NGAY TAI DUNG cho dieu khien do, ro rang hon la chi dua
+  // vao `busy` chung (chi disable, khong noi ro dang lam gi).
+  const [movingCategoryId, setMovingCategoryId] = useState<string | null>(null);
 
   // State CUC BO (optimistic) cho category/entry - khoi tao/dong bo lai tu
   // props moi luc Server Component cha co du lieu THAT sau router.refresh()
@@ -398,6 +406,59 @@ export function SeriesTreeManager({
 
           {!isRenaming && (
             <div className="flex shrink-0 items-center gap-1">
+              {movingCategoryId === cat.id ? (
+                <span className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] text-primary">
+                  <Loader2 size={11} className="animate-spin" aria-hidden="true" />
+                  Đang chuyển...
+                </span>
+              ) : (
+                rootCategories.length > 1 && (
+                  <div className="relative flex items-center">
+                    <FolderInput
+                      size={11}
+                      className="pointer-events-none absolute left-1.5 text-ink-faint"
+                      aria-hidden="true"
+                    />
+                    {/* Chuyen nhom con nay sang lam con cua 1 category GOC KHAC
+                        (yeu cau nguoi dung: "dịch chuyển cả cục accordion...
+                        từ Explore kéo xuống Security"). Select native (khong
+                        dung SelectMenu de gon, vi day la thao tac phu, it
+                        dung) - luon reset ve placeholder sau khi chon xong
+                        (value="" moi lan, khong "dinh" vao lua chon vua roi
+                        vi category da CHUYEN DI, khong con nam trong danh
+                        sach nhom con nay nua). */}
+                    <select
+                      value=""
+                      disabled={busy}
+                      onChange={(e) => {
+                        const targetParentId = e.target.value;
+                        if (!targetParentId) return;
+                        setMovingCategoryId(cat.id);
+                        run(
+                          () =>
+                            moveContentSeriesCategoryToParentAction(
+                              seriesSlug,
+                              cat.id,
+                              targetParentId,
+                            ),
+                          "Chuyển nhóm con thất bại",
+                        ).finally(() => setMovingCategoryId(null));
+                      }}
+                      aria-label="Chuyển nhóm con sang category gốc khác"
+                      className="cursor-pointer rounded-md border border-border bg-surface py-1 pr-1.5 pl-5 text-[11px] text-ink-faint hover:bg-hover-bg disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <option value="">Chuyển đến...</option>
+                      {rootCategories
+                        .filter((root) => root.id !== cat.parentId)
+                        .map((root) => (
+                          <option key={root.id} value={root.id}>
+                            {root.title}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )
+              )}
               <button
                 type="button"
                 disabled={busy || siblingIndex === 0}

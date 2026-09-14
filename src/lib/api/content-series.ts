@@ -168,7 +168,8 @@ export type ContentSeriesCategoryInput = {
   slug?: string;
   colorHex?: string;
   // Category CHA - tao 1 "nhom con" (accordion, xem SeriesSidebar.tsx) ben
-  // trong 1 category goc. CHI dung luc TAO (khong doi cha sau khi da tao).
+  // trong 1 category goc. Doi cha SAU KHI da tao thi dung
+  // moveContentSeriesCategoryToParent rieng ben duoi (khong qua input nay).
   parentId?: string;
 };
 
@@ -207,6 +208,21 @@ export function moveContentSeriesCategory(
   return apiFetch<ContentSeriesCategory>(
     `/content-series/${seriesSlug}/categories/${categoryId}/move`,
     { method: "POST", body: JSON.stringify({ direction }) },
+  );
+}
+
+// Chuyen 1 category CON (nhom con/accordion) sang lam con cua 1 category GOC
+// KHAC trong cung Series (yeu cau nguoi dung: "dịch chuyển cả cục accordion
+// ... từ Explore kéo xuống Security") - khac moveContentSeriesCategory (chi
+// hoan doi len/xuong trong CUNG cha).
+export function moveContentSeriesCategoryToParent(
+  seriesSlug: string,
+  categoryId: string,
+  newParentId: string,
+): Promise<ContentSeriesCategory> {
+  return apiFetch<ContentSeriesCategory>(
+    `/content-series/${seriesSlug}/categories/${categoryId}/move-to-parent`,
+    { method: "POST", body: JSON.stringify({ parentId: newParentId }) },
   );
 }
 
