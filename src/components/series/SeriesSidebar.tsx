@@ -72,7 +72,11 @@ function EntryLink({
         />
       )}
       {entry.icon && (
-        <SeriesIconGlyph name={entry.icon} size={12} className="mr-1.5 inline align-[-1px]" />
+        <SeriesIconGlyph
+          name={entry.icon}
+          size={12}
+          className="mr-1.5 inline align-[-1px]"
+        />
       )}
       {entry.navTitle || entry.title}
     </Link>
@@ -114,18 +118,16 @@ function CategoryNode({
   const open = !isAccordion || openIds.has(category.id);
 
   const header = isAccordion ? (
+    // font-mono - JetBrains Mono trong .series-scope (yeu cau nguoi dung,
+    // xem app/layout.tsx/globals.css: --font-mono duoc doi rieng trong scope
+    // nay) - ap cho ca nhan category GOC lan CON (ChevronRight/dau cham mau
+    // giu nguyen, khong bi anh huong boi font-family).
     <button
       type="button"
       onClick={() => onToggle(category.id)}
-      className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-semibold text-content-text hover:bg-hover-bg"
+      className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[12px] font-semibold text-content-text hover:bg-hover-bg"
       style={{ paddingLeft: `${10 + depth * 12}px` }}
     >
-      <ChevronRight
-        size={12}
-        strokeWidth={2.2}
-        className={cn("shrink-0 transition-transform duration-150 ease-out", open && "rotate-90")}
-        aria-hidden="true"
-      />
       {category.colorHex && (
         <span
           className="inline-block size-2 shrink-0 rounded-full"
@@ -133,13 +135,26 @@ function CategoryNode({
           aria-hidden="true"
         />
       )}
-      <span className="min-w-0 flex-1 truncate text-left">{category.title}</span>
+      <span className="min-w-0 flex-1 truncate text-left">
+        {category.title}
+      </span>
+      {/* Chevron doi ve CUOI hang (yeu cau nguoi dung, xem screenshot) - truoc
+          do nam dau hang truoc dau cham mau/title. */}
+      <ChevronRight
+        size={12}
+        strokeWidth={2.2}
+        className={cn(
+          "shrink-0 transition-transform duration-150 ease-out",
+          open && "rotate-90",
+        )}
+        aria-hidden="true"
+      />
     </button>
   ) : (
     // Category goc - nhan TINH (khong bam duoc), giu dung dang cu truoc khi
     // co accordion: chi to/mau khac entry, khong co chevron.
     <p
-      className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-content-text"
+      className="flex items-center gap-1.5 px-2.5 font-mono text-[12px] font-normal text-content-text"
       style={{ paddingLeft: `${10 + depth * 12}px` }}
     >
       {category.colorHex && (
@@ -158,7 +173,9 @@ function CategoryNode({
       {header}
 
       {open && (entries.length > 0 || children.length > 0) && (
-        <div className={cn("flex flex-col gap-0.5", isAccordion ? "mt-1" : "mt-2")}>
+        <div
+          className={cn("flex flex-col gap-0.5", isAccordion ? "mt-1" : "mt-2")}
+        >
           {entries.map((entry) => (
             <EntryLink
               key={entry.id}
@@ -170,7 +187,12 @@ function CategoryNode({
             />
           ))}
           {children.length > 0 && (
-            <div className={cn("flex flex-col gap-1", entries.length > 0 && "mt-2")}>
+            <div
+              className={cn(
+                "flex flex-col gap-1",
+                entries.length > 0 && "mt-2",
+              )}
+            >
               {children.map((child) => (
                 <CategoryNode
                   key={child.id}
@@ -222,7 +244,8 @@ export function SeriesSidebar({
   // mo, con lai thu gon). Category GOC (depth 0) KHONG can trong danh sach
   // nay nua vi luon hien san (khong con la accordion).
   const activeCategoryId =
-    entries.find((e) => `/series/${seriesSlug}/${e.slug}` === pathname)?.categoryId ?? null;
+    entries.find((e) => `/series/${seriesSlug}/${e.slug}` === pathname)
+      ?.categoryId ?? null;
 
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(activeCategoryId ? [activeCategoryId] : []),
@@ -234,7 +257,8 @@ export function SeriesSidebar({
   // NGAY TRONG RENDER (khong qua useEffect) theo dung pattern "Adjusting
   // state when a prop changes" cua React - xem CreateCollectionModal.tsx
   // cung pattern nay.
-  const [lastActiveCategoryId, setLastActiveCategoryId] = useState(activeCategoryId);
+  const [lastActiveCategoryId, setLastActiveCategoryId] =
+    useState(activeCategoryId);
   if (activeCategoryId !== lastActiveCategoryId) {
     setLastActiveCategoryId(activeCategoryId);
     if (activeCategoryId && !openIds.has(activeCategoryId)) {

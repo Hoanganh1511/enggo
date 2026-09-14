@@ -11,6 +11,7 @@ import { SeriesEntryEditor } from "@/components/series/SeriesEntryEditor";
 import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { SelectMenu } from "@/components/ui/select-menu";
+import { LayoutSpinnerOverlay } from "@/components/ui/layout-spinner";
 import type {
   ContentSeriesCategory,
   ContentSeriesEntryDetail,
@@ -65,6 +66,9 @@ export function SeriesEntryForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Chan double-submit bang GUARD o day thay vi thuoc tinh HTML
+    // `disabled` tren nut submit - xem giai thich o nut ben duoi.
+    if (saving) return;
     if (!title.trim() || !contentMarkdown.trim() || !categoryId) {
       toast.danger("Điền đủ Category, Tiêu đề, Nội dung trước đã.");
       return;
@@ -103,7 +107,11 @@ export function SeriesEntryForm({
   }
 
   return (
-    <div className="flex gap-8">
+    <div className="relative flex gap-8">
+      {/* Spinner layout - phu vung than trang soan Entry nay trong luc dang
+          luu (yeu cau nguoi dung). Dat o day (relative wrapper NGOAI CUNG)
+          thay vi chi boc form de che ca cot preview ben phai luon. */}
+      <LayoutSpinnerOverlay active={saving} />
       <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-col gap-5">
         <div>
           <label className={labelClass}>Category *</label>
@@ -277,10 +285,19 @@ export function SeriesEntryForm({
           )}
         </div>
 
+        {/* aria-disabled (KHONG dung thuoc tinh HTML `disabled`) - nut nay
+            dang GIU FOCUS luc bam submit; disabled that su se lam trinh
+            duyet tu dong bo focus khoi phan tu, keo theo cuon trang VE DAU
+            (bug nguoi dung bao: "ngay khi [spinner] bật lên... cuộn lên đầu
+            luôn"). Guard chong double-submit da chuyen sang dau
+            handleSubmit (if (saving) return). */}
         <button
           type="submit"
-          disabled={saving}
-          className="cursor-pointer self-start rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-surface transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-disabled={saving}
+          onClick={(e) => {
+            if (saving) e.preventDefault();
+          }}
+          className="cursor-pointer self-start rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-surface transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
         >
           {saving ? "Đang lưu..." : isEdit ? "Lưu Entry" : "Tạo Entry"}
         </button>
