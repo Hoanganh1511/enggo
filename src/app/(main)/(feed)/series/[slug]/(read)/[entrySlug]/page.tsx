@@ -94,6 +94,12 @@ async function EntryHeader({
         )}
       </div>
 
+      {/* Grid box TOC (H2) - NGAY DUOI subtitle (yeu cau nguoi dung: "cái
+          box toc sẽ hiện dạng grid ở dưới subtitle") - chuyen tu EntryBody
+          len day, van dung CHUNG 1 ham quet extractQuestionPickerToc tren
+          entry.contentMarkdown. */}
+      <SeriesQuestionPickerToc items={extractQuestionPickerToc(entry.contentMarkdown)} />
+
       <EntryDownloadButtons
         title={entry.title}
         contentMarkdown={entry.contentMarkdown}
@@ -114,17 +120,9 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
   const data = await dataPromise;
   if (!data) notFound();
   const { entry } = data;
-  // TU DONG quet H2 -> grid box "nhay nhanh" toi section (yeu cau nguoi
-  // dung: "chỉ bắt theo h2 thôi" + "4 button toc đâu... bắt theo h2 đâu" -
-  // KHONG con la 1 cong cu phai chen tay qua Composer nua, tu xuat hien tren
-  // MOI Entry co >=2 heading H2 - xem SeriesQuestionPickerToc.tsx (component
-  // tu an neu <2 muc).
-  const questionPickerItems = extractQuestionPickerToc(entry.contentMarkdown);
 
   return (
     <FadeIn>
-      <SeriesQuestionPickerToc items={questionPickerItems} />
-
       <div id={ENTRY_CONTENT_ID} className="mt-6">
         <DocsMarkdown markdown={entry.contentMarkdown} />
       </div>
