@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { SeriesStatsBar } from "./SeriesStatsBar";
@@ -30,6 +31,7 @@ import type {
 export function SeriesLivePreview({
   title,
   description,
+  coverImageUrl,
   stats,
   installTabs,
   externalLinks,
@@ -39,6 +41,7 @@ export function SeriesLivePreview({
 }: {
   title: string;
   description: string;
+  coverImageUrl: string;
   stats: ContentSeriesStat[];
   installTabs: ContentSeriesInstallTab[];
   externalLinks: ContentSeriesExternalLink[];
@@ -59,6 +62,23 @@ export function SeriesLivePreview({
         layout
         className="rounded-2xl bg-surface p-6 shadow-2xl shadow-black/8 ring-1 ring-black/5"
       >
+        <AnimatePresence initial={false}>
+          {coverImageUrl && (
+            <motion.div
+              key="cover"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="relative mb-5 aspect-3/1 w-full overflow-hidden rounded-xl bg-surface-muted">
+                <Image src={coverImageUrl} alt="" fill className="object-cover" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <motion.h1
           layout="position"
           className="font-content text-[24px] font-extrabold tracking-tight text-ink"

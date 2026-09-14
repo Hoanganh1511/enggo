@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { UserRound } from "lucide-react";
+import { ImagePlus, UserRound, X } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
+import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
 import { createContentSeriesAction } from "@/actions/discover/content-series/create-content-series";
 import { updateContentSeriesAction } from "@/actions/discover/content-series/update-content-series";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
@@ -56,6 +58,26 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
   const [authorAvatarUrl, setAuthorAvatarUrl] = useState(initial?.authorAvatarUrl ?? "");
   const effectiveAuthorName = isEdit ? authorName : (session?.user?.name ?? "");
   const effectiveAuthorAvatarUrl = isEdit ? authorAvatarUrl : (session?.user?.image ?? "");
+  const [coverImageUrl, setCoverImageUrl] = useState(initial?.coverImageUrl ?? "");
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleCoverChange(file: File | undefined) {
+    if (!file) return;
+    setIsUploadingCover(true);
+    try {
+      const uploadFile = await convertHeicToJpegIfNeeded(file);
+      const formData = new FormData();
+      formData.append("file", uploadFile);
+      formData.append("kind", "image");
+      const uploaded = await uploadPostImageAction(formData);
+      setCoverImageUrl(uploaded.url);
+    } catch (err) {
+      toast.danger(getApiErrorMessage(err, "Tải ảnh bìa thất bại, thử lại sau."));
+    } finally {
+      setIsUploadingCover(false);
+    }
+  }
   const [emailCourseEnabled, setEmailCourseEnabled] = useState(
     initial?.emailCourseEnabled ?? false,
   );
@@ -94,6 +116,10 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
         description,
         authorName: effectiveAuthorName,
         authorAvatarUrl: effectiveAuthorAvatarUrl.trim() || undefined,
+        // Mode edit: gui nguyen (ke ca rong) de xoa anh bia xoa duoc that su -
+        // "|| undefined" (dung khi tao moi) se khien PATCH bo qua field rong,
+        // hieu la "khong doi" thay vi "xoa" (giong CreateCollectionModal.tsx).
+        coverImageUrl: isEdit ? coverImageUrl : coverImageUrl || undefined,
         emailCourseEnabled,
         emailCourseTitle: emailCourseTitle.trim() || undefined,
         emailCourseDescription: emailCourseDescription.trim() || undefined,
@@ -143,6 +169,43 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+        </div>
+
+        <div>
+          <label className={labelClass}>Ảnh bìa (tuỳ chọn - hero trang tổng quan)</label>
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,.heic,.heif"
+            hidden
+            onChange={(e) => handleCoverChange(e.target.files?.[0])}
+          />
+          {coverImageUrl ? (
+            <div className="relative mt-1.5 aspect-3/1 w-full overflow-hidden rounded-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element -- anh vua upload, khong can toi uu Next/Image cho preview tam thoi */}
+              <img src={coverImageUrl} alt="" className="size-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setCoverImageUrl("")}
+                aria-label="Xoá ảnh bìa"
+                className="absolute top-2 right-2 flex size-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+              >
+                <X size={14} strokeWidth={2} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={isUploadingCover}
+              className="mt-1.5 flex aspect-3/1 w-full cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-muted text-ink-faint transition-colors duration-150 ease-out hover:bg-hover-bg disabled:cursor-wait"
+            >
+              <ImagePlus size={20} strokeWidth={1.6} />
+              <span className="text-xs">
+                {isUploadingCover ? "Đang tải..." : "Chọn ảnh bìa"}
+              </span>
+            </button>
+          )}
         </div>
 
         <div>
@@ -348,6 +411,7 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
         <SeriesLivePreview
           title={title}
           description={description}
+          coverImageUrl={coverImageUrl}
           stats={stats}
           installTabs={installTabs}
           externalLinks={externalLinks}

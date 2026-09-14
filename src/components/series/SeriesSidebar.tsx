@@ -52,12 +52,14 @@ function CategoryNode({
           lech gay gat voi entry - yeu cau nguoi dung "đừng bold đậm, cho
           font size nhỏ đi, nhẹ nhàng phân cấp"): chi con size nho hon 1 chut
           (12px, dong bo voi entry) + font-semibold (vua du de tach lop, khong
-          dam nhu font-bold). Mau rgba(20,22,26,.62) THEO YEU CAU RIENG cho
-          sidebar Series nay (khac --ink-muted token chung cua app) - dung
-          CHUNG mau nay voi entry ben duoi de ca 2 cap deu cung 1 "tong" nhat,
-          chi khac o do dam font-weight/size. */}
+          dam nhu font-bold). Dung bien --content-text (rgba(20,22,26,.8) -
+          xem globals.css) THEO YEU CAU RIENG cho sidebar Series nay (khac
+          --ink-muted token chung cua app) - dung CHUNG mau nay voi entry ben
+          duoi de ca 2 cap deu cung 1 "tong" nhat, chi khac o do dam
+          font-weight/size. Truoc day la rgba(20,22,26,.62) viet tay lap lai
+          nhieu cho, gio gom ve 1 bien dat ten. */}
       <p
-        className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-[rgba(20,22,26,0.62)]"
+        className="flex items-center gap-1.5 px-2.5 text-[12px] font-semibold text-content-text"
         style={{ paddingLeft: `${10 + depth * 12}px` }}
       >
         {category.colorHex && (
@@ -81,18 +83,22 @@ function CategoryNode({
               className={cn(
                 "relative truncate rounded-md py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
                 active
-                  ? "font-medium text-[#8F3F4D]"
-                  : "text-[rgba(20,22,26,0.62)] hover:bg-hover-bg hover:text-[rgba(20,22,26,0.85)]",
+                  ? "bg-[rgba(143,63,77,0.08)] font-medium text-[#8F3F4D]"
+                  : "text-content-text hover:bg-hover-bg hover:text-[rgba(20,22,26,0.92)]",
               )}
               style={{ paddingLeft: `${18 + depth * 12}px` }}
             >
-              {/* Thanh chi bao active - THAY cho nen xanh --primary-soft cu
-                  (yeu cau nguoi dung: khong dung mau xanh nua). Dung dung mau
-                  #8F3F4D cua nut "Viết bài" tren header (xem TopHeaderBar.tsx)
-                  de dong bo 1 "accent" duy nhat cho hanh dong/trang thai dang
-                  chon xuyen suot app. left-0 CO DINH (khong theo paddingLeft
-                  thut le tung depth) - bam sat mep trai CA hang, dung quy uoc
-                  active-indicator quen thuoc cua sidebar dang cay. */}
+              {/* Active: nen NHAT cung tong mau #8F3F4D (rgba(143,63,77,.08) -
+                  theo yeu cau nguoi dung, tham khao 1 sidebar ngoai co nen day
+                  sau muc dang chon) CONG voi thanh chi bao trai - truoc day
+                  CHI co thanh chi bao + doi mau chu, khong co nen. Van giu
+                  dung 1 accent #8F3F4D (mau nut "Viết bài" tren header, xem
+                  TopHeaderBar.tsx) - KHONG quay lai nen xanh --primary-soft cu
+                  (yeu cau nguoi dung truoc day: khong dung mau xanh nua) dung
+                  tinh than "nen mau nhat" nhung van dung tong mau da chot.
+                  left-0 CO DINH (khong theo paddingLeft thut le tung depth) -
+                  bam sat mep trai CA hang, dung quy uoc active-indicator quen
+                  thuoc cua sidebar dang cay. */}
               {active && (
                 <span
                   aria-hidden="true"

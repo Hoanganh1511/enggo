@@ -56,6 +56,10 @@ export type ContentSeriesOverview = {
   description: string;
   authorName: string;
   authorAvatarUrl: string | null;
+  // Anh nen hero cho trang tong quan Series - optional, CHUA dung o the rail
+  // "Series mới nhất"/danh sach /series (2 noi do co chu dich giu phang,
+  // xem NewestSeriesRail.tsx).
+  coverImageUrl: string | null;
   emailCourseEnabled: boolean;
   emailCourseTitle: string | null;
   emailCourseDescription: string | null;
@@ -121,6 +125,7 @@ export type ContentSeriesInput = {
   description?: string;
   authorName?: string;
   authorAvatarUrl?: string;
+  coverImageUrl?: string;
   emailCourseEnabled?: boolean;
   emailCourseTitle?: string;
   emailCourseDescription?: string;

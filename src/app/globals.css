@@ -113,6 +113,13 @@
   --ink-faint: color-mix(in srgb, #71717a 65%, white);
   --ink-disabled: color-mix(in srgb, #71717a 35%, white);
 
+  /* Mau chu rieng cho van ban NOI DUNG (font-content/Manrope - tieu de/mo
+     ta/nhan thu muc trong khu bai viet, vd nhan "thể loại" trong
+     SeriesSidebar.tsx) - tach khoi --ink-muted (dung cho UI/dieu huong) vi
+     truoc day cac noi nay dung rgba(20,22,26,x) roi rac tung file, khong co
+     ten bien chung. */
+  --content-text: rgba(20, 22, 26, 0.8);
+
   --border: #e4e4e7;
   --border-subtle: color-mix(in srgb, #e4e4e7 55%, white);
   --border-strong: #a1a1aa;
@@ -328,6 +335,7 @@
   --color-ink-muted: var(--ink-muted);
   --color-ink-faint: var(--ink-faint);
   --color-ink-disabled: var(--ink-disabled);
+  --color-content-text: var(--content-text);
 
   --color-border: var(--border);
   --color-border-subtle: var(--border-subtle);

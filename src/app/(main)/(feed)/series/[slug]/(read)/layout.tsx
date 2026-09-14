@@ -4,7 +4,10 @@ import { ArrowLeft, Settings } from "lucide-react";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
-import { SeriesMobileTopBar, SeriesSidebarDrawer } from "@/components/series/SeriesMobileNav";
+import {
+  SeriesMobileTopBar,
+  SeriesSidebarDrawer,
+} from "@/components/series/SeriesMobileNav";
 
 // Layout dung chung cho toan bo 1 Series (Overview + moi Entry) - sidebar
 // trai (cay category/entry) o day de KHONG remount khi chuyen qua lai giua
@@ -51,7 +54,11 @@ export default async function SeriesLayout({
           suy doan). Tran sat mep NGANG + mep TREN (cung cong thuc margin am
           voi div ben duoi) de bam dung vien tren cua vung noi dung, KHONG
           dung lg:-mx-10 (vo nghia vi chinh thanh nay da lg:hidden). */}
-      <SeriesMobileTopBar slug={slug} seriesTitle={series.title} isAdmin={status.isAdmin} />
+      <SeriesMobileTopBar
+        slug={slug}
+        seriesTitle={series.title}
+        isAdmin={status.isAdmin}
+      />
       <SeriesSidebarDrawer
         slug={slug}
         seriesTitle={series.title}
@@ -80,7 +87,7 @@ export default async function SeriesLayout({
         style={{ minHeight: "calc(100vh - var(--header-height))" }}
       >
         <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
-          <div className="sticky top-0 p-6">
+          <div className="sticky top-0 p-[18px]">
             <div className="mb-4 flex items-center justify-between gap-2 px-2.5">
               <Link
                 href="/series"
@@ -100,8 +107,14 @@ export default async function SeriesLayout({
                 </Link>
               )}
             </div>
-            <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">{series.title}</p>
-            <SeriesSidebar seriesSlug={slug} categories={series.categories} entries={series.entries} />
+            <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">
+              {series.title}
+            </p>
+            <SeriesSidebar
+              seriesSlug={slug}
+              categories={series.categories}
+              entries={series.entries}
+            />
           </div>
         </aside>
 

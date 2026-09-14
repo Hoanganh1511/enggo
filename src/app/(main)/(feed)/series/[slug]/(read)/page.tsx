@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { SeriesStatsBar } from "@/components/series/SeriesStatsBar";
@@ -20,6 +21,15 @@ export default async function SeriesOverviewPage({
 
   return (
     <div className="w-full pb-20">
+      {/* Anh bia hero - optional, CHI o trang tong quan nay (khac rail "Series
+          mới nhất"/danh sach /series, 2 noi do co chu dich giu phang khong
+          anh, xem NewestSeriesRail.tsx). */}
+      {series.coverImageUrl && (
+        <div className="relative mb-5 aspect-3/1 w-full overflow-hidden rounded-xl bg-surface-muted">
+          <Image src={series.coverImageUrl} alt="" fill priority className="object-cover" />
+        </div>
+      )}
+
       {/* font-content: tieu de Series la NOI DUNG (DocsMarkdown/SeriesStatsBar
           da tu boc font-content rieng ben trong). */}
       <h1 className="font-content text-[30px] font-extrabold tracking-tight text-ink">

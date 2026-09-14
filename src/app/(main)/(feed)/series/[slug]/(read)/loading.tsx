@@ -23,7 +23,7 @@ export default function SeriesReadLoading() {
           <SidebarSkeleton />
         </FadeIn>
       </aside>
-      <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">
+      <div className="min-w-0 flex-1 bg-[#FAFBFC] p-6 lg:p-10">
         <div className="flex gap-8">
           <div className="min-w-0 flex-1">
             <FadeIn>

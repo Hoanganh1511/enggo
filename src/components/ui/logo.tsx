@@ -1,4 +1,5 @@
 import { useId } from "react";
+import Image from "next/image";
 
 type LogoIconProps = {
   size?: number;
@@ -87,14 +88,24 @@ const Logo = ({
   }
 
   const isVertical = orientation === "vertical";
+  // logo.png la anh doc (1086x1448, ti le ~0.75) - tinh rieng width tu height
+  // = size de hien dung ti le that, khong bi meo (Next/image can width+height
+  // KHOP dung ti le goc, khong duoc chi truyen 1 canh + resize qua CSS).
+  const logoWidth = Math.round(size * (1086 / 1448));
 
   return (
     <div
       className={`flex ${isVertical ? "flex-col items-center gap-2 text-center" : "flex-row items-center gap-3"} ${className ?? ""}`}
     >
-      {/* <LogoIcon size={size} variant={variant} /> */}
       <div className={`flex flex-col ${isVertical ? "items-center" : ""}`}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Image
+            src="/assets/images/logo.png"
+            alt=""
+            width={logoWidth}
+            height={size}
+            className="shrink-0 object-contain"
+          />
           {/* Royal Gold Text */}
           <span
             className="
