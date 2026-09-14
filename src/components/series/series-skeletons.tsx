@@ -66,20 +66,31 @@ export function EntryTocSkeleton() {
   );
 }
 
-// Batch 3 - Cai dat/Chia se/Prev-Next (nhom cuoi trang, it quan trong nhat -
-// xem SeriesInstallWidget/SeriesShareButtons/SeriesEntryPagination).
+// Batch 3 - Cai dat/Chia se (nhom cuoi trang trong <article>, it quan trong
+// nhat - xem SeriesInstallWidget/SeriesShareButtons). Prev/Next KHONG con o
+// day - xem EntryNextBannerSkeleton rieng ben duoi.
 export function EntryExtrasSkeleton() {
   return (
-    <div className="mt-8 flex flex-col gap-6">
-      <div className="flex gap-2">
-        <SeriesSkeleton className="h-8 w-8 rounded-full" />
-        <SeriesSkeleton className="h-8 w-8 rounded-full" />
-        <SeriesSkeleton className="h-8 w-8 rounded-full" />
+    <div className="mt-8 flex gap-2">
+      <SeriesSkeleton className="h-8 w-8 rounded-full" />
+      <SeriesSkeleton className="h-8 w-8 rounded-full" />
+      <SeriesSkeleton className="h-8 w-8 rounded-full" />
+    </div>
+  );
+}
+
+// Batch 3 - Bang full-width gioi thieu Entry ke tiep (SeriesNextEntryBanner.tsx) -
+// tach rieng khoi EntryExtrasSkeleton vi nam NGOAI hang flex article+aside,
+// tran het chieu rong (xem [entrySlug]/page.tsx).
+export function EntryNextBannerSkeleton() {
+  return (
+    <div className="-mx-6 mt-10 flex items-center justify-between gap-6 border-t border-b border-border bg-surface-muted px-6 py-8 lg:-mx-10 lg:px-10">
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <SeriesSkeleton className="h-2.5 w-24" />
+        <SeriesSkeleton className="h-5 w-2/5" />
+        <SeriesSkeleton className="h-3.5 w-3/5" />
       </div>
-      <div className="flex gap-3">
-        <SeriesSkeleton className="h-16 flex-1" />
-        <SeriesSkeleton className="h-16 flex-1" />
-      </div>
+      <SeriesSkeleton className="size-11 shrink-0 rounded-full" />
     </div>
   );
 }

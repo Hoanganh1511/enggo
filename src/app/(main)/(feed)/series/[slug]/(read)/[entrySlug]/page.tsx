@@ -13,13 +13,14 @@ import {
 } from "@/components/series/EntryDownloadButtons";
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
-import { SeriesEntryPagination } from "@/components/series/SeriesEntryPagination";
+import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
   EntryHeaderSkeleton,
   EntryBodySkeleton,
   EntryTocSkeleton,
   EntryExtrasSkeleton,
+  EntryNextBannerSkeleton,
 } from "@/components/series/series-skeletons";
 
 type EntryDataPromise = Promise<ContentSeriesEntryPage | null>;
@@ -154,9 +155,11 @@ async function EntryToc({ dataPromise }: { dataPromise: EntryDataPromise }) {
   );
 }
 
-// Batch 3 - Cai dat/Chia se/Prev-Next: nhom "phu", it quan trong nhat, dat
-// SAU CUNG trong article - dung tinh than Carbon "chi skeleton phan cau truc
-// chinh, phan phu tai sau".
+// Batch 3 - Cai dat/Chia se: nhom "phu", it quan trong nhat, dat SAU CUNG
+// trong article - dung tinh than Carbon "chi skeleton phan cau truc chinh,
+// phan phu tai sau". Prev/Next KHONG con o day nua - xem EntryNextBanner
+// (rieng, full-width, nam NGOAI hang flex article+aside - yeu cau nguoi
+// dung).
 async function EntryExtras({
   dataPromise,
   slug,
@@ -166,7 +169,7 @@ async function EntryExtras({
 }) {
   const data = await dataPromise;
   if (!data) notFound();
-  const { series, entry, prev, next, totalCount } = data;
+  const { series, entry } = data;
   const installTabs = entry.installTabs ?? series.installTabs;
   const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
 
@@ -188,15 +191,37 @@ async function EntryExtras({
           title={entry.title}
         />
       </div>
+    </FadeIn>
+  );
+}
 
-      {totalCount > 1 && (
-        <SeriesEntryPagination
-          seriesSlug={slug}
-          prev={prev}
-          current={{ title: entry.title }}
-          next={next}
-        />
-      )}
+// Batch 3 - Bang FULL-WIDTH gioi thieu Entry ke tiep (SeriesNextEntryBanner.tsx) -
+// TACH RIENG khoi EntryExtras (o tren) vi phai nam NGOAI hang flex
+// article+aside moi tran het duoc chieu rong (xem SeriesEntryPage duoi) -
+// thay the han 3-the Prev/You are here/Next cu, yeu cau nguoi dung: "làm
+// nguyên hẳn 1 vùng để cho next bài tiếp theo" (kem anh mau). Entry CUOI
+// cung cua Series (next=null) thi khong render gi ca.
+async function EntryNextBanner({
+  dataPromise,
+  slug,
+}: {
+  dataPromise: EntryDataPromise;
+  slug: string;
+}) {
+  const data = await dataPromise;
+  if (!data) notFound();
+  const { series, next } = data;
+  if (!next) return null;
+  const categoryTitle =
+    series.categories.find((c) => c.id === next.categoryId)?.title ?? null;
+
+  return (
+    <FadeIn>
+      <SeriesNextEntryBanner
+        seriesSlug={slug}
+        next={next}
+        categoryTitle={categoryTitle}
+      />
     </FadeIn>
   );
 }
@@ -261,28 +286,35 @@ export default async function SeriesEntryPage({
 
   return (
     <div className="pb-20">
-      <Suspense
-        fallback={
-          <FadeIn>
-            <EntryHeaderSkeleton />
-          </FadeIn>
-        }
-      >
-        <EntryHeader dataPromise={dataPromise} slug={slug} />
-      </Suspense>
+      {/* pb-6 o day (thay vi my-6 tren chinh <hr> ben duoi) - yeu cau nguoi
+          dung: "không muốn nó margin y 6... điều chỉnh padding của các phần
+          tiếp giáp với nó để bù không gian" - khoang cach TRUOC hr gio la
+          padding-bottom cua khoi header nay, khong con la margin cua <hr>. */}
+      <div className="pb-6">
+        <Suspense
+          fallback={
+            <FadeIn>
+              <EntryHeaderSkeleton />
+            </FadeIn>
+          }
+        >
+          <EntryHeader dataPromise={dataPromise} slug={slug} />
+        </Suspense>
+      </div>
 
       {/* Duong ke ngang tach tieu de/mo ta khoi than bai - yeu cau nguoi
           dung, khop mockup tham khao. Nam NGOAI hang flex 2 cot ben duoi (het
           chieu rong ca article LAN aside) - truoc day nam TRONG <article>
           nen TOC/aside ben phai bat dau ngay tu dinh trang (ngang hang
           breadcrumb), khong khop vi tri bat dau THAT cua than bai (nguoi
-          dung bao loi). */}
-      <hr className="my-6 border-border" />
+          dung bao loi). KHONG con my-6 (xem pb-6/pt-6 o 2 khoi tiep giap). */}
+      <hr className="border-border" />
 
       {/* gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
           khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
-          cha se thanh khoang cach thua qua muc. */}
-      <div className="flex gap-6">
+          cha se thanh khoang cach thua qua muc. pt-6 - khoang cach SAU hr
+          (xem comment pb-6 o tren). */}
+      <div className="flex gap-6 pt-6">
         <article className="min-w-0 flex-1">
           <Suspense
             fallback={
@@ -326,6 +358,13 @@ export default async function SeriesEntryPage({
           </Suspense>
         </aside>
       </div>
+
+      {/* Full-width, NGOAI hang flex article+aside o tren (yeu cau nguoi
+          dung: 1 vung RIENG tran het chieu rong cho Entry ke tiep, xem
+          EntryNextBanner/SeriesNextEntryBanner.tsx). */}
+      <Suspense fallback={<EntryNextBannerSkeleton />}>
+        <EntryNextBanner dataPromise={dataPromise} slug={slug} />
+      </Suspense>
     </div>
   );
 }
