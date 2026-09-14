@@ -268,6 +268,19 @@
   font-family: var(--font-inter);
   --font-content: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
+
+  /* Design token rieng cho SeriesSidebar.tsx (yeu cau nguoi dung: "Cập nhật
+     lại sidebar theo hệ design token cho ui sidebar này" - chot 1 he mau/
+     weight quanh 1 "anchor" 14px, KHONG dung font-size de tao hierarchy giua
+     cac cap dieu huong CUNG 1 loai, chi dung mau/weight - xem cach ap dung
+     trong SeriesSidebar.tsx). */
+  --sidebar-section-color: #5f6368; /* Nhan section (Explore/Guides...) */
+  --sidebar-item-color: #73777d; /* Entry/nhom con cap 1, khong active */
+  --sidebar-item-active-color: #27292d; /* Entry dang active (moi cap) */
+  --sidebar-item-parent-active-color: #303236; /* Nhom con dang CHUA active */
+  --sidebar-subitem-color: #7a7d82; /* Entry long trong nhom con, khong active */
+  --sidebar-number-color: #96999e; /* So thu tu (chua dung trong sidebar nay) */
+  --sidebar-icon-color: #8a8d92; /* Icon truoc entry */
 }
 
 @theme inline {

@@ -43,28 +43,43 @@ function EntryLink({
 }) {
   const href = `/series/${seriesSlug}/${entry.slug}`;
   const active = pathname === href;
+  // Entry THANG duoi category goc (depth 0) = "--sidebar-item" (14px, anchor
+  // cua he token). Entry long trong 1 nhom con/accordion (depth 1) =
+  // "--sidebar-subitem" (13px) - CHI 1 BAC nho hon, khong dung font-size de
+  // "leo thang" hierarchy them nua (triet ly nguoi dung chot: "14px is the
+  // anchor. Everything else is differentiation around 14px"). Active dung
+  // CHUNG 1 mau/weight ("--sidebar-item-active", #27292D/500) o CA 2 cap -
+  // chi DOI MAU/WEIGHT, KHONG doi kich thuoc chu luc active (giu dung
+  // font-size goc cua cap do).
+  const isNested = depth > 0;
   return (
     <Link
       href={href}
       onClick={onNavigate}
       className={cn(
-        "truncate rounded-lg py-1.5 pr-2 text-[13.5px] transition-colors duration-150 ease-out",
+        "truncate rounded-lg py-1.5 pr-2 leading-5 transition-colors duration-150 ease-out",
+        isNested ? "text-[13px]" : "text-[14px]",
         active
-          ? "bg-[rgba(20,22,26,0.06)] font-medium text-content-text"
-          : "text-content-text hover:bg-hover-bg hover:text-[rgba(20,22,26,0.92)]",
+          ? "bg-[rgba(20,22,26,0.06)] font-medium text-(--sidebar-item-active-color)"
+          : cn(
+              "hover:bg-hover-bg",
+              isNested
+                ? "font-normal text-(--sidebar-subitem-color)"
+                : "font-normal text-(--sidebar-item-color)",
+            ),
       )}
       style={{ paddingLeft: `${18 + depth * 12}px` }}
     >
-      {/* Active - DOI HAN sang chi 1 nen xam nhat trung tinh
-          rgba(20,22,26,0.06), rounded-lg (yeu cau nguoi dung: "Thay đổi hẳn
-          active... giờ chỉ để màu nền là rgba trên thôi") - BO HET accent
-          #8F3F4D truoc do (ca nen tint mau lan thanh chi bao trai lan doi
-          mau chu), khong con giu lai gi tu phien ban cu. */}
+      {/* Active - nen xam nhat trung tinh rgba(20,22,26,0.06), rounded-lg
+          (yeu cau nguoi dung: "Thay đổi hẳn active... giờ chỉ để màu nền là
+          rgba trên thôi") CONG voi mau/weight tu he token
+          --sidebar-item-active-color (yeu cau nguoi dung: "Đồng thời để font
+          medium cho cái active"). */}
       {entry.icon && (
         <SeriesIconGlyph
           name={entry.icon}
-          size={12}
-          className="mr-1.5 inline align-[-1px]"
+          size={14}
+          className="mr-1.5 inline align-[-2px] text-(--sidebar-icon-color)"
         />
       )}
       {entry.navTitle || entry.title}
@@ -105,16 +120,30 @@ function CategoryNode({
   const entries = entriesByCategory.get(category.id) ?? [];
   const isAccordion = depth > 0;
   const open = !isAccordion || openIds.has(category.id);
+  // Nhom con (accordion) dang CHUA entry active ben trong - doi mau sang
+  // "--sidebar-item-parent-active-color" (dam hon nhom con binh thuong)
+  // GIU NGUYEN weight 400 (khong bold nhu chinh entry active) - dung tinh
+  // than token "--sidebar-item-parent-active" nguoi dung chot (14px/400/
+  // #303236), phan biet ro voi entry THAT su active (14/500/#27292D).
+  const hasActiveEntry = entries.some(
+    (e) => `/series/${seriesSlug}/${e.slug}` === pathname,
+  );
 
   const header = isAccordion ? (
-    // font-mono - JetBrains Mono trong .series-scope (yeu cau nguoi dung,
-    // xem app/layout.tsx/globals.css: --font-mono duoc doi rieng trong scope
-    // nay) - ap cho ca nhan category GOC lan CON (ChevronRight/dau cham mau
-    // giu nguyen, khong bi anh huong boi font-family).
+    // Nhom con gio la 1 NAV ITEM cap 14px (anchor), KHONG con la "section"
+    // 12px nhu truoc - theo he token nguoi dung chot ("14px is the anchor.
+    // Everything else is differentiation around 14px"): "Explore"/"Guides"
+    // (category GOC, nhan tinh) moi la "section" 12px, con nhom con la 1
+    // hang dieu huong that su nam CUNG cap voi cac entry 14px khac.
     <button
       type="button"
       onClick={() => onToggle(category.id)}
-      className="flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[12px] font-semibold text-content-text hover:bg-hover-bg"
+      className={cn(
+        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[14px] leading-5 font-normal hover:bg-hover-bg",
+        hasActiveEntry
+          ? "text-(--sidebar-item-parent-active-color)"
+          : "text-(--sidebar-item-color)",
+      )}
       style={{ paddingLeft: `${10 + depth * 12}px` }}
     >
       {category.colorHex && (
@@ -140,10 +169,13 @@ function CategoryNode({
       />
     </button>
   ) : (
-    // Category goc - nhan TINH (khong bam duoc), giu dung dang cu truoc khi
-    // co accordion: chi to/mau khac entry, khong co chevron.
+    // Category goc - nhan TINH (khong bam duoc, khong co chevron) - day la
+    // "--sidebar-section" DUY NHAT trong toan bo sidebar (12px/500/
+    // #5F6368, xem globals.css .series-scope) - CHI category GOC moi o muc
+    // 12px, moi cap con lai (nhom con/entry) deu xoay quanh anchor 14px
+    // (yeu cau nguoi dung ve he token, xem comment CategoryNode/EntryLink).
     <p
-      className="flex items-center gap-1.5 px-2.5 font-mono text-[12px] font-normal text-content-text"
+      className="flex items-center gap-1.5 px-2.5 font-mono text-[12px] leading-4 font-medium text-(--sidebar-section-color)"
       style={{ paddingLeft: `${10 + depth * 12}px` }}
     >
       {category.colorHex && (
