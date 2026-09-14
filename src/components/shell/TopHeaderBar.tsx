@@ -158,37 +158,31 @@ const TopHeaderBar = () => {
   if (focusModeActive) return null;
 
   return (
-    <header className="grid h-[var(--header-height)] shrink-0 grid-cols-[minmax(max-content,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 border-b border-border bg-[#FAFBFC] px-3 sm:gap-4 sm:px-5">
-      {/* Cum trai. Mobile: nut hamburger MO DRAWER sidebar (dong bo tren
-          MOI trang, khong rieng /home & /articles nua - truoc day trang
-          khac hien logo icon-only o day, gio thong nhat het thanh nut mo
-          sidebar, xem DashboardSidebarDrawer trong HomeDashboardSidebar.tsx
-          + dashboard-sidebar-drawer-store.ts). Desktop (md+) van la logo
-          ngang binh thuong, khong doi. */}
-      <div className="flex min-w-0 items-center justify-self-start">
-        <button
-          type="button"
-          onClick={() => setDashboardDrawerOpen(true)}
-          aria-label="Mở menu điều hướng"
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:bg-hover-bg md:hidden"
-        >
-          <Menu size={20} aria-hidden="true" />
-        </button>
-        <Link href="/home" className="hidden shrink-0 md:flex">
-          <Logo orientation="horizontal" size={24} />
-        </Link>
-      </div>
+    <header className="flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 sm:gap-4 sm:px-5">
+      {/* Cum trai: hamburger (mobile) + logo + nav ngang - dua nav VE SAT
+          logo (cach ra 1 khoang gap-6 vua phai) thay vi can giua man hinh
+          nhu truoc (yeu cau nguoi dung: "dồn cụm ở giữa về phía bên trái
+          cạnh cụm logo nhưng cách ra xíu"). Cum ben phai (icon/avatar/nut
+          Viet bai) tu chiem phan con lai nho justify-between cua header. */}
+      <div className="flex min-w-0 items-center gap-6">
+        <div className="flex min-w-0 items-center">
+          <button
+            type="button"
+            onClick={() => setDashboardDrawerOpen(true)}
+            aria-label="Mở menu điều hướng"
+            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-ink-muted hover:bg-hover-bg md:hidden"
+          >
+            <Menu size={20} aria-hidden="true" />
+          </button>
+          <Link href="/home" className="hidden shrink-0 md:flex">
+            <Logo orientation="horizontal" size={24} />
+          </Link>
+        </div>
 
-      {/* Giua - 5 muc nav that (khong dropdown mega-menu, xem HeaderNav.tsx)
-          - dung CSS grid 3 cot BANG NHAU cho ca header (thay vi flex-1 2 ben)
-          de cum nav luon can DUNG GIUA man hinh, khong bi lech theo do rong
-          thuc te cua cum logo/icon 2 ben (logo hep hon nhieu so voi cum icon
-          ben phai truoc day gay lech ro). */}
-      <div className="flex justify-center">
         <HeaderNav />
       </div>
 
-      <div className="flex shrink-0 items-center justify-self-end gap-1.5 sm:gap-2">
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <button type="button" title="Tìm kiếm" onClick={() => setSearchOpen(true)}>
           <HeaderIconChip icon={Search} />
         </button>

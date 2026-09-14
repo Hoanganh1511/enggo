@@ -65,11 +65,18 @@ function EntryLink({
       onClick={onNavigate}
       className={cn(
         "truncate rounded-lg py-1.5 pr-2 leading-5 transition-colors duration-150 ease-out",
+        // "Entry" (14/400) vs "Secondary entry" (13/400) - kich thuoc CO
+        // DINH theo cap, KHONG doi khi active (chi doi weight/mau, xem duoi -
+        // dung cau hinh type system nguoi dung chot).
         isNested ? "text-[13px]" : "text-[14px]",
         active
+          // "Active navigation" (600) - AP DUNG CHUNG cho ca 2 bien the mau
+          // (emphasized/thuong), CHI khac o mau/nen, khong khac o weight nua
+          // (truoc day emphasized=600 rieng, con lai 500 - gio dong bo het
+          // ve 600 theo bang cau hinh moi).
           ? emphasized
             ? "bg-ink font-semibold text-white"
-            : "bg-[rgba(20,22,26,0.06)] font-medium text-(--sidebar-item-active-color)"
+            : "bg-[rgba(20,22,26,0.06)] font-semibold text-(--sidebar-item-active-color)"
           : cn(
               "hover:bg-hover-bg",
               isNested
@@ -84,7 +91,10 @@ function EntryLink({
       // truoc (tung la 1 khoang thut nho co y, gio bo di de dong hang THANG
       // CANH). Entry long trong accordion (depth>0) VAN thut vao (24px) -
       // day la truong hop CAN phan biet cap, khac voi truong hop tren.
-      style={{ paddingLeft: isNested ? "24px" : "10px" }}
+      // fontFamily: Geist Sans - he type system rieng cho sidebar Series
+      // (yeu cau nguoi dung, bang cau hinh "Series title/Section/Navigation/
+      // Entry..."), KHAC Inter dang dung cho phan con lai cua .series-scope.
+      style={{ paddingLeft: isNested ? "24px" : "10px", fontFamily: "var(--font-geist-sans)" }}
     >
       {/* Active: 2 bien the -
           1) emphasized (nhanh "Explore"): pill nen DEN (bg-ink) + chu/icon
@@ -94,9 +104,9 @@ function EntryLink({
       {entry.icon && (
         <SeriesIconGlyph
           name={entry.icon}
-          size={14}
+          size={16}
           className={cn(
-            "mr-1.5 inline align-[-2px]",
+            "mr-1.5 inline align-[-3px]",
             active && emphasized ? "text-white" : "text-(--sidebar-icon-color)",
           )}
         />
@@ -173,24 +183,22 @@ function CategoryNode({
       type="button"
       onClick={() => onToggle(category.id)}
       className={cn(
-        // text-[13px] - dong bo VOI CHINH cac entry no chua (yeu cau nguoi
-        // dung sau khi xem anh chup: "cái title accordion để cùng font size
-        // với mấy cái kia") - uu tien phan hoi truc tiep tren giao dien nay
-        // hon token spec ly thuyet ban dau (14px), vi day la 1 accordion HEP
-        // pham vi (chi 1 nhom con + 2 entry ben trong), dong bo font-size
-        // VOI CHINH NOI DUNG no dang bao boc quan trong hon so khop tuyet
-        // doi voi "anchor" 14px chung toan sidebar.
-        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] leading-5 font-normal hover:bg-hover-bg",
+        // "Navigation" (14/400) / "Active navigation" (14/600) - theo dung
+        // bang cau hinh type system nguoi dung chot (thay the phan hoi tam
+        // thoi truoc do dong bo 13px voi entry - nay quay lai 14px CO DINH,
+        // chi WEIGHT doi theo hasActiveEntry, khong doi size).
+        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[14px] leading-5 hover:bg-hover-bg",
         hasActiveEntry
-          ? "text-(--sidebar-item-parent-active-color)"
-          : "text-(--sidebar-item-color)",
+          ? "font-semibold text-(--sidebar-item-parent-active-color)"
+          : "font-normal text-(--sidebar-item-color)",
       )}
       // paddingLeft CO DINH (khong nhan them depth * 12) - yeu cau nguoi
       // dung: "accordion không để thụt vào đâu nhé. Chỉ có các bài trong
       // accordion mới bắt đầu tăng padding left thôi" - ban than hang
       // accordion thang HANG voi category goc, chi ENTRY o BEN TRONG no moi
-      // thut le (xem EntryLink, van nhan depth * 12 nhu cu).
-      style={{ paddingLeft: "10px" }}
+      // thut le (xem EntryLink, van nhan depth * 12 nhu cu). fontFamily:
+      // Geist Sans (xem comment EntryLink ve he type system rieng nay).
+      style={{ paddingLeft: "10px", fontFamily: "var(--font-geist-sans)" }}
     >
       {category.colorHex && (
         <span
@@ -215,14 +223,16 @@ function CategoryNode({
       />
     </button>
   ) : (
-    // Category goc - nhan TINH (khong bam duoc, khong co chevron) - day la
-    // "--sidebar-section" DUY NHAT trong toan bo sidebar (12px/500/
-    // #5F6368, xem globals.css .series-scope) - CHI category GOC moi o muc
-    // 12px, moi cap con lai (nhom con/entry) deu xoay quanh anchor 14px
-    // (yeu cau nguoi dung ve he token, xem comment CategoryNode/EntryLink).
+    // Category goc - nhan TINH (khong bam duoc, khong co chevron) - "Section"
+    // (12/500, xem globals.css .series-scope --sidebar-section-color). KHONG
+    // con font-mono nua (yeu cau nguoi dung: "Không dùng monospace cho
+    // Explore, Security, Resilience... đây là navigation taxonomy, không
+    // phải code" - Geist Sans qua fontFamily o style ben duoi, giu Mono
+    // rieng cho cac chuoi KY THUAT that su nhu source badge, xem
+    // EntryHeader trong [entrySlug]/page.tsx).
     <p
-      className="flex items-center gap-1.5 px-2.5 font-mono text-[11px] leading-4 font-medium text-(--sidebar-section-color)"
-      style={{ paddingLeft: `${10 + depth * 12}px` }}
+      className="flex items-center gap-1.5 px-2.5 text-[12px] leading-4 font-medium text-(--sidebar-section-color)"
+      style={{ paddingLeft: `${10 + depth * 12}px`, fontFamily: "var(--font-geist-sans)" }}
     >
       {category.colorHex && (
         <span

@@ -86,7 +86,12 @@ export default async function SeriesLayout({
                   [entrySlug]/page.tsx); sua Series chuyen han sang trang
                   Quan ly profile (chua lam trong scope nay - chi bo nut o
                   day, chua them entry point moi). */}
-              <p className="mb-4 truncate px-2.5 text-[13px] font-semibold text-ink">
+              {/* "Series title" (14/600, Geist Sans - yeu cau nguoi dung ve
+                  bang cau hinh type system sidebar). */}
+              <p
+                className="mb-4 truncate px-2.5 text-[14px] font-semibold text-ink"
+                style={{ fontFamily: "var(--font-geist-sans)" }}
+              >
                 {series.title}
               </p>
               <SeriesSidebar

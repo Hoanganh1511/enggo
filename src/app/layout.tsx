@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   IBM_Plex_Mono,
   Be_Vietnam_Pro,
+  Geist,
   Geist_Mono,
   Noto_Serif,
   Playfair_Display,
@@ -49,6 +50,18 @@ const beVietnamPro = Be_Vietnam_Pro({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Rieng cho TYPE SYSTEM cua sidebar Series (SeriesSidebar.tsx + ten Series o
+// layout.tsx) - yeu cau nguoi dung (bang cau hinh chi tiet Series
+// title/Section/Navigation/Entry...) chot Geist Sans cho toan bo cac muc do,
+// KHAC voi Inter (--font-inter) dang dung cho phan con lai cua .series-scope
+// (than bai/tieu de trang...) - CHI ap dung o CAC PHAN TU sidebar cu the qua
+// var(--font-geist-sans) truc tiep, KHONG doi --font-content/font mac dinh
+// ca scope.
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
@@ -121,7 +134,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexMono.variable} ${beVietnamPro.variable} ${geistMono.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${ibmPlexMono.variable} ${beVietnamPro.variable} ${geistMono.variable} ${geistSans.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning CHI o body, KHONG lan xuong children - can
           thiet vi mot so extension trinh duyet (vd ColorZilla) tu chen
