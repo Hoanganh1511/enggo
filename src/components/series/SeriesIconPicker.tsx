@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { SERIES_ICON_OPTIONS, SeriesIconGlyph } from "./series-icon-options";
@@ -25,66 +25,86 @@ export function SeriesIconPicker({
     : SERIES_ICON_OPTIONS;
 
   return (
-    <PopoverRoot open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    // [2026-09-16] Them nut "x" xoa icon rieng (ngoai PopoverTrigger) - yeu
+    // cau nguoi dung: "Sửa bài không bỏ được icon đã chọn". Truoc do popover
+    // CHI cho chon 1 icon trong luoi (onChange luon nhan 1 ten that), khong
+    // co cach nao goi onChange("") de tro ve rong - chi hien nut nay khi DA
+    // co value, bam thang goi onChange("") (khong can mo popover), khop
+    // SeriesEntryForm.tsx: icon rong ("") -> submit thanh undefined (xem
+    // "icon: icon.trim() || undefined").
+    <div className="flex items-center gap-1">
+      <PopoverRoot open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="flex h-9 w-28 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2 text-[12px] text-ink-muted hover:bg-hover-bg"
+          >
+            <SeriesIconGlyph name={value} size={15} className="shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-left">{value || "Chọn icon"}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          open={open}
+          align="start"
+          sideOffset={6}
+          className="z-50 w-72 overflow-hidden rounded-md border border-border bg-surface p-2 shadow-dropdown"
+        >
+          <div className="mb-1.5 flex h-8 items-center gap-1.5 rounded-md border border-border bg-input-bg px-2.5">
+            <Search size={12} strokeWidth={1.9} className="text-ink-faint" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm icon..."
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-ink outline-none placeholder:text-ink-faint"
+            />
+          </div>
+          {/* max-h tang len (160px -> 256px) vi danh sach icon vua mo rong rat
+              nhieu (yeu cau nguoi dung: "ít icon quá... thật nhiều vào") - van
+              scroll duoc ben trong, chi cho xem duoc nhieu hang hon truoc khi
+              phai cuon. */}
+          <div className="grid max-h-64 grid-cols-8 gap-1 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <p className="col-span-8 py-3 text-center text-[11px] text-ink-faint">
+                Không tìm thấy icon.
+              </p>
+            ) : (
+              filtered.map(({ name, icon: Icon }) => {
+                const active = value === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    title={name}
+                    onClick={() => {
+                      onChange(name);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out",
+                      active
+                        ? "bg-primary text-surface"
+                        : "text-ink-muted hover:bg-hover-bg hover:text-ink",
+                    )}
+                  >
+                    <Icon size={15} strokeWidth={1.9} />
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </PopoverContent>
+      </PopoverRoot>
+      {value && (
         <button
           type="button"
-          className="flex h-9 w-28 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-surface px-2 text-[12px] text-ink-muted hover:bg-hover-bg"
+          onClick={() => onChange("")}
+          aria-label="Bỏ icon"
+          title="Bỏ icon"
+          className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink"
         >
-          <SeriesIconGlyph name={value} size={15} className="shrink-0" />
-          <span className="min-w-0 flex-1 truncate text-left">{value || "Chọn icon"}</span>
+          <X size={13} strokeWidth={2} />
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        open={open}
-        align="start"
-        sideOffset={6}
-        className="z-50 w-72 overflow-hidden rounded-md border border-border bg-surface p-2 shadow-dropdown"
-      >
-        <div className="mb-1.5 flex h-8 items-center gap-1.5 rounded-md border border-border bg-input-bg px-2.5">
-          <Search size={12} strokeWidth={1.9} className="text-ink-faint" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm icon..."
-            className="min-w-0 flex-1 bg-transparent text-[12px] text-ink outline-none placeholder:text-ink-faint"
-          />
-        </div>
-        {/* max-h tang len (160px -> 256px) vi danh sach icon vua mo rong rat
-            nhieu (yeu cau nguoi dung: "ít icon quá... thật nhiều vào") - van
-            scroll duoc ben trong, chi cho xem duoc nhieu hang hon truoc khi
-            phai cuon. */}
-        <div className="grid max-h-64 grid-cols-8 gap-1 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <p className="col-span-8 py-3 text-center text-[11px] text-ink-faint">
-              Không tìm thấy icon.
-            </p>
-          ) : (
-            filtered.map(({ name, icon: Icon }) => {
-              const active = value === name;
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  title={name}
-                  onClick={() => {
-                    onChange(name);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex size-8 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out",
-                    active
-                      ? "bg-primary text-surface"
-                      : "text-ink-muted hover:bg-hover-bg hover:text-ink",
-                  )}
-                >
-                  <Icon size={15} strokeWidth={1.9} />
-                </button>
-              );
-            })
-          )}
-        </div>
-      </PopoverContent>
-    </PopoverRoot>
+      )}
+    </div>
   );
 }
