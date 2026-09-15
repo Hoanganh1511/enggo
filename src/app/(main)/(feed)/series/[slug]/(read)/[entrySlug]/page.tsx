@@ -39,7 +39,10 @@ async function EntryHeader({
   dataPromise: EntryDataPromise;
   slug: string;
 }) {
-  const [data, status] = await Promise.all([dataPromise, getSelfStatusAction()]);
+  const [data, status] = await Promise.all([
+    dataPromise,
+    getSelfStatusAction(),
+  ]);
   if (!data) notFound();
   const { series, entry, totalCount, next } = data;
   const positionIndex = entry.orderIndex + 1;
@@ -102,10 +105,13 @@ async function EntryHeader({
           hiện dạng grid ở dưới subtitle", sau do mo rong thanh nhieu loai
           khoi sap xep duoc: "custom thêm đa dạng các element... sắp xếp thứ
           tự hiển thị"). entry.contentBlocks rong/null -> tu fallback ve 1
-          khoi TOC duy nhat (xem SeriesEntryContentBlocks.tsx). */}
+          khoi TOC duy nhat, CHI tren entry "map" (xem
+          SeriesEntryContentBlocks.tsx - yeu cau nguoi dung: "Chỉ trang Map
+          mới cho phép... box TOC dạng khung... Còn đâu không cho"). */}
       <SeriesEntryContentBlocks
         blocks={entry.contentBlocks}
         contentMarkdown={entry.contentMarkdown}
+        entrySlug={entry.slug}
       />
 
       <EntryDownloadButtons
@@ -136,6 +142,20 @@ async function EntryHeader({
         seriesSlug={slug}
         entrySlug={entry.slug}
         isAdmin={status.isAdmin}
+      />
+
+      {/* Zone "middle" - giua cum Top va than bai, NGAY TREN <hr> ben duoi -
+          yeu cau nguoi dung (them sau cung, mo rong tu he thong block dau
+          bai): "thêm 1 button + vào để cho phép người dùng thêm section
+          vào giữa" 2 vung Top/Than. */}
+      <SeriesEntryContentBlocks
+        blocks={entry.contentBlocks}
+        contentMarkdown={entry.contentMarkdown}
+        entrySlug={entry.slug}
+        zone="middle"
+        emailCourseEnabled={series.emailCourseEnabled}
+        emailCourseTitle={series.emailCourseTitle ?? undefined}
+        emailCourseDescription={series.emailCourseDescription ?? undefined}
       />
     </FadeIn>
   );
@@ -238,6 +258,19 @@ async function EntryExtras({
           title={entry.title}
         />
       </div>
+
+      {/* Zone "bottom" - sau than bai, TRUOC pagination Next (yeu cau nguoi
+          dung: "có cả dấu + ở cuối - sau phần thân để thêm section block
+          cho phần dưới"). */}
+      <SeriesEntryContentBlocks
+        blocks={entry.contentBlocks}
+        contentMarkdown={entry.contentMarkdown}
+        entrySlug={entry.slug}
+        zone="bottom"
+        emailCourseEnabled={series.emailCourseEnabled}
+        emailCourseTitle={series.emailCourseTitle ?? undefined}
+        emailCourseDescription={series.emailCourseDescription ?? undefined}
+      />
     </FadeIn>
   );
 }
@@ -410,7 +443,7 @@ export default async function SeriesEntryPage({
             duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
             vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
             trang nua) roi dinh lai o do khi cuon xuong. */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>

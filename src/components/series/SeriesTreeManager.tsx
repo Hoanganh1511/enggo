@@ -322,16 +322,25 @@ export function SeriesTreeManager({
                       </button>
                     </>
                   )}
+                  {/* Entry "map" - KHONG cho xoa (yeu cau nguoi dung: "lúc
+                      tạo seri lúc nào cũng phải mặc định cứng 1 cái Explore
+                      và Map... tuyệt đối không được cho phép xóa. Vì nó là
+                      mặc định của route" - route /series/{slug} tu redirect
+                      toi entry slug "map", xoa mat se lam route goc gay,
+                      xem (read)/page.tsx). Backend cung chan (deleteEntry) -
+                      day la lop UI, disable som de tranh nguoi dung bam roi
+                      moi thay bao loi. */}
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={busy || entry.slug === "map"}
+                    title={entry.slug === "map" ? "Entry mặc định, không thể xoá" : undefined}
                     onClick={() =>
                       run(
                         () => deleteContentSeriesEntryAction(seriesSlug, entry.id),
                         "Xoá entry thất bại",
                       )
                     }
-                    className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-surface hover:text-danger"
+                    className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-surface hover:text-danger disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-faint"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -647,16 +656,21 @@ export function SeriesTreeManager({
                             >
                               <Pencil size={13} />
                             </button>
+                            {/* Category goc "explore" - KHONG cho xoa, cung
+                                ly do voi entry "map" o renderEntriesList
+                                (mac dinh cua route /series/{slug}, tuyet doi
+                                khong duoc xoa - yeu cau nguoi dung). */}
                             <button
                               type="button"
-                              disabled={busy}
+                              disabled={busy || cat.slug === "explore"}
+                              title={cat.slug === "explore" ? "Category mặc định, không thể xoá" : undefined}
                               onClick={() =>
                                 run(
                                   () => deleteContentSeriesCategoryAction(seriesSlug, cat.id),
                                   "Không xoá được category này",
                                 )
                               }
-                              className="flex size-7 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-danger"
+                              className="flex size-7 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-danger disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-faint"
                             >
                               <Trash2 size={13} />
                             </button>

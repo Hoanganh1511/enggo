@@ -89,7 +89,14 @@ export function EntryPageActionsRow({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-md py-1 pr-2 transition-colors duration-150 ease-out hover:bg-hover-bg"
+                // rounded-full (khong phai rounded-md) - goc TRAI cua nen
+                // hover PHAI khop DUNG do cong tron cua avatar (yeu cau
+                // nguoi dung: "Bên trái của cái màu nền cho border sao cho
+                // khớp với độ tròn của avatar"). rounded-md truoc do ban
+                // kinh goc qua NHO so voi avatar tron hoan toan, khien goc
+                // vuong cua nen "cắt" ngang avatar thay vi bao tron no. pl-1
+                // them 1 chut dem TRAI de avatar khong dinh sat mep cong.
+                className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-full py-1 pr-2.5 pl-1 transition-colors duration-150 ease-out hover:bg-hover-bg"
               >
                 <AuthorAvatar authorName={authorName} authorAvatarUrl={authorAvatarUrl} />
                 <span className="truncate text-[13px] font-medium text-ink">
@@ -101,7 +108,18 @@ export function EntryPageActionsRow({
               open={authorMenuOpen}
               align="start"
               sideOffset={6}
-              className="z-50 w-48 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+              // series-scope lap lai o day - PopoverContent portal thang ra
+              // document.body (Radix Portal mac dinh), NAM NGOAI cay DOM cua
+              // <div className="series-scope"> boc toan bo /series
+              // (series/layout.tsx) nen KHONG ke thua duoc font-family:
+              // var(--font-inter) dat truc tiep tren .series-scope - text
+              // popover bi roi ve font mac dinh toan app (Plex Mono) thay vi
+              // Inter cua khu Series (nguoi dung phat hien: "Chỗ này có áp
+              // dụng quy tắc font chữ đúng không?"). Ap lai class nay TRUC
+              // TIEP tren chinh element portal ra ngoai de tai lap font-family
+              // (va moi CSS var khac cua .series-scope) cho nhanh DOM rieng
+              // biet nay.
+              className="series-scope z-50 w-48 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-dropdown"
             >
               {username && (
                 <Link
@@ -165,7 +183,9 @@ export function EntryPageActionsRow({
             open={shareOpen}
             align="end"
             sideOffset={6}
-            className="z-50 rounded-lg border border-border bg-surface p-2 shadow-dropdown"
+            // series-scope lap lai - cung ly do voi popover tac gia o tren
+            // (portal ra ngoai .series-scope, mat font-family Inter).
+            className="series-scope z-50 rounded-lg border border-border bg-surface p-2 shadow-dropdown"
           >
             <SeriesShareButtons
               channels={shareChannels}

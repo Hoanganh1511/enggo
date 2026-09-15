@@ -26,11 +26,63 @@ export type EntryBlockButton = {
   style: EntryBlockButtonStyle;
   openInNewTab?: boolean;
 };
+// [2026-09-15] `zone` - yeu cau nguoi dung mo rong tu "nua tren" duy nhat
+// sang 1 khai niem bo cuc trang day du: "Top" (duoi subtitle, hanh vi CU,
+// zone vang mat = "top" de tuong thich nguoc voi moi block da luu truoc do),
+// "middle" (giua cum Top va than bai markdown) va "bottom" (sau than bai,
+// truoc pagination Next). 4 loai block MOI (newsletter/botHelp/
+// featurePromo/deeperCourse) CHI danh cho middle/bottom (khong bao gio
+// "top") - giu tach biet voi 4 loai CU (toc/install/buttonGroup/callout)
+// von thiet ke rieng cho vi tri duoi subtitle, tranh ket hop ky la (vd 1
+// khoi "TOC box" nam giua trang).
+export type EntryContentBlockZone = "top" | "middle" | "bottom";
 export type EntryContentBlock =
-  | { id: string; type: "toc" }
-  | { id: string; type: "install"; command: string; description?: string; buttons?: EntryBlockButton[] }
-  | { id: string; type: "buttonGroup"; buttons: EntryBlockButton[] }
-  | { id: string; type: "callout"; eyebrow?: string; title: string; description?: string };
+  | { id: string; zone?: EntryContentBlockZone; type: "toc" }
+  | {
+      id: string;
+      zone?: EntryContentBlockZone;
+      type: "install";
+      command: string;
+      description?: string;
+      buttons?: EntryBlockButton[];
+    }
+  | { id: string; zone?: EntryContentBlockZone; type: "buttonGroup"; buttons: EntryBlockButton[] }
+  | { id: string; zone?: EntryContentBlockZone; type: "callout"; eyebrow?: string; title: string; description?: string }
+  // Khong config gi ca - chi bat/tat, render lai dung SeriesEmailSignup voi
+  // du lieu CUA CHINH Series (emailCourseTitle/Description), chi hien khi
+  // series.emailCourseEnabled - tai su dung 100% component/logic da co san
+  // thay vi lam 1 form thu email thu 2.
+  | { id: string; zone: "middle" | "bottom"; type: "newsletter" }
+  | {
+      id: string;
+      zone: "middle" | "bottom";
+      type: "botHelp";
+      title: string;
+      description: string;
+      buttonLabel: string;
+      buttonUrl: string;
+    }
+  | {
+      id: string;
+      zone: "middle" | "bottom";
+      type: "featurePromo";
+      imageUrl: string;
+      eyebrow?: string;
+      title: string;
+      description?: string;
+      buttonLabel: string;
+      buttonUrl: string;
+    }
+  | {
+      id: string;
+      zone: "middle" | "bottom";
+      type: "deeperCourse";
+      eyebrow?: string;
+      title: string;
+      description?: string;
+      buttonLabel: string;
+      buttonUrl: string;
+    };
 
 // "Campaign card" - cac field dieu khien hien thi the Series o /home (rail)
 // + /series (list), xem SeriesCampaignCard.tsx + tab "Thẻ hiển thị" trong

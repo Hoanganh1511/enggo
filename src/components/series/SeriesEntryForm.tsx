@@ -194,22 +194,38 @@ export function SeriesEntryForm({
           <input className={inputClass} value={source} onChange={(e) => setSource(e.target.value)} />
         </div>
 
-        {/* Danh sach khoi noi dung o DAU bai (TOC box/install/buttonGroup/
-            callout), sap xep bang nut len/xuong - yeu cau nguoi dung: "chia
-            làm nửa trên... custom thêm đa dạng các element... sắp xếp thứ
-            tự hiển thị". Rong = trang cong khai tu fallback ve 1 box TOC
-            (xem SeriesEntryContentBlocks.tsx). */}
+        {/* [2026-09-15] Wireframe bo cuc trang - yeu cau nguoi dung: "một
+            phần preview hiển thị bố cục của page. Như hiện tại có 2 phần
+            trên và thân. Giữa 2 phần này, thêm 1 button + vào để cho phép
+            người dùng thêm section vào giữa chúng, và có cả dấu + ở cuối".
+            KHONG dung 1 canvas preview rieng - thu tu CHINH cac section
+            trong form nay (Top -> [+ giữa] -> Nội dung * (Thân) -> [+ cuối])
+            DA khop dung bo cuc trang that, chi can gan nhan + nut Them ro
+            rang giua chung ("khung wireframe cơ gọn" nguoi dung chon). */}
         <div className="rounded-xl border border-border p-4">
-          <label className={labelClass}>Nội dung tuỳ chỉnh (đầu bài)</label>
+          <label className={labelClass}>Top (đầu bài)</label>
           <p className="-mt-0.5 mb-3 text-[12px] text-ink-faint">
             Hiện phía trên nội dung chính, thứ tự trong danh sách = thứ tự hiển thị.
           </p>
-          <EntryContentBlocksEditor blocks={contentBlocks} onChange={setContentBlocks} />
+          <EntryContentBlocksEditor
+            blocks={contentBlocks}
+            onChange={setContentBlocks}
+            zone="top"
+            allowToc={slug.trim() === "map"}
+          />
+        </div>
+
+        <div className="rounded-xl border border-dashed border-border p-4">
+          <label className={labelClass}>+ Section giữa Top và Thân</label>
+          <p className="-mt-0.5 mb-3 text-[12px] text-ink-faint">
+            Hiện ngay trên đường kẻ ngang, trước khi vào nội dung chính.
+          </p>
+          <EntryContentBlocksEditor blocks={contentBlocks} onChange={setContentBlocks} zone="middle" />
         </div>
 
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <label className={labelClass}>Nội dung *</label>
+            <label className={labelClass}>Thân bài — Nội dung *</label>
             <span className="text-[12px] text-ink-faint">
               Read time: {readTimeOverride ?? estimateReadTime(contentMarkdown)} phút
               <button
@@ -233,6 +249,14 @@ export function SeriesEntryForm({
             </span>
           </div>
           <SeriesEntryEditor value={contentMarkdown} onChange={setContentMarkdown} />
+        </div>
+
+        <div className="rounded-xl border border-dashed border-border p-4">
+          <label className={labelClass}>+ Section cuối bài</label>
+          <p className="-mt-0.5 mb-3 text-[12px] text-ink-faint">
+            Hiện sau nội dung chính, trước khi sang bài tiếp theo.
+          </p>
+          <EntryContentBlocksEditor blocks={contentBlocks} onChange={setContentBlocks} zone="bottom" />
         </div>
 
         <div className="rounded-xl border border-border p-4">
