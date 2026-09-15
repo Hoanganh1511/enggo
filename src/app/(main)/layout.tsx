@@ -5,6 +5,7 @@ import { ScrollToTopButton } from "@/components/shell/ScrollToTopButton";
 import { DashboardSidebarDrawer } from "@/components/discover/home-dashboard/HomeDashboardSidebar";
 import { ChatMessageToastStack } from "@/components/chat/ChatMessageToastStack";
 import { NavTransitionOverlay } from "@/components/shell/NavTransitionOverlay";
+import { FocusModeCurtain } from "@/components/shell/FocusModeCurtain";
 import FeedBootstrap from "@/lib/discover/FeedBootstrap";
 import { AvatarBootstrap } from "@/components/providers/AvatarBootstrap";
 
@@ -43,6 +44,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             tren MOI trang. */}
         <DashboardSidebarDrawer />
         <NavTransitionOverlay />
+        <FocusModeCurtain />
         <MainContentArea>{children}</MainContentArea>
       </div>
     </>

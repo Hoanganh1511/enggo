@@ -2,49 +2,36 @@
 
 import { motion } from "framer-motion";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
-import { cn } from "@/lib/utils";
 
 // Boc hang flex aside+content chinh cua trang Series ((read)/layout.tsx,
 // Server Component - khong doc duoc Zustand).
 //
-// [2026-09-15] Doi hoan toan hanh vi khi Focus mode bat - yeu cau nguoi
-// dung: "Kết hợp Cinema Mode vào Focus mode... phần nội dung chính gồm
-// sidebar seri và chi tiết bài -> cả cụm này sẽ có animation di chuyển ra
-// chính giữa màn hình, phần top của nó thì di chuyển lên sát bám vào top
-// viewport". Truoc day Focus mode chi tinh lai minHeight (header tu an di
-// cho ho); gio CA CUM NAY chuyen sang `position: fixed`, can giua ngang
-// (inset-x-0 + max-width + margin-x-auto - ky thuat can giua chuan cho phan
-// tu fixed/absolute co gioi han chieu rong), dinh sat dinh viewport (top-0),
-// z-40 (tren ca backdrop toi z-30 cua SeriesFocusBackdrop.tsx). `layout`
-// prop cua framer-motion tu "bay" no tu vi tri/kich thuoc BINH THUONG (trong
-// luong trang) sang vi tri fixed/can giua MOI bang 1 animation FLIP muot,
-// dung tinh than "animation di chuyển" nguoi dung mo ta - khong phai bat/tat
-// tuc thi.
+// [2026-09-16] Quay lai layout DON GIAN - "Cinema Mode" (fixed/can giua/
+// letterbox/backdrop toi, 2026-09-15) da BO theo yeu cau nguoi dung: "giờ
+// chỉ cần tắt sidebar chính đi là được, xong phần trong sẽ dàn ra ngoài đó".
+// Component nay gio KHONG can biet Focus mode dang bat hay tat nua - hang
+// nay LUON nam trong luong trang binh thuong (position tinh), chi con
+// `layout` prop cua framer-motion de tu ANIMATE muot khi CHIEU RONG cua no
+// thay doi (luc HomeDashboardSidebar.tsx an/hien qua lai, khoang trong ben
+// trai mat/xuat hien lam hang nay dan rong/thu hep lai - `layout` bat chuyen
+// dong do thanh 1 hieu ung tu nhien thay vi nhay khung dot ngot). Toan bo
+// "an that" cua sidebar/header + hieu ung che man hinh trong luc doi layout
+// nam o noi khac (HomeDashboardSidebar.tsx, TopHeaderBar.tsx,
+// FocusModeCurtain.tsx), KHONG con o day.
 export function SeriesFocusRow({ children }: { children: React.ReactNode }) {
+  // Header ngang tu an that (TopHeaderBar.tsx) khi Focus mode bat - luc do
+  // KHONG con gi de tru nua, dung nguyen 100vh se dung hon "100vh - header"
+  // (thieu mat 56px so voi khoang trong THAT SU dang co san).
   const focusModeActive = useFocusModeStore((s) => s.active);
   return (
     <motion.div
       layout
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className={cn(
-        "flex min-w-0 bg-background",
-        focusModeActive
-          ? // Fixed + can giua + dinh top - "ra chính giữa màn hình...
-            // sát bám vào top viewport". max-w gioi han (khong full-bleed)
-            // de van con thay duoc backdrop toi 2 ben nhu "letterbox" rap
-            // phim. overflow-y-auto rieng vi gio o NGOAI luong trang, khong
-            // con thua huong scroll cua window nhu truoc. overflow-x-hidden
-            // THEM (2026-09-16, nguoi dung bao loi hien thi luc bat Focus
-            // mode) - chan moi tran ngang (vd 1 dong text/list dai khong
-            // wrap kip) khoi tao thanh cuon ngang/tran ra ngoai khung
-            // letterbox - chi CAN CHINH DOC (scroll xuong doc noi dung dai)
-            // moi hop ly cho 1 trang doc, khong can cuon ngang bao gio.
-            "fixed inset-x-0 top-0 z-40 mx-auto max-w-360 overflow-x-hidden overflow-y-auto shadow-2xl"
-          : "-mx-4 -my-6 sm:-mx-6 lg:-mx-10",
-      )}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="-mx-4 -my-6 flex min-w-0 bg-background sm:-mx-6 lg:-mx-10"
       style={{
-        minHeight: focusModeActive ? undefined : "calc(100vh - var(--header-height))",
-        height: focusModeActive ? "100vh" : undefined,
+        minHeight: focusModeActive
+          ? "100vh"
+          : "calc(100vh - var(--header-height))",
       }}
     >
       {children}

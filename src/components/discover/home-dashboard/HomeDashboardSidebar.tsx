@@ -20,6 +20,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
+import { useFocusModeStore } from "@/stores/focus-mode-store";
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -190,10 +191,17 @@ export function HomeDashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const displayName = session?.user?.name ?? "Bạn";
-  // [2026-09-15] Focus mode KHONG con an sidebar nay nua ("Kết hợp Cinema
-  // Mode vào Focus mode" - yeu cau nguoi dung) - sidebar chinh gio LUON hien
-  // binh thuong, "tối đi" duoc tao boi 1 lop backdrop toi PHU LEN TREN tu
-  // ben ngoai (xem SeriesFocusBackdrop.tsx), khong phai tu no tu lam mo minh.
+  // [2026-09-16] Focus mode AN HAN sidebar nay - quay lai cach lam DON GIAN
+  // theo yeu cau nguoi dung ("giờ chỉ cần tắt sidebar chính đi là được, xong
+  // phần trong sẽ dàn ra ngoài đó"), thay the han cach lam "Cinema Mode"
+  // truoc do (2026-09-15: sidebar VAN hien, chi bi 1 lop backdrop toi phu
+  // len tren + cum Series rieng bay ra giua man hinh bang position:fixed -
+  // xem lich su SeriesFocusRow.tsx/SeriesFocusBackdrop.tsx da bo). FeedMainArea.tsx
+  // da tu bo padding-left lg:pl-61 tuong ung khi Focus mode bat (viet san tu
+  // truoc, dung y dinh nay) nen return null o day la DU: khong con sidebar
+  // chiem cho, phan noi dung Series tu nhien dan rong ra het khoang trong do.
+  const focusModeActive = useFocusModeStore((s) => s.active);
+  if (focusModeActive) return null;
 
   return (
     <aside

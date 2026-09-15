@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
 import { SeriesFocusSidebar } from "@/components/series/SeriesFocusSidebar";
-import { SeriesFocusBackdrop } from "@/components/series/SeriesFocusBackdrop";
 import { SeriesFocusRow } from "@/components/series/SeriesFocusRow";
 import { SeriesFocusContent } from "@/components/series/SeriesFocusContent";
 import { SeriesSidebarCollapseButton } from "@/components/series/SeriesSidebarCollapseButton";
@@ -53,7 +52,6 @@ export default async function SeriesLayout({
           NGANG + mep TREN (cung cong thuc margin am voi div ben duoi) de bam
           dung vien tren cua vung noi dung, KHONG dung lg:-mx-10 (vo nghia vi
           chinh thanh nay da lg:hidden). */}
-      <SeriesFocusBackdrop />
       <SeriesMobileTopBar seriesTitle={series.title} />
       <SeriesSidebarDrawer
         slug={slug}

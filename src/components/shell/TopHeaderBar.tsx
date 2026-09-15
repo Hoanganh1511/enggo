@@ -145,16 +145,21 @@ const TopHeaderBar = () => {
         : String(unreadCount)
       : undefined;
 
-  // [2026-09-15] Focus mode KHONG con an header nua ("Kết hợp Cinema Mode
-  // vào Focus mode" - yeu cau nguoi dung, mo ta lai toan bo hanh vi: header/
-  // sidebar chinh giu nguyen HIEN THI BINH THUONG, "tối đi" duoc tao boi 1
-  // lop backdrop toi PHU LEN TREN chung tu ben ngoai, xem
-  // SeriesFocusBackdrop.tsx - khong phai tu header/sidebar tu lam mo minh).
+  // [2026-09-16] Focus mode AN HAN header - quay lai cach lam DON GIAN theo
+  // yeu cau nguoi dung ("chỉ cần tắt sidebar chính đi là được... rồi ẩn tiếp
+  // header, kéo nó sát lên top của màn hình"), thay the "Cinema Mode"
+  // 2026-09-15 truoc do (header LUON hien, chi bi 1 lop backdrop toi phu
+  // len - da bo, xem lich su SeriesFocusBackdrop.tsx). return null o day la
+  // DU de MainContentArea (flex-1, khong tinh header-height thu cong) tu
+  // dan len lap day khoang trong do - khong can CSS bu tru gi them.
   // Van giu effect tu tat Focus mode khi roi /series (tranh "mắc kẹt").
+  const focusModeActive = useFocusModeStore((s) => s.active);
   const setFocusModeActive = useFocusModeStore((s) => s.setActive);
   useEffect(() => {
     if (!pathname.startsWith("/series")) setFocusModeActive(false);
   }, [pathname, setFocusModeActive]);
+
+  if (focusModeActive) return null;
 
   return (
     <header className="flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 sm:gap-4 sm:px-5">

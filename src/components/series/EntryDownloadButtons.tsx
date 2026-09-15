@@ -48,6 +48,7 @@ export function EntryDownloadButtons({
 }) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const focusModeActive = useFocusModeStore((s) => s.active);
+  const focusModeTransitioning = useFocusModeStore((s) => s.transitioning);
   const toggleFocusMode = useFocusModeStore((s) => s.toggle);
 
   function handleDownloadMarkdown() {
@@ -149,10 +150,11 @@ export function EntryDownloadButtons({
           aria-checked={focusModeActive}
           aria-label="Focus mode"
           onClick={toggleFocusMode}
+          disabled={focusModeTransitioning}
           whileTap={{ scale: 0.9 }}
-          className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-out ${
-            focusModeActive ? "bg-accent-gold" : "bg-ink-disabled"
-          }`}
+          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-out ${
+            focusModeTransitioning ? "cursor-wait" : "cursor-pointer"
+          } ${focusModeActive ? "bg-accent-gold" : "bg-ink-disabled"}`}
         >
           <motion.span
             animate={{ x: focusModeActive ? 16 : 0 }}
