@@ -410,57 +410,44 @@ export default async function SeriesEntryPage({
           khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
           cha se thanh khoang cach thua qua muc. pt-6 - khoang cach SAU hr
           (xem comment pb-6 o tren). */}
-      <div className="flex gap-6">
-        {/* Boc article + EntryNextBanner CHUNG 1 cot (flex-1) - yeu cau
-            nguoi dung: banner "Next" truoc day la sibling NGOAI ca hang
-            flex nay nen tran qua CA cot TOC ben phai ("nó vào đến hết phần
-            thân thôi được không... không gian riêng cho cột toc bên phải").
-            Gio banner nam TRONG cung cot voi article (khong con la sibling
-            cua <aside>) nen tu dong DUNG DUNG o mep phai cua article, KHONG
-            lan qua khoang gap-6 + <aside> nua. */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <article className="min-w-0 border-r border-border">
-            <Suspense
-              fallback={
-                <FadeIn delay={0.12}>
-                  <EntryBodySkeleton />
-                </FadeIn>
-              }
-            >
-              <EntryBody dataPromise={dataPromise} />
-            </Suspense>
-
-            <Suspense
-              fallback={
-                <FadeIn delay={0.24}>
-                  <EntryExtrasSkeleton />
-                </FadeIn>
-              }
-            >
-              <EntryExtras dataPromise={dataPromise} slug={slug} />
-            </Suspense>
-          </article>
-
-          {/* delay=0.24 (dong bo Batch 3) - truoc day fallback nay KHONG boc
-              FadeIn (thieu sot, khac voi 5 nhanh con lai) nen luc EntryNextBanner
-              tu skeleton doi sang that KHONG co hieu ung fade dong bo. */}
+      <div className="flex gap-6 pt-6">
+        {/* pb-10 (khong phai pb-0 mac dinh) - NOI vien border-r cua article
+            keo dai xuong THEM 1 khoang truoc khi ket thuc, thay vi dut ngay
+            sau EntryExtras roi de lo 1 khoang trang giua duong vien va
+            EntryNextBanner ben duoi (yeu cau nguoi dung: "bỏ cái khoảng
+            trống so với phần bên trên để không nhìn thấy đoạn border thẳng
+            bên trên bị ngắt đứt đoạn... Tăng padding bottom cho phần thân
+            trên rồi nối sát vào"). Banner gio nam NGOAI hang flex nay (xem
+            duoi) nen se noi SAT ngay sau padding nay, khong con margin-top
+            rieng nua. */}
+        <article className="min-w-0 flex-1 border-r border-border pb-10">
           <Suspense
             fallback={
-              <FadeIn delay={0.24}>
-                <EntryNextBannerSkeleton />
+              <FadeIn delay={0.12}>
+                <EntryBodySkeleton />
               </FadeIn>
             }
           >
-            <EntryNextBanner dataPromise={dataPromise} slug={slug} />
+            <EntryBody dataPromise={dataPromise} />
           </Suspense>
-        </div>
+
+          <Suspense
+            fallback={
+              <FadeIn delay={0.24}>
+                <EntryExtrasSkeleton />
+              </FadeIn>
+            }
+          >
+            <EntryExtras dataPromise={dataPromise} slug={slug} />
+          </Suspense>
+        </article>
 
         {/* Duong ke doc tach cot TOC ben phai - yeu cau nguoi dung. pl-8
             (thay vi dua vao gap-8 cua flex cha) de co khoang trong GIUA
             duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
             vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
             trang nua) roi dinh lai o do khi cuon xuong. */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6  pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-8 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
@@ -476,6 +463,23 @@ export default async function SeriesEntryPage({
           </Suspense>
         </aside>
       </div>
+
+      {/* [2026-09-15] Chuyen ra NGOAI hang flex article+aside (KHAC ban truoc
+          day, xem lich su comment cu trong SeriesNextEntryBanner.tsx) - yeu
+          cau nguoi dung dao nguoc lai quyet dinh truoc: "Phần Next cuối
+          trang tôi muốn cho nó thành full ra" (tran FULL 2 ben, ke ca qua
+          khoang cot TOC, khong con gioi han trong 1 cot nua). Nam SAU hang
+          flex (aside sticky da ket thuc cung do cao voi article o tren) nen
+          KHONG con overlap gi voi <aside> nua du bleed CA 2 ben. */}
+      <Suspense
+        fallback={
+          <FadeIn delay={0.24}>
+            <EntryNextBannerSkeleton />
+          </FadeIn>
+        }
+      >
+        <EntryNextBanner dataPromise={dataPromise} slug={slug} />
+      </Suspense>
 
       {/* Fixed, khong phu thuoc vi tri trong luong trang - Suspense fallback
           null (khong quan trong, khong can skeleton rieng). */}

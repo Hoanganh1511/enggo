@@ -43,27 +43,28 @@ export default function SeriesReadLoading() {
       <hr className="-mx-6 border-border lg:-mx-10" />
 
       <div className="flex gap-6 pt-6">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <article className="min-w-0">
-            <FadeIn delay={0.12}>
-              <EntryBodySkeleton />
-            </FadeIn>
-            <FadeIn delay={0.24}>
-              <EntryExtrasSkeleton />
-            </FadeIn>
-          </article>
-
-          <FadeIn delay={0.24}>
-            <EntryNextBannerSkeleton />
+        <article className="min-w-0 flex-1 border-r border-border pb-10">
+          <FadeIn delay={0.12}>
+            <EntryBodySkeleton />
           </FadeIn>
-        </div>
+          <FadeIn delay={0.24}>
+            <EntryExtrasSkeleton />
+          </FadeIn>
+        </article>
 
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 border-l border-border pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-8 xl:flex">
           <FadeIn delay={0.12}>
             <EntryTocSkeleton />
           </FadeIn>
         </aside>
       </div>
+
+      {/* Ngoai hang flex, full-bleed 2 ben - khop dung cau truc that trong
+          [entrySlug]/page.tsx sau khi doi "Next cuối trang... thành full
+          ra" (xem SeriesNextEntryBanner.tsx). */}
+      <FadeIn delay={0.24}>
+        <EntryNextBannerSkeleton />
+      </FadeIn>
     </div>
   );
 }
