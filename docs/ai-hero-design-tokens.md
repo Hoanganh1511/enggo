@@ -72,3 +72,33 @@ khu vực khác của enggo (feed, home rail, profile...) vì các khu đó vố
 phong cách khác (card ảnh, màu nhấn, đổ bóng - xem `--shadow-card` trong
 globals.css) - áp đặt token phẳng/không-đổ-bóng vào đó sẽ xung đột trực tiếp
 với hệ thống hiện tại thay vì bổ sung cho nó.
+
+## 2 thể loại bài viết trên enggo (2026-09-15)
+
+Web hiện có **2 thể loại bài viết hoàn toàn tách biệt**, mỗi loại tự có hệ
+thống thiết kế riêng - trước khi sửa/thêm UI cho "trang đọc bài", PHẢI xác
+định đang nói tới loại nào, vì áp nhầm token của loại này sang loại kia sẽ
+lạc tông ngay lập tức:
+
+1. **Bài thường (Post)** - route `/p/[id]`, soạn qua Composer.tsx (Tiptap).
+   Trang đọc: `ArticleHeader`/`ArticleBody`/`ArticleSidebar`/`ArticleActionBar`
+   (like/comment), `ArticleAuthorCard`, `ArticleTableOfContents` (mục lục
+   dạng pill card góc phải, ẩn dưới 1200px). Dùng **hệ token chính của app**
+   (`--ink`/`--surface`/`--shadow-card`/`--primary` trong `:root`), ảnh bìa
+   lớn, card có đổ bóng - hoàn toàn KHÔNG liên quan tới bộ token AI Hero
+   trong file này.
+2. **Bài Series (ContentSeriesEntry)** - route `/series/[slug]/[entrySlug]`,
+   soạn qua `SeriesEntryForm`/`SeriesEntryEditor`. Trang đọc: sidebar cây
+   category/entry riêng (`SeriesSidebar.tsx`, font Geist Sans - khác Inter
+   của phần còn lại trong `.series-scope`), `EntryDownloadButtons` (Tải PDF/
+   Markdown + switch Focus mode), Cinema/Focus mode (`SeriesFocusRow`/
+   `SeriesFocusSidebar`/`SeriesFocusContent`/`SeriesFocusBackdrop` - cụm
+   sidebar+nội dung bay ra giữa màn hình, ẩn header). Dùng 1 accent RIÊNG
+   `rgb(245,196,81)` (gold) cho mọi trạng thái active/nút chính - KHÔNG dùng
+   `--primary` cam của app. Đây mới là nơi áp bộ token AI Hero (phẳng,
+   border thay shadow, rgba(20,22,26,*) cho text) theo "Phạm vi áp dụng" ở
+   trên.
+
+Khi nhận yêu cầu kiểu "sửa trang đọc bài" mà không rõ loại nào, hỏi lại thay
+vì đoán - 2 cây component không dùng chung bất kỳ file style nào ngoài
+`globals.css` gốc.
