@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { Bell, Menu, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
+import { useCinemaModeStore } from "@/stores/cinema-mode-store";
 import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
@@ -155,10 +156,33 @@ const TopHeaderBar = () => {
   useEffect(() => {
     if (!pathname.startsWith("/series")) setFocusModeActive(false);
   }, [pathname, setFocusModeActive]);
+
+  // Cinema mode (doc Entry trong Series) - yeu cau nguoi dung: "Khi bật sẽ
+  // tắt đèn xung quanh ở các vùng: Sidebar chính, header". KHAC Focus mode
+  // (an han header) - Cinema mode chi LAM MO header (opacity), van nhin thay
+  // lo mo/con tuong tac duoc, giong hieu ung tat den phong chieu. Tu tat khi
+  // roi khoi /series, cung tinh than voi Focus mode o tren. CA 2 hook nay
+  // phai dat TRUOC `if (focusModeActive) return null` ben duoi (rules of
+  // hooks - khong duoc goi hook sau 1 early return co dieu kien).
+  const cinemaModeActive = useCinemaModeStore((s) => s.active);
+  const setCinemaModeActive = useCinemaModeStore((s) => s.toggle);
+  useEffect(() => {
+    if (!pathname.startsWith("/series")) {
+      // Tat "im lang" (khong dispatch neu dang da tat san) - tranh 1
+      // toggle() thua lam active bat NGUOC lai khi effect nay chay lai.
+      if (useCinemaModeStore.getState().active) setCinemaModeActive();
+    }
+  }, [pathname, setCinemaModeActive]);
+
   if (focusModeActive) return null;
 
   return (
-    <header className="flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 sm:gap-4 sm:px-5">
+    <header
+      className={cn(
+        "flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 transition-opacity duration-300 sm:gap-4 sm:px-5",
+        cinemaModeActive && "opacity-25",
+      )}
+    >
       {/* Cum trai: hamburger (mobile) + logo + nav ngang - dua nav VE SAT
           logo (cach ra 1 khoang gap-6 vua phai) thay vi can giua man hinh
           nhu truoc (yeu cau nguoi dung: "dồn cụm ở giữa về phía bên trái

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
+import { useCinemaModeStore } from "@/stores/cinema-mode-store";
 
 // Id cua khoi noi dung THAT (DocsMarkdown render trong EntryBody, xem
 // page.tsx) - PDF can chup DOM node nay (html2canvas), Markdown thi da co san
@@ -48,6 +49,8 @@ export function EntryDownloadButtons({
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const focusModeActive = useFocusModeStore((s) => s.active);
   const toggleFocusMode = useFocusModeStore((s) => s.toggle);
+  const cinemaModeActive = useCinemaModeStore((s) => s.active);
+  const toggleCinemaMode = useCinemaModeStore((s) => s.toggle);
 
   function handleDownloadMarkdown() {
     const blob = new Blob([contentMarkdown], { type: "text/markdown;charset=utf-8" });
@@ -140,6 +143,33 @@ export function EntryDownloadButtons({
           />
         </button>
         Focus mode
+      </label>
+
+      {/* [2026-09-15] Cinema mode - yeu cau nguoi dung: "Bổ sung thêm một
+          switcher nữa là Cinema mode. Khi bật sẽ tắt đèn xung quanh ở các
+          vùng: Sidebar chính, header". Cung kieu dang switch voi Focus mode
+          o tren (dong bo 1 accent gold duy nhat) - KHAC ve hanh vi: Focus
+          mode AN HAN header/sidebar chinh, Cinema mode chi LAM MO (opacity,
+          xem TopHeaderBar.tsx/HomeDashboardSidebar.tsx), van con nhin thay
+          lo mo/tuong tac duoc. */}
+      <label className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-muted select-none">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={cinemaModeActive}
+          aria-label="Cinema mode"
+          onClick={toggleCinemaMode}
+          className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ease-out ${
+            cinemaModeActive ? "bg-accent-gold" : "bg-ink-disabled"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform duration-150 ease-out ${
+              cinemaModeActive ? "translate-x-4" : "translate-x-0"
+            }`}
+          />
+        </button>
+        Cinema mode
       </label>
     </div>
   );
