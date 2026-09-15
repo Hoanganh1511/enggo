@@ -16,27 +16,55 @@ export function DocsToc({ toc }: { toc: DocsTocItem[] }) {
 
   useEffect(() => {
     if (toc.length === 0) return;
-    const els = toc
-      .map((t) => document.getElementById(t.id))
-      .filter((el): el is HTMLElement => el !== null);
-    if (els.length === 0) return;
+    let cancelled = false;
+    let observer: IntersectionObserver | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-    startTransition(() => setActiveId(els[0].id));
+    // DocsToc (nhanh Suspense "EntryToc") va than bai THAT chua heading
+    // (nhanh Suspense "EntryBody") la 2 Suspense DOC LAP, KHONG dam bao
+    // than bai da mount xong luc effect nay chay lan dau - neu bat luc do,
+    // "document.getElementById()" tra ve null het (heading chua ton tai
+    // trong DOM), effect cu the BO CUOC han (khong active nao duoc gan,
+    // khong observer nao duoc tao) vi dependency `[toc]` khong doi lai sau
+    // do de chay lai - day chinh la ly do "Active color... đâu?" (khong
+    // item nao sang mau/co thanh vang ca, du dang o dau trang) nguoi dung
+    // bao. Sua bang cach THU LAI (retry) toi da 20 lan (150ms/lan, ~3s) cho
+    // toi khi tim thay heading, thay vi bo cuoc ngay lan dau.
+    let attempts = 0;
+    function trySetup() {
+      if (cancelled) return;
+      const els = toc
+        .map((t) => document.getElementById(t.id))
+        .filter((el): el is HTMLElement => el !== null);
+      if (els.length === 0) {
+        attempts += 1;
+        if (attempts < 20) retryTimer = setTimeout(trySetup, 150);
+        return;
+      }
 
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        const current = els.find((el) => visible.has(el.id));
-        if (current) setActiveId(current.id);
-      },
-      { rootMargin: "0px 0px -70% 0px", threshold: 0 },
-    );
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+      startTransition(() => setActiveId(els[0].id));
+
+      const visible = new Set<string>();
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) visible.add(entry.target.id);
+            else visible.delete(entry.target.id);
+          }
+          const current = els.find((el) => visible.has(el.id));
+          if (current) setActiveId(current.id);
+        },
+        { rootMargin: "0px 0px -70% 0px", threshold: 0 },
+      );
+      els.forEach((el) => observer!.observe(el));
+    }
+
+    trySetup();
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      observer?.disconnect();
+    };
   }, [toc]);
 
   if (toc.length === 0) {
