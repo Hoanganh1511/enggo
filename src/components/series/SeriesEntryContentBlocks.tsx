@@ -192,11 +192,14 @@ function CalloutBlock({
   block: Extract<EntryContentBlock, { type: "callout" }>;
 }) {
   return (
-    // -ml-6 lg:-ml-10 CHI BEN TRAI - dung y het ky thuat full-bleed da giai
-    // quyet cho <hr> trong EntryBody (xem comment o do): khoi nay nam TRONG
-    // <article> (flex-1, khong padding rieng) nen BEN PHAI khong can bleed gi
-    // ca, con -mr se keo no tran qua khoang gap-6 + <aside> TOC ben phai.
-    <div className="font-content -ml-6 rounded-r-xl bg-surface-muted px-6 py-6 lg:-ml-10 lg:px-10">
+    // -mx-6 lg:-mx-10 CA 2 BEN - dung y het ky thuat full-bleed da giai quyet
+    // cho <hr> trong EntryBody (xem comment o do). [2026-09-16] Truoc day CHI
+    // bleed TRAI vi <article> khong co padding-right rieng nen ben phai "tu
+    // nhien" da chay dung toi border-r roi; gio <article> co THEM pr-6/
+    // lg:pr-10 (yeu cau nguoi dung: dung de content sat border-r) nen phai
+    // bleed NGUOC lai -mr-6/lg:-mr-10 de khoi nay VAN chay full-width toi
+    // border-r nhu cu, khong bi hut ngan lai theo padding moi.
+    <div className="font-content -mx-6 rounded-r-xl bg-surface-muted px-6 py-6 lg:-mx-10 lg:px-10">
       {block.eyebrow && (
         <p className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
           {block.eyebrow}

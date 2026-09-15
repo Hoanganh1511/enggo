@@ -211,19 +211,25 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
 
   return (
     <FadeIn delay={0.12}>
-      {/* [&_hr]:-ml-6 lg:[&_hr]:-ml-10 - CHI BEN TRAI (KHONG con -mr, xem
-          sua loi ben duoi). <hr> nay nam TRONG <article> (flex-1, khong co
-          padding rieng) - o day CHI can huy padding-left cua panel to (layout.tsx
-          "p-6 lg:p-10") vi KHONG co gi chen VAO GIUA hr va mep TRAI panel
-          do (article/flex-col wrapper/flex row/pb-20 deu 0 padding trai).
-          Nhung BEN PHAI thi KHAC: giua hr va mep phai panel co CA <aside>
-          (w-64) + gap-6 chen vao - dung LAI -mr-10 se keo hr LEN QUA khoang
-          gap+aside do, tran ra ngoai/de len duong ke doc phan cach TOC (bug
-          nguoi dung bao: "line ngang trong bài còn chờm ra ngoài", "Line
-          thẳng bên phải không kéo hết"). Ben phai KHONG can bleed gi ca -
-          <article> (flex-1, khong padding) da tu nhien cho hr rong DUNG BANG
-          chinh no, dung la "full" trong pham vi cot bai viet roi. */}
-      <div id={ENTRY_CONTENT_ID} className="mt-6 [&_hr]:-ml-6 lg:[&_hr]:-ml-10">
+      {/* [&_hr]:-ml-6 lg:[&_hr]:-ml-10 - <hr> nay nam TRONG <article> (flex-1)
+          - o day CHI can huy padding-left cua panel to (layout.tsx "p-6
+          lg:p-10") vi KHONG co gi chen VAO GIUA hr va mep TRAI panel do
+          (article/flex-col wrapper/flex row/pb-20 deu 0 padding trai). Ben
+          phai KHAC: giua hr va mep phai panel co CA <aside> (w-64) + gap-6
+          chen vao - dung -mr-10 se keo hr LEN QUA khoang gap+aside do, tran
+          ra ngoai/de len duong ke doc phan cach TOC (bug nguoi dung tung
+          bao: "line ngang trong bài còn chờm ra ngoài"). Muc tieu THAT SU o
+          ben phai chi la reach dung MEP PHAI cua <article> (border-r), KHONG
+          phai mep phai panel.
+          [2026-09-16] THEM lai [&_hr]:-mr-6 lg:[&_hr]:-mr-10 - truoc do
+          <article> KHONG co padding-right rieng nen hr da "tu nhien" chay
+          dung toi border-r ma khong can bleed gi. Gio <article> co THEM
+          pr-6/lg:pr-10 (yeu cau nguoi dung: "padding right cho phần nội dung
+          đâu, đừng để bị sát border right" - chu VAN BAN thuong gio co
+          khoang trong truoc border-r) nen hr PHAI bleed NGUOC lai dung bang
+          do de VAN chay full-width toi border-r nhu cu, khong bi hut ngan
+          lai theo padding moi. */}
+      <div id={ENTRY_CONTENT_ID} className="mt-6 [&_hr]:-mx-6 lg:[&_hr]:-mx-10">
         <DocsMarkdown markdown={entry.contentMarkdown} />
       </div>
 
@@ -460,7 +466,7 @@ export default async function SeriesEntryPage({
             trên rồi nối sát vào"). Banner gio nam NGOAI hang flex nay (xem
             duoi) nen se noi SAT ngay sau padding nay, khong con margin-top
             rieng nua. */}
-        <article className="min-w-0 flex-1 border-r border-border pb-10">
+        <article className="min-w-0 flex-1 border-r border-border pr-6 pb-10 lg:pr-10">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
