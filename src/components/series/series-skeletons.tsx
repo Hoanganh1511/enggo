@@ -42,12 +42,21 @@ export function EntryHeaderSkeleton() {
 // than bai that (DocsMarkdown).
 export function EntryBodySkeleton() {
   return (
+    // w-11/12 (khong con w-full) cho MOI thanh - yeu cau nguoi dung: "Cái
+    // skeleton nó vẫn dính vào border right kìa" - <article> KHONG co
+    // padding-phai rieng (thiet ke that: cho phep hr/anh/code that trong
+    // than bai tran DUNG DEN mep, xem comment EntryBody ben page.tsx), nen
+    // 1 thanh gia w-full se cham THANG vao border-r. Content that (chu wrap
+    // tu nhien) hau nhu khong bao gio cham dung mep nhu vay nen khong lo,
+    // nhung thanh SKELETON hinh chu nhat cham CHINH XAC 100% nhin rat lo/xau -
+    // gioi han 11/12 de luon co 1 khoang ho nho truoc border, chi rieng luc
+    // dang tai.
     <div className="mt-6 flex flex-col gap-3">
-      <SeriesSkeleton className="h-4 w-full" />
       <SeriesSkeleton className="h-4 w-11/12" />
+      <SeriesSkeleton className="h-4 w-10/12" />
       <SeriesSkeleton className="h-4 w-4/5" />
-      <SeriesSkeleton className="mt-2 h-32 w-full" />
-      <SeriesSkeleton className="mt-2 h-4 w-full" />
+      <SeriesSkeleton className="mt-2 h-32 w-11/12" />
+      <SeriesSkeleton className="mt-2 h-4 w-11/12" />
       <SeriesSkeleton className="h-4 w-3/5" />
     </div>
   );

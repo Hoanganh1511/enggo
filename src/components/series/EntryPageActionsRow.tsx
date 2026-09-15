@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import { SimpleModal } from "@/components/ui/simple-modal";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import type { ContentSeriesEntrySummary } from "@/lib/api/content-series";
 
@@ -74,6 +75,13 @@ export function EntryPageActionsRow({
     navigator.clipboard
       .writeText(contentMarkdown)
       .then(() => toast.success("Đã copy nội dung (markdown)"))
+      .catch(() => toast.danger("Không copy được, thử lại sau."));
+  }
+
+  function handleCopyShareUrl() {
+    navigator.clipboard
+      .writeText(shareUrl)
+      .then(() => toast.success("Đã copy link"))
       .catch(() => toast.danger("Không copy được, thử lại sau."));
   }
 
@@ -174,28 +182,40 @@ export function EntryPageActionsRow({
           Copy page
         </button>
 
-        <PopoverRoot open={shareOpen} onOpenChange={setShareOpen}>
-          <PopoverTrigger asChild>
-            <button type="button" className={buttonClass}>
-              <Share2 size={14} strokeWidth={2} aria-hidden="true" />
-              Share
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            open={shareOpen}
-            align="end"
-            sideOffset={6}
-            // series-scope lap lai - cung ly do voi popover tac gia o tren
-            // (portal ra ngoai .series-scope, mat font-family Inter).
-            className="series-scope z-50 rounded-lg border border-border bg-surface p-2 shadow-dropdown"
-          >
-            <SeriesShareButtons
-              channels={shareChannels}
-              url={shareUrl}
-              title={shareTitle}
-            />
-          </PopoverContent>
-        </PopoverRoot>
+        {/* [2026-09-15] SimpleModal (khong con PopoverRoot) - yeu cau nguoi
+            dung: "Khi ấn nút Share trong bài viết nó phải hiện modal như
+            này chứ không phải như [popover cu]" - dung LAI SimpleModal (khung
+            modal chung ca app, xem simple-modal.tsx) thay vi tu ve 1 popover
+            nho, khop dung "form factor" modal that (giua man hinh, co lop
+            overlay mo, nut dong X) trong anh mau. */}
+        <SimpleModal open={shareOpen} onOpenChange={setShareOpen} title="Share">
+          <div className="series-scope flex flex-col gap-4">
+            <div className="overflow-x-auto pb-1">
+              <SeriesShareButtons
+                variant="modal"
+                channels={shareChannels}
+                url={shareUrl}
+                title={shareTitle}
+              />
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2">
+              <span className="min-w-0 flex-1 truncate text-[13px] text-ink-muted">
+                {shareUrl}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyShareUrl}
+                className="shrink-0 cursor-pointer rounded-md bg-surface px-3 py-1.5 text-[12.5px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </SimpleModal>
+        <button type="button" onClick={() => setShareOpen(true)} className={buttonClass}>
+          <Share2 size={14} strokeWidth={2} aria-hidden="true" />
+          Share
+        </button>
 
         {next && (
           <Link

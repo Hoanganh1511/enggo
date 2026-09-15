@@ -95,8 +95,18 @@ async function EntryHeader({
         <h1 className="text-[30px] sm:text-[2.5rem] my-5 font-extrabold text-ink">
           {entry.title}
         </h1>
+        {/* [2026-09-15] Doi mau/typography rieng (khong con dung token
+            text-ink-faint - qua nhat, gan #A5ACB8, "cảm giác disabled") -
+            yeu cau nguoi dung dua ra bang de xuat cu the: Inter/18px/400/
+            #667085/line-height 1.55/letter-spacing -0.01em, giu duoc dung
+            hierarchy voi H1 ma khong qua nhat. */}
         {entry.subtitle && (
-          <p className="mt-1 text-[18.5px] text-ink-faint">{entry.subtitle}</p>
+          <p
+            className="mt-1 text-[18px] font-normal"
+            style={{ color: "#667085", lineHeight: 1.55, letterSpacing: "-0.01em" }}
+          >
+            {entry.subtitle}
+          </p>
         )}
       </div>
 
