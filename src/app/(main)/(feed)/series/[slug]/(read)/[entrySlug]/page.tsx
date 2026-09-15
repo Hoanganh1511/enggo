@@ -92,7 +92,7 @@ async function EntryHeader({
           cau nguoi dung: "icon chỉ hiện trên sidebar thôi, không liên quan
           gì vào trong title, subtitle của bài viết"). */}
       <div className="font-content mt-2">
-        <h1 className="text-[30px] sm:text-[2.3rem]  my-6 font-extrabold text-ink">
+        <h1 className="text-[30px] sm:text-[2.5rem] my-5 font-extrabold text-ink">
           {entry.title}
         </h1>
         {entry.subtitle && (
