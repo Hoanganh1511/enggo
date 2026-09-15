@@ -43,7 +43,7 @@ function ToastCard({ item }: { item: ToastItem }) {
     >
       <motion.li
         layout
-        initial={{ opacity: 0, y: 16, scale: 0.95 }}
+        initial={{ opacity: 0, y: -16, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, x: 40, scale: 0.95 }}
         transition={{ duration: 0.15, ease: "easeOut" }}
@@ -53,11 +53,11 @@ function ToastCard({ item }: { item: ToastItem }) {
           <Icon className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} />
           <div className="min-w-0 flex-1">
             {item.title && (
-              <RadixToast.Title className="text-sm font-medium text-ink">
+              <RadixToast.Title className="text-[13.5px] font-semibold text-ink">
                 {item.title}
               </RadixToast.Title>
             )}
-            <RadixToast.Description className="text-xs text-ink-muted">
+            <RadixToast.Description className="text-[12.5px] text-ink-muted">
               {item.description}
             </RadixToast.Description>
           </div>
@@ -107,7 +107,12 @@ export function Toaster() {
           <ToastCard key={item.id} item={item} />
         ))}
       </AnimatePresence>
-      <RadixToast.Viewport className="fixed bottom-0 right-0 z-100 flex w-full flex-col gap-2 p-4 sm:w-auto" />
+      {/* top-right (thay bottom-right cu) - yeu cau nguoi dung: "Vị trí cho
+          nổi rõ ràng ở góc phải màn hình" + dong bo VOI ChatMessageToastStack.tsx
+          (cung goc, xem file do) - truoc day 2 he thong toast trong app dat 2
+          GOC KHAC nhau (toast thuong bottom-right, toast tin nhan top-right),
+          nhin roi/khong nhat quan. */}
+      <RadixToast.Viewport className="fixed top-20 right-4 z-100 flex w-full flex-col gap-2 sm:w-96" />
     </RadixToast.Provider>
   );
 }

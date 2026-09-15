@@ -34,6 +34,15 @@ const MAX_EXPANDED = 5;
 // neu khong tuong tac (khac han toast thuong o toast-store.ts, o day can
 // giu lau hon vi la thong bao co hanh dong ke tiep, khong phai thong bao
 // suong).
+//
+// [2026-09-15] Restyle DUNG token he thong (bg-surface/border-border/
+// text-ink*/shadow-dropdown/rounded-lg) THAY vi mau slate/hex rieng truoc
+// day - yeu cau nguoi dung: "Thống nhất 1 dạng noti kiểu toast, điều chỉnh
+// lại style, font chữ" (2 he thong toast trong app tung nhin KHAC HAN
+// nhau: toast thuong dung token chung, rieng toast tin nhan nay dung
+// slate-200/500/#182338... tu ve). Vi tri (top-20 right-4) GIU NGUYEN -
+// Toaster.tsx (toast-store.ts) gio doi sang DUNG chung goc nay thay vi
+// bottom-right cu, dong bo CA 2 he thong ve 1 goc "nổi rõ ràng" duy nhat.
 export function ChatMessageToastStack() {
   const items = useSyncExternalStore(
     subscribeChatToasts,
@@ -83,25 +92,24 @@ export function ChatMessageToastStack() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_28px_rgba(15,23,42,.14)]"
+            className="overflow-hidden rounded-lg border border-border bg-surface shadow-dropdown"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <b className="text-[13px] text-[#182338]">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <b className="text-[13.5px] font-semibold text-ink">
                 Tin nhắn mới ({items.length})
               </b>
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => clearChatToasts()}
-                  className="cursor-pointer text-[12px] font-medium text-slate-400 hover:text-slate-600"
+                  className="cursor-pointer text-[12px] font-medium text-ink-faint hover:text-ink"
                 >
                   Xoá tất cả
                 </button>
                 <button
                   type="button"
                   onClick={() => setExpanded(false)}
-                  className="cursor-pointer text-[12px] font-medium"
-                  style={{ color: "var(--primary)" }}
+                  className="cursor-pointer text-[12px] font-medium text-primary"
                 >
                   Thu gọn
                 </button>
@@ -147,7 +155,7 @@ export function ChatMessageToastStack() {
                 return (
                   <div
                     key={item.id}
-                    className="absolute inset-x-0 top-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_6px_20px_rgba(15,23,42,.1)]"
+                    className="absolute inset-x-0 top-0 overflow-hidden rounded-lg border border-border bg-surface shadow-dropdown"
                     style={{
                       transform: `translateY(${idx * 8}px) scale(${1 - idx * 0.035})`,
                       zIndex: 10 - idx,
@@ -174,7 +182,7 @@ export function ChatMessageToastStack() {
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white py-1.5 text-[12px] font-semibold text-slate-600 shadow-[0_4px_14px_rgba(15,23,42,.08)] hover:bg-slate-50"
+          className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-border bg-surface py-1.5 text-[12px] font-semibold text-ink-muted shadow-dropdown hover:bg-hover-bg"
         >
           <Layers size={13} />
           Xem tất cả ({items.length})
@@ -194,7 +202,7 @@ function ChatToastRow({
   onDismiss: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 ease-out hover:bg-slate-50">
+    <div className="flex items-center gap-3 px-4 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg">
       <button
         type="button"
         onClick={onOpen}
@@ -203,21 +211,21 @@ function ChatToastRow({
         <ChatToastAvatar name={item.senderName} avatarUrl={item.senderAvatarUrl} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <b className="truncate text-[13px] text-[#182338]">
+            <b className="truncate text-[13.5px] font-medium text-ink">
               {item.senderName}
             </b>
-            <span className="shrink-0 text-[10px] text-slate-400">
+            <span className="shrink-0 text-[11px] text-ink-faint">
               {formatRelativeTime(item.createdAt)}
             </span>
           </div>
-          <p className="truncate text-[12px] text-slate-500">{item.preview}</p>
+          <p className="truncate text-[12.5px] text-ink-muted">{item.preview}</p>
         </div>
       </button>
       <button
         type="button"
         onClick={onDismiss}
         aria-label="Bỏ qua"
-        className="shrink-0 cursor-pointer rounded-full p-1 text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+        className="shrink-0 cursor-pointer rounded-full p-1 text-icon hover:bg-hover-bg hover:text-icon-hover"
       >
         <X size={13} />
       </button>
@@ -244,10 +252,8 @@ function ChatToastAvatar({
     );
   }
   return (
-    <span
-      className="grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-semibold text-white"
-      style={{ background: "var(--primary)" }}
-    >
+    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-[13px] font-semibold text-white">
+
       {name.trim().charAt(0).toUpperCase() || "?"}
     </span>
   );

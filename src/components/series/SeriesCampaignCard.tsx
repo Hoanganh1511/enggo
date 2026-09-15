@@ -191,6 +191,12 @@ export function SeriesCampaignCard({
     !cardBg && "hover:border-border-strong",
     direction,
     variant === "compact" ? "min-w-[260px] max-w-[260px]" : "w-full",
+    // min-h-40 (banner) - khong co gia tri nay, chieu cao ca hang CHI dua
+    // theo NOI DUNG chu (1-2 dong ngan) - anh (h-full, cung stretch theo
+    // chieu cao hang do) bi ep xuong con vai chuc px, gan nhu khong thay
+    // (yeu cau nguoi dung: "seri có ảnh bìa rồi nhưng không hiển thị...
+    // thấp quá"). compact da co h-28 CO DINH rieng cho anh nen khong can.
+    variant === "banner" && "min-h-40",
   );
   const cardStyle: React.CSSProperties = { backgroundColor: cardBg };
 
