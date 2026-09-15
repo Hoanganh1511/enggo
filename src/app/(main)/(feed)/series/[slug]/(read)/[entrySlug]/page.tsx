@@ -28,16 +28,26 @@ import {
 
 type EntryDataPromise = Promise<ContentSeriesEntryPage | null>;
 
-// CHI rieng entry "map" (trang goc cua Series, slug co dinh "map" - xem
-// SeriesEntryPage/EntryHeader duoi, breadcrumb luon tro thang toi
-// `/series/${slug}/map`) la KHONG phai "bai viet noi dung" tuan tu that su -
-// no la trang gioi thieu/dieu huong goc cua Series. Cac entry KHAC trong
-// Explore (Skills, Architecture Map, AWS Services, Hands-on Labs...) VAN la
-// bai viet binh thuong, VAN hien day du cum UI (yeu cau nguoi dung sua lai
-// 2026-09-16: "Chỉ riêng cái Map gốc là không có thôi. Còn các bài viết khác
-// thì đều có" - truoc do lo hieu nham la CA nhanh Explore).
-function isMapRootEntry(slug: string): boolean {
-  return slug === "map";
+// Entry nam TRUC TIEP duoi category goc ten "Explore" (depth 0, category.
+// parentId === null) - vd "Map"/"Skills" - la KHONG phai "bai viet noi dung"
+// tuan tu that su, chi la trang gioi thieu/dieu huong goc cua Series. CHU Y:
+// entry nam trong 1 category CON long ben trong Explore (vd "Discover" ->
+// Architecture Map/AWS Services/Hands-on Labs) KHONG tinh - do VAN la bai
+// viet binh thuong, van hien day du cum UI (yeu cau nguoi dung, lich su sua
+// 2 lan 2026-09-16: lan 1 tuong CA nhanh Explore -> SAI; lan 2 rut lai chi
+// con rieng "map" -> THIEU, quen mat "Skills" cung cung cap; lan 3 nay chot
+// dung pham vi la "TAT CA entry o CAP DAU TIEN cua Explore" tuc entry gan
+// TRUC TIEP vao category Explore, khong phan biet slug cu the nao).
+function isExploreTopLevelEntry(
+  categories: ContentSeriesEntryPage["series"]["categories"],
+  categoryId: string,
+): boolean {
+  const category = categories.find((c) => c.id === categoryId);
+  return (
+    !!category &&
+    category.parentId === null &&
+    category.title.trim().toLowerCase() === "explore"
+  );
 }
 
 // Batch 1 (Progressive Loading, xem comment o SeriesEntryPage duoi) -
@@ -59,7 +69,7 @@ async function EntryHeader({
   const { series, entry, totalCount, next } = data;
   const positionIndex = entry.orderIndex + 1;
   const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
-  const isMapRoot = isMapRootEntry(entry.slug);
+  const isExploreTopLevel = isExploreTopLevelEntry(series.categories, entry.categoryId);
 
   return (
     <FadeIn>
@@ -156,11 +166,12 @@ async function EntryHeader({
           "Profile/Cập nhật bài viết/Cập nhật Series" khi bam vao avatar+ten
           tac gia (thay the cum nut doc EntryAuthorRail cu, da bo - yeu cau
           nguoi dung: "Bỏ cái cục này đi").
-          [2026-09-16] AN cho RIENG entry "map" (trang goc cua Series) - yeu
-          cau nguoi dung: "Chỉ riêng cái Map gốc là không có thôi. Còn các bài
-          viết khác thì đều có" (xem isMapRootEntry o dau file + ghi chu trong
+          [2026-09-16] AN cho MOI entry o cap dau tien cua Explore (Map,
+          Skills...) - yeu cau nguoi dung: "Tất cả mấy cái ngay cấp đầu tiên
+          của Explore thì đều không tính là bài viết kiểu kia" (xem
+          isExploreTopLevelEntry o dau file + ghi chu trong
           docs/ai-hero-design-tokens.md). */}
-      {!isMapRoot && (
+      {!isExploreTopLevel && (
         <EntryPageActionsRow
           authorName={series.authorName}
           authorAvatarUrl={series.authorAvatarUrl}
@@ -322,9 +333,10 @@ async function EntryNextBanner({
   const data = await dataPromise;
   if (!data) notFound();
   const { series, entry, next } = data;
-  // "map" (trang goc) khong hien banner "bai tiep theo" - cung ly do/yeu cau
-  // voi EntryPageActionsRow o EntryHeader (xem isMapRootEntry dau file).
-  if (!next || isMapRootEntry(entry.slug)) return null;
+  // Entry o cap dau tien cua Explore (Map, Skills...) khong hien banner "bai
+  // tiep theo" - cung ly do/yeu cau voi EntryPageActionsRow o EntryHeader
+  // (xem isExploreTopLevelEntry dau file).
+  if (!next || isExploreTopLevelEntry(series.categories, entry.categoryId)) return null;
   const categoryTitle =
     series.categories.find((c) => c.id === next.categoryId)?.title ?? null;
 

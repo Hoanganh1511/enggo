@@ -103,21 +103,29 @@ Khi nhận yêu cầu kiểu "sửa trang đọc bài" mà không rõ loại nà
 vì đoán - 2 cây component không dùng chung bất kỳ file style nào ngoài
 `globals.css` gốc.
 
-## Entry "map" (trang gốc Series) không phải "bài viết nội dung" (2026-09-16)
+## Entry ở cấp đầu tiên của Explore không phải "bài viết nội dung" (2026-09-16)
 
-CHỈ RIÊNG entry gốc slug cố định **"map"** (trang giới thiệu/điều hướng gốc
-của 1 Series, xem `The Map: ...`) là KHÔNG hiện 2 cụm UI:
+Entry nằm **TRỰC TIẾP** dưới category gốc tên "Explore" (depth 0, tức
+`category.parentId === null`) - hiện tại là **"Map"** và **"Skills"** - là
+KHÔNG hiện 2 cụm UI:
 - `EntryPageActionsRow` (author+Follow, Copy page/Share/Next page) ở cuối
   phần đầu bài.
 - `SeriesNextEntryBanner` (banner full-width "bài tiếp theo" ở cuối trang).
 
-Xem `isMapRootEntry()` trong `[entrySlug]/page.tsx`.
+Xem `isExploreTopLevelEntry()` trong `[entrySlug]/page.tsx` - so khớp qua
+`category.parentId === null && category.title.toLowerCase() === "explore"`,
+KHÔNG so theo `entry.slug` cụ thể (tự động đúng nếu sau này thêm/đổi tên entry
+gắn trực tiếp vào Explore).
 
-**Lưu ý quan trọng**: ban đầu hiểu nhầm là CẢ nhánh category gốc "Explore"
-(Map, Skills, Discover/Architecture Map/AWS Services/Hands-on Labs...) đều bị
-ẩn - SAI. Người dùng đã sửa lại (2026-09-16): "Chỉ riêng cái Map gốc là không
-có thôi. Còn các bài viết khác thì đều có" - kể cả các entry khác NẰM TRONG
-Explore (Skills, Architecture Map...) vẫn là bài viết bình thường, vẫn hiện
-đầy đủ 2 cụm trên như mọi entry khác trong Series. Đừng dùng lại logic
-"thuộc nhánh Explore" cho quyết định ẩn/hiện - chỉ so sánh đúng `entry.slug
-=== "map"`.
+Entry nằm trong 1 category CON lồng bên trong Explore (vd "Discover" ->
+Architecture Map/AWS Services/Hands-on Labs) KHÔNG tính vào diện này - đó vẫn
+là bài viết bình thường, vẫn hiện đầy đủ 2 cụm trên.
+
+**Lịch sử hiểu sai/sửa lại nhiều lần (đọc kỹ trước khi đổi lại)**:
+1. Lần 1: tưởng CẢ nhánh Explore (mọi entry, kể cả trong Discover) đều ẩn -
+   SAI, người dùng sửa: "Chỉ riêng cái Map gốc là không có thôi."
+2. Lần 2: thu hẹp về CHỈ riêng entry slug "map" - THIẾU, người dùng bổ sung:
+   "Tất cả mấy cái ngay cấp đầu tiên của Explore thì đều không tính là bài
+   viết kiểu kia" (tức còn cả "Skills" nữa, không chỉ "map").
+3. Phạm vi ĐÚNG (chốt): entry gắn TRỰC TIẾP vào category Explore (cấp 1) -
+   không phải toàn nhánh, không phải chỉ 1 entry "map".
