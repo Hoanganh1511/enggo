@@ -373,8 +373,12 @@ export default async function SeriesEntryPage({
           chieu rong ca article LAN aside) - truoc day nam TRONG <article>
           nen TOC/aside ben phai bat dau ngay tu dinh trang (ngang hang
           breadcrumb), khong khop vi tri bat dau THAT cua than bai (nguoi
-          dung bao loi). KHONG con my-6 (xem pb-6/pt-6 o 2 khoi tiep giap). */}
-      <hr className="border-border" />
+          dung bao loi). KHONG con my-6 (xem pb-6/pt-6 o 2 khoi tiep giap).
+          -mx-6 lg:-mx-10 them vao - khop DUNG bleed cua cac <hr> trong than
+          bai (xem EntryBody, "[&_hr]:-mx-6 lg:[&_hr]:-mx-10") - truoc do
+          hr nay CHUA bleed nen ngan hon han cac hr phia duoi, nhin "khác
+          riêng" (yeu cau nguoi dung). */}
+      <hr className="-mx-6 border-border lg:-mx-10" />
 
       {/* gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
           khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
