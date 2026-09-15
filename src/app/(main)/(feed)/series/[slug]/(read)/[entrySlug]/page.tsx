@@ -394,7 +394,7 @@ export default async function SeriesEntryPage({
           khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
           cha se thanh khoang cach thua qua muc. pt-6 - khoang cach SAU hr
           (xem comment pb-6 o tren). */}
-      <div className="flex gap-6 pt-6">
+      <div className="flex gap-6">
         {/* Boc article + EntryNextBanner CHUNG 1 cot (flex-1) - yeu cau
             nguoi dung: banner "Next" truoc day la sibling NGOAI ca hang
             flex nay nen tran qua CA cot TOC ben phai ("nó vào đến hết phần
@@ -403,7 +403,7 @@ export default async function SeriesEntryPage({
             cua <aside>) nen tu dong DUNG DUNG o mep phai cua article, KHONG
             lan qua khoang gap-6 + <aside> nua. */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <article className="min-w-0">
+          <article className="min-w-0 border-r border-border">
             <Suspense
               fallback={
                 <FadeIn delay={0.12}>
@@ -444,7 +444,7 @@ export default async function SeriesEntryPage({
             duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
             vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
             trang nua) roi dinh lai o do khi cuon xuong. */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 border-l border-border pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6  pl-8 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
