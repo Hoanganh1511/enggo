@@ -8,8 +8,14 @@ import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/pop
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import type { ContentSeriesEntrySummary } from "@/lib/api/content-series";
 
+// [2026-09-15] Tang size + dam chu (h-8 -> h-9, px-3 -> px-3.5, 12.5px ->
+// 13px, font-medium -> font-semibold, text-ink-muted -> text-ink) - yeu cau
+// nguoi dung sau khi so sanh voi anh mau: "Nút chưa to, chưa đậm nội dung
+// như bên kia" (ban dau lam nhat/nho hon EntryDownloadButtons ben canh cho
+// "phu", nhung day la hang HANH DONG chinh cuoi cum dau bai nen can noi bat
+// hon).
 const buttonClass =
-  "flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-[12.5px] font-medium text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink";
+  "flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3.5 text-[13px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg";
 
 // Cum hang cuoi CUNG cua phan dau bai (truoc khi xuong than bai) - yeu cau
 // nguoi dung, khop anh mau tham khao (trang skill cua Matt Pocock): trai la
@@ -62,7 +68,7 @@ export function EntryPageActionsRow({
         <button
           type="button"
           onClick={() => toast.info("Tính năng Follow sắp ra mắt")}
-          className="flex h-7 shrink-0 cursor-pointer items-center rounded-md border border-border px-2.5 text-[12.5px] font-medium text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          className="flex h-9 shrink-0 cursor-pointer items-center rounded-md border border-border px-3.5 text-[13px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
         >
           Follow
         </button>
@@ -70,14 +76,14 @@ export function EntryPageActionsRow({
 
       <div className="flex shrink-0 items-center gap-2">
         <button type="button" onClick={handleCopyPage} className={buttonClass}>
-          <Copy size={13} strokeWidth={2} aria-hidden="true" />
+          <Copy size={14} strokeWidth={2} aria-hidden="true" />
           Copy page
         </button>
 
         <PopoverRoot open={shareOpen} onOpenChange={setShareOpen}>
           <PopoverTrigger asChild>
             <button type="button" className={buttonClass}>
-              <Share2 size={13} strokeWidth={2} aria-hidden="true" />
+              <Share2 size={14} strokeWidth={2} aria-hidden="true" />
               Share
             </button>
           </PopoverTrigger>
@@ -94,7 +100,7 @@ export function EntryPageActionsRow({
         {next && (
           <Link href={`/series/${seriesSlug}/${next.slug}`} className={buttonClass}>
             Next page
-            <ArrowRight size={13} strokeWidth={2} aria-hidden="true" />
+            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
           </Link>
         )}
       </div>
