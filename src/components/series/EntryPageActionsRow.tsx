@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Copy, Share2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { ArrowRight, Copy, FileEdit, Layers, Share2, User } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import {
   PopoverRoot,
@@ -25,10 +26,20 @@ const buttonClass =
 // nguoi dung, khop anh mau tham khao (trang skill cua Matt Pocock): trai la
 // tac gia + Follow, phai la Copy page/Share/Next page. Tac gia lay tu
 // Series.authorName/authorAvatarUrl (Series KHONG co FK toi 1 User cu the,
-// chi la CHUOI TEXT tu do - xem EntryAuthorRail) nen "Follow" O DAY CHUA gan
-// logic that (chua co he thong follow tac gia rieng cho Series) - CHI la UI,
-// bam vao hien toast "sắp ra mắt" (yeu cau nguoi dung: "Sửa thành Follow đi",
-// khong yeu cau gan chuc nang that).
+// chi la CHUOI TEXT tu do) nen "Follow" O DAY CHUA gan logic that (chua co he
+// thong follow tac gia rieng cho Series) - CHI la UI, bam vao hien toast
+// "sắp ra mắt" (yeu cau nguoi dung: "Sửa thành Follow đi", khong yeu cau gan
+// chuc nang that).
+//
+// [2026-09-15] Bam vao avatar+ten tac gia (CHI admin) mo 1 POPOVER Profile/
+// Cập nhật bài viết/Cập nhật Series - thay the han cum nut doc rieng
+// EntryAuthorRail cu (fixed canh phai man hinh, xem lich su [entrySlug]/
+// page.tsx) theo yeu cau nguoi dung: "Bỏ cái cục này đi... khi click vào
+// phần avatar và tên tác giả... sẽ hiện ra một popover". "Profile" dan toi
+// TRANG CA NHAN cua CHINH nguoi dang xem (session.username qua useSession) -
+// admin gan voi quyen he thong (isAdmin), KHONG phai 1 User cu the gan voi
+// Series (Series khong co FK) nen "Profile" o day la profile cua NGUOI DANG
+// THAO TAC, khong phai cua "tác giả" hien thi.
 export function EntryPageActionsRow({
   authorName,
   authorAvatarUrl,
@@ -38,6 +49,8 @@ export function EntryPageActionsRow({
   shareTitle,
   next,
   seriesSlug,
+  entrySlug,
+  isAdmin,
 }: {
   authorName: string;
   authorAvatarUrl: string | null;
@@ -47,8 +60,13 @@ export function EntryPageActionsRow({
   shareTitle: string;
   next: ContentSeriesEntrySummary | null;
   seriesSlug: string;
+  entrySlug: string;
+  isAdmin: boolean;
 }) {
   const [shareOpen, setShareOpen] = useState(false);
+  const [authorMenuOpen, setAuthorMenuOpen] = useState(false);
+  const { data: session } = useSession();
+  const username = session?.username;
 
   function handleCopyPage() {
     navigator.clipboard
@@ -60,21 +78,67 @@ export function EntryPageActionsRow({
   return (
     <div className="font-content mt-4 flex flex-wrap items-center justify-between gap-3 pt-4">
       <div className="flex min-w-0 items-center gap-2.5">
-        {authorAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- avatar nho, khong can toi uu Next/Image
-          <img
-            src={authorAvatarUrl}
-            alt=""
-            className="size-7 shrink-0 rounded-full object-cover"
-          />
+        {isAdmin ? (
+          // Popover "Profile/Cập nhật bài viết/Cập nhật Series" - thay the
+          // cum nut doc rieng EntryAuthorRail cu (yeu cau nguoi dung: "Bỏ
+          // cái cục này đi... Giờ khi click vào phần avatar và tên tác giả
+          // ... sẽ hiện ra một popover"). CHI hien cho admin (author o day
+          // anh xa theo quyen admin, xem comment dau file) - nguoi xem
+          // thuong chi thay avatar+ten TINH, khong bam duoc.
+          <PopoverRoot open={authorMenuOpen} onOpenChange={setAuthorMenuOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex min-w-0 cursor-pointer items-center gap-2.5 rounded-md py-1 pr-2 transition-colors duration-150 ease-out hover:bg-hover-bg"
+              >
+                <AuthorAvatar authorName={authorName} authorAvatarUrl={authorAvatarUrl} />
+                <span className="truncate text-[13px] font-medium text-ink">
+                  {authorName}
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              open={authorMenuOpen}
+              align="start"
+              sideOffset={6}
+              className="z-50 w-48 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+            >
+              {username && (
+                <Link
+                  href={`/u/${username}`}
+                  onClick={() => setAuthorMenuOpen(false)}
+                  className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+                >
+                  <User size={14} strokeWidth={2} aria-hidden="true" />
+                  Profile
+                </Link>
+              )}
+              <Link
+                href={`/series/${seriesSlug}/manage/entries/${entrySlug}`}
+                onClick={() => setAuthorMenuOpen(false)}
+                className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+              >
+                <FileEdit size={14} strokeWidth={2} aria-hidden="true" />
+                Cập nhật bài viết
+              </Link>
+              <Link
+                href={`/series/${seriesSlug}/manage`}
+                onClick={() => setAuthorMenuOpen(false)}
+                className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+              >
+                <Layers size={14} strokeWidth={2} aria-hidden="true" />
+                Cập nhật Series
+              </Link>
+            </PopoverContent>
+          </PopoverRoot>
         ) : (
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[12px] font-semibold text-ink-muted">
-            {authorName.trim().charAt(0).toUpperCase() || "?"}
-          </span>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <AuthorAvatar authorName={authorName} authorAvatarUrl={authorAvatarUrl} />
+            <span className="truncate text-[13px] font-medium text-ink">
+              {authorName}
+            </span>
+          </div>
         )}
-        <span className="truncate text-[13px] font-medium text-ink">
-          {authorName}
-        </span>
         <button
           type="button"
           onClick={() => toast.info("Tính năng Follow sắp ra mắt")}
@@ -122,5 +186,29 @@ export function EntryPageActionsRow({
         )}
       </div>
     </div>
+  );
+}
+
+function AuthorAvatar({
+  authorName,
+  authorAvatarUrl,
+}: {
+  authorName: string;
+  authorAvatarUrl: string | null;
+}) {
+  if (authorAvatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- avatar nho, khong can toi uu Next/Image
+      <img
+        src={authorAvatarUrl}
+        alt=""
+        className="size-7 shrink-0 rounded-full object-cover"
+      />
+    );
+  }
+  return (
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[12px] font-semibold text-ink-muted">
+      {authorName.trim().charAt(0).toUpperCase() || "?"}
+    </span>
   );
 }
