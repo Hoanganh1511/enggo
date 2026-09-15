@@ -179,8 +179,13 @@ const TopHeaderBar = () => {
   return (
     <header
       className={cn(
-        "flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 transition-opacity duration-300 sm:gap-4 sm:px-5",
-        cinemaModeActive && "opacity-25",
+        // [2026-09-15] brightness (khong con opacity) - yeu cau nguoi dung:
+        // "Cinematic mode thì tắt đèn xung quanh phải cho màu tối chứ" -
+        // opacity lam mo TIEN VE nen trang cua trang (--FAFBFC), nhin "nhat
+        // di" chu khong "toi di". filter:brightness() giam sang THAT (toi
+        // han xuong den), dung tinh than "tắt đèn" hon.
+        "flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 transition-[filter] duration-300 sm:gap-4 sm:px-5",
+        cinemaModeActive && "brightness-[0.35]",
       )}
     >
       {/* Cum trai: hamburger (mobile) + logo + nav ngang - dua nav VE SAT

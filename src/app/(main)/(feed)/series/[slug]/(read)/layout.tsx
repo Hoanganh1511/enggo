@@ -78,7 +78,17 @@ export default async function SeriesLayout({
       <SeriesFocusRow>
         <SeriesFocusSidebar>
           <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
-            <div className="sticky top-0 p-[18px]">
+            {/* [2026-09-15] Them scroll RIENG cho sidebar - yeu cau nguoi
+                dung: "Thêm scroll vào phần sidebar seri nữa. Nhưng không
+                hiện UI, cho ẩn đi" (cay category/entry gio da rat dai sau
+                khi nhap cau truc AWS SAA-C03 day du, sticky top-0 truoc do
+                KHONG tu tao vung cuon rieng - se bi tran qua viewport, chu
+                muc phia duoi khong an dinh duoc). max-h gioi han dung phan
+                con lai duoi header (100vh - header-height) + overflow-y-auto
+                de TU no co thanh cuon, .scrollbar-none (da co san trong
+                globals.css, dung cho HorizontalScroller.tsx) de AN thanh
+                cuon THI GIAC ma van cuon duoc binh thuong bang chuot/touch. */}
+            <div className="scrollbar-none sticky top-0 max-h-[calc(100vh-var(--header-height))] overflow-y-auto p-[18px]">
               {/* Link "Tất cả series" + nut gear Quan ly - DA BO (yeu cau
                   nguoi dung: "Tất cả series và nút settings không cho hiện ở
                   đây nữa"). Duong ve series LIST gio nam trong breadcrumb

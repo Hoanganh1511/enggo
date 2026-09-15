@@ -197,17 +197,20 @@ export function HomeDashboardSidebar() {
   // danh cho no (xem FeedMainArea.tsx).
   const focusModeActive = useFocusModeStore((s) => s.active);
   // Cinema mode (xem cinema-mode-store.ts) - yeu cau nguoi dung: "Khi bật sẽ
-  // tắt đèn xung quanh ở các vùng: Sidebar chính, header". Chi LAM MO
-  // (opacity), khong an han nhu Focus mode - tu tat khi roi /series da xu ly
-  // TAP TRUNG trong TopHeaderBar.tsx, o day chi can DOC state.
+  // tắt đèn xung quanh ở các vùng: Sidebar chính, header". Chi LAM TOI
+  // (filter brightness, KHONG dung opacity - yeu cau nguoi dung: "Cinematic
+  // mode thì tắt đèn xung quanh phải cho màu tối chứ", opacity lam nhat di
+  // ve phia nen trang cua trang, khong "tối đi" nhu tat den THAT), khong an
+  // han nhu Focus mode - tu tat khi roi /series da xu ly TAP TRUNG trong
+  // TopHeaderBar.tsx, o day chi can DOC state.
   const cinemaModeActive = useCinemaModeStore((s) => s.active);
   if (focusModeActive) return null;
 
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] px-5 py-6 transition-opacity duration-300 lg:flex lg:flex-col",
-        cinemaModeActive && "opacity-25",
+        "fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] px-5 py-6 transition-[filter] duration-300 lg:flex lg:flex-col",
+        cinemaModeActive && "brightness-[0.35]",
       )}
     >
       <SidebarBody pathname={pathname} displayName={displayName} />
