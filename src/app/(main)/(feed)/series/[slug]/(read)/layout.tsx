@@ -3,6 +3,7 @@ import { getContentSeriesOverviewAction } from "@/actions/discover/content-serie
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
 import { SeriesFocusSidebar } from "@/components/series/SeriesFocusSidebar";
 import { SeriesFocusRow } from "@/components/series/SeriesFocusRow";
+import { SeriesFocusContent } from "@/components/series/SeriesFocusContent";
 import { SeriesSidebarCollapseButton } from "@/components/series/SeriesSidebarCollapseButton";
 import {
   SeriesMobileTopBar,
@@ -105,7 +106,7 @@ export default async function SeriesLayout({
           </aside>
         </SeriesFocusSidebar>
 
-        <div className="min-w-0 flex-1 p-6 lg:p-10">{children}</div>
+        <SeriesFocusContent>{children}</SeriesFocusContent>
       </SeriesFocusRow>
     </>
   );
