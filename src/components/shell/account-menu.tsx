@@ -94,7 +94,7 @@ const AccountMenu = ({ user }: { user?: AccountUser | null }) => {
               (bam vao van mo popover day du binh thuong qua PopoverTrigger,
               khong mat chuc nang gi), tranh cum tai khoan chiem qua nhieu
               cho tren header hep. */}
-          <span className="hidden max-w-32 truncate text-sm font-medium text-ink sm:inline">
+          <span className="hidden max-w-32 truncate text-sm text-ink sm:inline">
             {user.name ?? "Người dùng"}
           </span>
           <ChevronDown
