@@ -49,8 +49,16 @@
      truoc, lan doi mau nay khong dong den). --success/--warning/--danger/
      --notification (xanh/vang/do) CUNG giu nguyen - la mau ngu nghia
      (thanh cong/canh bao/loi), doi sang xam se lam mat kha nang phan biet
-     trang thai chi qua mau, khong phai "mau chu dao" trang tri. */
-  --background: #fbfbfd;
+     trang thai chi qua mau, khong phai "mau chu dao" trang tri.
+     [2026-09-15] #fbfbfd -> #ffffff (trang tinh) - yeu cau nguoi dung:
+     "đổi hẳn cái màu nền của web sang màu trắng" - #fbfbfd (gan trang
+     nhung khac --surface #ffffff mot chut) tao ra 1 duong seam/rift MAU
+     THAY DOI ro ret khi cuon trong Focus mode moi (SeriesFocusRow.tsx,
+     bg-background phu ca vung fixed, cac card/block ben trong dung
+     bg-surface), do lech mau qua nho de nhan ra o layout binh thuong
+     nhung lo ro trong 1 khung fixed lien tuc. Dong nhat ve 1 mau trang
+     duy nhat loai bo han seam do. */
+  --background: #ffffff;
   --background-secondary: #f4f4f5;
   --foreground: #171717;
   --active: var(--primary);
@@ -243,7 +251,7 @@
      toàn web màu này: #FBFBFD" - CHI doi rieng token nen nay o day, cac
      token khac (--foreground/--border/--primary...) van giu tach biet co
      chu dich voi phan con lai cua app (xem comment file nay). */
-  --background: #fbfbfd;
+  --background: #ffffff;
   --surface: #ffffff;
   --surface-subtle: #f7f7f5;
   --foreground: #172033;
