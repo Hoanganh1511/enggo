@@ -16,6 +16,7 @@ import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
 import { SeriesEntryContentBlocks } from "@/components/series/SeriesEntryContentBlocks";
+import { EntryPageActionsRow } from "@/components/series/EntryPageActionsRow";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
   EntryHeaderSkeleton,
@@ -40,8 +41,9 @@ async function EntryHeader({
 }) {
   const data = await dataPromise;
   if (!data) notFound();
-  const { series, entry, totalCount } = data;
+  const { series, entry, totalCount, next } = data;
   const positionIndex = entry.orderIndex + 1;
+  const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
 
   return (
     <FadeIn>
@@ -116,6 +118,20 @@ async function EntryHeader({
           {entry.source}
         </span>
       )}
+
+      {/* Hang cuoi cung cua cum dau bai, NGAY TRUOC khi xuong than bai - yeu
+          cau nguoi dung (khop anh mau tham khao): tac gia + Follow (trai),
+          Copy page/Share/Next page (phai). */}
+      <EntryPageActionsRow
+        authorName={series.authorName}
+        authorAvatarUrl={series.authorAvatarUrl}
+        contentMarkdown={entry.contentMarkdown}
+        shareChannels={series.shareChannels}
+        shareUrl={entryUrl}
+        shareTitle={entry.title}
+        next={next}
+        seriesSlug={slug}
+      />
     </FadeIn>
   );
 }
