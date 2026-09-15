@@ -124,17 +124,19 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
 
   return (
     <FadeIn>
-      {/* [&_hr]:-mx-6 lg:[&_hr]:-mx-10 - CHI rieng <hr> (duong ke ngang tach
-          section trong markdown) duoc BLEED tran het chieu rong panel noi
-          dung that su (huy dung -mx6/lg:-mx-10 khop CHINH XAC voi
-          p-6/lg:p-10 cua the cha o layout.tsx: "min-w-0 flex-1 bg-surface
-          p-6 lg:p-10") - text/heading/paragraph khac VAN giu padding binh
-          thuong, KHONG bi anh huong (chi hr moi co margin am nay). Yeu cau
-          nguoi dung: "những cái line ngang này dài full ra... tới nội dung
-          nó vẫn sẽ lại được padding như cũ". Dat o DAY (rieng cho Entry
-          body, khong sua DOCS_PROSE_CLASS dung chung) de KHONG anh huong
-          /docs hay khoi FAQ ben duoi (boi canh padding khac). */}
-      <div id={ENTRY_CONTENT_ID} className="mt-6 [&_hr]:-mx-6 lg:[&_hr]:-mx-10">
+      {/* [&_hr]:-ml-6 lg:[&_hr]:-ml-10 - CHI BEN TRAI (KHONG con -mr, xem
+          sua loi ben duoi). <hr> nay nam TRONG <article> (flex-1, khong co
+          padding rieng) - o day CHI can huy padding-left cua panel to (layout.tsx
+          "p-6 lg:p-10") vi KHONG co gi chen VAO GIUA hr va mep TRAI panel
+          do (article/flex-col wrapper/flex row/pb-20 deu 0 padding trai).
+          Nhung BEN PHAI thi KHAC: giua hr va mep phai panel co CA <aside>
+          (w-64) + gap-6 chen vao - dung LAI -mr-10 se keo hr LEN QUA khoang
+          gap+aside do, tran ra ngoai/de len duong ke doc phan cach TOC (bug
+          nguoi dung bao: "line ngang trong bài còn chờm ra ngoài", "Line
+          thẳng bên phải không kéo hết"). Ben phai KHONG can bleed gi ca -
+          <article> (flex-1, khong padding) da tu nhien cho hr rong DUNG BANG
+          chinh no, dung la "full" trong pham vi cot bai viet roi. */}
+      <div id={ENTRY_CONTENT_ID} className="mt-6 [&_hr]:-ml-6 lg:[&_hr]:-ml-10">
         <DocsMarkdown markdown={entry.contentMarkdown} />
       </div>
 

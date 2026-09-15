@@ -25,8 +25,11 @@ export default async function SeriesManagePage({
 
   return (
     <div className="w-full pb-20">
+      {/* /map (khong phai bare /series/{slug}) - dong bo voi moi noi khac
+          da tro toi Series (yeu cau nguoi dung: "về nguyên seri thì phải có
+          /map chứ?" - cho nay bi sot lai lan truoc). */}
       <Link
-        href={`/series/${slug}`}
+        href={`/series/${slug}/map`}
         className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
       >
         <ArrowLeft size={13} />
