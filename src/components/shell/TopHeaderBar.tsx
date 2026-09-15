@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 import { Bell, Menu, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
-import { useCinemaModeStore } from "@/stores/cinema-mode-store";
 import { cn } from "@/lib/utils";
 import {
   PopoverRoot,
@@ -146,48 +145,19 @@ const TopHeaderBar = () => {
         : String(unreadCount)
       : undefined;
 
-  // Focus mode (doc Entry trong Series) - an header hoan toan. Tu tat khi
-  // dieu huong ra khoi /series (khong lam nguoi dung "mac ket" focus mode o
-  // trang khac). Dat SAU moi hook khac phia tren (khong return null truoc do)
-  // de socket/badge/unread-count van chay binh thuong ngam ben duoi, chi UI
-  // header la an di.
-  const focusModeActive = useFocusModeStore((s) => s.active);
+  // [2026-09-15] Focus mode KHONG con an header nua ("Kết hợp Cinema Mode
+  // vào Focus mode" - yeu cau nguoi dung, mo ta lai toan bo hanh vi: header/
+  // sidebar chinh giu nguyen HIEN THI BINH THUONG, "tối đi" duoc tao boi 1
+  // lop backdrop toi PHU LEN TREN chung tu ben ngoai, xem
+  // SeriesFocusBackdrop.tsx - khong phai tu header/sidebar tu lam mo minh).
+  // Van giu effect tu tat Focus mode khi roi /series (tranh "mắc kẹt").
   const setFocusModeActive = useFocusModeStore((s) => s.setActive);
   useEffect(() => {
     if (!pathname.startsWith("/series")) setFocusModeActive(false);
   }, [pathname, setFocusModeActive]);
 
-  // Cinema mode (doc Entry trong Series) - yeu cau nguoi dung: "Khi bật sẽ
-  // tắt đèn xung quanh ở các vùng: Sidebar chính, header". KHAC Focus mode
-  // (an han header) - Cinema mode chi LAM MO header (opacity), van nhin thay
-  // lo mo/con tuong tac duoc, giong hieu ung tat den phong chieu. Tu tat khi
-  // roi khoi /series, cung tinh than voi Focus mode o tren. CA 2 hook nay
-  // phai dat TRUOC `if (focusModeActive) return null` ben duoi (rules of
-  // hooks - khong duoc goi hook sau 1 early return co dieu kien).
-  const cinemaModeActive = useCinemaModeStore((s) => s.active);
-  const setCinemaModeActive = useCinemaModeStore((s) => s.toggle);
-  useEffect(() => {
-    if (!pathname.startsWith("/series")) {
-      // Tat "im lang" (khong dispatch neu dang da tat san) - tranh 1
-      // toggle() thua lam active bat NGUOC lai khi effect nay chay lai.
-      if (useCinemaModeStore.getState().active) setCinemaModeActive();
-    }
-  }, [pathname, setCinemaModeActive]);
-
-  if (focusModeActive) return null;
-
   return (
-    <header
-      className={cn(
-        // [2026-09-15] brightness (khong con opacity) - yeu cau nguoi dung:
-        // "Cinematic mode thì tắt đèn xung quanh phải cho màu tối chứ" -
-        // opacity lam mo TIEN VE nen trang cua trang (--FAFBFC), nhin "nhat
-        // di" chu khong "toi di". filter:brightness() giam sang THAT (toi
-        // han xuong den), dung tinh than "tắt đèn" hon.
-        "flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 transition-[filter] duration-300 sm:gap-4 sm:px-5",
-        cinemaModeActive && "brightness-[0.35]",
-      )}
-    >
+    <header className="flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border bg-[#FAFBFC] px-3 sm:gap-4 sm:px-5">
       {/* Cum trai: hamburger (mobile) + logo + nav ngang - dua nav VE SAT
           logo (cach ra 1 khoang gap-6 vua phai) thay vi can giua man hinh
           nhu truoc (yeu cau nguoi dung: "dồn cụm ở giữa về phía bên trái

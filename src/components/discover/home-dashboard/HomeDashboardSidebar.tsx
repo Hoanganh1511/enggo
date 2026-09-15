@@ -20,8 +20,6 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
-import { useFocusModeStore } from "@/stores/focus-mode-store";
-import { useCinemaModeStore } from "@/stores/cinema-mode-store";
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -192,26 +190,14 @@ export function HomeDashboardSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const displayName = session?.user?.name ?? "Bạn";
-  // Focus mode (doc Entry trong Series, xem focus-mode-store.ts) - an han
-  // sidebar chinh cua app luon, cung voi TopHeaderBar.tsx + padding lg:pl-61
-  // danh cho no (xem FeedMainArea.tsx).
-  const focusModeActive = useFocusModeStore((s) => s.active);
-  // Cinema mode (xem cinema-mode-store.ts) - yeu cau nguoi dung: "Khi bật sẽ
-  // tắt đèn xung quanh ở các vùng: Sidebar chính, header". Chi LAM TOI
-  // (filter brightness, KHONG dung opacity - yeu cau nguoi dung: "Cinematic
-  // mode thì tắt đèn xung quanh phải cho màu tối chứ", opacity lam nhat di
-  // ve phia nen trang cua trang, khong "tối đi" nhu tat den THAT), khong an
-  // han nhu Focus mode - tu tat khi roi /series da xu ly TAP TRUNG trong
-  // TopHeaderBar.tsx, o day chi can DOC state.
-  const cinemaModeActive = useCinemaModeStore((s) => s.active);
-  if (focusModeActive) return null;
+  // [2026-09-15] Focus mode KHONG con an sidebar nay nua ("Kết hợp Cinema
+  // Mode vào Focus mode" - yeu cau nguoi dung) - sidebar chinh gio LUON hien
+  // binh thuong, "tối đi" duoc tao boi 1 lop backdrop toi PHU LEN TREN tu
+  // ben ngoai (xem SeriesFocusBackdrop.tsx), khong phai tu no tu lam mo minh.
 
   return (
     <aside
-      className={cn(
-        "fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] px-5 py-6 transition-[filter] duration-300 lg:flex lg:flex-col",
-        cinemaModeActive && "brightness-[0.35]",
-      )}
+      className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] px-5 py-6 lg:flex lg:flex-col"
     >
       <SidebarBody pathname={pathname} displayName={displayName} />
     </aside>

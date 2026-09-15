@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
-import { useCinemaModeStore } from "@/stores/cinema-mode-store";
 
 // Id cua khoi noi dung THAT (DocsMarkdown render trong EntryBody, xem
 // page.tsx) - PDF can chup DOM node nay (html2canvas), Markdown thi da co san
@@ -49,8 +49,6 @@ export function EntryDownloadButtons({
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const focusModeActive = useFocusModeStore((s) => s.active);
   const toggleFocusMode = useFocusModeStore((s) => s.toggle);
-  const cinemaModeActive = useCinemaModeStore((s) => s.active);
-  const toggleCinemaMode = useCinemaModeStore((s) => s.toggle);
 
   function handleDownloadMarkdown() {
     const blob = new Blob([contentMarkdown], { type: "text/markdown;charset=utf-8" });
@@ -124,52 +122,37 @@ export function EntryDownloadButtons({
           dung 1 accent duy nhat rgb(245,196,81) cho moi trang thai active/
           nut chinh - doi tu #8F3F4D theo yeu cau nguoi dung, xem
           RecentPostsMenu.tsx/TopHeaderBar.tsx "Viết bài"). Kich thuoc nho
-          gon hon (h-5 w-9) khop voi 2 nut Tai PDF/Markdown ben canh. */}
+          gon hon (h-5 w-9) khop voi 2 nut Tai PDF/Markdown ben canh.
+          [2026-09-15] Nut tron dung motion.span + `layout` + spring (khong
+          con CSS transition-transform tay) - yeu cau nguoi dung: "ở motion
+          dev họ dùng animation nào cho switch có UX tốt, nhẹ nhàng, thú vị
+          thì áp dụng luôn" - dung dung "cong thuc" toggle switch kinh dien
+          cua Framer Motion (motion.dev): `layout` de tu FLIP vi tri MOI moi
+          lan doi trang thai (khong can tinh tay translate-x), spring
+          stiffness cao + damping vua de nay nhe mot chut roi dung lai (cam
+          giac "tactile" hon ease-out phang). whileTap tren CA nut (khong
+          chi tren knob) de nen xuong hoi "bop" lai luc bam, nha ra luc tha -
+          phan hoi xuc giac ro rang hon 1 nut tinh khong phan hoi gi luc bam. */}
       <label className="ml-1 flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-muted select-none">
-        <button
+        <motion.button
           type="button"
           role="switch"
           aria-checked={focusModeActive}
           aria-label="Focus mode"
           onClick={toggleFocusMode}
-          className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ease-out ${
+          whileTap={{ scale: 0.9 }}
+          className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-out ${
             focusModeActive ? "bg-accent-gold" : "bg-ink-disabled"
           }`}
         >
-          <span
-            className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform duration-150 ease-out ${
-              focusModeActive ? "translate-x-4" : "translate-x-0"
-            }`}
+          <motion.span
+            layout
+            transition={{ type: "spring", stiffness: 700, damping: 30 }}
+            className="absolute top-0.5 size-4 rounded-full bg-white"
+            style={{ left: focusModeActive ? "calc(100% - 18px)" : "2px" }}
           />
-        </button>
+        </motion.button>
         Focus mode
-      </label>
-
-      {/* [2026-09-15] Cinema mode - yeu cau nguoi dung: "Bổ sung thêm một
-          switcher nữa là Cinema mode. Khi bật sẽ tắt đèn xung quanh ở các
-          vùng: Sidebar chính, header". Cung kieu dang switch voi Focus mode
-          o tren (dong bo 1 accent gold duy nhat) - KHAC ve hanh vi: Focus
-          mode AN HAN header/sidebar chinh, Cinema mode chi LAM MO (opacity,
-          xem TopHeaderBar.tsx/HomeDashboardSidebar.tsx), van con nhin thay
-          lo mo/tuong tac duoc. */}
-      <label className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-muted select-none">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={cinemaModeActive}
-          aria-label="Cinema mode"
-          onClick={toggleCinemaMode}
-          className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ease-out ${
-            cinemaModeActive ? "bg-accent-gold" : "bg-ink-disabled"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform duration-150 ease-out ${
-              cinemaModeActive ? "translate-x-4" : "translate-x-0"
-            }`}
-          />
-        </button>
-        Cinema mode
       </label>
     </div>
   );
