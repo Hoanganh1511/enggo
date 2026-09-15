@@ -50,9 +50,23 @@ export function SeriesSkeleton({ className }: { className?: string }) {
 // cung 1 kieu fade+truot cho CA 2 phia tao cam giac lien tuc, muot ma - dung
 // tinh than "anim in, out mượt, nhẹ nhàng, rõ ý chuyển đổi" nguoi dung yeu
 // cau, trong gioi han thuc te cua RSC Suspense streaming.
+//
+// [2026-09-15] Them "layout" - trang Entry co NHIEU Suspense doc lap xep
+// CHONG (Header/Body/Toc/Extras/NextBanner...), moi khoi tu skeleton (chieu
+// cao CO DINH, gia dinh) doi sang noi dung that (chieu cao THAT, thuong khac
+// han, vd than bai markdown dai/ngan tuy Entry) - khi 1 khoi PHIA TREN doi
+// chieu cao, MOI khoi PHIA DUOI bi day/keo len xuong DOT NGOT (yeu cau nguoi
+// dung: "có cái hiện ra trên, xong cái khác hiện lên tiếp... xê dịch vị trí
+// ... chưa mượt"). "layout" bao framer-motion tu do lai vi tri MOI cua chinh
+// khoi nay moi khi 1 anh huong ben ngoai (vd sibling phia tren doi kich
+// thuoc) lam no dich chuyen, roi ANIMATE toi do (FLIP) thay vi nhay tuc thi -
+// ap dung DONG LOAT cho ca fallback skeleton LAN noi dung that (component
+// nay dung chung ca 2) nen ca lan skeleton MOI xuat hien LAN luc no bien mat
+// nhuong cho, LAN cac khoi khac bi anh huong deu tron tru nhu nhau.
 export function FadeIn({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
