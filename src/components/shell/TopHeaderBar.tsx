@@ -265,7 +265,7 @@ const TopHeaderBar = () => {
         <div className="ml-1 hidden items-stretch lg:flex">
           <Link
             href="/compose"
-            className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-l-sm bg-[rgb(245,196,81)] pr-3 pl-4 text-sm font-semibold text-ink transition-opacity duration-150 ease-out hover:opacity-90"
+            className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-l-sm bg-accent-gold pr-3 pl-4 text-sm font-semibold text-ink transition-opacity duration-150 ease-out hover:opacity-90"
           >
             <SquarePen size={15} strokeWidth={2} />
             Viết bài

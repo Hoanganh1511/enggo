@@ -11,6 +11,46 @@ export type ContentSeriesInstallTab = { label: string; command: string; note?: s
 export type ContentSeriesExternalLink = { label: string; url: string; icon?: string };
 export type ContentSeriesFaqItem = { question: string; answer: string };
 
+// "Campaign card" - cac field dieu khien hien thi the Series o /home (rail)
+// + /series (list), xem SeriesCampaignCard.tsx + tab "Thẻ hiển thị" trong
+// SeriesManageTabs.tsx (yeu cau nguoi dung: redesign the Series thanh dang
+// banner co anh/badge/CTA + CMS cau hinh rieng cho tung the). Dung CHUNG cho
+// ca ContentSeriesListItem (render the) LAN ContentSeriesOverview (form
+// sua) - 1 nguon du lieu duy nhat, khong lech kieu giua 2 noi.
+export type ContentSeriesActionStyle = "primary" | "secondary" | "text";
+export type ContentSeriesAction = {
+  id: string;
+  label: string;
+  url: string;
+  style: ContentSeriesActionStyle;
+  openInNewTab?: boolean;
+};
+export type ContentSeriesBadgeVariant = "info" | "success" | "warning" | "deadline" | "custom";
+export type ContentSeriesCardFields = {
+  // Anh cho CA hero trang tong quan LAN the campaign card (yeu cau nguoi
+  // dung 2026-09-15 - truoc day CHUA dung cho card, xem lich su comment o
+  // schema.prisma ContentSeries.coverImageUrl).
+  coverImageUrl: string | null;
+  // Thu tu hien thi tren /series (admin drag-reorder) - KHONG anh huong
+  // "Series mới nhất" o /home (van dua vao createdAt, xem findAll() backend).
+  orderIndex: number;
+  badgeText: string | null;
+  badgeVariant: ContentSeriesBadgeVariant;
+  badgeColor: string | null;
+  badgeTextColor: string | null;
+  deadlineAt: string | null;
+  imagePosition: "left" | "right";
+  imageWidthPercent: number;
+  imageFit: "cover" | "contain";
+  backgroundColor: string | null;
+  textTheme: "dark" | "light";
+  cardStyle: "default" | "soft" | "accent";
+  actions: ContentSeriesAction[];
+  showBadge: boolean;
+  showDeadline: boolean;
+  isVisible: boolean;
+};
+
 export type ContentSeriesListItem = {
   id: string;
   slug: string;
@@ -26,7 +66,7 @@ export type ContentSeriesListItem = {
   // NewestSeriesRail.tsx). Sap xep san theo orderIndex.
   categories: ContentSeriesCategory[];
   entries: ContentSeriesEntrySummary[];
-};
+} & ContentSeriesCardFields;
 
 export type ContentSeriesCategory = {
   id: string;
@@ -60,10 +100,6 @@ export type ContentSeriesOverview = {
   description: string;
   authorName: string;
   authorAvatarUrl: string | null;
-  // Anh nen hero cho trang tong quan Series - optional, CHUA dung o the rail
-  // "Series mới nhất"/danh sach /series (2 noi do co chu dich giu phang,
-  // xem NewestSeriesRail.tsx).
-  coverImageUrl: string | null;
   emailCourseEnabled: boolean;
   emailCourseTitle: string | null;
   emailCourseDescription: string | null;
@@ -75,7 +111,7 @@ export type ContentSeriesOverview = {
   entries: ContentSeriesEntrySummary[];
   createdAt: string;
   updatedAt: string;
-};
+} & ContentSeriesCardFields;
 
 export type ContentSeriesEntryDetail = {
   id: string;
@@ -138,6 +174,23 @@ export type ContentSeriesInput = {
   installTabs?: ContentSeriesInstallTab[];
   externalLinks?: ContentSeriesExternalLink[];
   shareChannels?: string[];
+  // --- "Campaign card" (xem comment ContentSeriesCardFields).
+  badgeText?: string;
+  badgeVariant?: ContentSeriesBadgeVariant;
+  badgeColor?: string;
+  badgeTextColor?: string;
+  // null = xoa deadline, undefined = khong doi, string (ISO) = dat moi.
+  deadlineAt?: string | null;
+  imagePosition?: "left" | "right";
+  imageWidthPercent?: number;
+  imageFit?: "cover" | "contain";
+  backgroundColor?: string;
+  textTheme?: "dark" | "light";
+  cardStyle?: "default" | "soft" | "accent";
+  actions?: ContentSeriesAction[];
+  showBadge?: boolean;
+  showDeadline?: boolean;
+  isVisible?: boolean;
 };
 
 export function createContentSeries(
@@ -146,6 +199,15 @@ export function createContentSeries(
   return apiFetch<ContentSeriesListItem>("/content-series", {
     method: "POST",
     body: JSON.stringify(input),
+  });
+}
+
+// Sap xep lai thu tu hien thi TOAN BO Series tren /series (drag-reorder,
+// admin - xem SeriesListPage), khong lien quan "Series mới nhất" o /home.
+export function reorderContentSeries(orderedIds: string[]): Promise<unknown> {
+  return apiFetch<unknown>("/content-series/reorder", {
+    method: "POST",
+    body: JSON.stringify({ orderedIds }),
   });
 }
 

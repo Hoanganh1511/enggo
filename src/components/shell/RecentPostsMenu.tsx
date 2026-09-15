@@ -151,7 +151,7 @@ export function RecentPostsMenu() {
           // (thay border-white/20 cu, vi nen gio SANG nen can duong ke TOI
           // hon moi thay ro) + text-ink (thay text-surface/trang, tuong
           // phan qua kem tren nen vang sang).
-          className="flex h-9 w-7 shrink-0 cursor-pointer items-center justify-center rounded-r-sm border-l border-black/15 bg-[rgb(245,196,81)] text-ink transition-opacity duration-150 ease-out hover:opacity-90"
+          className="flex h-9 w-7 shrink-0 cursor-pointer items-center justify-center rounded-r-sm border-l border-black/15 bg-accent-gold text-ink transition-opacity duration-150 ease-out hover:opacity-90"
         >
           <ChevronDown
             size={14}

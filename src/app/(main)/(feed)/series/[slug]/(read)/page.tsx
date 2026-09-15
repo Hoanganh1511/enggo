@@ -11,14 +11,19 @@ import { SeriesEmailSignup } from "@/components/series/SeriesEmailSignup";
 // markdown khac, component do da doc lap voi "docs" (chi nhan 1 chuoi
 // markdown) nen dung duoc cho ca Series.
 //
-// [2026-09-14] DA THU auto-redirect sang Entry dau tien (yeu cau nguoi dung
-// "dẫn vào trang map, không phải trang theo tiêu đề") nhung gay crash that
-// tren production (Vercel bao "This page couldn't load" - loi ket noi/mang,
-// KHONG phai 404/loi Next.js binh thuong => nghi ngo function bi crash/treo
-// o tang server, chua ro nguyen nhan chinh xac vi khong xem duoc log server
-// that). DA REVERT ve render tong quan nhu cu de KHONG con chan nguoi dung
-// truy cap Series - se lam lai auto-redirect sau khi xac dinh duoc nguyen
-// nhan that qua Vercel function logs.
+// [2026-09-14] DA THU auto-redirect sang Entry dau tien nhung gay crash
+// that tren production 1 lan (Vercel bao "This page couldn't load"), da
+// REVERT vi khong xac dinh duoc nguyen nhan qua log.
+// [2026-09-15] Thu lam lai bang redirect() 1 lan nua, nhung nguoi dung
+// chot huong khac: "Không phải là điều hướng sang map, mà ngay từ chỗ link
+// để sang seri ấy, bạn thêm /map vào sau luôn" - tuc la KHONG dung
+// redirect() server-side o day nua (tranh han rui ro crash da gap phai),
+// thay vao do MOI noi TRO toi 1 Series (series list, rail /home, breadcrumb
+// Entry...) tu SUA HREF de tro THANG toi "/series/{slug}/map" ngay tu dau -
+// xem cac cho da sua: series/page.tsx, NewestSeriesRail.tsx,
+// [entrySlug]/page.tsx (breadcrumb). Trang nay (URL goc /series/{slug})
+// VAN ton tai binh thuong (khong con bi chan boi redirect) - chi con duoc
+// ghe truc tiep qua URL go tay/link cu tu ben ngoai.
 export default async function SeriesOverviewPage({
   params,
 }: {

@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
 import { SeriesFocusSidebar } from "@/components/series/SeriesFocusSidebar";
+import { SeriesFocusRow } from "@/components/series/SeriesFocusRow";
+import { SeriesSidebarCollapseButton } from "@/components/series/SeriesSidebarCollapseButton";
 import {
   SeriesMobileTopBar,
   SeriesSidebarDrawer,
@@ -72,10 +74,7 @@ export default async function SeriesLayout({
           thay vi day het 1 man hinh - nguoi dung bao loi). Dam bao LUON it nhat
           day 1 viewport, cao hon the neu noi dung dai hon (min-height van cho
           gian ra binh thuong). */}
-      <div
-        className="-mx-4 -my-6 flex sm:-mx-6 lg:-mx-10"
-        style={{ minHeight: "calc(100vh - var(--header-height))" }}
-      >
+      <SeriesFocusRow>
         <SeriesFocusSidebar>
           <aside className="hidden w-64 shrink-0 border-r border-border bg-[#f5f6f8] lg:block">
             <div className="sticky top-0 p-[18px]">
@@ -88,12 +87,15 @@ export default async function SeriesLayout({
                   day, chua them entry point moi). */}
               {/* "Series title" (14/600, Geist Sans - yeu cau nguoi dung ve
                   bang cau hinh type system sidebar). */}
-              <p
-                className="mb-4 truncate px-2.5 text-[14px] font-semibold text-ink"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
-              >
-                {series.title}
-              </p>
+              <div className="mb-4 flex items-start justify-between gap-2 px-2.5">
+                <p
+                  className="min-w-0 truncate text-[14px] font-semibold text-ink"
+                  style={{ fontFamily: "var(--font-geist-sans)" }}
+                >
+                  {series.title}
+                </p>
+                <SeriesSidebarCollapseButton />
+              </div>
               <SeriesSidebar
                 seriesSlug={slug}
                 categories={series.categories}
@@ -104,7 +106,7 @@ export default async function SeriesLayout({
         </SeriesFocusSidebar>
 
         <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">{children}</div>
-      </div>
+      </SeriesFocusRow>
     </>
   );
 }

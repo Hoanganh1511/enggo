@@ -5,12 +5,14 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { SeriesForm } from "@/components/series/SeriesForm";
 import { SeriesTreeManager } from "@/components/series/SeriesTreeManager";
+import { SeriesCardConfigForm } from "@/components/series/SeriesCardConfigForm";
 import { SeriesDeleteButton } from "@/components/series/SeriesDeleteButton";
 import type { ContentSeriesOverview } from "@/lib/api/content-series";
 
 const TABS = [
   { key: "info", label: "Thông tin chung" },
   { key: "structure", label: "Cấu trúc" },
+  { key: "card", label: "Thẻ hiển thị" },
   { key: "danger", label: "Vùng nguy hiểm" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -72,6 +74,10 @@ export function SeriesManageTabs({
           categories={series.categories}
           entries={series.entries}
         />
+      </div>
+
+      <div className={cn("mt-6", active !== "card" && "hidden")}>
+        <SeriesCardConfigForm series={series} />
       </div>
 
       <div className={cn("mt-6", active !== "danger" && "hidden")}>

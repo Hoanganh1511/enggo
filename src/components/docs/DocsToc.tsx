@@ -55,13 +55,25 @@ export function DocsToc({ toc }: { toc: DocsTocItem[] }) {
           key={item.id}
           href={`#${item.id}`}
           className={cn(
-            "py-1 text-[13px] transition-colors duration-150 ease-out",
+            "relative py-1 text-[13px] transition-colors duration-150 ease-out",
             item.level === 3 && "pl-3",
             item.id === activeId
               ? "font-medium text-ink"
               : "text-ink-faint hover:text-ink-muted",
           )}
         >
+          {/* Thanh vang chinh (--accent-gold) danh dau muc DANG ACTIVE (dua
+              theo scroll-spy activeId da co san o tren) - de LEN TREN dung
+              vi tri border-l cua ca nav (pl-3/-left-3 = 12px khop nhau), yeu
+              cau nguoi dung: "1 thanh màu vàng chủ đạo... hiệu ứng active
+              khi màn ở vị trí tương ứng trong nội dung", khop anh mau. */}
+          {item.id === activeId && (
+            <span
+              aria-hidden="true"
+              className="absolute top-0 -left-3 h-full w-0.5 rounded-full"
+              style={{ backgroundColor: "var(--accent-gold)" }}
+            />
+          )}
           {item.text}
         </a>
       ))}

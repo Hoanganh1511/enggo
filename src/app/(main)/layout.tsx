@@ -17,7 +17,12 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     <>
       <FeedBootstrap />
       <AvatarBootstrap />
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white">
+      {/* bg-background (thay bg-white cu) - yeu cau nguoi dung: "Cho nền
+          toàn web màu này: #FBFBFD" - --background gio la #FBFBFD (xem
+          globals.css :root), day la nen NGOAI CUNG bao trum toan bo trang
+          (khac bg-surface/bg-white cua tung khoi noi dung rieng le ben
+          trong, van giu nguyen). */}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-background">
         {/* Nen luoi caro chung cho TOAN BO trang trong app (truoc day chi ve
             rieng o HomeHero.tsx cho /home) - fixed + -z-10 de nam co dinh phia
             sau moi noi dung, khong cuon theo MainContentArea. */}

@@ -50,7 +50,7 @@
      --notification (xanh/vang/do) CUNG giu nguyen - la mau ngu nghia
      (thanh cong/canh bao/loi), doi sang xam se lam mat kha nang phan biet
      trang thai chi qua mau, khong phai "mau chu dao" trang tri. */
-  --background: #f1f2f5;
+  --background: #fbfbfd;
   --background-secondary: #f4f4f5;
   --foreground: #171717;
   --active: var(--primary);
@@ -154,6 +154,12 @@
   --danger: #e11d48;
   --notification: #f27b6d;
 
+  /* Accent vang chinh (nut "Viết bài" o TopHeaderBar.tsx, switch Focus mode...)
+     - truoc day lap lai rgb(245,196,81) rai rac o nhieu file (raw literal,
+     khong qua bien) - gio dua ve 1 bien DUY NHAT de dung lai (vd thanh active
+     "On this page" - xem DocsToc.tsx) khong bi lech mau/kho doi dong loat. */
+  --accent-gold: rgb(245, 196, 81);
+
   /* Nut/chip dang "selected" tone brand (Note trong PostComposer khi active) */
   --outline-bg: color-mix(in srgb, var(--primary) 10%, var(--surface));
   --outline-border: color-mix(in srgb, var(--primary) 35%, transparent);
@@ -233,7 +239,11 @@
    app. Component moi trong khu vuc nay dung bg-[var(--background)] v.v. thay
    vi hex thang, doi mau = sua 1 cho o day. */
 .dashboard-scope {
-  --background: #fafaf9;
+  /* #fbfbfd (khop --background toan app) - yeu cau nguoi dung: "Cho nền
+     toàn web màu này: #FBFBFD" - CHI doi rieng token nen nay o day, cac
+     token khac (--foreground/--border/--primary...) van giu tach biet co
+     chu dich voi phan con lai cua app (xem comment file nay). */
+  --background: #fbfbfd;
   --surface: #ffffff;
   --surface-subtle: #f7f7f5;
   --foreground: #172033;
@@ -370,6 +380,7 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-notification: var(--notification);
+  --color-accent-gold: var(--accent-gold);
 
   --color-outline-bg: var(--outline-bg);
   --color-outline-border: var(--outline-border);

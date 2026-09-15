@@ -8,7 +8,6 @@ import { Check, Plus } from "lucide-react";
 import { followUserAction } from "@/actions/discover/follow-user";
 import { useIsMobileViewport } from "@/lib/use-is-mobile-viewport";
 import { cn } from "@/lib/utils";
-import { ScrollableRow } from "./ScrollableRow";
 import { CreatorPreviewModal } from "./CreatorPreviewModal";
 
 export type CreatorSummary = {
@@ -21,13 +20,15 @@ export type CreatorSummary = {
   isFollowing?: boolean;
 };
 
-// "use client" - can 2 logic rieng biet KHONG duoc an vao nhau (yeu cau
-// nguoi dung): (1) bam avatar/ten - desktop di thang toi trang ca nhan
-// (giu nguyen hanh vi cu), mobile mo CreatorPreviewModal.tsx xem truoc; (2)
-// bam dau "+" goc duoi-phai avatar - theo doi nhanh NGAY TAI DAY, khong mo
-// modal, khong dieu huong. 2 nhanh nay dung 2 onClick RIENG + e.stopPropagation()
-// o nut "+" (no nam LONG trong cung 1 the voi avatar) de bam "+" khong lam
-// avatar "an theo" mo modal/dieu huong cung luc.
+// [2026-09-15] Doi tu ScrollableRow (hang cuon ngang, avatar+ten don thuan)
+// sang the CARD gon (flex-wrap, khong cuon) - yeu cau nguoi dung: "nội dung
+// của tác giả nổi bật... đơn điệu nhưng chiếm nhiều diện tích, tối ưu diện
+// tích, elements trong nó lại". Voi chi 1-2 tac gia (truong hop pho bien),
+// ScrollableRow cu de lai 1 khoang trong ngang RAT LON (hang du rong het cot
+// noi dung, avatar/ten chi chiem 1 goc) - flex-wrap khien the tu CO LAI vua
+// du noi dung, khong con khoang chet. Moi the gio la 1 KHOI thong tin day du
+// hon (avatar + ten + @username + nut Theo dõi RO CHU thay vi dau "+" nho
+// chong len avatar) thay vi chi 2 dong text don gian, bot "don dieu" hon.
 export function CreatorRail({ creators }: { creators: CreatorSummary[] }) {
   const [previewUsername, setPreviewUsername] = useState<string | null>(null);
   const isMobile = useIsMobileViewport();
@@ -36,16 +37,16 @@ export function CreatorRail({ creators }: { creators: CreatorSummary[] }) {
 
   return (
     <>
-      <ScrollableRow gapClassName="gap-5">
+      <div className="flex flex-wrap gap-2.5">
         {creators.map((creator) => (
-          <CreatorTile
+          <CreatorCard
             key={creator.username}
             creator={creator}
             onOpenPreview={() => setPreviewUsername(creator.username)}
             isMobile={isMobile}
           />
         ))}
-      </ScrollableRow>
+      </div>
 
       <CreatorPreviewModal
         username={previewUsername}
@@ -55,7 +56,7 @@ export function CreatorRail({ creators }: { creators: CreatorSummary[] }) {
   );
 }
 
-function CreatorTile({
+function CreatorCard({
   creator,
   onOpenPreview,
   isMobile,
@@ -70,8 +71,8 @@ function CreatorTile({
   const [pending, setPending] = useState(false);
 
   async function handleQuickFollow(e: React.MouseEvent) {
-    // Chan NGAY luc bubble - tranh click "+" bi hieu nham la click avatar
-    // (mo modal/dieu huong cung luc), xem comment o CreatorRail.
+    // Chan NGAY luc bubble - tranh click nut Theo doi bi hieu nham la click
+    // ca the (mo modal/dieu huong cung luc).
     e.preventDefault();
     e.stopPropagation();
     if (following || pending) return;
@@ -86,85 +87,58 @@ function CreatorTile({
     }
   }
 
-  const avatar = (
-    <div className="relative">
-      {/* Dang theo doi (khong phai chinh minh) - hieu ung anim TRUOC la 1
-          vong tron phong to/mo dan (scale vuot ra ngoai avatar) - vua giong
-          "story ring" (Instagram/Facebook) gay hieu nham sai nghia, VUA bi
-          ScrollableRow (overflow-x-auto) tu ep overflow-y thanh hidden nen
-          cat cut phan tren/duoi cua vong tron luc no phinh ra. Doi sang
-          box-shadow INSET (nam HAN BEN TRONG khung avatar, khong bao gio
-          vuot qua bien - object nay VON DA co border-radius nen shadow tu
-          bo cong theo, tuyet doi khong bi ancestor overflow cat) - "tho"
-          nhe dan mo-ro cua vien xanh, doc hon han kieu vong tron ben ngoai. */}
+  const content = (
+    <>
       <Image
         src={creator.avatarUrl}
         alt={creator.name}
-        width={48}
-        height={48}
-        className={cn(
-          "relative size-12 shrink-0 rounded-full border-2 object-cover shadow-sm",
-          following && !isSelf
-            ? "animate-creator-following-glow border-emerald-500"
-            : "border-white",
-        )}
+        width={36}
+        height={36}
+        className="size-9 shrink-0 rounded-full object-cover"
       />
-      {/* Dang theo doi: 1 dau check TINH (khong anim) o dung vi tri dau "+"
-          cu - noi ro rang "ban dang theo doi", khong con la story ring nua. */}
-      {following && !isSelf && (
-        <span
-          aria-hidden="true"
-          className="absolute -right-0.5 -bottom-0.5 flex size-5 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-sm"
-        >
-          <Check size={11} strokeWidth={2.5} />
-        </span>
-      )}
-      {/* Dau "+" theo doi nhanh - AN HAN neu la chinh minh (khong the tu
-          theo doi minh) HOAC da theo doi roi (thay bang dau check o tren). */}
-      {!following && !isSelf && (
-        <button
-          type="button"
-          onClick={handleQuickFollow}
-          disabled={pending}
-          aria-label={`Theo dõi nhanh ${creator.name}`}
-          title="Theo dõi"
-          className="absolute -right-0.5 -bottom-0.5 flex size-5 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-sm transition-transform duration-150 ease-out hover:scale-110 disabled:cursor-wait"
-        >
-          <Plus size={11} strokeWidth={2} />
-        </button>
-      )}
-    </div>
-  );
-
-  const content = (
-    <>
-      {avatar}
-      <span className="font-content max-w-[76px] truncate text-[11px] text-[var(--foreground-muted)]">
-        {creator.name}
-      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-content truncate text-[13px] font-semibold text-[var(--foreground)]">
+          {creator.name}
+        </p>
+        <p className="truncate text-[11px] text-[var(--muted)]">@{creator.username}</p>
+      </div>
+      {!isSelf &&
+        (following ? (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-600">
+            <Check size={11} strokeWidth={2.5} aria-hidden="true" />
+            Đang theo dõi
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={handleQuickFollow}
+            disabled={pending}
+            aria-label={`Theo dõi ${creator.name}`}
+            className="flex shrink-0 cursor-pointer items-center gap-1 rounded-full border border-[var(--border)] px-2 py-1 text-[11px] font-medium text-[var(--foreground)] transition-colors duration-150 ease-out hover:bg-[var(--hover-bg)] disabled:cursor-wait"
+          >
+            <Plus size={11} strokeWidth={2} aria-hidden="true" />
+            Theo dõi
+          </button>
+        ))}
     </>
   );
+
+  const cardClass =
+    "flex w-64 max-w-full cursor-pointer items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 transition-colors duration-150 ease-out hover:border-[var(--border-strong)]";
 
   // Mobile: mo preview modal (khong dieu huong ngay) - desktop: giu nguyen
   // hanh vi cu, di thang toi trang ca nhan qua <Link> that (khong phai
   // router.push trong onClick, de van huong duoc middle-click/mo tab moi).
   if (isMobile) {
     return (
-      <button
-        type="button"
-        onClick={onOpenPreview}
-        className={cn("flex min-w-[64px] cursor-pointer flex-col items-center gap-2")}
-      >
+      <button type="button" onClick={onOpenPreview} className={cn(cardClass, "text-left")}>
         {content}
       </button>
     );
   }
 
   return (
-    <Link
-      href={`/u/${creator.username}`}
-      className="flex min-w-[64px] flex-col items-center gap-2"
-    >
+    <Link href={`/u/${creator.username}`} className={cardClass}>
       {content}
     </Link>
   );

@@ -1,19 +1,16 @@
-import { BookOpen } from "lucide-react";
 import type { ContentSeriesListItem } from "@/lib/api/content-series";
-import { SeriesCardLink } from "@/components/series/SeriesCardLink";
-import { SeriesIconGlyph } from "@/components/series/series-icon-options";
+import { SeriesCampaignCard } from "@/components/series/SeriesCampaignCard";
 import { ScrollableRow } from "./ScrollableRow";
 
-// "Series mới nhất" tren /home. Ban dau lam theo mau "注目キーワード" (Yahoo
-// Japan trending rail, the co thumbnail anh/mosaic mau sac) nhung XUNG DOT
-// voi huong tham my "phang, content-first, khong trang tri anh" cua AI Hero
-// token set (xem docs/ai-hero-design-tokens.md - nguoi dung phan hoi the cu
-// "không hợp phong cách phẳng AI Hero"). Bo han khoi mosaic/gradient, chi con
-// 1 hang icon nho (toi da 4 emoji cua 4 entry dau, cung du lieu cu nhung
-// hien THU YEU khong CHIEM DIEN TICH lon) + tieu de + so lieu + mo ta - toan
-// bo the la text/border, khong con khoi mau trang tri nao.
+// "Series mới nhất" tren /home. [2026-09-15] Redesign THANH campaign card
+// (SeriesCampaignCard.tsx, variant="compact") - yeu cau nguoi dung, DAO
+// NGUOC quyet dinh truoc do (tung bo han anh/mau vi "không hợp phong cách
+// phẳng AI Hero") sang huong co anh/badge/CTA/nen mau tuy chinh, cau hinh tu
+// tab "Thẻ hiển thị" trong SeriesManageTabs.tsx. isVisible=false thi AN
+// khoi rail nay (khong xoa Series).
 export function NewestSeriesRail({ series }: { series: ContentSeriesListItem[] }) {
-  if (series.length === 0) {
+  const visible = series.filter((s) => s.isVisible);
+  if (visible.length === 0) {
     return (
       <p className="py-4 text-[13px] text-[var(--muted)]">
         Chưa có series nào.
@@ -23,39 +20,9 @@ export function NewestSeriesRail({ series }: { series: ContentSeriesListItem[] }
 
   return (
     <ScrollableRow gapClassName="gap-3">
-      {series.map((s) => {
-        const icons = s.entries
-          .map((e) => e.icon)
-          .filter((i): i is string => Boolean(i))
-          .slice(0, 4);
-        return (
-          <SeriesCardLink
-            key={s.id}
-            href={`/series/${s.slug}`}
-            className="min-w-[220px] max-w-[220px] rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3.5 transition hover:border-[var(--border-strong)]"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-1 text-[11px] font-medium text-[var(--muted)]">
-                <BookOpen size={12} aria-hidden="true" />
-                {s._count.entries} phần
-              </span>
-              {icons.length > 0 && (
-                <span className="flex items-center gap-1 text-[var(--muted)]" aria-hidden="true">
-                  {icons.map((icon, i) => (
-                    <SeriesIconGlyph key={i} name={icon} size={12} strokeWidth={1.8} />
-                  ))}
-                </span>
-              )}
-            </div>
-            <p className="mt-2 line-clamp-1 text-[14px] font-bold text-[var(--foreground)]">
-              {s.title}
-            </p>
-            <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-[var(--muted)]">
-              {s.description}
-            </p>
-          </SeriesCardLink>
-        );
-      })}
+      {visible.map((s) => (
+        <SeriesCampaignCard key={s.id} series={s} variant="compact" />
+      ))}
     </ScrollableRow>
   );
 }

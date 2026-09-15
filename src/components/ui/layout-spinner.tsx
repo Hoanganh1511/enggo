@@ -10,9 +10,15 @@ import { cn } from "@/lib/utils";
 export function LayoutSpinnerOverlay({
   active,
   className,
+  label,
 }: {
   active: boolean;
   className?: string;
+  // Dong chu mo ta NGAY DUOI spinner (vd "Đang khởi tạo Entry "Tên bài"") -
+  // yeu cau nguoi dung: overlay truoc day CHI co spinner tron, khong noi ro
+  // dang lam gi. Optional - cac noi dung LayoutSpinnerOverlay khac (chua
+  // truyen label) van hoat dong y het truoc, chi rieng spinner khong chu.
+  label?: React.ReactNode;
 }) {
   if (!active) return null;
   return (
@@ -24,7 +30,35 @@ export function LayoutSpinnerOverlay({
       role="status"
       aria-live="polite"
     >
-      <Spinner size={28} />
+      <div className="flex flex-col items-center gap-3">
+        <Spinner size={28} />
+        {label && (
+          <p className="max-w-xs text-center text-[13px] font-medium text-ink">
+            {label}
+            <LoadingDots />
+          </p>
+        )}
+      </div>
     </div>
+  );
+}
+
+// 3 dau cham "bập bồng" LAN LUOT tung dot (khong nhay cung luc) - dung
+// animation "bounce" co san cua Tailwind + animationDelay so le tung cham
+// (150ms/dot) de tao hieu ung dang song, yeu cau nguoi dung: "kèm theo dấu 3
+// dots anim bập bồng từng dot một".
+function LoadingDots() {
+  return (
+    <span className="ml-0.5 inline-flex" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="animate-bounce"
+          style={{ animationDelay: `${i * 150}ms` }}
+        >
+          .
+        </span>
+      ))}
+    </span>
   );
 }

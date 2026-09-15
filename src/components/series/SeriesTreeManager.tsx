@@ -43,6 +43,7 @@ import { reorderContentSeriesCategoriesAction } from "@/actions/discover/content
 import { deleteContentSeriesEntryAction } from "@/actions/discover/content-series/delete-content-series-entry";
 import { moveContentSeriesEntryAction } from "@/actions/discover/content-series/move-content-series-entry";
 import { reorderContentSeriesEntriesInCategoryAction } from "@/actions/discover/content-series/reorder-content-series-entries-in-category";
+import { SeriesIconGlyph } from "@/components/series/series-icon-options";
 import type { ContentSeriesCategory, ContentSeriesEntrySummary } from "@/lib/api/content-series";
 
 const inputClass =
@@ -282,7 +283,13 @@ export function SeriesTreeManager({
                     href={`/series/${seriesSlug}/manage/entries/${entry.slug}`}
                     className="min-w-0 flex-1 truncate text-[13px] text-ink hover:underline"
                   >
-                    {entry.icon && <span className="mr-1">{entry.icon}</span>}
+                    {entry.icon && (
+                      <SeriesIconGlyph
+                        name={entry.icon}
+                        size={13}
+                        className="mr-1.5 inline align-[-2px] text-ink-faint"
+                      />
+                    )}
                     {entry.navTitle || entry.title}
                   </Link>
                   {!sortMode && (
@@ -519,7 +526,19 @@ export function SeriesTreeManager({
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={rootCategories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-          <div className="flex flex-col gap-5">
+          {/* Lam mo + khoa tuong tac CA CAY khi dang luu thu tu vua tha
+              (dragBusy) - yeu cau nguoi dung: "vẫn chưa có đầy đủ loading ở
+              các giai đoạn chuyển đổi đầy đủ" (truoc do CHI co 1 spinner nho
+              canh nut "Sắp xếp", ban than cac the trong cay khong co dau
+              hieu gi dang "cho luu" ca). transition-opacity de tu no mo/ro
+              lai muot, khop tinh than animation muot moi bo sung o
+              SortableShell. */}
+          <div
+            className={cn(
+              "flex flex-col gap-5 transition-opacity duration-200 ease-out",
+              dragBusy && "pointer-events-none opacity-50",
+            )}
+          >
             {rootCategories.map((cat, catIndex) => {
               const isRenaming = renamingId === cat.id;
               const childCats = childrenByParent.get(cat.id) ?? [];
@@ -858,7 +877,17 @@ function SortableShell({
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
-        transition,
+        // isDragging: GIU NGUYEN gia tri `transition` THAT cua dnd-kit
+        // (thuong la undefined/null luc nay, co chu dich - de item dang keo
+        // BAM SAT con tro 1:1, khong bi "do tre"). CHI khi KHONG dang keo
+        // (dang settle ve vi tri moi sau khi tha, hoac doi vi tri do
+        // permuteOrderIndex/router.refresh() ban NGOAI 1 luot keo that su)
+        // moi fallback ve 1 transition mac dinh - dam bao LUON co animation
+        // truot muot, khong con "giật đột ngột" khi doi vi tri (yeu cau
+        // nguoi dung: "Lúc chuyển cũng giật đột ngột phải có anim switch").
+        transition: isDragging
+          ? transition
+          : (transition ?? "transform 220ms cubic-bezier(0.2, 0, 0, 1), opacity 200ms ease-out"),
         opacity: isDragging ? 0.5 : 1,
       }}
     >

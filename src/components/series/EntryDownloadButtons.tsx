@@ -130,7 +130,7 @@ export function EntryDownloadButtons({
           aria-label="Focus mode"
           onClick={toggleFocusMode}
           className={`relative h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors duration-150 ease-out ${
-            focusModeActive ? "bg-[rgb(245,196,81)]" : "bg-ink-disabled"
+            focusModeActive ? "bg-accent-gold" : "bg-ink-disabled"
           }`}
         >
           <span

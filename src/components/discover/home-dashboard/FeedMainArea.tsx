@@ -13,20 +13,18 @@ export function FeedMainArea({ children }: { children: React.ReactNode }) {
 
   return (
     <main className={cn("relative z-10 py-6", !focusModeActive && "lg:pl-61")}>
-      {/* lg:pl-16 (thay vi lg:pl-10 mac dinh) khi Focus mode - nhuong cho nut
-          tron toggle sidebar CO DINH cua SeriesFocusSidebar.tsx (fixed
-          top-6 left-4, size-10 => choan toi ~left:56px) de KHONG bi noi
-          dung (vd breadcrumb dau trang Series Entry) de len tren - yeu cau
-          nguoi dung sau khi thay bi de: "tăng thêm padding left cho phần
-          chính để không bị đè nút collapse lên". */}
-      <div
-        className={cn(
-          "mx-auto w-full px-4 sm:px-6 lg:pr-10",
-          focusModeActive ? "lg:pl-16" : "lg:pl-10",
-        )}
-      >
-        {children}
-      </div>
+      {/* [2026-09-14] Tung dung "lg:pl-16 khi Focus mode" (thay vi lg:pl-10)
+          de nhuong cho nut tron toggle sidebar CO DINH. DA BO (2026-09-15) -
+          Focus mode CHI TUNG bat tren trang Series Entry, va trang do LUON
+          tu HUY padding nay qua "-mx-4 lg:-mx-10" cua chinh no ((read)/layout.tsx)
+          bat ke gia tri padding la bao nhieu, nen doi rieng 16/10 o day KHONG
+          he co tac dung hien thi nao - nguoc lai, lech 1 chieu (pl-16 nhung
+          bleed van co dinh -mx-10) tao ra 1 khoang trang THUA 24px ben trai
+          Focus mode (yeu cau nguoi dung: "bị thừa khoảng trắng bên trái").
+          Nut tron da tu xu ly vi tri overlap rieng qua left-4/left-68 dong
+          theo trang thai collapsed (xem SeriesFocusSidebar.tsx), khong can
+          FeedMainArea can thiep nua. */}
+      <div className="mx-auto w-full px-4 sm:px-6 lg:px-10">{children}</div>
     </main>
   );
 }

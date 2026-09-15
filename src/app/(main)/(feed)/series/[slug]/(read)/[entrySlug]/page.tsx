@@ -62,7 +62,7 @@ async function EntryHeader({
             /
           </span>
           <Link
-            href={`/series/${slug}`}
+            href={`/series/${slug}/map`}
             className="hover:text-ink hover:underline"
           >
             {series.title}

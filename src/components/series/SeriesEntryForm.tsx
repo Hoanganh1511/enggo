@@ -110,8 +110,18 @@ export function SeriesEntryForm({
     <div className="relative flex gap-8">
       {/* Spinner layout - phu vung than trang soan Entry nay trong luc dang
           luu (yeu cau nguoi dung). Dat o day (relative wrapper NGOAI CUNG)
-          thay vi chi boc form de che ca cot preview ben phai luon. */}
-      <LayoutSpinnerOverlay active={saving} />
+          thay vi chi boc form de che ca cot preview ben phai luon. Label kem
+          ten bai (in dam) - yeu cau nguoi dung: "Bổ sung thêm text ví dụ
+          như Đang khởi tạo Bài viết Entry "**tên bài**"". */}
+      <LayoutSpinnerOverlay
+        active={saving}
+        label={
+          <>
+            {isEdit ? "Đang lưu Bài viết Entry " : "Đang khởi tạo Bài viết Entry "}
+            &quot;<strong className="font-semibold">{title.trim() || "(chưa có tiêu đề)"}</strong>&quot;
+          </>
+        }
+      />
       <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-col gap-5">
         <div>
           <label className={labelClass}>Category *</label>
