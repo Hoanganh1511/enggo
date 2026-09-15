@@ -19,8 +19,10 @@ import type { ContentSeriesEntrySummary } from "@/lib/api/content-series";
 // như bên kia" (ban dau lam nhat/nho hon EntryDownloadButtons ben canh cho
 // "phu", nhung day la hang HANH DONG chinh cuoi cum dau bai nen can noi bat
 // hon).
+// rounded-[10px] (khong phai rounded-md=6px mac dinh) - yeu cau nguoi dung:
+// "Tất cả button này cho radius khoảng 10px".
 const buttonClass =
-  "flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3.5 text-[13px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg";
+  "flex h-9 cursor-pointer items-center gap-1.5 rounded-[10px] border border-border px-3.5 text-[13px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg";
 
 // Cum hang cuoi CUNG cua phan dau bai (truoc khi xuong than bai) - yeu cau
 // nguoi dung, khop anh mau tham khao (trang skill cua Matt Pocock): trai la
@@ -160,7 +162,7 @@ export function EntryPageActionsRow({
         <button
           type="button"
           onClick={() => toast.info("Tính năng Follow sắp ra mắt")}
-          className="flex h-9 shrink-0 cursor-pointer items-center rounded-md border border-border px-3.5 text-[13px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+          className="flex h-9 shrink-0 cursor-pointer items-center rounded-[10px] border border-border px-3.5 text-[13px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
         >
           Follow
         </button>
