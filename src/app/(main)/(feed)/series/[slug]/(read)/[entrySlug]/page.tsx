@@ -443,7 +443,7 @@ export default async function SeriesEntryPage({
             duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
             vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
             trang nua) roi dinh lai o do khi cuon xuong. */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 pl-8 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>

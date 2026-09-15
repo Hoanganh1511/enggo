@@ -28,15 +28,18 @@ export function SeriesQuestionPickerToc({
         <Link
           key={item.id}
           href={`#${item.id}`}
-          className="flex items-center gap-2.5 rounded-xl border border-border px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
+          // max-w-[400px] - yeu cau nguoi dung: "đừng để dài full màn thế.
+          // Để max width là tầm 400px thôi. Xong dài hơn thì xuống dòng" -
+          // truoc do box tu dan het chieu rong cot grid (co the rat rong tren
+          // man hinh lon). KHONG con `truncate` tren span cau hoi (1 dong +
+          // ellipsis) - thay bang wrap tu do nhieu dong khi cau hoi dai qua
+          // 400px, dung y "xuống dòng" nguoi dung mo ta.
+          className="flex max-w-100 items-start gap-2.5 rounded-xl border border-border px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
         >
           <span className="font-mono text-[12px] text-ink-faint">
             {String(i + 1).padStart(2, "0")}
           </span>
-          <span
-            className="min-w-0 flex-1 truncate text-[14.5px] "
-            style={{ color: "#14161A" }}
-          >
+          <span className="min-w-0 flex-1 text-[14.5px]" style={{ color: "#14161A" }}>
             {item.question}
           </span>
           <ChevronDown

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { startTransition } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { DocsTocItem } from "@/lib/docs/docs-toc";
 
@@ -100,12 +101,24 @@ export function DocsToc({ toc }: { toc: DocsTocItem[] }) {
               trai VAN GIU, chi rieng MAU CHU active doi). w-px (khong con
               w-0.5=2px) - do day thanh PHAI BANG dung border-l cua nav (mac
               dinh Tailwind border = 1px): "Độ dầy thanh màu cũng cho bằng
-              đường line của nó". */}
+              đường line của nó".
+              [2026-09-15] motion.span + layoutId CO DINH ("toc-active-bar") -
+              truoc do la <span> thuong, moi lan activeId doi thi span CU
+              (gan voi <a> cu) bien mat, span MOI (gan voi <a> moi) xuat hien
+              tuc thi o vi tri khac - nhin roi rac, "không được đúng là trượt
+              trên rãnh" (yeu cau nguoi dung, so voi anh mau: thanh vang THAT
+              SU truot lien tuc doc theo duong border-l, nhu 1 con truot nam
+              trong 1 cai ranh, khong phai bien mat/hien lai o 2 noi khac
+              nhau). Cung 1 layoutId qua nhieu lan render (chi 1 <a> render no
+              tai 1 thoi diem) khien framer-motion tu dong noi 2 vi tri
+              CU/MOI bang 1 chuyen dong FLIP muot, dung cam giac "slide". */}
           {item.id === activeId && (
-            <span
+            <motion.span
+              layoutId="toc-active-bar"
               aria-hidden="true"
               className="absolute top-0 -left-3 h-full w-px"
               style={{ backgroundColor: "var(--accent-gold)" }}
+              transition={{ type: "spring", stiffness: 500, damping: 40 }}
             />
           )}
           {item.text}

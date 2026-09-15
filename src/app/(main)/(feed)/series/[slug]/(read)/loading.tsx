@@ -56,7 +56,7 @@ export default function SeriesReadLoading() {
           </FadeIn>
         </article>
 
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 pl-8 xl:flex">
           <FadeIn delay={0.12}>
             <EntryTocSkeleton />
           </FadeIn>

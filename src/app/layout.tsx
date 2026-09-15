@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import {
-  IBM_Plex_Mono,
   Be_Vietnam_Pro,
   Geist,
   Geist_Mono,
@@ -14,21 +13,10 @@ import NextTopLoader from "nextjs-toploader";
 import { Toaster } from "@/components/ui/toast";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 
-// Font chinh toan app - xem globals.css --font-sans. Doi tu Inter sang IBM
-// Plex Mono theo yeu cau nguoi dung (ap dung cho MOI text thuong cua app,
-// khong chi code/label) - co san subset "vietnamese" rieng (khac Playfair/DM
-// Sans ben duoi), nen dau tieng Viet van hien dung ma khong can fallback
-// latin-ext.
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  weight: ["400", "500", "600", "700"],
-  subsets: ["vietnamese", "latin"],
-});
-
 // Font cho NOI DUNG (khac component/dieu huong) - tieu de bai/tai lieu, than
 // bai, mo ta, binh luan, cac thong tin hien thi... noi chung MOI cho khong
 // phai nut/nhan/tab/sidebar dieu huong deu dung Be Vietnam Pro thay vi
-// --font-plex-mono (font chinh, chi danh cho UI/dieu huong). Ap qua class
+// --font-sans (font chinh, chi danh cho UI/dieu huong). Ap qua class
 // tien ich .font-content (xem globals.css --font-content) tren tung cum text
 // noi dung, KHONG doi --font-sans mac dinh (se keo theo ca UI).
 //
@@ -73,8 +61,9 @@ const geistSans = Geist({
 // next/font (tu host, khong goi Google luc runtime) de sua tan goc. Sau do
 // mo rong them cho tieu de trang chi tiet bai viet (ArticleHeader.tsx, theo
 // yeu cau nguoi dung) - VAN khong dung cho UI/dieu huong chung cua app (van
-// chi IBM Plex Mono), chi ap dung tung cho tieu de/noi dung dai o 2 khu vuc
-// nay qua var(--font-serif-book) truc tiep (chua co Tailwind utility rieng).
+// chi --font-sans mac dinh), chi ap dung tung cho tieu de/noi dung dai o 2
+// khu vuc nay qua var(--font-serif-book) truc tiep (chua co Tailwind utility
+// rieng).
 const notoSerifBook = Noto_Serif({
   variable: "--font-serif-book",
   weight: ["400", "500", "600", "700"],
@@ -95,11 +84,14 @@ const playfairDisplay = Playfair_Display({
   subsets: ["latin", "latin-ext"],
 });
 
-// Rieng cho khu vuc Series (/series/**, xem series-scope trong globals.css) -
-// theo thiet ke rieng nguoi dung dua ra cho module nay (Heading/Body/Nav deu
-// Inter, chi khac o WEIGHT co san qua cac class font-bold/font-medium... da
-// dung san trong code, KHONG doi font toan app - Inter tung bi thay boi IBM
-// Plex Mono truoc day theo 1 yeu cau RIENG, van giu nguyen ngoai pham vi Series).
+// [2026-09-15] Doi lai lam --font-sans (font chinh) toan app - yeu cau nguoi
+// dung: "Đổi font chính lại thành Inter đi" (dao nguoc quyet dinh truoc day
+// doi --font-sans sang IBM Plex Mono, da bo IBM_Plex_Mono khoi file nay).
+// Van GIU rieng cho khu vuc Series qua .series-scope (globals.css) - THIET
+// KE RIENG cho module do (Heading/Body/Nav deu Inter, chi khac WEIGHT qua
+// class font-bold/font-medium...) gio TRUNG voi font mac dinh toan app,
+// nhung khai bao rieng khong thua vi 2 he thong (Series/toan app) van co the
+// tach lai doc lap trong tuong lai.
 const inter = Inter({
   variable: "--font-inter",
   weight: ["400", "500", "600", "700", "800"],
@@ -134,7 +126,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${ibmPlexMono.variable} ${beVietnamPro.variable} ${geistMono.variable} ${geistSans.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${beVietnamPro.variable} ${geistMono.variable} ${geistSans.variable} ${notoSerifBook.variable} ${playfairDisplay.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning CHI o body, KHONG lan xuong children - can
           thiet vi mot so extension trinh duyet (vd ColorZilla) tu chen
