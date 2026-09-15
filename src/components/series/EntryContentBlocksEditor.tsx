@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from "lucide-react";
-import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { SimpleModal } from "@/components/ui/simple-modal";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import type {
@@ -24,6 +24,20 @@ const BLOCK_TYPE_LABEL: Record<EntryContentBlock["type"], string> = {
   botHelp: "Gợi ý hỏi bot",
   featurePromo: "Thẻ quảng bá (có ảnh)",
   deeperCourse: "Thẻ CTA (không ảnh)",
+};
+
+// Mo ta ngan duoi nhan trong modal chon block - giup hinh dung THEM anh
+// preview (yeu cau nguoi dung: "rõ ảnh mô tả demo từng loại đê biết bố cục
+// nó như nào").
+const BLOCK_TYPE_DESCRIPTION: Record<EntryContentBlock["type"], string> = {
+  toc: "Lưới ô số + câu hỏi, tự quét heading H2",
+  install: "Dòng lệnh copy-paste + nút bên dưới",
+  buttonGroup: "1 hàng nhiều nút bấm",
+  callout: "Băng màu nhấn mạnh, tràn full-width",
+  newsletter: "Form đăng ký email của Series",
+  botHelp: "Icon + gợi ý + 1 nút CTA",
+  featurePromo: "Ảnh + tiêu đề + mô tả + nút",
+  deeperCourse: "Tiêu đề + mô tả + nút, không ảnh",
 };
 
 // Loai block cho phep TRONG TUNG zone - "top" giu nguyen 4 loai CU (thiet
@@ -125,7 +139,7 @@ export function EntryContentBlocksEditor({
   // SeriesEntryContentBlocks.tsx (lop bao dam THAT su).
   allowToc?: boolean;
 }) {
-  const [addOpen, setAddOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const zoneBlocks = blocks.filter((b) => (b.zone ?? "top") === zone);
   const addableTypes = ZONE_TYPES[zone].filter((type) => type !== "toc" || allowToc);
 
@@ -135,7 +149,7 @@ export function EntryContentBlocksEditor({
 
   function addBlock(type: EntryContentBlock["type"]) {
     updateZoneBlocks([...zoneBlocks, newBlock(type, zone)]);
-    setAddOpen(false);
+    setPickerOpen(false);
   }
 
   function updateBlock(index: number, patch: Partial<EntryContentBlock>) {
@@ -377,36 +391,125 @@ export function EntryContentBlocksEditor({
         </div>
       ))}
 
-      <PopoverRoot open={addOpen} onOpenChange={setAddOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex cursor-pointer items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-[13px] font-medium text-primary hover:bg-primary-soft"
-          >
-            <Plus size={14} /> Thêm section
-            <ChevronDown size={13} className={addOpen ? "rotate-180" : ""} />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          open={addOpen}
-          align="start"
-          sideOffset={6}
-          className="series-scope z-50 w-64 overflow-hidden rounded-md border border-border bg-surface shadow-dropdown"
-        >
-          <div className="p-1">
-            {addableTypes.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => addBlock(type)}
-                className="flex w-full cursor-pointer items-center rounded-md px-2.5 py-2 text-left text-[13px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
-              >
-                {BLOCK_TYPE_LABEL[type]}
-              </button>
-            ))}
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        className="flex cursor-pointer items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-[13px] font-medium text-primary hover:bg-primary-soft"
+      >
+        <Plus size={14} /> Thêm section
+      </button>
+
+      {/* [2026-09-15] Modal grid 3 cot (khong con dropdown text) - yeu cau
+          nguoi dung: "đừng dùng dropdown, hãy mở một modal, trình bày các
+          options dạng grid 3 cột, rõ ảnh mô tả demo từng loại đê biết bố
+          cục nó như nào, kiểu skeleton ấy, xong người dùng chọn thì hiện
+          thông tin để điền". Moi the la 1 ban xem truoc "skeleton" TINH (bar
+          xam mo phong bo cuc that, xem BlockTypePreview) - chon xong dong
+          modal + goi addBlock nhu cu, block moi hien NGAY trong danh sach
+          BEN TRONG editor (o tren) voi cac o nhap de dien, dung y "hiện
+          thông tin để điền" nguoi dung mo ta. */}
+      <SimpleModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        title="Thêm section"
+        maxWidthClassName="max-w-xl"
+      >
+        <div className="series-scope grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {addableTypes.map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => addBlock(type)}
+              className="flex cursor-pointer flex-col overflow-hidden rounded-lg border border-border text-left transition-colors duration-150 ease-out hover:border-primary hover:bg-primary-soft"
+            >
+              <BlockTypePreview type={type} />
+              <div className="p-2.5">
+                <p className="text-[12.5px] font-semibold text-ink">{BLOCK_TYPE_LABEL[type]}</p>
+                <p className="mt-0.5 text-[11px] text-ink-faint">{BLOCK_TYPE_DESCRIPTION[type]}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </SimpleModal>
+    </div>
+  );
+}
+
+// Anh xem truoc dang "skeleton" TINH (khong shimmer - day la 1 the chon
+// trong modal, khong phai trang thai dang tai that) mo phong DUNG bo cuc
+// cong khai cua tung loai block (xem SeriesEntryContentBlocks.tsx) - giup
+// admin hinh dung TRUOC KHI chon, thay vi doan qua ten chu.
+function BlockTypePreview({ type }: { type: EntryContentBlock["type"] }) {
+  const bar = "rounded-full bg-[rgba(20,22,26,0.14)]";
+  return (
+    <div className="flex h-20 items-center justify-center bg-surface-muted p-3">
+      {type === "toc" && (
+        <div className="grid w-full grid-cols-2 gap-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-1 rounded-sm border border-[rgba(20,22,26,0.14)] bg-surface px-1.5 py-1">
+              <span className={`h-1.5 w-2 shrink-0 ${bar}`} />
+              <span className={`h-1.5 flex-1 ${bar}`} />
+            </div>
+          ))}
+        </div>
+      )}
+      {type === "install" && (
+        <div className="flex w-full flex-col gap-1.5">
+          <div className="h-5 w-full rounded-sm bg-[#0d1117]" />
+          <span className={`h-1.5 w-1/2 ${bar}`} />
+        </div>
+      )}
+      {type === "buttonGroup" && (
+        <div className="flex w-full items-center gap-1.5">
+          <span className="h-4 w-1/3 rounded-full bg-ink" />
+          <span className="h-4 w-1/3 rounded-full border border-[rgba(20,22,26,0.25)]" />
+          <span className={`h-4 w-1/3 rounded-full ${bar}`} />
+        </div>
+      )}
+      {type === "callout" && (
+        <div className="flex w-full flex-col gap-1.5 rounded-sm bg-[#e8e9ec] p-2">
+          <span className={`h-1.5 w-1/3 ${bar}`} />
+          <span className={`h-2 w-3/4 rounded-full bg-[rgba(20,22,26,0.28)]`} />
+          <span className={`h-1.5 w-1/2 ${bar}`} />
+        </div>
+      )}
+      {type === "newsletter" && (
+        <div className="flex w-full flex-col gap-1.5">
+          <span className={`h-1.5 w-2/3 ${bar}`} />
+          <div className="flex gap-1">
+            <span className="h-3.5 flex-1 rounded-sm border border-[rgba(20,22,26,0.18)] bg-surface" />
+            <span className="h-3.5 flex-1 rounded-sm border border-[rgba(20,22,26,0.18)] bg-surface" />
+            <span className="h-3.5 w-6 shrink-0 rounded-sm bg-accent-gold" />
           </div>
-        </PopoverContent>
-      </PopoverRoot>
+        </div>
+      )}
+      {type === "botHelp" && (
+        <div className="flex w-full items-center gap-2">
+          <span className="size-6 shrink-0 rounded-full bg-[rgba(20,22,26,0.18)]" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className={`h-1.5 w-4/5 ${bar}`} />
+            <span className={`h-1.5 w-3/5 ${bar}`} />
+          </div>
+          <span className="h-4 w-8 shrink-0 rounded-sm bg-ink" />
+        </div>
+      )}
+      {type === "featurePromo" && (
+        <div className="flex w-full items-center gap-2">
+          <span className="size-8 shrink-0 rounded-sm bg-[rgba(20,22,26,0.18)]" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className={`h-1.5 w-2/3 ${bar}`} />
+            <span className={`h-1.5 w-1/2 ${bar}`} />
+          </div>
+          <span className="h-4 w-6 shrink-0 rounded-sm bg-primary" />
+        </div>
+      )}
+      {type === "deeperCourse" && (
+        <div className="flex w-full flex-col gap-1.5">
+          <span className={`h-1.5 w-1/3 ${bar}`} />
+          <span className={`h-2 w-3/4 rounded-full bg-[rgba(20,22,26,0.28)]`} />
+          <span className="mt-0.5 h-4 w-10 rounded-sm bg-accent-gold" />
+        </div>
+      )}
     </div>
   );
 }

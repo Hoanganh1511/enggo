@@ -23,15 +23,18 @@ export function SeriesQuestionPickerToc({
   if (items.length < 2) return null;
 
   return (
-    // flex-wrap (khong con grid grid-cols-2) - yeu cau nguoi dung: "Cho dồn
-    // vào nhau chứ sao lại cách ra thế?" Luc con la grid-cols-2, moi box du
-    // da gioi han max-w-100 (400px) van bi GAN CHET vao 1 cot rong 50% man
-    // hinh (grid tu chia cot theo % bat ke noi dung/max-width ben trong), de
-    // lo 1 khoang trang RAT LON giua 2 box tren man hinh rong. flex-wrap de
-    // box 2 tu NAM SAT box 1 (chi cach dung 1 khoang gap-2) neu con cho,
-    // chi xuong dong khi thuc su khong vua - dung "dồn vào nhau" nguoi dung
-    // mo ta. min-w-70 giu box khong bi qua hep khi cau hoi ngan (vd "Design").
-    <div className="font-content mt-6 flex flex-wrap gap-2">
+    // [2026-09-15] grid grid-cols-[repeat(2,max-content)] + justify-start
+    // (khong con flex-wrap tu do) - yeu cau nguoi dung: "nó phải dồn 2 cột
+    // bên trái cơ mà, chứ có phải bừa phứa như này đâu" - flex-wrap TRUOC DO
+    // de moi box tu do xep 3-4 cai/hang tren man hinh rong (dung "dồn vào
+    // nhau" nhung LAI mat luon bo cuc 2 COT co chu dich). Grid VOI cot
+    // "max-content" (khong phai 1fr/mac dinh cua grid-cols-2 truoc do nua -
+    // day chinh la nguyen nhan GAY khoang trang lon lan truoc, xem lich su
+    // duoi) chi rong DUNG BANG noi dung ben trong (van bi tran max-w-100 tu
+    // chinh item), CONG justify-start de ca khoi grid neo VE BEN TRAI thay
+    // vi dan deu/stretch het hang - dung 2 cot, dam sat nhau, khong con
+    // khoang trong thua.
+    <div className="font-content mt-6 grid grid-cols-1 justify-start gap-2 sm:grid-cols-[repeat(2,max-content)]">
       {items.map((item, i) => (
         <Link
           key={item.id}
@@ -44,7 +47,7 @@ export function SeriesQuestionPickerToc({
           // Nen/vien rieng (khong dung bg-surface/border-border mac dinh) -
           // yeu cau nguoi dung: "Cho nền TOC box : bg-[#f5f6f8], border:
           // rgba(20, 22, 26, 0.22)".
-          className="flex min-w-70 max-w-100 flex-1 items-start gap-2.5 rounded-xl border border-[rgba(20,22,26,0.22)] bg-[#f5f6f8] px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
+          className="flex min-w-70 max-w-100 items-start gap-2.5 rounded-xl border border-[rgba(20,22,26,0.22)] bg-[#f5f6f8] px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
         >
           <span className="font-mono text-[12px] text-ink-faint">
             {String(i + 1).padStart(2, "0")}
