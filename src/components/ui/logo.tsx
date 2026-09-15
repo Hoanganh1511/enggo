@@ -109,6 +109,7 @@ const Logo = ({
           {/* Royal Gold Text */}
           <span
             className="
+            ml-2
           text-xl
           font-bold
           tracking-[-0.02em]
