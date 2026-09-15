@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { ArrowRight, Copy, FileEdit, Layers, Share2, User } from "lucide-react";
+import { ArrowRight, FileEdit, Layers, Share2, User } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import {
   PopoverRoot,
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/popover";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
-import { CopyPageFlipCard } from "@/components/series/CopyPageFlipCard";
 import type { ContentSeriesEntrySummary } from "@/lib/api/content-series";
 
 // [2026-09-15] Tang size + dam chu (h-8 -> h-9, px-3 -> px-3.5, 12.5px ->
@@ -28,7 +27,10 @@ const buttonClass =
 
 // Cum hang cuoi CUNG cua phan dau bai (truoc khi xuong than bai) - yeu cau
 // nguoi dung, khop anh mau tham khao (trang skill cua Matt Pocock): trai la
-// tac gia + Follow, phai la Copy page/Share/Next page. Tac gia lay tu
+// tac gia + Follow, phai la Share/Next page. [2026-09-16] "Copy page" da
+// CHUYEN sang gop chung voi nut Markdown (xem EntryDownloadButtons.tsx, popover
+// "Copy Markdown"/"Tải Markdown") - yeu cau nguoi dung: "Gộp nút copy page
+// vào trên nút Tải markdown". Tac gia lay tu
 // Series.authorName/authorAvatarUrl (Series KHONG co FK toi 1 User cu the,
 // chi la CHUOI TEXT tu do) nen "Follow" O DAY CHUA gan logic that (chua co he
 // thong follow tac gia rieng cho Series) - CHI la UI, bam vao hien toast
@@ -47,7 +49,6 @@ const buttonClass =
 export function EntryPageActionsRow({
   authorName,
   authorAvatarUrl,
-  contentMarkdown,
   shareChannels,
   shareUrl,
   shareTitle,
@@ -55,10 +56,16 @@ export function EntryPageActionsRow({
   seriesSlug,
   entrySlug,
   isAdmin,
+  // Cum ben PHAI (Share/Next page) rieng, KHONG anh huong toi cum tac gia+
+  // Follow ben trai - yeu cau nguoi dung 2026-09-16: "À, ở Map thì vẫn để
+  // cái cụm Tác giả nhé" (dinh chinh lai quyet dinh truoc do an CA hang cho
+  // entry o cap dau tien cua Explore - Map/Skills - xem
+  // isExploreTopLevelEntry trong [entrySlug]/page.tsx). Mac dinh true (hien
+  // binh thuong) cho moi entry khac.
+  showShareAndNext = true,
 }: {
   authorName: string;
   authorAvatarUrl: string | null;
-  contentMarkdown: string;
   shareChannels: string[];
   shareUrl: string;
   shareTitle: string;
@@ -66,28 +73,12 @@ export function EntryPageActionsRow({
   seriesSlug: string;
   entrySlug: string;
   isAdmin: boolean;
+  showShareAndNext?: boolean;
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [authorMenuOpen, setAuthorMenuOpen] = useState(false);
-  const [copyPageAnim, setCopyPageAnim] = useState(false);
   const { data: session } = useSession();
   const username = session?.username;
-
-  // [2026-09-15] KHONG con toast cho rieng hanh dong nay - yeu cau nguoi
-  // dung: "không dùng toast để thông báo thành công [nút] copy page" - thay
-  // bang CopyPageFlipCard (UI file markdown tu lat/scale, xem file do). Tu
-  // tat sau 900ms (rut ngan tu 1.4s - yeu cau nguoi dung: "cho thời gian lên
-  // nhanh hơn và xong cũng xuống nhanh hơn. hơi lâu"; van du de kip doc
-  // "Copied .md" truoc khi bien mat vi lat vao gio chi con 0.3s).
-  function handleCopyPage() {
-    navigator.clipboard
-      .writeText(contentMarkdown)
-      .then(() => {
-        setCopyPageAnim(true);
-        setTimeout(() => setCopyPageAnim(false), 900);
-      })
-      .catch(() => toast.danger("Không copy được, thử lại sau."));
-  }
 
   function handleCopyShareUrl() {
     navigator.clipboard
@@ -187,59 +178,54 @@ export function EntryPageActionsRow({
         </button>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        <button type="button" onClick={handleCopyPage} className={buttonClass}>
-          <Copy size={14} strokeWidth={2} aria-hidden="true" />
-          Copy page
-        </button>
-
-        {/* [2026-09-15] SimpleModal (khong con PopoverRoot) - yeu cau nguoi
-            dung: "Khi ấn nút Share trong bài viết nó phải hiện modal như
-            này chứ không phải như [popover cu]" - dung LAI SimpleModal (khung
-            modal chung ca app, xem simple-modal.tsx) thay vi tu ve 1 popover
-            nho, khop dung "form factor" modal that (giua man hinh, co lop
-            overlay mo, nut dong X) trong anh mau. */}
-        <SimpleModal open={shareOpen} onOpenChange={setShareOpen} title="Share">
-          <div className="series-scope flex flex-col gap-4">
-            <div className="overflow-x-auto pb-1">
-              <SeriesShareButtons
-                variant="modal"
-                channels={shareChannels}
-                url={shareUrl}
-                title={shareTitle}
-              />
+      {showShareAndNext && (
+        <div className="flex shrink-0 items-center gap-2">
+          {/* [2026-09-15] SimpleModal (khong con PopoverRoot) - yeu cau nguoi
+              dung: "Khi ấn nút Share trong bài viết nó phải hiện modal như
+              này chứ không phải như [popover cu]" - dung LAI SimpleModal (khung
+              modal chung ca app, xem simple-modal.tsx) thay vi tu ve 1 popover
+              nho, khop dung "form factor" modal that (giua man hinh, co lop
+              overlay mo, nut dong X) trong anh mau. */}
+          <SimpleModal open={shareOpen} onOpenChange={setShareOpen} title="Share">
+            <div className="series-scope flex flex-col gap-4">
+              <div className="overflow-x-auto pb-1">
+                <SeriesShareButtons
+                  variant="modal"
+                  channels={shareChannels}
+                  url={shareUrl}
+                  title={shareTitle}
+                />
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2">
+                <span className="min-w-0 flex-1 truncate text-[13px] text-ink-muted">
+                  {shareUrl}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyShareUrl}
+                  className="shrink-0 cursor-pointer rounded-md bg-surface px-3 py-1.5 text-[12.5px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-3 py-2">
-              <span className="min-w-0 flex-1 truncate text-[13px] text-ink-muted">
-                {shareUrl}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyShareUrl}
-                className="shrink-0 cursor-pointer rounded-md bg-surface px-3 py-1.5 text-[12.5px] font-semibold text-ink transition-colors duration-150 ease-out hover:bg-hover-bg"
-              >
-                Copy
-              </button>
-            </div>
-          </div>
-        </SimpleModal>
-        <button type="button" onClick={() => setShareOpen(true)} className={buttonClass}>
-          <Share2 size={14} strokeWidth={2} aria-hidden="true" />
-          Share
-        </button>
+          </SimpleModal>
+          <button type="button" onClick={() => setShareOpen(true)} className={buttonClass}>
+            <Share2 size={14} strokeWidth={2} aria-hidden="true" />
+            Share
+          </button>
 
-        {next && (
-          <Link
-            href={`/series/${seriesSlug}/${next.slug}`}
-            className={buttonClass}
-          >
-            Next page
-            <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
-          </Link>
-        )}
-      </div>
-
-      <CopyPageFlipCard show={copyPageAnim} />
+          {next && (
+            <Link
+              href={`/series/${seriesSlug}/${next.slug}`}
+              className={buttonClass}
+            >
+              Next page
+              <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

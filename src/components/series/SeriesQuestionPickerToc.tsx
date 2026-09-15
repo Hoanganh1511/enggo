@@ -47,7 +47,15 @@ export function SeriesQuestionPickerToc({
           // Nen/vien rieng (khong dung bg-surface/border-border mac dinh) -
           // yeu cau nguoi dung: "Cho nền TOC box : bg-[#f5f6f8], border:
           // rgba(20, 22, 26, 0.22)".
-          className="flex min-w-100 max-w-100 items-start gap-2.5 rounded-xl border border-[rgba(20,22,26,0.22)] bg-[#f5f6f8] px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
+          // [2026-09-16 fix] min-w-100 (400px) truoc day CO DINH moi kich
+          // thuoc man hinh - tren mobile (grid-cols-1, cot rong = full
+          // viewport, thuong < 400px) ep box RONG HON CA man hinh, tran
+          // ngang/bi cat (nguoi dung hoi rieng ve responsive khu Series).
+          // Chuyen thanh sm:min-w-100 (CHI ap dung tu breakpoint sm tro len,
+          // dung luc grid chuyen sang 2 cot max-content that su can 1 kich
+          // thuoc toi thieu dong deu) + w-full lam nen mobile (chiem het be
+          // rong cot 1-cot, khong bi ep qua kho).
+          className="flex w-full min-w-0 max-w-100 items-start gap-2.5 rounded-xl border border-[rgba(20,22,26,0.22)] bg-[#f5f6f8] px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60 sm:min-w-100"
         >
           <span className="font-mono text-[12px] text-ink-faint">
             {String(i + 1).padStart(2, "0")}

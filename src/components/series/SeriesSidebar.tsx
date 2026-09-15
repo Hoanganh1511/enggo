@@ -165,10 +165,17 @@ function CategoryNode({
       ? category.title.trim().toLowerCase() === "explore"
       : (emphasizedFromParent ?? false);
   // Nhom con (accordion) dang CHUA entry active ben trong - doi mau sang
-  // "--sidebar-item-parent-active-color" (dam hon nhom con binh thuong)
+  // "--sidebar-item-parent-active-color" (dam hon nhom con binh thuong),
   // GIU NGUYEN weight 400 (khong bold nhu chinh entry active) - dung tinh
   // than token "--sidebar-item-parent-active" nguoi dung chot (14px/400/
   // #303236), phan biet ro voi entry THAT su active (14/500/#27292D).
+  // [2026-09-16 fix] Code THUC TE truoc do lai ap "font-semibold" (mau thuan)
+  // du comment tren da noi ro "GIU NGUYEN weight 400" - contradict ngay
+  // trong chinh no, khien accordion chua trang dang xem (vd "Discover" khi
+  // dang o 1 Entry ben trong no) nhin DAM/BOLD hon han cac accordion khac
+  // (nguoi dung bao "đậm hơn các cái dưới", xac nhan qua DevTools thay
+  // "font-semibold" that su dang ap dung). Sua dung y comment: CHI doi MAU
+  // (den hon), KHONG doi weight - "chỉ cần đổi text đen là được. Đừng bold".
   const hasActiveEntry = entries.some(
     (e) => `/series/${seriesSlug}/${e.slug}` === pathname,
   );
@@ -183,14 +190,12 @@ function CategoryNode({
       type="button"
       onClick={() => onToggle(category.id)}
       className={cn(
-        // "Navigation" (14/400) / "Active navigation" (14/600) - theo dung
-        // bang cau hinh type system nguoi dung chot (thay the phan hoi tam
-        // thoi truoc do dong bo 13px voi entry - nay quay lai 14px CO DINH,
-        // chi WEIGHT doi theo hasActiveEntry, khong doi size).
-        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[14px] leading-5 hover:bg-hover-bg",
+        // Weight LUON font-normal (400) - CHI mau doi theo hasActiveEntry
+        // (xem comment o tren), khong con "font-semibold" luc active nua.
+        "flex w-full cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-[14px] leading-5 font-normal hover:bg-hover-bg",
         hasActiveEntry
-          ? "font-semibold text-(--sidebar-item-parent-active-color)"
-          : "font-normal text-(--sidebar-item-color)",
+          ? "text-(--sidebar-item-parent-active-color)"
+          : "text-(--sidebar-item-color)",
       )}
       // paddingLeft CO DINH (khong nhan them depth * 12) - yeu cau nguoi
       // dung: "accordion không để thụt vào đâu nhé. Chỉ có các bài trong

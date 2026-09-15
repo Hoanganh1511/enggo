@@ -162,29 +162,28 @@ async function EntryHeader({
 
       {/* Hang cuoi cung cua cum dau bai, NGAY TRUOC khi xuong than bai - yeu
           cau nguoi dung (khop anh mau tham khao): tac gia + Follow (trai),
-          Copy page/Share/Next page (phai). isAdmin/entrySlug - popover
-          "Profile/Cập nhật bài viết/Cập nhật Series" khi bam vao avatar+ten
-          tac gia (thay the cum nut doc EntryAuthorRail cu, da bo - yeu cau
-          nguoi dung: "Bỏ cái cục này đi").
-          [2026-09-16] AN cho MOI entry o cap dau tien cua Explore (Map,
-          Skills...) - yeu cau nguoi dung: "Tất cả mấy cái ngay cấp đầu tiên
-          của Explore thì đều không tính là bài viết kiểu kia" (xem
-          isExploreTopLevelEntry o dau file + ghi chu trong
-          docs/ai-hero-design-tokens.md). */}
-      {!isExploreTopLevel && (
-        <EntryPageActionsRow
-          authorName={series.authorName}
-          authorAvatarUrl={series.authorAvatarUrl}
-          contentMarkdown={entry.contentMarkdown}
-          shareChannels={series.shareChannels}
-          shareUrl={entryUrl}
-          shareTitle={entry.title}
-          next={next}
-          seriesSlug={slug}
-          entrySlug={entry.slug}
-          isAdmin={status.isAdmin}
-        />
-      )}
+          Share/Next page (phai - "Copy page" da chuyen sang gop chung voi
+          nut Markdown, xem EntryDownloadButtons.tsx). isAdmin/entrySlug -
+          popover "Profile/Cập nhật bài viết/Cập nhật Series" khi bam vao
+          avatar+ten tac gia (thay the cum nut doc EntryAuthorRail cu, da bo -
+          yeu cau nguoi dung: "Bỏ cái cục này đi").
+          [2026-09-16] CUM TAC GIA+Follow LUON hien (ke ca Map/Skills) - yeu
+          cau nguoi dung dinh chinh lai: "À, ở Map thì vẫn để cái cụm Tác giả
+          nhé". CHI rieng Share/Next page (showShareAndNext) moi an cho entry
+          o cap dau tien cua Explore (xem isExploreTopLevelEntry dau file +
+          ghi chu trong docs/ai-hero-design-tokens.md). */}
+      <EntryPageActionsRow
+        authorName={series.authorName}
+        authorAvatarUrl={series.authorAvatarUrl}
+        shareChannels={series.shareChannels}
+        shareUrl={entryUrl}
+        shareTitle={entry.title}
+        next={next}
+        seriesSlug={slug}
+        entrySlug={entry.slug}
+        isAdmin={status.isAdmin}
+        showShareAndNext={!isExploreTopLevel}
+      />
 
       {/* Zone "middle" - giua cum Top va than bai, NGAY TREN <hr> ben duoi -
           yeu cau nguoi dung (them sau cung, mo rong tu he thong block dau

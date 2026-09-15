@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download } from "lucide-react";
+import { ChevronDown, Copy, Download } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { CopyPageFlipCard } from "@/components/series/CopyPageFlipCard";
 
 // Id cua khoi noi dung THAT (DocsMarkdown render trong EntryBody, xem
 // page.tsx) - PDF can chup DOM node nay (html2canvas), Markdown thi da co san
@@ -47,12 +49,32 @@ export function EntryDownloadButtons({
   contentMarkdown: string;
 }) {
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [markdownMenuOpen, setMarkdownMenuOpen] = useState(false);
+  const [copyPageAnim, setCopyPageAnim] = useState(false);
   const focusModeActive = useFocusModeStore((s) => s.active);
   const toggleFocusMode = useFocusModeStore((s) => s.toggle);
 
   function handleDownloadMarkdown() {
     const blob = new Blob([contentMarkdown], { type: "text/markdown;charset=utf-8" });
     downloadBlob(blob, `${slugifyFileName(title)}.md`);
+    setMarkdownMenuOpen(false);
+  }
+
+  // [2026-09-16] Gop "Copy page" (truoc o EntryPageActionsRow.tsx, cuoi
+  // phan dau bai) vao NGAY DAY - yeu cau nguoi dung: "Gộp nút copy page vào
+  // trên nút Tải markdown... Giờ nút Tải Markdown khi click sẽ hiện popover
+  // 2 options: Copy Markdown và Tải Markdown". KHONG con toast rieng - van
+  // dung CopyPageFlipCard (UI file markdown tu lat/scale) nhu truoc, chuyen
+  // nguyen logic tu EntryPageActionsRow.tsx sang day.
+  function handleCopyMarkdown() {
+    navigator.clipboard
+      .writeText(contentMarkdown)
+      .then(() => {
+        setCopyPageAnim(true);
+        setTimeout(() => setCopyPageAnim(false), 900);
+      })
+      .catch(() => toast.danger("Không copy được, thử lại sau."));
+    setMarkdownMenuOpen(false);
   }
 
   async function handleDownloadPdf() {
@@ -108,14 +130,48 @@ export function EntryDownloadButtons({
         <Download size={13} strokeWidth={2} aria-hidden="true" />
         {generatingPdf ? "Đang tạo PDF..." : "Tải PDF"}
       </button>
-      <button
-        type="button"
-        onClick={handleDownloadMarkdown}
-        className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-[12.5px] font-medium text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
-      >
-        <Download size={13} strokeWidth={2} aria-hidden="true" />
-        Tải Markdown
-      </button>
+      {/* [2026-09-16] Gop "Copy page" vao day - yeu cau nguoi dung: "Giờ nút
+          Tải Markdown khi click sẽ hiện popover 2 options: Copy Markdown và
+          Tải Markdown. Text của button giờ chỉ còn Markdown". */}
+      <PopoverRoot open={markdownMenuOpen} onOpenChange={setMarkdownMenuOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-border px-3 text-[12.5px] font-medium text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          >
+            <Download size={13} strokeWidth={2} aria-hidden="true" />
+            Markdown
+            <ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          open={markdownMenuOpen}
+          align="start"
+          sideOffset={6}
+          // series-scope lap lai - PopoverContent portal ra document.body
+          // (ngoai cay DOM cua .series-scope), xem giai thich chi tiet trong
+          // EntryPageActionsRow.tsx (popover Profile/Cập nhật...) - cung 1 ly
+          // do, khong lap lai o day.
+          className="series-scope z-50 w-44 overflow-hidden rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+        >
+          <button
+            type="button"
+            onClick={handleCopyMarkdown}
+            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          >
+            <Copy size={14} strokeWidth={2} aria-hidden="true" />
+            Copy Markdown
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadMarkdown}
+            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          >
+            <Download size={14} strokeWidth={2} aria-hidden="true" />
+            Tải Markdown
+          </button>
+        </PopoverContent>
+      </PopoverRoot>
 
       {/* Switch rieng (khong dung lai Toggle chung o SettingsControls.tsx -
           ban do to hon va mau xanh --primary, lac tong voi khu Series dang
@@ -162,6 +218,8 @@ export function EntryDownloadButtons({
         </motion.button>
         Focus mode
       </label>
+
+      <CopyPageFlipCard show={copyPageAnim} />
     </div>
   );
 }

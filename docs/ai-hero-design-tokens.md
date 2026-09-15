@@ -107,19 +107,28 @@ vì đoán - 2 cây component không dùng chung bất kỳ file style nào ngo�
 
 Entry nằm **TRỰC TIẾP** dưới category gốc tên "Explore" (depth 0, tức
 `category.parentId === null`) - hiện tại là **"Map"** và **"Skills"** - là
-KHÔNG hiện 2 cụm UI:
-- `EntryPageActionsRow` (author+Follow, Copy page/Share/Next page) ở cuối
-  phần đầu bài.
-- `SeriesNextEntryBanner` (banner full-width "bài tiếp theo" ở cuối trang).
+KHÔNG hiện cụm **Share/Next page** (bên phải `EntryPageActionsRow`) và
+KHÔNG hiện `SeriesNextEntryBanner` (banner full-width "bài tiếp theo" ở cuối
+trang). Cụm **tác giả + Follow** (bên trái `EntryPageActionsRow`) thì
+NGƯỢC LẠI - LUÔN hiện, kể cả ở Map/Skills (người dùng đính chính: "À, ở Map
+thì vẫn để cái cụm Tác giả nhé").
 
 Xem `isExploreTopLevelEntry()` trong `[entrySlug]/page.tsx` - so khớp qua
 `category.parentId === null && category.title.toLowerCase() === "explore"`,
 KHÔNG so theo `entry.slug` cụ thể (tự động đúng nếu sau này thêm/đổi tên entry
-gắn trực tiếp vào Explore).
+gắn trực tiếp vào Explore). Kết quả truyền vào `EntryPageActionsRow` qua prop
+`showShareAndNext` (KHÔNG dùng để ẩn/hiện cả component - `EntryPageActionsRow`
+luôn render, chỉ ẩn cụm bên phải của chính nó).
 
 Entry nằm trong 1 category CON lồng bên trong Explore (vd "Discover" ->
 Architecture Map/AWS Services/Hands-on Labs) KHÔNG tính vào diện này - đó vẫn
-là bài viết bình thường, vẫn hiện đầy đủ 2 cụm trên.
+là bài viết bình thường, vẫn hiện đầy đủ mọi cụm.
+
+Lưu ý: "Copy page" trước đây nằm trong cụm Share/Next page - từ 2026-09-16 đã
+CHUYỂN sang gộp chung với nút "Markdown" (`EntryDownloadButtons.tsx`, popover
+"Copy Markdown"/"Tải Markdown") nên KHÔNG còn bị ảnh hưởng bởi quy tắc ẩn/hiện
+này nữa - nút Markdown (kèm Copy Markdown) luôn hiện ở mọi entry, kể cả Map/
+Skills.
 
 **Lịch sử hiểu sai/sửa lại nhiều lần (đọc kỹ trước khi đổi lại)**:
 1. Lần 1: tưởng CẢ nhánh Explore (mọi entry, kể cả trong Discover) đều ẩn -
@@ -127,5 +136,9 @@ là bài viết bình thường, vẫn hiện đầy đủ 2 cụm trên.
 2. Lần 2: thu hẹp về CHỈ riêng entry slug "map" - THIẾU, người dùng bổ sung:
    "Tất cả mấy cái ngay cấp đầu tiên của Explore thì đều không tính là bài
    viết kiểu kia" (tức còn cả "Skills" nữa, không chỉ "map").
-3. Phạm vi ĐÚNG (chốt): entry gắn TRỰC TIẾP vào category Explore (cấp 1) -
-   không phải toàn nhánh, không phải chỉ 1 entry "map".
+3. Lần 3: ẩn NGUYÊN CẢ `EntryPageActionsRow` (kể cả cụm tác giả+Follow) cho
+   entry cấp 1 của Explore - THIẾU, người dùng đính chính: "À, ở Map thì vẫn
+   để cái cụm Tác giả nhé" - cụm tác giả+Follow phải LUÔN hiện.
+4. Phạm vi ĐÚNG (chốt): entry gắn TRỰC TIẾP vào category Explore (cấp 1) chỉ
+   ẩn cụm Share/Next page (+ banner "bài tiếp theo") - KHÔNG ẩn tác giả+
+   Follow, không ẩn Copy/Tải Markdown (đã tách riêng khỏi cụm này).
