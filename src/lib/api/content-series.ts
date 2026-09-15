@@ -101,7 +101,31 @@ export type EntryContentBlock =
       buttonLabel: string;
       buttonUrl: string;
       buttonEvent?: string;
+    }
+  // [2026-09-15] Danh sach bai hoc dang the doc ("5 lessons, in order") -
+  // yeu cau nguoi dung dua tren 1 anh mau: tieu de chung + nhieu dong, moi
+  // dong la 1 the rieng (anh thu nho + so thu tu + tieu de + mo ta 2 dong +
+  // nut mui ten tron ben phai). Khac VOI SeriesNextEntryBanner (chi 1 the
+  // Next DUY NHAT, tu dong lay tu du lieu that cua Series) - block nay la
+  // 1 DANH SACH LIEN KET TUY Y admin tu nhap (co the tro toi Entry khac
+  // trong CHINH Series nay, Series khac, hoac URL ngoai bat ky), dung cho
+  // truong hop muon gioi thieu 1 nhom bai/khoa hoc CU THE giua/cuoi 1 Entry.
+  | {
+      id: string;
+      zone: "middle" | "bottom";
+      type: "lessonList";
+      heading?: string;
+      items: EntryLessonListItem[];
     };
+
+export type EntryLessonListItem = {
+  id: string;
+  imageUrl: string;
+  title: string;
+  description?: string;
+  url: string;
+  event?: string;
+};
 
 // "Campaign card" - cac field dieu khien hien thi the Series o /home (rail)
 // + /series (list), xem SeriesCampaignCard.tsx + tab "Thẻ hiển thị" trong

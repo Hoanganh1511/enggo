@@ -25,16 +25,20 @@ export function CopyPageFlipCard({ show }: { show: boolean }) {
         >
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            animate={{ opacity: 1, transition: { duration: 0.15 } }}
+            exit={{ opacity: 0, transition: { duration: 0.12 } }}
             className="absolute inset-0 bg-black/10"
           />
+          {/* [2026-09-15] Rut ngan thoi luong - yeu cau nguoi dung: "cho thời
+              gian lên nhanh hơn và xong cũng xuống nhanh hơn. hơi lâu". Lat
+              vao 0.55s -> 0.3s; luc thoat gan rieng 1 `transition` NHANH HON
+              (0.15s) ngay trong chinh object `exit` (ghi de transition chung
+              o tren CHI cho animate) thay vi dung chung 1 toc do cho ca 2
+              chieu. */}
           <motion.div
             initial={{ scale: 0, rotateY: 180 }}
-            animate={{ scale: 1, rotateY: 0 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 0.55, ease: [0.34, 1.56, 0.64, 1] }}
+            animate={{ scale: 1, rotateY: 0, transition: { duration: 0.3, ease: [0.34, 1.56, 0.64, 1] } }}
+            exit={{ scale: 0, opacity: 0, transition: { duration: 0.15, ease: "easeIn" } }}
             style={{ width: 200, height: 200, transformStyle: "preserve-3d" }}
             className="relative"
           >

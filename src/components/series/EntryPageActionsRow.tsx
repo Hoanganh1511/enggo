@@ -76,14 +76,15 @@ export function EntryPageActionsRow({
   // [2026-09-15] KHONG con toast cho rieng hanh dong nay - yeu cau nguoi
   // dung: "không dùng toast để thông báo thành công [nút] copy page" - thay
   // bang CopyPageFlipCard (UI file markdown tu lat/scale, xem file do). Tu
-  // tat sau 1.4s (dai hon 1 chut so voi thoi luong lat 0.55s de nguoi dung
-  // kip doc "Copied .md" truoc khi bien mat).
+  // tat sau 900ms (rut ngan tu 1.4s - yeu cau nguoi dung: "cho thời gian lên
+  // nhanh hơn và xong cũng xuống nhanh hơn. hơi lâu"; van du de kip doc
+  // "Copied .md" truoc khi bien mat vi lat vao gio chi con 0.3s).
   function handleCopyPage() {
     navigator.clipboard
       .writeText(contentMarkdown)
       .then(() => {
         setCopyPageAnim(true);
-        setTimeout(() => setCopyPageAnim(false), 1400);
+        setTimeout(() => setCopyPageAnim(false), 900);
       })
       .catch(() => toast.danger("Không copy được, thử lại sau."));
   }

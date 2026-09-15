@@ -11,6 +11,7 @@ import type {
   EntryBlockButtonStyle,
   EntryContentBlock,
   EntryContentBlockZone,
+  EntryLessonListItem,
 } from "@/lib/api/content-series";
 
 const inputClass =
@@ -25,6 +26,7 @@ const BLOCK_TYPE_LABEL: Record<EntryContentBlock["type"], string> = {
   botHelp: "Gợi ý hỏi bot",
   featurePromo: "Thẻ quảng bá (có ảnh)",
   deeperCourse: "Thẻ CTA (không ảnh)",
+  lessonList: "Danh sách bài học",
 };
 
 // Mo ta ngan duoi nhan trong modal chon block - giup hinh dung THEM anh
@@ -39,6 +41,7 @@ const BLOCK_TYPE_DESCRIPTION: Record<EntryContentBlock["type"], string> = {
   botHelp: "Icon + gợi ý + 1 nút CTA",
   featurePromo: "Ảnh + tiêu đề + mô tả + nút",
   deeperCourse: "Tiêu đề + mô tả + nút, không ảnh",
+  lessonList: "Tiêu đề chung + nhiều thẻ bài học xếp dọc",
 };
 
 // Loai block cho phep TRONG TUNG zone - "top" giu nguyen 4 loai CU (thiet
@@ -47,8 +50,8 @@ const BLOCK_TYPE_DESCRIPTION: Record<EntryContentBlock["type"], string> = {
 // chung 1 bo 4 loai nay cho CA 2 vi tri giua/cuoi, tach biet voi 4 loai cu.
 const ZONE_TYPES: Record<EntryContentBlockZone, EntryContentBlock["type"][]> = {
   top: ["toc", "install", "buttonGroup", "callout"],
-  middle: ["newsletter", "botHelp", "featurePromo", "deeperCourse"],
-  bottom: ["newsletter", "botHelp", "featurePromo", "deeperCourse"],
+  middle: ["newsletter", "botHelp", "featurePromo", "deeperCourse", "lessonList"],
+  bottom: ["newsletter", "botHelp", "featurePromo", "deeperCourse", "lessonList"],
 };
 
 const BUTTON_STYLE_OPTIONS: { value: EntryBlockButtonStyle; label: string }[] = [
@@ -104,11 +107,17 @@ function newBlock(type: EntryContentBlock["type"], zone: EntryContentBlockZone):
         buttonLabel: "",
         buttonUrl: "",
       };
+    case "lessonList":
+      return { id: randomId(), zone: zone === "top" ? "middle" : zone, type: "lessonList", items: [] };
   }
 }
 
 function newButton(): EntryBlockButton {
   return { id: randomId(), label: "", url: "", style: "outline-black" };
+}
+
+function newLessonItem(): EntryLessonListItem {
+  return { id: randomId(), imageUrl: "", title: "", url: "" };
 }
 
 // Editor cho danh sach "khoi noi dung" CHEN duoc vao 1 trong 3 zone cua 1
@@ -369,20 +378,33 @@ export function EntryContentBlocksEditor({
                 value={block.description ?? ""}
                 onChange={(e) => updateBlock(index, { description: e.target.value })}
               />
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <input
-                  className={inputClass}
-                  placeholder="Nhãn nút *"
-                  value={block.buttonLabel}
-                  onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
-                />
-                <input
-                  className={inputClass}
-                  placeholder="URL nút *"
-                  value={block.buttonUrl}
-                  onChange={(e) => updateBlock(index, { buttonUrl: e.target.value })}
-                />
-              </div>
+              <input
+                className={inputClass}
+                placeholder="Nhãn nút *"
+                value={block.buttonLabel}
+                onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
+              />
+              <ButtonActionField
+                url={block.buttonUrl}
+                event={block.buttonEvent}
+                onChangeUrl={(buttonUrl) => updateBlock(index, { buttonUrl })}
+                onChangeEvent={(buttonEvent) => updateBlock(index, { buttonEvent })}
+              />
+            </div>
+          )}
+
+          {block.type === "lessonList" && (
+            <div className="flex flex-col gap-2">
+              <input
+                className={inputClass}
+                placeholder="Tiêu đề chung (tuỳ chọn, vd: 5 lessons, in order)"
+                value={block.heading ?? ""}
+                onChange={(e) => updateBlock(index, { heading: e.target.value })}
+              />
+              <LessonListItemsEditor
+                items={block.items}
+                onChange={(items) => updateBlock(index, { items })}
+              />
             </div>
           )}
         </div>
@@ -507,6 +529,17 @@ function BlockTypePreview({ type }: { type: EntryContentBlock["type"] }) {
           <span className="mt-0.5 h-4 w-10 rounded-sm bg-accent-gold" />
         </div>
       )}
+      {type === "lessonList" && (
+        <div className="flex w-full flex-col gap-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex items-center gap-1.5 rounded-sm border border-[rgba(20,22,26,0.14)] bg-surface p-1">
+              <span className="h-4 w-6 shrink-0 rounded-sm bg-[rgba(20,22,26,0.18)]" />
+              <span className={`h-1.5 flex-1 ${bar}`} />
+              <span className="size-3 shrink-0 rounded-full border border-[rgba(20,22,26,0.25)]" />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -578,6 +611,58 @@ function ButtonActionField({
         </>
       )}
     </div>
+  );
+}
+
+// Danh sach bai hoc cho block "lessonList" (xem SeriesEntryContentBlocks.tsx
+// - LessonListBlock). Moi dong: anh thu nho + tieu de + mo ta (tuy chon) +
+// ButtonActionField dung chung (link URL hoac su kien trang) cho hanh dong
+// khi bam vao the.
+function LessonListItemsEditor({
+  items,
+  onChange,
+}: {
+  items: EntryLessonListItem[];
+  onChange: (items: EntryLessonListItem[]) => void;
+}) {
+  return (
+    <RepeaterField
+      items={items}
+      onChange={onChange}
+      newItem={newLessonItem}
+      addLabel="Thêm bài học"
+      renderRow={(item, update, remove) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-start gap-2">
+            <input
+              className={`${inputClass} min-w-0 flex-1`}
+              placeholder="URL ảnh thu nhỏ *"
+              value={item.imageUrl}
+              onChange={(e) => update({ imageUrl: e.target.value })}
+            />
+            <RemoveRowButton onClick={remove} />
+          </div>
+          <input
+            className={inputClass}
+            placeholder="Tiêu đề *"
+            value={item.title}
+            onChange={(e) => update({ title: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Mô tả (tuỳ chọn, 2 dòng)"
+            value={item.description ?? ""}
+            onChange={(e) => update({ description: e.target.value })}
+          />
+          <ButtonActionField
+            url={item.url}
+            event={item.event}
+            onChangeUrl={(url) => update({ url })}
+            onChangeEvent={(event) => update({ event })}
+          />
+        </div>
+      )}
+    />
   );
 }
 

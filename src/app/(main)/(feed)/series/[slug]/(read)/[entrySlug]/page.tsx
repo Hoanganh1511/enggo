@@ -110,6 +110,13 @@ async function EntryHeader({
         )}
       </div>
 
+      {/* [2026-09-15] Chuyen LEN TREN cum TOC (khong con o duoi) - yeu cau
+          nguoi dung: "Đổi vị trí cụm này lên trên cụm TOC nhé". */}
+      <EntryDownloadButtons
+        title={entry.title}
+        contentMarkdown={entry.contentMarkdown}
+      />
+
       {/* Danh sach khoi noi dung tuy chinh (TOC box/install/buttonGroup/
           callout) - NGAY DUOI subtitle (yeu cau nguoi dung: "cái box toc sẽ
           hiện dạng grid ở dưới subtitle", sau do mo rong thanh nhieu loai
@@ -122,11 +129,6 @@ async function EntryHeader({
         blocks={entry.contentBlocks}
         contentMarkdown={entry.contentMarkdown}
         entrySlug={entry.slug}
-      />
-
-      <EntryDownloadButtons
-        title={entry.title}
-        contentMarkdown={entry.contentMarkdown}
       />
 
       {entry.source && (

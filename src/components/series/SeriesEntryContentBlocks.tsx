@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Copy } from "lucide-react";
+import { ArrowRight, Check, Copy } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { cn } from "@/lib/utils";
 import { extractQuestionPickerToc } from "@/lib/docs/question-picker-toc";
@@ -13,6 +13,7 @@ import type {
   EntryBlockButton,
   EntryContentBlock,
   EntryContentBlockZone,
+  EntryLessonListItem,
 } from "@/lib/api/content-series";
 
 // Danh sach khoi noi dung CO THE CHEN vao 3 vi tri ("zone") tren 1 trang
@@ -127,6 +128,8 @@ function EntryContentBlockRenderer({
       return <FeaturePromoBlock block={block} />;
     case "deeperCourse":
       return <DeeperCourseBlock block={block} />;
+    case "lessonList":
+      return <LessonListBlock block={block} />;
     default:
       return null;
   }
@@ -218,19 +221,20 @@ function BotHelpBlock({
     // p-8 (32px 4 huong) - yeu cau nguoi dung: "padding của cả block đấy
     // cho thành 32px 4 hướng hết nhé".
     <div className="font-content flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-8">
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center">
         {/* Anh chibi rieng nguoi dung tu them (public/assets/images/), thay
             the icon Bot mac dinh - yeu cau nguoi dung: "dùng thay vào cho
             chỗ ảnh logo bên cạnh cụm thông tin 'Not sure where to start'
-            ấy nhé. size 160x160 là đẹp". */}
+            ấy nhé". Size 100x100 (khong con 160x160), KHONG con gap voi
+            cum text ben canh - yeu cau nguoi dung dieu chinh lai. */}
         <Image
-          src="/assets/images/AI_assistant_chibi.png"
+          src="/assets/images/AI_assistant_image.png"
           alt=""
-          width={160}
-          height={160}
+          width={70}
+          height={70}
           className="shrink-0 object-contain"
         />
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-col gap-2">
           <p className="text-[16.5px] font-semibold text-ink">{block.title}</p>
           <p className="text-[14px] text-ink-muted">{block.description}</p>
         </div>
@@ -306,6 +310,91 @@ function DeeperCourseBlock({
         className="mt-3 bg-accent-gold text-ink hover:opacity-90"
       />
     </div>
+  );
+}
+
+// Danh sach bai hoc dang the doc ("5 lessons, in order") - yeu cau nguoi
+// dung dua tren 1 anh mau tham khao: tieu de chung + nhieu the, moi the anh
+// thu nho + so thu tu + tieu de + mo ta 2 dong + nut mui ten tron ben phai.
+// Ca the la 1 link/button DUY NHAT (giong SeriesNextEntryBanner) - "nut mui
+// ten" chi la trang tri THI GIAC, KHONG phai 1 vung click rieng, tranh 2 lop
+// click long nhau tren cung the (khac EntryPageActionsRow noi nut That su
+// tach rieng vi con nhieu hanh dong khac tren cung 1 hang).
+function LessonListBlock({
+  block,
+}: {
+  block: Extract<EntryContentBlock, { type: "lessonList" }>;
+}) {
+  if (block.items.length === 0) return null;
+  return (
+    <div className="font-content flex flex-col gap-3">
+      {block.heading && (
+        <p className="text-[22px] font-extrabold text-ink">{block.heading}</p>
+      )}
+      <div className="flex flex-col gap-3">
+        {block.items.map((item, index) => (
+          <LessonListRow key={item.id} item={item} index={index} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LessonListRow({
+  item,
+  index,
+}: {
+  item: EntryLessonListItem;
+  index: number;
+}) {
+  const className =
+    "group flex cursor-pointer items-center gap-4 rounded-xl border border-border bg-surface p-3 transition-colors duration-150 ease-out hover:border-ink/20";
+  const content = (
+    <>
+      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+        {/* eslint-disable-next-line @next/next/no-img-element -- URL anh go tay, khong qua remotePatterns */}
+        <img src={item.imageUrl} alt="" className="size-full object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-mono text-[12px] text-ink-faint">
+          {String(index + 1).padStart(2, "0")}
+        </p>
+        <p className="mt-0.5 text-[16px] font-bold text-ink">{item.title}</p>
+        {item.description && (
+          <p className="mt-0.5 line-clamp-2 text-[13.5px] text-ink-muted">
+            {item.description}
+          </p>
+        )}
+      </div>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border text-ink-faint transition-colors duration-150 ease-out group-hover:border-ink group-hover:text-ink">
+        <ArrowRight size={15} strokeWidth={2} aria-hidden="true" />
+      </span>
+    </>
+  );
+
+  if (item.event) {
+    return (
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent(item.event!))}
+        className={className}
+      >
+        {content}
+      </button>
+    );
+  }
+  const isExternal = /^https?:\/\//.test(item.url);
+  if (isExternal) {
+    return (
+      <a href={item.url} target="_blank" rel="noreferrer" className={className}>
+        {content}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.url} className={className}>
+      {content}
+    </Link>
   );
 }
 
