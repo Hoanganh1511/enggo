@@ -124,7 +124,17 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
 
   return (
     <FadeIn>
-      <div id={ENTRY_CONTENT_ID} className="mt-6">
+      {/* [&_hr]:-mx-6 lg:[&_hr]:-mx-10 - CHI rieng <hr> (duong ke ngang tach
+          section trong markdown) duoc BLEED tran het chieu rong panel noi
+          dung that su (huy dung -mx6/lg:-mx-10 khop CHINH XAC voi
+          p-6/lg:p-10 cua the cha o layout.tsx: "min-w-0 flex-1 bg-surface
+          p-6 lg:p-10") - text/heading/paragraph khac VAN giu padding binh
+          thuong, KHONG bi anh huong (chi hr moi co margin am nay). Yeu cau
+          nguoi dung: "những cái line ngang này dài full ra... tới nội dung
+          nó vẫn sẽ lại được padding như cũ". Dat o DAY (rieng cho Entry
+          body, khong sua DOCS_PROSE_CLASS dung chung) de KHONG anh huong
+          /docs hay khoi FAQ ben duoi (boi canh padding khac). */}
+      <div id={ENTRY_CONTENT_ID} className="mt-6 [&_hr]:-mx-6 lg:[&_hr]:-mx-10">
         <DocsMarkdown markdown={entry.contentMarkdown} />
       </div>
 
