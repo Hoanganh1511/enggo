@@ -105,7 +105,7 @@ export default async function SeriesLayout({
           </aside>
         </SeriesFocusSidebar>
 
-        <div className="min-w-0 flex-1 bg-surface p-6 lg:p-10">{children}</div>
+        <div className="min-w-0 flex-1 p-6 lg:p-10">{children}</div>
       </SeriesFocusRow>
     </>
   );

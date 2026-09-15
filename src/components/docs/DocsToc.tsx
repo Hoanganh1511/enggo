@@ -86,7 +86,7 @@ export function DocsToc({ toc }: { toc: DocsTocItem[] }) {
             "relative py-1 text-[13px] transition-colors duration-150 ease-out",
             item.level === 3 && "pl-3",
             item.id === activeId
-              ? "font-medium text-ink"
+              ? "font-medium text-accent-gold"
               : "text-ink-faint hover:text-ink-muted",
           )}
         >

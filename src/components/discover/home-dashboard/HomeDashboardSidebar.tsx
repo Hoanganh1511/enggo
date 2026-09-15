@@ -198,7 +198,7 @@ export function HomeDashboardSidebar() {
   if (focusModeActive) return null;
 
   return (
-    <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4] bg-white px-5 py-6 lg:flex lg:flex-col">
+    <aside className="fixed inset-y-0 left-0 top-[var(--header-height)] z-20 hidden w-61 border-r border-[#edf0f4]  px-5 py-6 lg:flex lg:flex-col">
       <SidebarBody pathname={pathname} displayName={displayName} />
     </aside>
   );

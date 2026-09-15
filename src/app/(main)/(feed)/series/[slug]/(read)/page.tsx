@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
@@ -14,16 +14,16 @@ import { SeriesEmailSignup } from "@/components/series/SeriesEmailSignup";
 // [2026-09-14] DA THU auto-redirect sang Entry dau tien nhung gay crash
 // that tren production 1 lan (Vercel bao "This page couldn't load"), da
 // REVERT vi khong xac dinh duoc nguyen nhan qua log.
-// [2026-09-15] Thu lam lai bang redirect() 1 lan nua, nhung nguoi dung
-// chot huong khac: "Không phải là điều hướng sang map, mà ngay từ chỗ link
-// để sang seri ấy, bạn thêm /map vào sau luôn" - tuc la KHONG dung
-// redirect() server-side o day nua (tranh han rui ro crash da gap phai),
-// thay vao do MOI noi TRO toi 1 Series (series list, rail /home, breadcrumb
-// Entry...) tu SUA HREF de tro THANG toi "/series/{slug}/map" ngay tu dau -
-// xem cac cho da sua: series/page.tsx, NewestSeriesRail.tsx,
-// [entrySlug]/page.tsx (breadcrumb). Trang nay (URL goc /series/{slug})
-// VAN ton tai binh thuong (khong con bi chan boi redirect) - chi con duoc
-// ghe truc tiep qua URL go tay/link cu tu ben ngoai.
+// [2026-09-15] Thu SUA HREF o moi noi TRO toi 1 Series (series list, rail
+// /home, breadcrumb Entry) de tro THANG toi "/series/{slug}/map" thay vi
+// redirect() server-side - nhung nguoi dung van tiep tuc ghe duoc URL goc
+// nay qua cac duong KHONG kiem soat duoc bang cach sua href (bookmark cu,
+// go tay URL, link ngoai...): "Sao cứ vào route của seri luôn vậy? Nó không
+// có cái đó. Mặc định của seri là /map". LAM LAI redirect() - lan nay van
+// GIU NGUYEN toan bo href da sua sang "/map" truc tiep (khong revert, van
+// co ich vi tranh redirect vong lai khi dieu huong tu trong app), CHI thom
+// redirect() o day nhu 1 lop BAO DAM CUOI CUNG cho MOI duong con lai dan
+// toi URL goc nay.
 export default async function SeriesOverviewPage({
   params,
 }: {
@@ -32,6 +32,12 @@ export default async function SeriesOverviewPage({
   const { slug } = await params;
   const series = await getContentSeriesOverviewAction(slug).catch(() => null);
   if (!series) notFound();
+
+  const landingEntry =
+    series.entries.find((e) => e.slug === "map") ?? series.entries[0];
+  if (landingEntry?.slug) {
+    redirect(`/series/${slug}/${landingEntry.slug}`);
+  }
 
   return (
     <div className="w-full pb-20">
