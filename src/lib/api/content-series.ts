@@ -19,10 +19,23 @@ export type ContentSeriesFaqItem = { question: string; answer: string };
 // o day, thay vi primary/secondary/text ben card) VA khac ngu canh hien thi,
 // gop chung se ep 1 union phai gong ganh 2 UI khong lien quan.
 export type EntryBlockButtonStyle = "solid-yellow" | "outline-black" | "ghost-gray";
+// [2026-09-15] `event` - yeu cau nguoi dung: "ngoài gắn link url cho button
+// ra, thì nếu như tôi muốn đặt cho nó event, sự kiện gì đó liên quan tới
+// page thì sao?" (vd nut "Ask AI Assistant" trong botHelp KHONG dieu huong
+// sang URL nao ca, ma can TRIGGER 1 hanh vi JS o NGAY trang hien tai - mo
+// widget chat, cuon toi 1 vi tri, mo modal khac... nhung Series KHONG biet/
+// khong nen phu thuoc CU THE vao tinh nang do la gi). Giai phap: button
+// CHON 1 trong 2 CHE DO - "link" (url, hanh vi CU) hoac "event" (dispatch 1
+// CustomEvent(tren window) VOI TEN nguoi dung tu dat) - bat ky component
+// JS nao khac trong app co the tu dang ky window.addEventListener(tenSuKien)
+// de PHAN UNG, Series module khong can biet truoc su kien do lam gi. Khi
+// `event` co gia tri, `url` bi BO QUA luc render (button KHONG con la the
+// <a>/<Link> dieu huong nua, ma la <button> onClick dispatch).
 export type EntryBlockButton = {
   id: string;
   label: string;
   url: string;
+  event?: string;
   style: EntryBlockButtonStyle;
   openInNewTab?: boolean;
 };
@@ -61,6 +74,10 @@ export type EntryContentBlock =
       description: string;
       buttonLabel: string;
       buttonUrl: string;
+      // Xem comment `EntryBlockButton.event` o tren - cung co che, ap dung
+      // cho nut DON LE cua 3 loai block nay (botHelp/featurePromo/
+      // deeperCourse chi co 1 nut, khong phai mang nhu buttonGroup/install).
+      buttonEvent?: string;
     }
   | {
       id: string;
@@ -72,6 +89,7 @@ export type EntryContentBlock =
       description?: string;
       buttonLabel: string;
       buttonUrl: string;
+      buttonEvent?: string;
     }
   | {
       id: string;
@@ -82,6 +100,7 @@ export type EntryContentBlock =
       description?: string;
       buttonLabel: string;
       buttonUrl: string;
+      buttonEvent?: string;
     };
 
 // "Campaign card" - cac field dieu khien hien thi the Series o /home (rail)

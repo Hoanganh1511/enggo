@@ -98,13 +98,20 @@ export function SeriesEntryForm({
         readTimeMinutes: readTimeOverride,
       };
       if (isEdit && initial) {
+        // Sua Entry co san - O NGUYEN trang, CHI bao thanh cong (yeu cau
+        // nguoi dung: "Lưu chỉnh sửa bài viết xong thì ở nguyên đấy báo
+        // thành công chứ mắc gì điều hướng về quản lý series") - truoc do
+        // tu dong router.push ve trang Quan ly, cat ngang luc dang sua tiep.
+        // router.refresh() de dong bo lai du lieu server (vd readTimeMinutes
+        // tu tinh lai) ma KHONG doi URL.
         await updateContentSeriesEntryAction(seriesSlug, initial.id, payload);
         toast.success("Đã lưu Entry");
+        router.refresh();
       } else {
         await createContentSeriesEntryAction(seriesSlug, payload);
         toast.success("Đã tạo Entry");
+        router.push(`/series/${seriesSlug}/manage`);
       }
-      router.push(`/series/${seriesSlug}/manage`);
     } catch (err) {
       toast.danger(getApiErrorMessage(err, "Lưu thất bại, thử lại sau."));
     } finally {

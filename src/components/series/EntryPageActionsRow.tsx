@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
+import { CopyPageFlipCard } from "@/components/series/CopyPageFlipCard";
 import type { ContentSeriesEntrySummary } from "@/lib/api/content-series";
 
 // [2026-09-15] Tang size + dam chu (h-8 -> h-9, px-3 -> px-3.5, 12.5px ->
@@ -68,13 +69,22 @@ export function EntryPageActionsRow({
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [authorMenuOpen, setAuthorMenuOpen] = useState(false);
+  const [copyPageAnim, setCopyPageAnim] = useState(false);
   const { data: session } = useSession();
   const username = session?.username;
 
+  // [2026-09-15] KHONG con toast cho rieng hanh dong nay - yeu cau nguoi
+  // dung: "không dùng toast để thông báo thành công [nút] copy page" - thay
+  // bang CopyPageFlipCard (UI file markdown tu lat/scale, xem file do). Tu
+  // tat sau 1.4s (dai hon 1 chut so voi thoi luong lat 0.55s de nguoi dung
+  // kip doc "Copied .md" truoc khi bien mat).
   function handleCopyPage() {
     navigator.clipboard
       .writeText(contentMarkdown)
-      .then(() => toast.success("Đã copy nội dung (markdown)"))
+      .then(() => {
+        setCopyPageAnim(true);
+        setTimeout(() => setCopyPageAnim(false), 1400);
+      })
       .catch(() => toast.danger("Không copy được, thử lại sau."));
   }
 
@@ -227,6 +237,8 @@ export function EntryPageActionsRow({
           </Link>
         )}
       </div>
+
+      <CopyPageFlipCard show={copyPageAnim} />
     </div>
   );
 }

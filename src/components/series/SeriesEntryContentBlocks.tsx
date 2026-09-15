@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { Bot, Check, Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { cn } from "@/lib/utils";
 import { extractQuestionPickerToc } from "@/lib/docs/question-picker-toc";
 import { SeriesQuestionPickerToc } from "./SeriesQuestionPickerToc";
 import { SeriesEmailSignup } from "./SeriesEmailSignup";
-import type { EntryBlockButton, EntryContentBlock, EntryContentBlockZone } from "@/lib/api/content-series";
+import type {
+  EntryBlockButton,
+  EntryContentBlock,
+  EntryContentBlockZone,
+} from "@/lib/api/content-series";
 
 // Danh sach khoi noi dung CO THE CHEN vao 3 vi tri ("zone") tren 1 trang
 // Entry - yeu cau nguoi dung mo rong tu "nua tren" ban dau ("chia làm nửa
@@ -47,7 +52,9 @@ export function SeriesEntryContentBlocks({
 }) {
   const isMap = entrySlug === "map";
   const isTopZone = zone === "top";
-  const zoneBlocks = (blocks ?? []).filter((block) => (block.zone ?? "top") === zone);
+  const zoneBlocks = (blocks ?? []).filter(
+    (block) => (block.zone ?? "top") === zone,
+  );
   const base: EntryContentBlock[] =
     zoneBlocks.length > 0
       ? zoneBlocks
@@ -89,7 +96,11 @@ function EntryContentBlockRenderer({
 }) {
   switch (block.type) {
     case "toc":
-      return <SeriesQuestionPickerToc items={extractQuestionPickerToc(contentMarkdown)} />;
+      return (
+        <SeriesQuestionPickerToc
+          items={extractQuestionPickerToc(contentMarkdown)}
+        />
+      );
     case "install":
       return <InstallBlock block={block} />;
     case "buttonGroup":
@@ -197,27 +208,38 @@ function CalloutBlock({
 }
 
 // "Not sure where to start? Ask the bot..." - hang gioi thieu ho tro, khop
-// anh mau tham khao 2 (icon bot tron + text + 1 CTA ben phai).
+// anh mau tham khao 2 (anh chibi + text + 1 CTA ben phai).
 function BotHelpBlock({
   block,
 }: {
   block: Extract<EntryContentBlock, { type: "botHelp" }>;
 }) {
   return (
-    <div className="font-content flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4">
+    // p-8 (32px 4 huong) - yeu cau nguoi dung: "padding của cả block đấy
+    // cho thành 32px 4 hướng hết nhé".
+    <div className="font-content flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-8">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-ink-faint">
-          <Bot size={18} strokeWidth={1.8} aria-hidden="true" />
-        </span>
+        {/* Anh chibi rieng nguoi dung tu them (public/assets/images/), thay
+            the icon Bot mac dinh - yeu cau nguoi dung: "dùng thay vào cho
+            chỗ ảnh logo bên cạnh cụm thông tin 'Not sure where to start'
+            ấy nhé. size 160x160 là đẹp". */}
+        <Image
+          src="/assets/images/AI_assistant_chibi.png"
+          alt=""
+          width={160}
+          height={160}
+          className="shrink-0 object-contain"
+        />
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-ink">{block.title}</p>
-          <p className="text-[13px] text-ink-muted">{block.description}</p>
+          <p className="text-[16.5px] font-semibold text-ink">{block.title}</p>
+          <p className="text-[14px] text-ink-muted">{block.description}</p>
         </div>
       </div>
       <EntryPromoButtonLink
         label={block.buttonLabel}
         url={block.buttonUrl}
-        className="shrink-0 border border-ink bg-ink text-white hover:opacity-90"
+        event={block.buttonEvent}
+        className="shrink-0 bg-accent-gold text-ink hover:opacity-90"
       />
     </div>
   );
@@ -252,6 +274,7 @@ function FeaturePromoBlock({
       <EntryPromoButtonLink
         label={block.buttonLabel}
         url={block.buttonUrl}
+        event={block.buttonEvent}
         className="shrink-0 bg-primary text-white hover:opacity-90"
       />
     </div>
@@ -279,6 +302,7 @@ function DeeperCourseBlock({
       <EntryPromoButtonLink
         label={block.buttonLabel}
         url={block.buttonUrl}
+        event={block.buttonEvent}
         className="mt-3 bg-accent-gold text-ink hover:opacity-90"
       />
     </div>
@@ -288,20 +312,42 @@ function DeeperCourseBlock({
 function EntryPromoButtonLink({
   label,
   url,
+  event,
   className,
 }: {
   label: string;
   url: string;
+  // Xem comment EntryBlockButton.event trong content-series.ts - co gia tri
+  // thi BO QUA url, dispatch 1 CustomEvent tren window thay vi dieu huong.
+  event?: string;
   className?: string;
 }) {
-  const isExternal = /^https?:\/\//.test(url);
   const sharedClassName = cn(
-    "inline-flex w-fit items-center gap-1 rounded-lg px-4 py-2 text-[13.5px] font-semibold transition-opacity duration-150 ease-out",
+    // px-4.5/py-2.5 (khong con px-4/py-2) - yeu cau nguoi dung: "Cho padding
+    // cả 2 chiều tăng thêm 2px" (16px->18px ngang, 8px->10px doc).
+    "inline-flex w-fit cursor-pointer items-center gap-1 rounded-lg px-4.5 py-2.5 text-[13.5px] font-semibold transition-opacity duration-150 ease-out",
     className,
   );
+  if (event) {
+    return (
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent(event))}
+        className={sharedClassName}
+      >
+        {label}
+      </button>
+    );
+  }
+  const isExternal = /^https?:\/\//.test(url);
   if (isExternal) {
     return (
-      <a href={url} target="_blank" rel="noreferrer" className={sharedClassName}>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className={sharedClassName}
+      >
         {label}
       </a>
     );
@@ -326,13 +372,26 @@ function EntryBlockButtonLink({
   button: EntryBlockButton;
   compact?: boolean;
 }) {
-  const isExternal = /^https?:\/\//.test(button.url);
   const className = cn(
-    "inline-flex shrink-0 items-center gap-1 rounded-lg font-medium transition-colors duration-150 ease-out",
+    "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg font-medium transition-colors duration-150 ease-out",
     compact ? "px-3 py-1.5 text-[12.5px]" : "px-4 py-2 text-[13.5px]",
     BUTTON_STYLE_CLASS[button.style],
   );
 
+  // Xem comment EntryBlockButton.event trong content-series.ts.
+  if (button.event) {
+    return (
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new CustomEvent(button.event!))}
+        className={className}
+      >
+        {button.label}
+      </button>
+    );
+  }
+
+  const isExternal = /^https?:\/\//.test(button.url);
   if (isExternal) {
     return (
       <a
@@ -346,7 +405,11 @@ function EntryBlockButtonLink({
     );
   }
   return (
-    <Link href={button.url} target={button.openInNewTab ? "_blank" : undefined} className={className}>
+    <Link
+      href={button.url}
+      target={button.openInNewTab ? "_blank" : undefined}
+      className={className}
+    >
       {button.label}
     </Link>
   );

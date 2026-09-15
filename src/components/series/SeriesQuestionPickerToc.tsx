@@ -47,12 +47,15 @@ export function SeriesQuestionPickerToc({
           // Nen/vien rieng (khong dung bg-surface/border-border mac dinh) -
           // yeu cau nguoi dung: "Cho nền TOC box : bg-[#f5f6f8], border:
           // rgba(20, 22, 26, 0.22)".
-          className="flex min-w-70 max-w-100 items-start gap-2.5 rounded-xl border border-[rgba(20,22,26,0.22)] bg-[#f5f6f8] px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
+          className="flex min-w-100 max-w-100 items-start gap-2.5 rounded-xl border border-[rgba(20,22,26,0.22)] bg-[#f5f6f8] px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-hover-bg/60"
         >
           <span className="font-mono text-[12px] text-ink-faint">
             {String(i + 1).padStart(2, "0")}
           </span>
-          <span className="min-w-0 flex-1 text-[14.5px]" style={{ color: "#14161A" }}>
+          <span
+            className="min-w-0 flex-1 text-[14.5px]"
+            style={{ color: "#14161A", letterSpacing: "0.5px" }}
+          >
             {item.question}
           </span>
           <ChevronDown

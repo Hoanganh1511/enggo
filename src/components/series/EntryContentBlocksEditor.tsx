@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
+import { cn } from "@/lib/utils";
 import type {
   EntryBlockButton,
   EntryBlockButtonStyle,
@@ -292,20 +293,18 @@ export function EntryContentBlocksEditor({
                 value={block.description}
                 onChange={(e) => updateBlock(index, { description: e.target.value })}
               />
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <input
-                  className={inputClass}
-                  placeholder="Nhãn nút *"
-                  value={block.buttonLabel}
-                  onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
-                />
-                <input
-                  className={inputClass}
-                  placeholder="URL nút *"
-                  value={block.buttonUrl}
-                  onChange={(e) => updateBlock(index, { buttonUrl: e.target.value })}
-                />
-              </div>
+              <input
+                className={inputClass}
+                placeholder="Nhãn nút *"
+                value={block.buttonLabel}
+                onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
+              />
+              <ButtonActionField
+                url={block.buttonUrl}
+                event={block.buttonEvent}
+                onChangeUrl={(buttonUrl) => updateBlock(index, { buttonUrl })}
+                onChangeEvent={(buttonEvent) => updateBlock(index, { buttonEvent })}
+              />
             </div>
           )}
 
@@ -335,20 +334,18 @@ export function EntryContentBlocksEditor({
                 value={block.description ?? ""}
                 onChange={(e) => updateBlock(index, { description: e.target.value })}
               />
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <input
-                  className={inputClass}
-                  placeholder="Nhãn nút *"
-                  value={block.buttonLabel}
-                  onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
-                />
-                <input
-                  className={inputClass}
-                  placeholder="URL nút *"
-                  value={block.buttonUrl}
-                  onChange={(e) => updateBlock(index, { buttonUrl: e.target.value })}
-                />
-              </div>
+              <input
+                className={inputClass}
+                placeholder="Nhãn nút *"
+                value={block.buttonLabel}
+                onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
+              />
+              <ButtonActionField
+                url={block.buttonUrl}
+                event={block.buttonEvent}
+                onChangeUrl={(buttonUrl) => updateBlock(index, { buttonUrl })}
+                onChangeEvent={(buttonEvent) => updateBlock(index, { buttonEvent })}
+              />
             </div>
           )}
 
@@ -514,6 +511,76 @@ function BlockTypePreview({ type }: { type: EntryContentBlock["type"] }) {
   );
 }
 
+// [2026-09-15] Chon giua "Link URL" (hanh vi CU, dieu huong) va "Sự kiện
+// trang" (dispatch 1 CustomEvent tren window, KHONG dieu huong) - yeu cau
+// nguoi dung: "ngoài gắn link url cho button ra, thì nếu như tôi muốn đặt
+// cho nó event, sự kiện gì đó liên quan tới page thì sao?" (vd nut "Ask AI
+// Assistant" trong botHelp can MO 1 widget/modal NGAY TRANG HIEN TAI, khong
+// phai dieu huong sang URL nao). Dung CHUNG cho ca nut don le (botHelp/
+// featurePromo/deeperCourse) LAN tung dong trong ButtonListEditor
+// (buttonGroup/install) - xem EntryBlockButton.event trong content-series.ts
+// ve cach hanh vi nay duoc RENDER cong khai.
+function ButtonActionField({
+  url,
+  event,
+  onChangeUrl,
+  onChangeEvent,
+}: {
+  url: string;
+  event?: string;
+  onChangeUrl: (url: string) => void;
+  onChangeEvent: (event: string | undefined) => void;
+}) {
+  const mode: "link" | "event" = event !== undefined ? "event" : "link";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex w-fit gap-0.5 rounded-md bg-surface-muted p-0.5">
+        <button
+          type="button"
+          onClick={() => onChangeEvent(undefined)}
+          className={cn(
+            "cursor-pointer rounded px-2 py-1 text-[11.5px] font-medium transition-colors duration-150 ease-out",
+            mode === "link" ? "bg-surface text-ink shadow-sm" : "text-ink-faint hover:text-ink-muted",
+          )}
+        >
+          Link URL
+        </button>
+        <button
+          type="button"
+          onClick={() => onChangeEvent(event ?? "")}
+          className={cn(
+            "cursor-pointer rounded px-2 py-1 text-[11.5px] font-medium transition-colors duration-150 ease-out",
+            mode === "event" ? "bg-surface text-ink shadow-sm" : "text-ink-faint hover:text-ink-muted",
+          )}
+        >
+          Sự kiện trang
+        </button>
+      </div>
+      {mode === "link" ? (
+        <input
+          className={inputClass}
+          placeholder="URL nút *"
+          value={url}
+          onChange={(e) => onChangeUrl(e.target.value)}
+        />
+      ) : (
+        <>
+          <input
+            className={`${inputClass} font-mono`}
+            placeholder="Tên sự kiện (vd: open-ai-assistant)"
+            value={event ?? ""}
+            onChange={(e) => onChangeEvent(e.target.value)}
+          />
+          <p className="text-[11px] text-ink-faint">
+            Bấm nút sẽ phát <code className="font-mono">window.dispatchEvent(new CustomEvent(&quot;tên sự kiện&quot;))</code> thay
+            vì điều hướng - cần có code khác trong app lắng nghe đúng tên này để xử lý (mở chat, cuộn trang...).
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ButtonListEditor({
   buttons,
   onChange,
@@ -530,22 +597,20 @@ function ButtonListEditor({
       renderRow={(item, update, remove) => (
         <div className="flex flex-col gap-2">
           <div className="flex items-start gap-2">
-            <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
-              <input
-                className={inputClass}
-                placeholder="Label"
-                value={item.label}
-                onChange={(e) => update({ label: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="URL"
-                value={item.url}
-                onChange={(e) => update({ url: e.target.value })}
-              />
-            </div>
+            <input
+              className={`${inputClass} min-w-0 flex-1`}
+              placeholder="Label"
+              value={item.label}
+              onChange={(e) => update({ label: e.target.value })}
+            />
             <RemoveRowButton onClick={remove} />
           </div>
+          <ButtonActionField
+            url={item.url}
+            event={item.event}
+            onChangeUrl={(url) => update({ url })}
+            onChangeEvent={(event) => update({ event })}
+          />
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <SelectMenu
