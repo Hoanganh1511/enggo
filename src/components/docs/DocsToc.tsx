@@ -86,19 +86,25 @@ export function DocsToc({ toc }: { toc: DocsTocItem[] }) {
             "relative py-1 text-[13px] transition-colors duration-150 ease-out",
             item.level === 3 && "pl-3",
             item.id === activeId
-              ? "font-medium text-accent-gold"
-              : "text-ink-faint hover:text-ink-muted",
+              ? "font-medium text-ink"
+              : "text-[color-mix(in_srgb,var(--ink-faint)_85%,black)] hover:text-ink-muted",
           )}
         >
           {/* Thanh vang chinh (--accent-gold) danh dau muc DANG ACTIVE (dua
               theo scroll-spy activeId da co san o tren) - de LEN TREN dung
               vi tri border-l cua ca nav (pl-3/-left-3 = 12px khop nhau), yeu
               cau nguoi dung: "1 thanh màu vàng chủ đạo... hiệu ứng active
-              khi màn ở vị trí tương ứng trong nội dung", khop anh mau. */}
+              khi màn ở vị trí tương ứng trong nội dung", khop anh mau.
+              [2026-09-15] Chu active doi sang text-ink (den) thay vi mau
+              vang - yeu cau nguoi dung: "Cho active chữ đen" (thanh vang ben
+              trai VAN GIU, chi rieng MAU CHU active doi). w-px (khong con
+              w-0.5=2px) - do day thanh PHAI BANG dung border-l cua nav (mac
+              dinh Tailwind border = 1px): "Độ dầy thanh màu cũng cho bằng
+              đường line của nó". */}
           {item.id === activeId && (
             <span
               aria-hidden="true"
-              className="absolute top-0 -left-3 h-full w-0.5 rounded-full"
+              className="absolute top-0 -left-3 h-full w-px"
               style={{ backgroundColor: "var(--accent-gold)" }}
             />
           )}

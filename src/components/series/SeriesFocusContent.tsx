@@ -12,13 +12,22 @@ import { cn } from "@/lib/utils";
 // nut tron dang dung, de len nhau (nguoi dung bao: "Cái nút này lại bị đè
 // lên rồi"). lg:pt-20 (thay vi lg:p-10 mac dinh) danh rieng khoang trong DU
 // cho nut (top-6 + size-10 = het khoang 4rem tinh tu dinh) + 1 chut dem.
-export function SeriesFocusContent({ children }: { children: React.ReactNode }) {
+export function SeriesFocusContent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const focusModeActive = useFocusModeStore((s) => s.active);
   const collapsed = useFocusModeStore((s) => s.sidebarCollapsed);
   const needsRoomForToggle = focusModeActive && collapsed;
 
   return (
-    <div className={cn("min-w-0 flex-1 p-6 lg:p-10", needsRoomForToggle && "lg:pt-20")}>
+    <div
+      className={cn(
+        "min-w-0 flex-1 bg-surface p-6 lg:p-10",
+        needsRoomForToggle && "lg:pt-20",
+      )}
+    >
       {children}
     </div>
   );
