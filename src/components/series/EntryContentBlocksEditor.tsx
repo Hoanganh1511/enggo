@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { SimpleModal } from "@/components/ui/simple-modal";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
@@ -44,15 +44,36 @@ const BLOCK_TYPE_DESCRIPTION: Record<EntryContentBlock["type"], string> = {
   lessonList: "Tiêu đề chung + nhiều thẻ bài học xếp dọc",
 };
 
-// Loai block cho phep TRONG TUNG zone - "top" giu nguyen 4 loai CU (thiet
-// ke rieng cho vi tri duoi subtitle); "middle"/"bottom" CHI dung 4 loai MOI
-// (newsletter/botHelp/featurePromo/deeperCourse) - yeu cau nguoi dung dung
-// chung 1 bo 4 loai nay cho CA 2 vi tri giua/cuoi, tach biet voi 4 loai cu.
-const ZONE_TYPES: Record<EntryContentBlockZone, EntryContentBlock["type"][]> = {
-  top: ["toc", "install", "buttonGroup", "callout"],
-  middle: ["newsletter", "botHelp", "featurePromo", "deeperCourse", "lessonList"],
-  bottom: ["newsletter", "botHelp", "featurePromo", "deeperCourse", "lessonList"],
-};
+// [2026-09-16] Zone "top" (duoi subtitle) DA BO khoi form soan - yeu cau
+// nguoi dung: "Xóa cái Top Đầu Bài đi". Chi con 2 vi tri chen duoc qua UI
+// nay: "middle" (truoc than bai) va "bottom" (sau than bai) - CA 2 dung
+// CHUNG 1 bo 5 loai block (newsletter/botHelp/featurePromo/deeperCourse/
+// lessonList), khac voi 4 loai CU rieng cho "top" (toc/install/buttonGroup/
+// callout - van con hop le o TANG DU LIEU/render cong khai cho entry cu da
+// co san blocks zone="top" tu truoc, chi khong con tao MOI duoc qua form nay
+// nua). "toc" dac biet: KHONG nam trong danh sach nay vi von chi thuoc zone
+// "top" (tu dong hien rieng cho entry "map" khi zoneBlocks rong, xem
+// SeriesEntryContentBlocks.tsx - khong can admin tao thu cong).
+const EDITABLE_ZONES: { id: "middle" | "bottom"; label: string; description: string }[] = [
+  {
+    id: "middle",
+    label: "Giữa bài",
+    description: "Hiện ngay trên đường kẻ ngang, trước khi vào nội dung chính.",
+  },
+  {
+    id: "bottom",
+    label: "Cuối bài",
+    description: "Hiện sau nội dung chính, trước khi sang bài tiếp theo.",
+  },
+];
+
+const ADDABLE_TYPES: EntryContentBlock["type"][] = [
+  "newsletter",
+  "botHelp",
+  "featurePromo",
+  "deeperCourse",
+  "lessonList",
+];
 
 const BUTTON_STYLE_OPTIONS: { value: EntryBlockButtonStyle; label: string }[] = [
   { value: "solid-yellow", label: "Nền vàng, chữ đen" },
@@ -66,7 +87,12 @@ function randomId(): string {
     : Math.random().toString(36).slice(2);
 }
 
-function newBlock(type: EntryContentBlock["type"], zone: EntryContentBlockZone): EntryContentBlock {
+// [2026-09-16] Zone tham so gio CHI con "middle" | "bottom" (khop dung
+// EDITABLE_ZONES/pendingZone - "top" da bo khoi form soan, xem comment dau
+// file) - cac case toc/install/buttonGroup/callout van giu (type cua chung
+// nhan zone rong hon: "top"|"middle"|"bottom") de switch van EXHAUSTIVE du
+// khong con duong nao trong UI moi tao duoc chung nua.
+function newBlock(type: EntryContentBlock["type"], zone: "middle" | "bottom"): EntryContentBlock {
   switch (type) {
     case "toc":
       return { id: randomId(), zone, type: "toc" };
@@ -77,11 +103,11 @@ function newBlock(type: EntryContentBlock["type"], zone: EntryContentBlockZone):
     case "callout":
       return { id: randomId(), zone, type: "callout", title: "" };
     case "newsletter":
-      return { id: randomId(), zone: zone === "top" ? "middle" : zone, type: "newsletter" };
+      return { id: randomId(), zone, type: "newsletter" };
     case "botHelp":
       return {
         id: randomId(),
-        zone: zone === "top" ? "middle" : zone,
+        zone,
         type: "botHelp",
         title: "",
         description: "",
@@ -91,7 +117,7 @@ function newBlock(type: EntryContentBlock["type"], zone: EntryContentBlockZone):
     case "featurePromo":
       return {
         id: randomId(),
-        zone: zone === "top" ? "middle" : zone,
+        zone,
         type: "featurePromo",
         imageUrl: "",
         title: "",
@@ -101,14 +127,14 @@ function newBlock(type: EntryContentBlock["type"], zone: EntryContentBlockZone):
     case "deeperCourse":
       return {
         id: randomId(),
-        zone: zone === "top" ? "middle" : zone,
+        zone,
         type: "deeperCourse",
         title: "",
         buttonLabel: "",
         buttonUrl: "",
       };
     case "lessonList":
-      return { id: randomId(), zone: zone === "top" ? "middle" : zone, type: "lessonList", items: [] };
+      return { id: randomId(), zone, type: "lessonList", items: [] };
   }
 }
 
@@ -120,336 +146,406 @@ function newLessonItem(): EntryLessonListItem {
   return { id: randomId(), imageUrl: "", title: "", url: "" };
 }
 
-// Editor cho danh sach "khoi noi dung" CHEN duoc vao 1 trong 3 zone cua 1
-// trang Entry - yeu cau nguoi dung (2026-09-15, mo rong tu ban dau "nua
-// tren" duy nhat): "thêm 1 button + vào để cho phép người dùng thêm section
-// vào giữa [Top va Than]... có cả dấu + ở cuối - sau phần thân". Component
-// nay dung LAI 3 LAN trong SeriesEntryForm.tsx (zone="top"/"middle"/
-// "bottom"), CA 3 lan CHIA SE 1 mang `blocks` DUY NHAT (Entry.contentBlocks)
-// - moi instance TU LOC ra dung block cua zone minh (theo `(b.zone ?? "top")`)
-// de sap xep/them/xoa, roi GHEP LAI vao mang day du khi goi onChange, tranh
-// dam len block cua 2 zone kia. Sap xep bang nut len/xuong (giong pattern
-// `moveAction` trong SeriesCardConfigForm.tsx) THAY VI dnd-kit - danh sach o
-// day thuong chi vai phan tu. Xem SeriesEntryContentBlocks.tsx cho phan
-// RENDER cong khai tuong ung.
+// Editor cho danh sach "khoi noi dung" CHEN duoc vao vi tri "giữa" hoặc
+// "cuối" 1 trang Entry - dung 1 LAN DUY NHAT trong SeriesEntryForm.tsx (KHAC
+// truoc day dung 3 lan rieng cho top/middle/bottom, xem lich su duoi).
+//
+// [2026-09-16] Gop lai thanh 1 khoi DUY NHAT (khong con 3 "cục" rieng) - yeu
+// cau nguoi dung: "Không tách thành 3 cục riêng này. Xóa cái Top Đầu Bài đi.
+// Giờ để 1 button click, sau đó nó hiện modal ra chọn 1 trong 2 cái. Rồi
+// chọn mẫu, vậy cho gọn". Danh sach block cua CA 2 zone hien THEO NHOM (chi
+// hien nhom nao dang co block, tranh tieu de rong) trong CUNG 1 khung, 1 nut
+// "+ Thêm section" DUY NHAT mo modal 2 BUOC: (1) chon vi tri (Giữa bài/Cuối
+// bài), (2) chon mau (grid preview nhu cu). Sap xep len/xuong van tinh RIENG
+// trong tung zone (2 zone hien o 2 vi tri khac nhau tren trang cong khai,
+// tron thu tu giua chung khong co y nghia).
 export function EntryContentBlocksEditor({
   blocks,
   onChange,
-  zone,
-  allowToc = false,
 }: {
   blocks: EntryContentBlock[];
   onChange: (blocks: EntryContentBlock[]) => void;
-  zone: EntryContentBlockZone;
-  // [2026-09-15] CHI entry "map" moi duoc phep dung block "toc" - yeu cau
-  // nguoi dung: "Chỉ trang Map mới cho phép và có cái cục box TOC dạng
-  // khung như này thôi nhé. Còn đâu không cho." CHI co y nghia voi
-  // zone="top" (4 loai moi khong bao gio co "toc"). An lua chon "toc" khoi
-  // menu "Thêm khối" khi false - xem loc lai luc RENDER cong khai trong
-  // SeriesEntryContentBlocks.tsx (lop bao dam THAT su).
-  allowToc?: boolean;
 }) {
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const zoneBlocks = blocks.filter((b) => (b.zone ?? "top") === zone);
-  const addableTypes = ZONE_TYPES[zone].filter((type) => type !== "toc" || allowToc);
+  const [pickerStep, setPickerStep] = useState<"zone" | "type" | null>(null);
+  const [pendingZone, setPendingZone] = useState<"middle" | "bottom" | null>(null);
 
-  function updateZoneBlocks(nextZoneBlocks: EntryContentBlock[]) {
-    onChange([...blocks.filter((b) => (b.zone ?? "top") !== zone), ...nextZoneBlocks]);
+  function blocksForZone(zoneId: EntryContentBlockZone) {
+    return blocks.filter((b) => (b.zone ?? "top") === zoneId);
+  }
+
+  function updateZoneBlocks(zoneId: EntryContentBlockZone, nextZoneBlocks: EntryContentBlock[]) {
+    onChange([...blocks.filter((b) => (b.zone ?? "top") !== zoneId), ...nextZoneBlocks]);
   }
 
   function addBlock(type: EntryContentBlock["type"]) {
-    updateZoneBlocks([...zoneBlocks, newBlock(type, zone)]);
-    setPickerOpen(false);
+    if (!pendingZone) return;
+    updateZoneBlocks(pendingZone, [...blocksForZone(pendingZone), newBlock(type, pendingZone)]);
+    closePicker();
   }
 
-  function updateBlock(index: number, patch: Partial<EntryContentBlock>) {
-    const next = [...zoneBlocks];
+  function updateBlock(zoneId: EntryContentBlockZone, index: number, patch: Partial<EntryContentBlock>) {
+    const list = blocksForZone(zoneId);
+    const next = [...list];
     next[index] = { ...next[index], ...patch } as EntryContentBlock;
-    updateZoneBlocks(next);
+    updateZoneBlocks(zoneId, next);
   }
 
-  function removeBlock(index: number) {
-    updateZoneBlocks(zoneBlocks.filter((_, i) => i !== index));
+  function removeBlock(zoneId: EntryContentBlockZone, index: number) {
+    updateZoneBlocks(zoneId, blocksForZone(zoneId).filter((_, i) => i !== index));
   }
 
-  function moveBlock(index: number, direction: -1 | 1) {
+  function moveBlock(zoneId: EntryContentBlockZone, index: number, direction: -1 | 1) {
+    const list = blocksForZone(zoneId);
     const target = index + direction;
-    if (target < 0 || target >= zoneBlocks.length) return;
-    const next = [...zoneBlocks];
+    if (target < 0 || target >= list.length) return;
+    const next = [...list];
     [next[index], next[target]] = [next[target], next[index]];
-    updateZoneBlocks(next);
+    updateZoneBlocks(zoneId, next);
   }
+
+  function openPicker() {
+    setPendingZone(null);
+    setPickerStep("zone");
+  }
+
+  function closePicker() {
+    setPickerStep(null);
+    setPendingZone(null);
+  }
+
+  const nonEmptyZones = EDITABLE_ZONES.filter((z) => blocksForZone(z.id).length > 0);
 
   return (
-    <div className="flex flex-col gap-3">
-      {zoneBlocks.map((block, index) => (
-        <div key={block.id} className="rounded-lg border border-border p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[13px] font-semibold text-ink">
-              {BLOCK_TYPE_LABEL[block.type]}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => moveBlock(index, -1)}
-                disabled={index === 0}
-                aria-label="Đưa lên"
-                className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                <ArrowUp size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => moveBlock(index, 1)}
-                disabled={index === zoneBlocks.length - 1}
-                aria-label="Đưa xuống"
-                className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
-              >
-                <ArrowDown size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeBlock(index)}
-                aria-label="Xoá khối"
-                className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-danger"
-              >
-                <Trash2 size={13} />
-              </button>
-            </div>
-          </div>
+    <div className="rounded-xl border border-border p-4">
+      <label className="mb-1 block text-[13px] font-medium text-ink">Section chèn thêm</label>
+      <p className="-mt-0.5 mb-3 text-[12px] text-ink-faint">
+        Chèn khối nội dung tuỳ chỉnh vào giữa bài (trước nội dung chính) hoặc cuối bài (trước bài tiếp theo).
+      </p>
 
-          {block.type === "toc" && (
-            <p className="text-[12px] text-ink-faint">
-              Tự quét các heading H2 trong nội dung, không cần cấu hình gì thêm.
-              {!allowToc && (
-                <span className="text-danger">
-                  {" "}
-                  Khối này chỉ hiển thị công khai trên entry &quot;map&quot; - entry hiện tại sẽ không hiện.
-                </span>
-              )}
-            </p>
-          )}
-
-          {block.type === "install" && (
-            <div className="flex flex-col gap-2">
-              <input
-                className={`${inputClass} font-mono`}
-                placeholder="Command (vd: npx skills@latest add ...)"
-                value={block.command}
-                onChange={(e) => updateBlock(index, { command: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Mô tả sau lệnh (tuỳ chọn, vd: Then type /wizard...)"
-                value={block.description ?? ""}
-                onChange={(e) => updateBlock(index, { description: e.target.value })}
-              />
-              <ButtonListEditor
-                buttons={block.buttons ?? []}
-                onChange={(buttons) => updateBlock(index, { buttons })}
-              />
-            </div>
-          )}
-
-          {block.type === "buttonGroup" && (
-            <ButtonListEditor
-              buttons={block.buttons}
-              onChange={(buttons) => updateBlock(index, { buttons })}
-            />
-          )}
-
-          {block.type === "callout" && (
-            <div className="flex flex-col gap-2">
-              <input
-                className={inputClass}
-                placeholder="Eyebrow (tuỳ chọn, vd: AI Skills for Real Engineers)"
-                value={block.eyebrow ?? ""}
-                onChange={(e) => updateBlock(index, { eyebrow: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Tiêu đề *"
-                value={block.title}
-                onChange={(e) => updateBlock(index, { title: e.target.value })}
-              />
-              <textarea
-                className={`${inputClass} min-h-16 resize-y`}
-                placeholder="Mô tả (tuỳ chọn)"
-                value={block.description ?? ""}
-                onChange={(e) => updateBlock(index, { description: e.target.value })}
-              />
-            </div>
-          )}
-
-          {block.type === "newsletter" && (
-            <p className="text-[12px] text-ink-faint">
-              Không cần cấu hình - tự hiện form đăng ký email dùng chung tiêu đề/mô tả của Series
-              (tab &quot;Thông tin chung&quot;), chỉ khi Series đã bật &quot;Email course&quot;.
-            </p>
-          )}
-
-          {block.type === "botHelp" && (
-            <div className="flex flex-col gap-2">
-              <input
-                className={inputClass}
-                placeholder="Tiêu đề * (vd: Not sure where to start?)"
-                value={block.title}
-                onChange={(e) => updateBlock(index, { title: e.target.value })}
-              />
-              <textarea
-                className={`${inputClass} min-h-16 resize-y`}
-                placeholder="Mô tả *"
-                value={block.description}
-                onChange={(e) => updateBlock(index, { description: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Nhãn nút *"
-                value={block.buttonLabel}
-                onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
-              />
-              <ButtonActionField
-                url={block.buttonUrl}
-                event={block.buttonEvent}
-                onChangeUrl={(buttonUrl) => updateBlock(index, { buttonUrl })}
-                onChangeEvent={(buttonEvent) => updateBlock(index, { buttonEvent })}
-              />
-            </div>
-          )}
-
-          {block.type === "featurePromo" && (
-            <div className="flex flex-col gap-2">
-              <input
-                className={inputClass}
-                placeholder="URL ảnh *"
-                value={block.imageUrl}
-                onChange={(e) => updateBlock(index, { imageUrl: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Eyebrow (tuỳ chọn, vd: AI HERO · SKILL SYSTEM)"
-                value={block.eyebrow ?? ""}
-                onChange={(e) => updateBlock(index, { eyebrow: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Tiêu đề *"
-                value={block.title}
-                onChange={(e) => updateBlock(index, { title: e.target.value })}
-              />
-              <textarea
-                className={`${inputClass} min-h-14 resize-y`}
-                placeholder="Mô tả (tuỳ chọn)"
-                value={block.description ?? ""}
-                onChange={(e) => updateBlock(index, { description: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Nhãn nút *"
-                value={block.buttonLabel}
-                onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
-              />
-              <ButtonActionField
-                url={block.buttonUrl}
-                event={block.buttonEvent}
-                onChangeUrl={(buttonUrl) => updateBlock(index, { buttonUrl })}
-                onChangeEvent={(buttonEvent) => updateBlock(index, { buttonEvent })}
-              />
-            </div>
-          )}
-
-          {block.type === "deeperCourse" && (
-            <div className="flex flex-col gap-2">
-              <input
-                className={inputClass}
-                placeholder="Eyebrow (tuỳ chọn, vd: READY TO GO DEEPER?)"
-                value={block.eyebrow ?? ""}
-                onChange={(e) => updateBlock(index, { eyebrow: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Tiêu đề *"
-                value={block.title}
-                onChange={(e) => updateBlock(index, { title: e.target.value })}
-              />
-              <textarea
-                className={`${inputClass} min-h-14 resize-y`}
-                placeholder="Mô tả (tuỳ chọn)"
-                value={block.description ?? ""}
-                onChange={(e) => updateBlock(index, { description: e.target.value })}
-              />
-              <input
-                className={inputClass}
-                placeholder="Nhãn nút *"
-                value={block.buttonLabel}
-                onChange={(e) => updateBlock(index, { buttonLabel: e.target.value })}
-              />
-              <ButtonActionField
-                url={block.buttonUrl}
-                event={block.buttonEvent}
-                onChangeUrl={(buttonUrl) => updateBlock(index, { buttonUrl })}
-                onChangeEvent={(buttonEvent) => updateBlock(index, { buttonEvent })}
-              />
-            </div>
-          )}
-
-          {block.type === "lessonList" && (
-            <div className="flex flex-col gap-2">
-              <input
-                className={inputClass}
-                placeholder="Tiêu đề chung (tuỳ chọn, vd: 5 lessons, in order)"
-                value={block.heading ?? ""}
-                onChange={(e) => updateBlock(index, { heading: e.target.value })}
-              />
-              <LessonListItemsEditor
-                items={block.items}
-                onChange={(items) => updateBlock(index, { items })}
-              />
-            </div>
-          )}
+      {nonEmptyZones.length > 0 && (
+        <div className="mb-3 flex flex-col gap-4">
+          {nonEmptyZones.map((zoneConfig) => {
+            const zoneBlocks = blocksForZone(zoneConfig.id);
+            return (
+              <div key={zoneConfig.id} className="flex flex-col gap-2">
+                <p className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
+                  {zoneConfig.label}
+                </p>
+                {zoneBlocks.map((block, index) => (
+                  <BlockCard
+                    key={block.id}
+                    block={block}
+                    onUpdate={(patch) => updateBlock(zoneConfig.id, index, patch)}
+                    onRemove={() => removeBlock(zoneConfig.id, index)}
+                    onMoveUp={() => moveBlock(zoneConfig.id, index, -1)}
+                    onMoveDown={() => moveBlock(zoneConfig.id, index, 1)}
+                    canMoveUp={index > 0}
+                    canMoveDown={index < zoneBlocks.length - 1}
+                  />
+                ))}
+              </div>
+            );
+          })}
         </div>
-      ))}
+      )}
 
       <button
         type="button"
-        onClick={() => setPickerOpen(true)}
+        onClick={openPicker}
         className="flex cursor-pointer items-center gap-1.5 self-start rounded-md px-2 py-1.5 text-[13px] font-medium text-primary hover:bg-primary-soft"
       >
         <Plus size={14} /> Thêm section
       </button>
 
-      {/* [2026-09-15] Modal grid 3 cot (khong con dropdown text) - yeu cau
-          nguoi dung: "đừng dùng dropdown, hãy mở một modal, trình bày các
-          options dạng grid 3 cột, rõ ảnh mô tả demo từng loại đê biết bố
-          cục nó như nào, kiểu skeleton ấy, xong người dùng chọn thì hiện
-          thông tin để điền". Moi the la 1 ban xem truoc "skeleton" TINH (bar
-          xam mo phong bo cuc that, xem BlockTypePreview) - chon xong dong
-          modal + goi addBlock nhu cu, block moi hien NGAY trong danh sach
-          BEN TRONG editor (o tren) voi cac o nhap de dien, dung y "hiện
-          thông tin để điền" nguoi dung mo ta. */}
       <SimpleModal
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        title="Thêm section"
+        open={pickerStep !== null}
+        onOpenChange={(open) => !open && closePicker()}
+        title={pickerStep === "type" ? "Chọn mẫu" : "Chọn vị trí"}
         maxWidthClassName="max-w-xl"
       >
-        <div className="series-scope grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {addableTypes.map((type) => (
+        {pickerStep === "zone" && (
+          <div className="series-scope grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {EDITABLE_ZONES.map((zoneConfig) => (
+              <button
+                key={zoneConfig.id}
+                type="button"
+                onClick={() => {
+                  setPendingZone(zoneConfig.id);
+                  setPickerStep("type");
+                }}
+                className="flex cursor-pointer flex-col gap-1 rounded-lg border border-border p-3.5 text-left transition-colors duration-150 ease-out hover:border-primary hover:bg-primary-soft"
+              >
+                <p className="text-[13px] font-semibold text-ink">{zoneConfig.label}</p>
+                <p className="text-[12px] text-ink-faint">{zoneConfig.description}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {pickerStep === "type" && pendingZone && (
+          <div className="series-scope flex flex-col gap-3">
             <button
-              key={type}
               type="button"
-              onClick={() => addBlock(type)}
-              className="flex cursor-pointer flex-col overflow-hidden rounded-lg border border-border text-left transition-colors duration-150 ease-out hover:border-primary hover:bg-primary-soft"
+              onClick={() => setPickerStep("zone")}
+              className="flex w-fit cursor-pointer items-center gap-1 text-[12.5px] font-medium text-ink-faint hover:text-ink"
             >
-              <BlockTypePreview type={type} />
-              <div className="p-2.5">
-                <p className="text-[12.5px] font-semibold text-ink">{BLOCK_TYPE_LABEL[type]}</p>
-                <p className="mt-0.5 text-[11px] text-ink-faint">{BLOCK_TYPE_DESCRIPTION[type]}</p>
-              </div>
+              <ChevronLeft size={14} /> Quay lại
             </button>
-          ))}
-        </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {ADDABLE_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => addBlock(type)}
+                  className="flex cursor-pointer flex-col overflow-hidden rounded-lg border border-border text-left transition-colors duration-150 ease-out hover:border-primary hover:bg-primary-soft"
+                >
+                  <BlockTypePreview type={type} />
+                  <div className="p-2.5">
+                    <p className="text-[12.5px] font-semibold text-ink">{BLOCK_TYPE_LABEL[type]}</p>
+                    <p className="mt-0.5 text-[11px] text-ink-faint">{BLOCK_TYPE_DESCRIPTION[type]}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </SimpleModal>
+    </div>
+  );
+}
+
+// The 1 block trong danh sach - tach rieng khoi component chinh de dung
+// CHUNG cho ca 2 nhom "Giữa bài"/"Cuối bài" ma khong lap code (truoc day 1
+// zone = 1 instance EntryContentBlocksEditor rieng nen khong can tach, gio 1
+// instance duy nhat hien CA 2 nhom nen phai tach block-card ra rieng).
+function BlockCard({
+  block,
+  onUpdate,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
+}: {
+  block: EntryContentBlock;
+  onUpdate: (patch: Partial<EntryContentBlock>) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-[13px] font-semibold text-ink">{BLOCK_TYPE_LABEL[block.type]}</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            aria-label="Đưa lên"
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ArrowUp size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            aria-label="Đưa xuống"
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <ArrowDown size={13} />
+          </button>
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Xoá khối"
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-danger"
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+
+      {block.type === "toc" && (
+        <p className="text-[12px] text-ink-faint">
+          Tự quét các heading H2 trong nội dung, không cần cấu hình gì thêm.
+        </p>
+      )}
+
+      {block.type === "install" && (
+        <div className="flex flex-col gap-2">
+          <input
+            className={`${inputClass} font-mono`}
+            placeholder="Command (vd: npx skills@latest add ...)"
+            value={block.command}
+            onChange={(e) => onUpdate({ command: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Mô tả sau lệnh (tuỳ chọn, vd: Then type /wizard...)"
+            value={block.description ?? ""}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+          <ButtonListEditor
+            buttons={block.buttons ?? []}
+            onChange={(buttons) => onUpdate({ buttons })}
+          />
+        </div>
+      )}
+
+      {block.type === "buttonGroup" && (
+        <ButtonListEditor buttons={block.buttons} onChange={(buttons) => onUpdate({ buttons })} />
+      )}
+
+      {block.type === "callout" && (
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Eyebrow (tuỳ chọn, vd: AI Skills for Real Engineers)"
+            value={block.eyebrow ?? ""}
+            onChange={(e) => onUpdate({ eyebrow: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Tiêu đề *"
+            value={block.title}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+          />
+          <textarea
+            className={`${inputClass} min-h-16 resize-y`}
+            placeholder="Mô tả (tuỳ chọn)"
+            value={block.description ?? ""}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+        </div>
+      )}
+
+      {block.type === "newsletter" && (
+        <p className="text-[12px] text-ink-faint">
+          Không cần cấu hình - tự hiện form đăng ký email dùng chung tiêu đề/mô tả của Series
+          (tab &quot;Thông tin chung&quot;), chỉ khi Series đã bật &quot;Email course&quot;.
+        </p>
+      )}
+
+      {block.type === "botHelp" && (
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Tiêu đề * (vd: Not sure where to start?)"
+            value={block.title}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+          />
+          <textarea
+            className={`${inputClass} min-h-16 resize-y`}
+            placeholder="Mô tả *"
+            value={block.description}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Nhãn nút *"
+            value={block.buttonLabel}
+            onChange={(e) => onUpdate({ buttonLabel: e.target.value })}
+          />
+          <ButtonActionField
+            url={block.buttonUrl}
+            event={block.buttonEvent}
+            onChangeUrl={(buttonUrl) => onUpdate({ buttonUrl })}
+            onChangeEvent={(buttonEvent) => onUpdate({ buttonEvent })}
+          />
+        </div>
+      )}
+
+      {block.type === "featurePromo" && (
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="URL ảnh *"
+            value={block.imageUrl}
+            onChange={(e) => onUpdate({ imageUrl: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Eyebrow (tuỳ chọn, vd: AI HERO · SKILL SYSTEM)"
+            value={block.eyebrow ?? ""}
+            onChange={(e) => onUpdate({ eyebrow: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Tiêu đề *"
+            value={block.title}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+          />
+          <textarea
+            className={`${inputClass} min-h-14 resize-y`}
+            placeholder="Mô tả (tuỳ chọn)"
+            value={block.description ?? ""}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Nhãn nút *"
+            value={block.buttonLabel}
+            onChange={(e) => onUpdate({ buttonLabel: e.target.value })}
+          />
+          <ButtonActionField
+            url={block.buttonUrl}
+            event={block.buttonEvent}
+            onChangeUrl={(buttonUrl) => onUpdate({ buttonUrl })}
+            onChangeEvent={(buttonEvent) => onUpdate({ buttonEvent })}
+          />
+        </div>
+      )}
+
+      {block.type === "deeperCourse" && (
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Eyebrow (tuỳ chọn, vd: READY TO GO DEEPER?)"
+            value={block.eyebrow ?? ""}
+            onChange={(e) => onUpdate({ eyebrow: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Tiêu đề *"
+            value={block.title}
+            onChange={(e) => onUpdate({ title: e.target.value })}
+          />
+          <textarea
+            className={`${inputClass} min-h-14 resize-y`}
+            placeholder="Mô tả (tuỳ chọn)"
+            value={block.description ?? ""}
+            onChange={(e) => onUpdate({ description: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Nhãn nút *"
+            value={block.buttonLabel}
+            onChange={(e) => onUpdate({ buttonLabel: e.target.value })}
+          />
+          <ButtonActionField
+            url={block.buttonUrl}
+            event={block.buttonEvent}
+            onChangeUrl={(buttonUrl) => onUpdate({ buttonUrl })}
+            onChangeEvent={(buttonEvent) => onUpdate({ buttonEvent })}
+          />
+        </div>
+      )}
+
+      {block.type === "lessonList" && (
+        <div className="flex flex-col gap-2">
+          <input
+            className={inputClass}
+            placeholder="Tiêu đề chung (tuỳ chọn, vd: 5 lessons, in order)"
+            value={block.heading ?? ""}
+            onChange={(e) => onUpdate({ heading: e.target.value })}
+          />
+          <LessonListItemsEditor items={block.items} onChange={(items) => onUpdate({ items })} />
+        </div>
+      )}
     </div>
   );
 }
