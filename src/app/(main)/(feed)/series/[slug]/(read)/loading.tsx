@@ -42,8 +42,12 @@ export default function SeriesReadLoading() {
 
       <hr className="-mx-6 border-border lg:-mx-10" />
 
-      <div className="flex gap-6 pt-6">
-        <article className="min-w-0 flex-1 border-r border-border pb-10">
+      {/* pt-6 dat BEN TRONG article/aside (khong con o div flex cha) - xem
+          fix cung ngay trong [entrySlug]/page.tsx: border-r phai bao QUANH
+          ca khoang pt-6 nay, khong de no ho ra 1 dai trang truoc khi duong
+          vien doc bat dau ("2 đường line border không liền mạch"). */}
+      <div className="flex gap-6">
+        <article className="min-w-0 flex-1 border-r border-border pt-6 pb-10">
           <FadeIn delay={0.12}>
             <EntryBodySkeleton />
           </FadeIn>
@@ -52,7 +56,7 @@ export default function SeriesReadLoading() {
           </FadeIn>
         </article>
 
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 pl-8 xl:flex">
           <FadeIn delay={0.12}>
             <EntryTocSkeleton />
           </FadeIn>

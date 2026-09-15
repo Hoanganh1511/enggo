@@ -408,9 +408,17 @@ export default async function SeriesEntryPage({
 
       {/* gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
           khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
-          cha se thanh khoang cach thua qua muc. pt-6 - khoang cach SAU hr
-          (xem comment pb-6 o tren). */}
-      <div className="flex gap-6 pt-6">
+          cha se thanh khoang cach thua qua muc.
+          [2026-09-15 fix] pt-6 CHUYEN vao BEN TRONG <article>/<aside> (thay
+          vi dat o div flex cha nhu truoc) - luc pt-6 nam o div cha, border-r
+          cua <article> CHI bat dau SAU khoang pt-6 do (border thuoc ve
+          <article>, o DUOI padding-top cua the cha) => ho ra 1 dai TRANG
+          NGANG giua <hr> phia tren va diem bat dau THAT cua duong vien doc,
+          nhin "2 đường line border không liền mạch" (yeu cau nguoi dung).
+          Dua pt-6 vao TRONG <article> (border-r bao QUANH CA phan padding
+          do) thi duong vien doc bat dau NGAY tu sat duoi <hr>, khoang cach
+          6 gio nam o BEN TRONG khung vien thay vi truoc no. */}
+      <div className="flex gap-6">
         {/* pb-10 (khong phai pb-0 mac dinh) - NOI vien border-r cua article
             keo dai xuong THEM 1 khoang truoc khi ket thuc, thay vi dut ngay
             sau EntryExtras roi de lo 1 khoang trang giua duong vien va
@@ -420,7 +428,7 @@ export default async function SeriesEntryPage({
             trên rồi nối sát vào"). Banner gio nam NGOAI hang flex nay (xem
             duoi) nen se noi SAT ngay sau padding nay, khong con margin-top
             rieng nua. */}
-        <article className="min-w-0 flex-1 border-r border-border pb-10">
+        <article className="min-w-0 flex-1 border-r border-border pt-6 pb-10">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
@@ -447,7 +455,7 @@ export default async function SeriesEntryPage({
             duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
             vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
             trang nua) roi dinh lai o do khi cuon xuong. */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 pl-8 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
