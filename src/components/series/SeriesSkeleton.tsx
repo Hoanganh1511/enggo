@@ -63,13 +63,29 @@ export function SeriesSkeleton({ className }: { className?: string }) {
 // ap dung DONG LOAT cho ca fallback skeleton LAN noi dung that (component
 // nay dung chung ca 2) nen ca lan skeleton MOI xuat hien LAN luc no bien mat
 // nhuong cho, LAN cac khoi khac bi anh huong deu tron tru nhu nhau.
-export function FadeIn({ children }: { children: React.ReactNode }) {
+// [2026-09-15] Them `delay` - CA 5 nhanh Suspense (Header/Body/Toc/Extras/
+// NextBanner...) deu await CHUNG 1 dataPromise DUY NHAT (1 request that duy
+// nhat, xem comment SeriesEntryPage duoi) nen tren thuc te ca 5 deu SAN
+// SANG cung 1 luc khi request do xong - "Progressive Loading" 3 tang chi
+// con Y NGHIA VE THU TU UU TIEN trong code, khong con tao ra do TRE THAT
+// giua cac tang nua, khien nguoi dung KHONG phan biet duoc tang nao len
+// truoc/sau ("nhấp nháy gần nhau quá... không nhìn rõ phần nào lên trước").
+// Sua bang cach CHU DONG lech `delay` (giay) THEO DUNG thu tu Batch 1/2/3 da
+// dinh nghia trong page.tsx - hieu ung tra ve la 1 chuoi xuat hien TUAN TU
+// de doc, du du lieu that su san sang cung luc.
+export function FadeIn({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+}) {
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: "easeOut", delay }}
     >
       {children}
     </motion.div>

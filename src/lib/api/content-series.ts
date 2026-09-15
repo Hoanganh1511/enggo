@@ -11,6 +11,27 @@ export type ContentSeriesInstallTab = { label: string; command: string; note?: s
 export type ContentSeriesExternalLink = { label: string; url: string; icon?: string };
 export type ContentSeriesFaqItem = { question: string; answer: string };
 
+// Khoi noi dung o dau 1 Entry (truoc than bai markdown), sap xep duoc - yeu
+// cau nguoi dung: "chia làm nửa trên... custom thêm đa dạng các element...
+// sắp xếp thứ tự hiển thị". Co tinh TACH RIENG khoi ContentSeriesAction/
+// ContentSeriesActionStyle (dung cho CTA cua campaign card o tren) - 2 he
+// thong nut khac nhau ve tu vung style (solid-yellow/outline-black/ghost-gray
+// o day, thay vi primary/secondary/text ben card) VA khac ngu canh hien thi,
+// gop chung se ep 1 union phai gong ganh 2 UI khong lien quan.
+export type EntryBlockButtonStyle = "solid-yellow" | "outline-black" | "ghost-gray";
+export type EntryBlockButton = {
+  id: string;
+  label: string;
+  url: string;
+  style: EntryBlockButtonStyle;
+  openInNewTab?: boolean;
+};
+export type EntryContentBlock =
+  | { id: string; type: "toc" }
+  | { id: string; type: "install"; command: string; description?: string; buttons?: EntryBlockButton[] }
+  | { id: string; type: "buttonGroup"; buttons: EntryBlockButton[] }
+  | { id: string; type: "callout"; eyebrow?: string; title: string; description?: string };
+
 // "Campaign card" - cac field dieu khien hien thi the Series o /home (rail)
 // + /series (list), xem SeriesCampaignCard.tsx + tab "Thẻ hiển thị" trong
 // SeriesManageTabs.tsx (yeu cau nguoi dung: redesign the Series thanh dang
@@ -127,6 +148,7 @@ export type ContentSeriesEntryDetail = {
   contentMarkdown: string;
   installTabs: ContentSeriesInstallTab[] | null;
   faq: ContentSeriesFaqItem[] | null;
+  contentBlocks: EntryContentBlock[] | null;
   readTimeMinutes: number;
   createdAt: string;
   updatedAt: string;
@@ -299,6 +321,7 @@ export type ContentSeriesEntryInput = {
   contentMarkdown?: string;
   installTabs?: ContentSeriesInstallTab[];
   faq?: ContentSeriesFaqItem[];
+  contentBlocks?: EntryContentBlock[];
   readTimeMinutes?: number;
 };
 

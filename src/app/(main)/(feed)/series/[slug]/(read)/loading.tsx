@@ -31,12 +31,15 @@ export default function SeriesReadLoading() {
         <FadeIn>
           <EntryHeaderSkeleton />
         </FadeIn>
-        <FadeIn>
+        {/* delay=0.12 - dong bo voi Batch 2 trong [entrySlug]/page.tsx (xem
+            comment `delay` o SeriesSkeleton.tsx) de khoi Body khong hien CUNG
+            luc voi Header ngay ca trong man hinh loading.tsx tam thoi nay. */}
+        <FadeIn delay={0.12}>
           <EntryBodySkeleton />
         </FadeIn>
       </div>
       <div className="hidden h-fit w-56 shrink-0 xl:block">
-        <FadeIn>
+        <FadeIn delay={0.12}>
           <EntryTocSkeleton />
         </FadeIn>
       </div>

@@ -10,6 +10,7 @@ import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { SeriesEntryEditor } from "@/components/series/SeriesEntryEditor";
 import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
+import { EntryContentBlocksEditor } from "@/components/series/EntryContentBlocksEditor";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { LayoutSpinnerOverlay } from "@/components/ui/layout-spinner";
 import type {
@@ -17,6 +18,7 @@ import type {
   ContentSeriesEntryDetail,
   ContentSeriesFaqItem,
   ContentSeriesInstallTab,
+  EntryContentBlock,
 } from "@/lib/api/content-series";
 
 const inputClass =
@@ -63,6 +65,9 @@ export function SeriesEntryForm({
     initial?.installTabs ?? [],
   );
   const [readTimeOverride, setReadTimeOverride] = useState(initial?.readTimeMinutes ?? undefined);
+  const [contentBlocks, setContentBlocks] = useState<EntryContentBlock[]>(
+    initial?.contentBlocks ?? [],
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,6 +94,7 @@ export function SeriesEntryForm({
         contentMarkdown,
         faq: hasFaq ? faq : [],
         installTabs: installOverride ? installTabs : undefined,
+        contentBlocks,
         readTimeMinutes: readTimeOverride,
       };
       if (isEdit && initial) {
@@ -186,6 +192,19 @@ export function SeriesEntryForm({
         <div>
           <label className={labelClass}>Source (vd mattpocock/skills)</label>
           <input className={inputClass} value={source} onChange={(e) => setSource(e.target.value)} />
+        </div>
+
+        {/* Danh sach khoi noi dung o DAU bai (TOC box/install/buttonGroup/
+            callout), sap xep bang nut len/xuong - yeu cau nguoi dung: "chia
+            làm nửa trên... custom thêm đa dạng các element... sắp xếp thứ
+            tự hiển thị". Rong = trang cong khai tu fallback ve 1 box TOC
+            (xem SeriesEntryContentBlocks.tsx). */}
+        <div className="rounded-xl border border-border p-4">
+          <label className={labelClass}>Nội dung tuỳ chỉnh (đầu bài)</label>
+          <p className="-mt-0.5 mb-3 text-[12px] text-ink-faint">
+            Hiện phía trên nội dung chính, thứ tự trong danh sách = thứ tự hiển thị.
+          </p>
+          <EntryContentBlocksEditor blocks={contentBlocks} onChange={setContentBlocks} />
         </div>
 
         <div>

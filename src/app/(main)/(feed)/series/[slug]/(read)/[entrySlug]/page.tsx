@@ -8,7 +8,6 @@ import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
-import { extractQuestionPickerToc } from "@/lib/docs/question-picker-toc";
 import {
   EntryDownloadButtons,
   ENTRY_CONTENT_ID,
@@ -16,7 +15,7 @@ import {
 import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
-import { SeriesQuestionPickerToc } from "@/components/series/SeriesQuestionPickerToc";
+import { SeriesEntryContentBlocks } from "@/components/series/SeriesEntryContentBlocks";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
   EntryHeaderSkeleton,
@@ -54,7 +53,10 @@ async function EntryHeader({
           dung chung 1 mau/1 kieu dau cham "·" nhu nhau, nhin thanh 1 chuoi
           phang khong phan tach). */}
       <div className="font-content flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-ink-muted">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-1.5 text-ink-muted"
+        >
           <Link href="/series" className="hover:text-ink hover:underline">
             Series
           </Link>
@@ -85,21 +87,24 @@ async function EntryHeader({
           cau nguoi dung: "icon chỉ hiện trên sidebar thôi, không liên quan
           gì vào trong title, subtitle của bài viết"). */}
       <div className="font-content mt-2">
-        <h1 className="text-[30px] sm:text-[2.125rem]  my-6 font-extrabold text-ink">
+        <h1 className="text-[30px] sm:text-[2.3rem]  my-6 font-extrabold text-ink">
           {entry.title}
         </h1>
         {entry.subtitle && (
-          <p className="mt-1 text-[18.5px] text-ink-faint">
-            {entry.subtitle}
-          </p>
+          <p className="mt-1 text-[18.5px] text-ink-faint">{entry.subtitle}</p>
         )}
       </div>
 
-      {/* Grid box TOC (H2) - NGAY DUOI subtitle (yeu cau nguoi dung: "cái
-          box toc sẽ hiện dạng grid ở dưới subtitle") - chuyen tu EntryBody
-          len day, van dung CHUNG 1 ham quet extractQuestionPickerToc tren
-          entry.contentMarkdown. */}
-      <SeriesQuestionPickerToc items={extractQuestionPickerToc(entry.contentMarkdown)} />
+      {/* Danh sach khoi noi dung tuy chinh (TOC box/install/buttonGroup/
+          callout) - NGAY DUOI subtitle (yeu cau nguoi dung: "cái box toc sẽ
+          hiện dạng grid ở dưới subtitle", sau do mo rong thanh nhieu loai
+          khoi sap xep duoc: "custom thêm đa dạng các element... sắp xếp thứ
+          tự hiển thị"). entry.contentBlocks rong/null -> tu fallback ve 1
+          khoi TOC duy nhat (xem SeriesEntryContentBlocks.tsx). */}
+      <SeriesEntryContentBlocks
+        blocks={entry.contentBlocks}
+        contentMarkdown={entry.contentMarkdown}
+      />
 
       <EntryDownloadButtons
         title={entry.title}
@@ -123,7 +128,7 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
   const { entry } = data;
 
   return (
-    <FadeIn>
+    <FadeIn delay={0.12}>
       {/* [&_hr]:-ml-6 lg:[&_hr]:-ml-10 - CHI BEN TRAI (KHONG con -mr, xem
           sua loi ben duoi). <hr> nay nam TRONG <article> (flex-1, khong co
           padding rieng) - o day CHI can huy padding-left cua panel to (layout.tsx
@@ -170,7 +175,7 @@ async function EntryToc({ dataPromise }: { dataPromise: EntryDataPromise }) {
   const toc = extractDocsToc(data.entry.contentMarkdown);
 
   return (
-    <FadeIn>
+    <FadeIn delay={0.12}>
       <DocsToc toc={toc} />
     </FadeIn>
   );
@@ -195,7 +200,7 @@ async function EntryExtras({
   const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
 
   return (
-    <FadeIn>
+    <FadeIn delay={0.24}>
       {installTabs.length > 0 && (
         <div className="mt-8">
           <h2 className="font-content mb-3 text-[15px] font-semibold text-ink">
@@ -237,7 +242,7 @@ async function EntryNextBanner({
     series.categories.find((c) => c.id === next.categoryId)?.title ?? null;
 
   return (
-    <FadeIn>
+    <FadeIn delay={0.24}>
       <SeriesNextEntryBanner
         seriesSlug={slug}
         next={next}
@@ -268,7 +273,7 @@ async function EntrySidebarShare({
   if (series.shareChannels.length === 0) return null;
 
   return (
-    <FadeIn>
+    <FadeIn delay={0.24}>
       <div className="border-t border-border pt-4">
         <p className="font-content mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
           Share
@@ -300,7 +305,10 @@ async function EntryAuthorRail({
   dataPromise: EntryDataPromise;
   slug: string;
 }) {
-  const [data, status] = await Promise.all([dataPromise, getSelfStatusAction()]);
+  const [data, status] = await Promise.all([
+    dataPromise,
+    getSelfStatusAction(),
+  ]);
   if (!data || !status.isAdmin) return null;
   const { entry } = data;
 
@@ -398,7 +406,7 @@ export default async function SeriesEntryPage({
           <article className="min-w-0">
             <Suspense
               fallback={
-                <FadeIn>
+                <FadeIn delay={0.12}>
                   <EntryBodySkeleton />
                 </FadeIn>
               }
@@ -408,7 +416,7 @@ export default async function SeriesEntryPage({
 
             <Suspense
               fallback={
-                <FadeIn>
+                <FadeIn delay={0.24}>
                   <EntryExtrasSkeleton />
                 </FadeIn>
               }
@@ -417,7 +425,16 @@ export default async function SeriesEntryPage({
             </Suspense>
           </article>
 
-          <Suspense fallback={<EntryNextBannerSkeleton />}>
+          {/* delay=0.24 (dong bo Batch 3) - truoc day fallback nay KHONG boc
+              FadeIn (thieu sot, khac voi 5 nhanh con lai) nen luc EntryNextBanner
+              tu skeleton doi sang that KHONG co hieu ung fade dong bo. */}
+          <Suspense
+            fallback={
+              <FadeIn delay={0.24}>
+                <EntryNextBannerSkeleton />
+              </FadeIn>
+            }
+          >
             <EntryNextBanner dataPromise={dataPromise} slug={slug} />
           </Suspense>
         </div>
@@ -430,7 +447,7 @@ export default async function SeriesEntryPage({
         <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 border-l border-border pl-8 xl:flex">
           <Suspense
             fallback={
-              <FadeIn>
+              <FadeIn delay={0.12}>
                 <EntryTocSkeleton />
               </FadeIn>
             }
