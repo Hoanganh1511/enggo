@@ -4,7 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Copy, Share2 } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
-import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import type { ContentSeriesEntrySummary } from "@/lib/api/content-series";
 
@@ -54,17 +58,23 @@ export function EntryPageActionsRow({
   }
 
   return (
-    <div className="font-content mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+    <div className="font-content mt-4 flex flex-wrap items-center justify-between gap-3 pt-4">
       <div className="flex min-w-0 items-center gap-2.5">
         {authorAvatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- avatar nho, khong can toi uu Next/Image
-          <img src={authorAvatarUrl} alt="" className="size-7 shrink-0 rounded-full object-cover" />
+          <img
+            src={authorAvatarUrl}
+            alt=""
+            className="size-7 shrink-0 rounded-full object-cover"
+          />
         ) : (
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[12px] font-semibold text-ink-muted">
             {authorName.trim().charAt(0).toUpperCase() || "?"}
           </span>
         )}
-        <span className="truncate text-[13px] font-medium text-ink">{authorName}</span>
+        <span className="truncate text-[13px] font-medium text-ink">
+          {authorName}
+        </span>
         <button
           type="button"
           onClick={() => toast.info("Tính năng Follow sắp ra mắt")}
@@ -93,12 +103,19 @@ export function EntryPageActionsRow({
             sideOffset={6}
             className="z-50 rounded-lg border border-border bg-surface p-2 shadow-dropdown"
           >
-            <SeriesShareButtons channels={shareChannels} url={shareUrl} title={shareTitle} />
+            <SeriesShareButtons
+              channels={shareChannels}
+              url={shareUrl}
+              title={shareTitle}
+            />
           </PopoverContent>
         </PopoverRoot>
 
         {next && (
-          <Link href={`/series/${seriesSlug}/${next.slug}`} className={buttonClass}>
+          <Link
+            href={`/series/${seriesSlug}/${next.slug}`}
+            className={buttonClass}
+          >
             Next page
             <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
           </Link>

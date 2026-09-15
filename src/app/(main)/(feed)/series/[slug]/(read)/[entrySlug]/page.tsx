@@ -428,7 +428,7 @@ export default async function SeriesEntryPage({
             trên rồi nối sát vào"). Banner gio nam NGOAI hang flex nay (xem
             duoi) nen se noi SAT ngay sau padding nay, khong con margin-top
             rieng nua. */}
-        <article className="min-w-0 flex-1 border-r border-border pt-6 pb-10">
+        <article className="min-w-0 flex-1 border-r border-border pb-10">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>

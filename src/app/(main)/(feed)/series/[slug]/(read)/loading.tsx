@@ -47,7 +47,7 @@ export default function SeriesReadLoading() {
           ca khoang pt-6 nay, khong de no ho ra 1 dai trang truoc khi duong
           vien doc bat dau ("2 đường line border không liền mạch"). */}
       <div className="flex gap-6">
-        <article className="min-w-0 flex-1 border-r border-border pt-6 pb-10">
+        <article className="min-w-0 flex-1 border-r border-border pb-10">
           <FadeIn delay={0.12}>
             <EntryBodySkeleton />
           </FadeIn>
