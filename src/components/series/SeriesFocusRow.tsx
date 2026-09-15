@@ -27,14 +27,19 @@ export function SeriesFocusRow({ children }: { children: React.ReactNode }) {
       layout
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
-        "flex bg-background",
+        "flex min-w-0 bg-background",
         focusModeActive
           ? // Fixed + can giua + dinh top - "ra chính giữa màn hình...
             // sát bám vào top viewport". max-w gioi han (khong full-bleed)
             // de van con thay duoc backdrop toi 2 ben nhu "letterbox" rap
             // phim. overflow-y-auto rieng vi gio o NGOAI luong trang, khong
-            // con thua huong scroll cua window nhu truoc.
-            "fixed inset-x-0 top-0 z-40 mx-auto max-w-360 overflow-y-auto shadow-2xl"
+            // con thua huong scroll cua window nhu truoc. overflow-x-hidden
+            // THEM (2026-09-16, nguoi dung bao loi hien thi luc bat Focus
+            // mode) - chan moi tran ngang (vd 1 dong text/list dai khong
+            // wrap kip) khoi tao thanh cuon ngang/tran ra ngoai khung
+            // letterbox - chi CAN CHINH DOC (scroll xuong doc noi dung dai)
+            // moi hop ly cho 1 trang doc, khong can cuon ngang bao gio.
+            "fixed inset-x-0 top-0 z-40 mx-auto max-w-360 overflow-x-hidden overflow-y-auto shadow-2xl"
           : "-mx-4 -my-6 sm:-mx-6 lg:-mx-10",
       )}
       style={{

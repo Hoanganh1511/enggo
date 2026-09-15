@@ -111,13 +111,20 @@ export function DocsToc({ toc }: { toc: DocsTocItem[] }) {
               trong 1 cai ranh, khong phai bien mat/hien lai o 2 noi khac
               nhau). Cung 1 layoutId qua nhieu lan render (chi 1 <a> render no
               tai 1 thoi diem) khien framer-motion tu dong noi 2 vi tri
-              CU/MOI bang 1 chuyen dong FLIP muot, dung cam giac "slide". */}
+              CU/MOI bang 1 chuyen dong FLIP muot, dung cam giac "slide".
+              [2026-09-15 fix] -left-3 (-12px) THIEU MAT do RONG cua chinh
+              border-l tren <nav> (1px): <a> nam sau border(1px)+pl-3(12px)
+              cua nav, tuc canh trai cua <a> da CACH duong border 13px, khong
+              phai 12px - offset -left-3 chi keo lai dung 12px nen thanh vang
+              luon lech 1px SANG PHAI so voi duong border-l (nguoi dung bao
+              "chưa trùng vào rãnh, trông rất lệch"). Doi sang calc(-0.75rem -
+              1px) de tru them dung 1px border do. */}
           {item.id === activeId && (
             <motion.span
               layoutId="toc-active-bar"
               aria-hidden="true"
-              className="absolute top-0 -left-3 h-full w-px"
-              style={{ backgroundColor: "var(--accent-gold)" }}
+              className="absolute top-0 h-full w-px"
+              style={{ left: "calc(-0.75rem - 1px)", backgroundColor: "var(--accent-gold)" }}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
             />
           )}

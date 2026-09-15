@@ -102,3 +102,22 @@ lạc tông ngay lập tức:
 Khi nhận yêu cầu kiểu "sửa trang đọc bài" mà không rõ loại nào, hỏi lại thay
 vì đoán - 2 cây component không dùng chung bất kỳ file style nào ngoài
 `globals.css` gốc.
+
+## Entry "map" (trang gốc Series) không phải "bài viết nội dung" (2026-09-16)
+
+CHỈ RIÊNG entry gốc slug cố định **"map"** (trang giới thiệu/điều hướng gốc
+của 1 Series, xem `The Map: ...`) là KHÔNG hiện 2 cụm UI:
+- `EntryPageActionsRow` (author+Follow, Copy page/Share/Next page) ở cuối
+  phần đầu bài.
+- `SeriesNextEntryBanner` (banner full-width "bài tiếp theo" ở cuối trang).
+
+Xem `isMapRootEntry()` trong `[entrySlug]/page.tsx`.
+
+**Lưu ý quan trọng**: ban đầu hiểu nhầm là CẢ nhánh category gốc "Explore"
+(Map, Skills, Discover/Architecture Map/AWS Services/Hands-on Labs...) đều bị
+ẩn - SAI. Người dùng đã sửa lại (2026-09-16): "Chỉ riêng cái Map gốc là không
+có thôi. Còn các bài viết khác thì đều có" - kể cả các entry khác NẰM TRONG
+Explore (Skills, Architecture Map...) vẫn là bài viết bình thường, vẫn hiện
+đầy đủ 2 cụm trên như mọi entry khác trong Series. Đừng dùng lại logic
+"thuộc nhánh Explore" cho quyết định ẩn/hiện - chỉ so sánh đúng `entry.slug
+=== "map"`.

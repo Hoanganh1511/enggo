@@ -28,6 +28,18 @@ import {
 
 type EntryDataPromise = Promise<ContentSeriesEntryPage | null>;
 
+// CHI rieng entry "map" (trang goc cua Series, slug co dinh "map" - xem
+// SeriesEntryPage/EntryHeader duoi, breadcrumb luon tro thang toi
+// `/series/${slug}/map`) la KHONG phai "bai viet noi dung" tuan tu that su -
+// no la trang gioi thieu/dieu huong goc cua Series. Cac entry KHAC trong
+// Explore (Skills, Architecture Map, AWS Services, Hands-on Labs...) VAN la
+// bai viet binh thuong, VAN hien day du cum UI (yeu cau nguoi dung sua lai
+// 2026-09-16: "Chỉ riêng cái Map gốc là không có thôi. Còn các bài viết khác
+// thì đều có" - truoc do lo hieu nham la CA nhanh Explore).
+function isMapRootEntry(slug: string): boolean {
+  return slug === "map";
+}
+
 // Batch 1 (Progressive Loading, xem comment o SeriesEntryPage duoi) -
 // breadcrumb + tieu de/subtitle + source badge, phan QUAN TRONG NHAT nen len
 // truoc, KHONG cho doi cung luc voi than bai (co the nang hon vi con phai
@@ -47,6 +59,7 @@ async function EntryHeader({
   const { series, entry, totalCount, next } = data;
   const positionIndex = entry.orderIndex + 1;
   const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
+  const isMapRoot = isMapRootEntry(entry.slug);
 
   return (
     <FadeIn>
@@ -142,19 +155,25 @@ async function EntryHeader({
           Copy page/Share/Next page (phai). isAdmin/entrySlug - popover
           "Profile/Cập nhật bài viết/Cập nhật Series" khi bam vao avatar+ten
           tac gia (thay the cum nut doc EntryAuthorRail cu, da bo - yeu cau
-          nguoi dung: "Bỏ cái cục này đi"). */}
-      <EntryPageActionsRow
-        authorName={series.authorName}
-        authorAvatarUrl={series.authorAvatarUrl}
-        contentMarkdown={entry.contentMarkdown}
-        shareChannels={series.shareChannels}
-        shareUrl={entryUrl}
-        shareTitle={entry.title}
-        next={next}
-        seriesSlug={slug}
-        entrySlug={entry.slug}
-        isAdmin={status.isAdmin}
-      />
+          nguoi dung: "Bỏ cái cục này đi").
+          [2026-09-16] AN cho RIENG entry "map" (trang goc cua Series) - yeu
+          cau nguoi dung: "Chỉ riêng cái Map gốc là không có thôi. Còn các bài
+          viết khác thì đều có" (xem isMapRootEntry o dau file + ghi chu trong
+          docs/ai-hero-design-tokens.md). */}
+      {!isMapRoot && (
+        <EntryPageActionsRow
+          authorName={series.authorName}
+          authorAvatarUrl={series.authorAvatarUrl}
+          contentMarkdown={entry.contentMarkdown}
+          shareChannels={series.shareChannels}
+          shareUrl={entryUrl}
+          shareTitle={entry.title}
+          next={next}
+          seriesSlug={slug}
+          entrySlug={entry.slug}
+          isAdmin={status.isAdmin}
+        />
+      )}
 
       {/* Zone "middle" - giua cum Top va than bai, NGAY TREN <hr> ben duoi -
           yeu cau nguoi dung (them sau cung, mo rong tu he thong block dau
@@ -302,8 +321,10 @@ async function EntryNextBanner({
 }) {
   const data = await dataPromise;
   if (!data) notFound();
-  const { series, next } = data;
-  if (!next) return null;
+  const { series, entry, next } = data;
+  // "map" (trang goc) khong hien banner "bai tiep theo" - cung ly do/yeu cau
+  // voi EntryPageActionsRow o EntryHeader (xem isMapRootEntry dau file).
+  if (!next || isMapRootEntry(entry.slug)) return null;
   const categoryTitle =
     series.categories.find((c) => c.id === next.categoryId)?.title ?? null;
 

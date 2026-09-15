@@ -40,8 +40,27 @@ export function SeriesFocusSidebar({ children }: { children: React.ReactNode }) 
           bi "cut cut" ngang chung noi dung cua no, khong keo dai het trang
           nhu cot noi dung dai hon (nguoi dung bao loi). Bon "flex" o day de
           lop boc tu stretch <aside> con TRONG NO len bang chinh chieu cao cua
-          no (da duoc outer flex stretch dung), khoi phuc lai hanh vi cu. */}
-      <div className={cn("flex", focusModeActive && collapsed && "lg:hidden")}>{children}</div>
+          no (da duoc outer flex stretch dung), khoi phuc lai hanh vi cu.
+          --focus-sidebar-offset: aside ben trong (layout.tsx) dung bien nay
+          de tinh max-height vung cuon rieng cua no
+          (calc(100vh-var(--focus-sidebar-offset))). Binh thuong (khong Focus
+          mode) hang nay nam DUOI header ngang that su nen phai tru
+          var(--header-height); Focus mode thi ca cum sidebar+noi dung da
+          chuyen sang `position:fixed` dinh THANG dinh viewport (header bi an,
+          xem SeriesFocusRow.tsx) nen KHONG con gi de tru nua - de nguyen
+          --header-height o day se lam vung cuon NGAN hon that 56px, day noi
+          dung/thanh cuon sidebar sai vi tri (nguoi dung bao "lỗi" luc bat
+          Focus mode). */}
+      <div
+        className={cn("flex", focusModeActive && collapsed && "lg:hidden")}
+        style={{
+          ["--focus-sidebar-offset" as string]: focusModeActive
+            ? "0px"
+            : "var(--header-height)",
+        }}
+      >
+        {children}
+      </div>
     </>
   );
 }

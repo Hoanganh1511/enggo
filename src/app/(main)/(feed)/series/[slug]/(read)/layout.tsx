@@ -90,7 +90,7 @@ export default async function SeriesLayout({
                 de TU no co thanh cuon, .scrollbar-none (da co san trong
                 globals.css, dung cho HorizontalScroller.tsx) de AN thanh
                 cuon THI GIAC ma van cuon duoc binh thuong bang chuot/touch. */}
-            <div className="scrollbar-none sticky top-0 max-h-[calc(100vh-var(--header-height))] overflow-y-auto p-[18px]">
+            <div className="scrollbar-none sticky top-0 max-h-[calc(100vh-var(--focus-sidebar-offset,var(--header-height)))] overflow-y-auto p-[18px]">
               {/* Link "Tất cả series" + nut gear Quan ly - DA BO (yeu cau
                   nguoi dung: "Tất cả series và nút settings không cho hiện ở
                   đây nữa"). Duong ve series LIST gio nam trong breadcrumb

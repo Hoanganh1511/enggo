@@ -330,19 +330,21 @@ export function SeriesSidebar({
     () => new Set(activeCategoryId ? [activeCategoryId] : []),
   );
 
-  // Dieu huong sang Entry o category KHAC (pathname doi) - dam bao category
-  // moi active LUON duoc mo, nhung KHONG dong lai cac category nguoi dung da
-  // tu bam mo tay truoc do (cong don vao Set thay vi thay the). Goi setState
-  // NGAY TRONG RENDER (khong qua useEffect) theo dung pattern "Adjusting
-  // state when a prop changes" cua React - xem CreateCollectionModal.tsx
-  // cung pattern nay.
+  // Dieu huong sang Entry o category KHAC (pathname doi) - THAY THE han Set
+  // cu bang CHI category moi active (khong cong don nua). Truoc day cong don
+  // (giu nguyen moi accordion da tung bam mo + them category moi vao) khien
+  // cac accordion cu KHONG active van dung mo mai, cang di nhieu bai cang
+  // chong chat nhieu accordion mo cung luc (nguoi dung bao loi, kem anh chup
+  // 2 accordion mo dong thoi du chi 1 bai dang active). Gio moi lan doi bai
+  // sang category khac: DONG het accordion cu, CHI mo accordion chua bai
+  // dang xem. Goi setState NGAY TRONG RENDER (khong qua useEffect) theo dung
+  // pattern "Adjusting state when a prop changes" cua React - xem
+  // CreateCollectionModal.tsx cung pattern nay.
   const [lastActiveCategoryId, setLastActiveCategoryId] =
     useState(activeCategoryId);
   if (activeCategoryId !== lastActiveCategoryId) {
     setLastActiveCategoryId(activeCategoryId);
-    if (activeCategoryId && !openIds.has(activeCategoryId)) {
-      setOpenIds(new Set(openIds).add(activeCategoryId));
-    }
+    setOpenIds(new Set(activeCategoryId ? [activeCategoryId] : []));
   }
 
   function toggle(id: string) {
