@@ -513,20 +513,31 @@ export const Accordion = Node.create({
   defining: true,
   addAttributes() {
     return {
+      // parseHTML doc TRUC TIEP tu DOM con (summary/thuoc tinh open) thay vi
+      // 1 data-attribute rieng ("data-title") - FIX bug that su: markdown
+      // serializer o duoi ghi title vao NOI DUNG <summary> va `open` vao
+      // thuoc tinh BOOLEAN THAT (khong phai "data-open") de trinh duyet tu
+      // hoat dong duoc luc DOC (khong JS), nhung ban dau parseHTML lai doc
+      // "data-title"/"data-open" - 2 thuoc tinh CHUA BAO GIO duoc ghi - nen
+      // MOI LAN mo lai 1 Entry da luu (vd bai "AWS Architecture Map") thi
+      // Accordion reset ve mac dinh/mat noi dung, phat sinh loi that su khi
+      // 0 content nao khop duoc content:"block+" bat buoc (RangeError tu
+      // ProseMirror, sap trang quan ly Entry - nguoi dung bao "F5 trang bị
+      // lỗi").
       title: {
         default: "Tiêu đề",
-        parseHTML: (el) => el.getAttribute("data-title") ?? "Tiêu đề",
+        parseHTML: (el) => el.querySelector(":scope > summary")?.textContent?.trim() || "Tiêu đề",
         renderHTML: (attrs) => ({ "data-title": attrs.title as string }),
       },
       open: {
         default: true,
-        parseHTML: (el) => el.getAttribute("data-open") !== "false",
+        parseHTML: (el) => el.hasAttribute("open"),
         renderHTML: (attrs) => ({ "data-open": attrs.open === false ? "false" : "true" }),
       },
     };
   },
   parseHTML() {
-    return [{ tag: "details[data-accordion]", contentElement: "div.accordion-body" }];
+    return [{ tag: "details[data-accordion]", contentElement: ":scope > div.accordion-body" }];
   },
   renderHTML({ HTMLAttributes, node }) {
     const title = (node.attrs.title as string) || "Tiêu đề";
@@ -544,11 +555,16 @@ export const Accordion = Node.create({
   // Markdown fallback (xem comment addStorage cua Callout o tren) - KHAC
   // Callout/GoDeeper/TocBlock (xuong cap thanh text thuong): nhung THANG the
   // <details>/<summary> tho vao markdown, chua NOI DUNG THAT o giua duoi dang
-  // markdown that (khong phai HTML) - can 2 dong trong truoc/sau (giong ly do
-  // QuestionPicker giai thich) de CommonMark/rehype-raw (DocsMarkdown.tsx)
-  // nhan dung day la markdown long trong 1 khoi HTML tho, khong bi nuot lam 1
-  // dong text. An toan nhu QuestionPicker vi noi dung Series/docs CHI admin
-  // soan duoc.
+  // markdown that (khong phai HTML). PHAI boc noi dung trong 1
+  // <div class="accordion-body"> KHOP DUNG voi contentElement khai bao o
+  // parseHTML ben tren - THIEU div nay la bug that su da xay ra (xem comment
+  // addAttributes ve ly do): ProseMirror parse lai markdown da luu se KHONG
+  // tim thay noi dung nao khop content:"block+" bat buoc -> nem loi crash
+  // ca trang luc mo lai Entry. Can dong trong TRUOC/SAU moi doan markdown
+  // long trong HTML (ca quanh <details> LAN quanh <div class="accordion-body">
+  // - CommonMark coi "div" cung la 1 tag HTML-block type-6, tu ket thuc o
+  // dong trong dau tien) de CommonMark/rehype-raw (DocsMarkdown.tsx) nhan
+  // dung day la markdown long trong HTML tho, khong bi nuot lam text.
   addStorage() {
     return {
       markdown: {
@@ -560,11 +576,12 @@ export const Accordion = Node.create({
           state.ensureNewLine();
           state.write(
             `<details class="accordion-block" data-accordion${open ? " open" : ""}>\n` +
-              `<summary class="accordion-summary">${escapeHtml(title)}</summary>\n\n`,
+              `<summary class="accordion-summary">${escapeHtml(title)}</summary>\n` +
+              `<div class="accordion-body">\n\n`,
           );
           state.renderContent(node);
           state.ensureNewLine();
-          state.write("\n</details>");
+          state.write("\n</div>\n</details>");
           state.closeBlock(node);
         },
       },
@@ -613,9 +630,12 @@ export const StatAccordion = Node.create({
         parseHTML: (el) => el.getAttribute("data-description") ?? "",
         renderHTML: (attrs) => ({ "data-description": (attrs.description as string) ?? "" }),
       },
+      // parseHTML doc thuoc tinh BOOLEAN THAT "open" (khop dung markdown
+      // serializer o duoi ghi native `open`, KHONG phai "data-open") - cung
+      // loi voi Accordion o tren neu de lech.
       open: {
         default: true,
-        parseHTML: (el) => el.getAttribute("data-open") !== "false",
+        parseHTML: (el) => el.hasAttribute("open"),
         renderHTML: (attrs) => ({ "data-open": attrs.open === false ? "false" : "true" }),
       },
       items: {
@@ -704,6 +724,13 @@ export const StatAccordion = Node.create({
   // Markdown fallback - toan bo 1 khoi HTML tho (giong QuestionPicker/
   // CuratedList/TocBlock: du lieu la SNAPSHOT attrs, khong phai ProseMirror
   // children that nen khong the state.renderContent() nhu Accordion thuong).
+  // PHAI ghi LAI title/count/description/items/legend duoi dang data-*
+  // attribute tren <details> (escape dung chuan HTML attribute) - bug that
+  // su neu bo qua (giong Accordion o tren): parseHTML cua node nay doc cac
+  // attrs TU CHINH cac data-* nay (xem addAttributes), thieu se khien MOI
+  // Entry da luu bi RESET het items/legend/title ve rong/mac dinh moi lan mo
+  // lai (khong crash nhu Accordion vi node nay la atom/content rong, nhung
+  // van la MAT DU LIEU that su).
   addStorage() {
     return {
       markdown: {
@@ -732,8 +759,16 @@ export const StatAccordion = Node.create({
           const descriptionHtml = description
             ? `<p class="stat-accordion-description">${escapeHtml(description)}</p>`
             : "";
+          // data-* la NGUON THAT SU parseHTML doc lai luc mo Entry (xem
+          // addAttributes) - phan HTML con lai (summary/list/legend) chi la
+          // BAN HIEN THI cho nguoi doc, khong duoc parseHTML dung toi.
           const html =
-            `<details class="stat-accordion" data-stat-accordion${open ? " open" : ""}>` +
+            `<details class="stat-accordion" data-stat-accordion` +
+            ` data-title="${escapeHtml(title)}" data-count="${escapeHtml(count)}"` +
+            ` data-description="${escapeHtml(description)}"` +
+            ` data-items="${escapeHtml(JSON.stringify(items))}"` +
+            ` data-legend="${escapeHtml(JSON.stringify(legend))}"` +
+            `${open ? " open" : ""}>` +
             `<summary class="stat-accordion-summary"><span class="stat-accordion-title">${escapeHtml(title)}</span>` +
             (count ? `<span class="stat-accordion-badge">${escapeHtml(count)}</span>` : "") +
             `</summary>` +
