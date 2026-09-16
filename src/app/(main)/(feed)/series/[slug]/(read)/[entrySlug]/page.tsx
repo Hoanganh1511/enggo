@@ -6,6 +6,7 @@ import { getContentSeriesEntryAction } from "@/actions/discover/content-series/g
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import type { ContentSeriesEntryPage } from "@/lib/api/content-series";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
+import { EntryContentWithGlobe } from "@/components/series/EntryContentWithGlobe";
 import { DocsToc } from "@/components/docs/DocsToc";
 import { extractDocsToc } from "@/lib/docs/docs-toc";
 import {
@@ -230,7 +231,12 @@ async function EntryBody({ dataPromise }: { dataPromise: EntryDataPromise }) {
           do de VAN chay full-width toi border-r nhu cu, khong bi hut ngan
           lai theo padding moi. */}
       <div id={ENTRY_CONTENT_ID} className="mt-6 [&_hr]:-mx-6 lg:[&_hr]:-mx-10">
-        <DocsMarkdown markdown={entry.contentMarkdown} />
+        {/* EntryContentWithGlobe (khong phai DocsMarkdown thang) - CHI o than
+            bai chinh nay moi can click de mo modal globe 3D (yeu cau nguoi
+            dung: "list các region aws... click vào chúng sẽ hiện modal có
+            quả địa cầu 3d") - FAQ (duoi) van dung DocsMarkdown thuan, khong
+            can tinh nang nay. */}
+        <EntryContentWithGlobe markdown={entry.contentMarkdown} />
       </div>
 
       {entry.faq && entry.faq.length > 0 && (

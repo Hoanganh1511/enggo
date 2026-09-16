@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { Minus, Plus, X } from "lucide-react";
+import { Globe as GlobeIcon, Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StatAccordionItem, StatAccordionLegendItem } from "./post-extensions";
 import { STAT_ACCORDION_DEFAULT_COLOR } from "./post-extensions";
+import { RegionGlobeModal, type RegionGlobeTarget } from "./RegionGlobeModal";
 
 // NodeView cua "Accordion thống kê" (bien the khac cua Accordion thuong -
 // yeu cau nguoi dung: "1 biến thể khác của accordion, nhưng có số lượng, có
@@ -24,6 +26,11 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   const items = (node.attrs.items ?? []) as StatAccordionItem[];
   const legend = (node.attrs.legend ?? []) as StatAccordionLegendItem[];
   const canEdit = editor.isEditable;
+  // Test thu hieu ung globe NGAY trong editor (khong can luu/mo lai trang doc
+  // that) - dung CHUNG 1 RegionGlobeModal voi ban doc cong khai
+  // (EntryContentWithGlobe.tsx), chi khac nguon target la 1 dong item dang
+  // sua thay vi click tu HTML tho.
+  const [previewTarget, setPreviewTarget] = useState<RegionGlobeTarget | null>(null);
   // Noi dung LUON hien luc soan (khac ban render TINH tu dong an/hien theo
   // attr `open` khi doc that) - giong tinh than AccordionView.tsx, de van sua
   // duoc items/legend/description du dang dat mac dinh dong hay mo. Bam +/-
@@ -103,39 +110,84 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           description && <p className="mb-3 text-[13.5px] text-ink-muted">{description}</p>
         )}
 
-        <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
-          {items.map((item, i) => (
-            <div key={i} className="group flex items-center gap-2">
-              <input
-                type="color"
-                value={item.color || STAT_ACCORDION_DEFAULT_COLOR}
-                onChange={(e) => updateItem(i, { color: e.target.value })}
-                disabled={!canEdit}
-                className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none"
-                title="Màu chấm"
-              />
-              {canEdit ? (
+        <div className="flex flex-col gap-1">
+          {items.map((item, i) => {
+            const hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
+            return (
+              <div key={i} className="group flex items-center gap-2">
                 <input
-                  value={item.text}
-                  onChange={(e) => updateItem(i, { text: e.target.value })}
-                  placeholder="Nội dung..."
-                  className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
+                  type="color"
+                  value={item.color || STAT_ACCORDION_DEFAULT_COLOR}
+                  onChange={(e) => updateItem(i, { color: e.target.value })}
+                  disabled={!canEdit}
+                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none"
+                  title="Màu chấm"
                 />
-              ) : (
-                <span className="min-w-0 flex-1 text-[13.5px] text-ink">{item.text}</span>
-              )}
-              {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => removeItem(i)}
-                  aria-label="Bỏ dòng"
-                  className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint opacity-0 hover:bg-hover-bg hover:text-ink group-hover:opacity-100"
-                >
-                  <X size={12} strokeWidth={2} />
-                </button>
-              )}
-            </div>
-          ))}
+                {canEdit ? (
+                  <input
+                    value={item.text}
+                    onChange={(e) => updateItem(i, { text: e.target.value })}
+                    placeholder="Nội dung..."
+                    className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
+                  />
+                ) : (
+                  <span className="min-w-0 flex-1 text-[13.5px] text-ink">{item.text}</span>
+                )}
+                {canEdit && (
+                  <>
+                    {/* Lat/lng - de trong = dong nay KHONG bam duoc luc doc
+                        (xem statAccordionItemAttrs trong post-extensions.ts).
+                        Toa do co the tra cuu nhanh tren Google Maps (bam chuot
+                        phai vao 1 diem -> copy toa do). */}
+                    <input
+                      type="number"
+                      step="any"
+                      value={item.lat ?? ""}
+                      onChange={(e) =>
+                        updateItem(i, { lat: e.target.value === "" ? undefined : Number(e.target.value) })
+                      }
+                      placeholder="lat"
+                      title="Vĩ độ (latitude)"
+                      className="w-14 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
+                    />
+                    <input
+                      type="number"
+                      step="any"
+                      value={item.lng ?? ""}
+                      onChange={(e) =>
+                        updateItem(i, { lng: e.target.value === "" ? undefined : Number(e.target.value) })
+                      }
+                      placeholder="lng"
+                      title="Kinh độ (longitude)"
+                      className="w-14 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
+                    />
+                    <button
+                      type="button"
+                      disabled={!hasCoords}
+                      onClick={() =>
+                        hasCoords &&
+                        setPreviewTarget({ label: item.text, lat: item.lat as number, lng: item.lng as number })
+                      }
+                      title={hasCoords ? "Xem thử trên quả địa cầu" : "Nhập lat/lng để xem thử"}
+                      className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                    >
+                      <GlobeIcon size={13} strokeWidth={2} />
+                    </button>
+                  </>
+                )}
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => removeItem(i)}
+                    aria-label="Bỏ dòng"
+                    className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint opacity-0 hover:bg-hover-bg hover:text-ink group-hover:opacity-100"
+                  >
+                    <X size={12} strokeWidth={2} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
         {canEdit && (
           <button
@@ -195,6 +247,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           </div>
         )}
       </div>
+      <RegionGlobeModal target={previewTarget} onOpenChange={(o) => !o && setPreviewTarget(null)} />
     </NodeViewWrapper>
   );
 }

@@ -589,12 +589,33 @@ export const Accordion = Node.create({
   },
 });
 
-export type StatAccordionItem = { text: string; color: string };
+// lat/lng KHONG bat buoc - yeu cau nguoi dung: "tôi có một list các region
+// aws trên thế giới, tôi muốn khi click vào chúng sẽ hiện modal có quả địa
+// cầu 3d rồi quay tới, xong focus vào đúng vị trí đó" (xem RegionGlobeModal.tsx
+// + EntryContentWithGlobe.tsx ve phan xu ly click/globe). Chi dong nao co CA
+// 2 gia tri nay moi duoc hien nhu 1 muc BAM DUOC luc doc (xem CSS
+// [&_.stat-accordion-item[data-lat]] o duoi) - dong khong co toa do van hien
+// binh thuong, khong bam duoc.
+export type StatAccordionItem = { text: string; color: string; lat?: number; lng?: number };
 export type StatAccordionLegendItem = { color: string; label: string };
 
 // Mau mac dinh cho 1 dot moi tao (chua tuy chinh) - cam AWS, khop tinh than
 // mockup nguoi dung gui (khoi "Geographic Regions"/"Edge Locations").
 export const STAT_ACCORDION_DEFAULT_COLOR = "#f97316";
+
+// Attrs dung chung cho 1 dong item (renderHTML LAN markdown serialize duoi -
+// chi item nao co CA lat/lng moi gan them "data-lat"/"data-lng" + class rieng
+// de CSS bao hieu bam duoc (xem POST_PROSE_CLASS) - EntryContentWithGlobe.tsx
+// doc lai 2 data-* nay qua 1 click handler UY QUYEN (delegated), KHONG can
+// hydrate rieng tung dong (item van la HTML tho thuan tuy, xem comment
+// StatAccordion.addStorage o duoi).
+function statAccordionItemAttrs(item: StatAccordionItem): Record<string, string> {
+  const hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
+  return {
+    class: hasCoords ? "stat-accordion-item stat-accordion-item-clickable" : "stat-accordion-item",
+    ...(hasCoords ? { "data-lat": String(item.lat), "data-lng": String(item.lng) } : {}),
+  };
+}
 
 // "Accordion thống kê" - bien the KHAC voi Accordion thuong o tren (yeu cau
 // nguoi dung sau khi xem mockup AWS Global Infrastructure: "cũng là 1 biến
@@ -690,7 +711,7 @@ export const StatAccordion = Node.create({
           { class: "stat-accordion-list" },
           ...items.map((item) => [
             "div",
-            { class: "stat-accordion-item" },
+            statAccordionItemAttrs(item),
             [
               "span",
               { class: "stat-accordion-dot", style: `background-color:${item.color || STAT_ACCORDION_DEFAULT_COLOR}` },
@@ -745,10 +766,16 @@ export const StatAccordion = Node.create({
             s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
           const dot = (color: string) =>
             `<span class="stat-accordion-dot" style="background-color:${color || STAT_ACCORDION_DEFAULT_COLOR}"></span>`;
+          const itemAttrsHtml = (item: StatAccordionItem) => {
+            const attrs = statAccordionItemAttrs(item);
+            return Object.entries(attrs)
+              .map(([k, v]) => `${k}="${escapeHtml(v)}"`)
+              .join(" ");
+          };
           const itemsHtml = items
             .map(
               (item) =>
-                `<div class="stat-accordion-item">${dot(item.color)}<span class="stat-accordion-item-text">${escapeHtml(item.text)}</span></div>`,
+                `<div ${itemAttrsHtml(item)}>${dot(item.color)}<span class="stat-accordion-item-text">${escapeHtml(item.text)}</span></div>`,
             )
             .join("");
           const legendHtml = legend.length
@@ -953,7 +980,13 @@ export const POST_PROSE_CLASS =
   "[&_.stat-accordion-body]:border-t [&_.stat-accordion-body]:border-border [&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
   "[&_.stat-accordion-description]:mb-3 [&_.stat-accordion-description]:text-[13.5px] [&_.stat-accordion-description]:text-ink-muted " +
   "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-4 [&_.stat-accordion-list]:gap-y-1.5 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +
-  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
+  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:rounded-md [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
+  // Dong co toa do (lat/lng) - bam duoc de mo modal globe 3D (xem
+  // RegionGlobeModal.tsx/EntryContentWithGlobe.tsx) - chi bao truc quan bang
+  // cursor + gach chan luc hover, KHONG doi mau (giu dung tinh than "hover
+  // nhe nhang" da ap dung cho SeriesQuestionPickerToc.tsx).
+  "[&_.stat-accordion-item-clickable]:-mx-1.5 [&_.stat-accordion-item-clickable]:cursor-pointer [&_.stat-accordion-item-clickable]:px-1.5 [&_.stat-accordion-item-clickable]:transition-colors [&_.stat-accordion-item-clickable]:duration-150 [&_.stat-accordion-item-clickable]:hover:bg-hover-bg " +
+  "[&_.stat-accordion-item-clickable_.stat-accordion-item-text]:hover:underline [&_.stat-accordion-item-clickable_.stat-accordion-item-text]:underline-offset-2 " +
   "[&_.stat-accordion-dot]:inline-block [&_.stat-accordion-dot]:size-2 [&_.stat-accordion-dot]:shrink-0 [&_.stat-accordion-dot]:rounded-full " +
   "[&_.stat-accordion-legend]:mt-3 [&_.stat-accordion-legend]:flex [&_.stat-accordion-legend]:flex-col [&_.stat-accordion-legend]:gap-1.5 [&_.stat-accordion-legend]:border-t [&_.stat-accordion-legend]:border-border [&_.stat-accordion-legend]:pt-3 " +
   "[&_.stat-accordion-legend-item]:flex [&_.stat-accordion-legend-item]:items-center [&_.stat-accordion-legend-item]:gap-2 [&_.stat-accordion-legend-item]:text-[12.5px] [&_.stat-accordion-legend-item]:text-ink-faint";
