@@ -1009,7 +1009,12 @@ export const POST_PROSE_CLASS =
   "[&_.accordion-body_.stat-accordion]:my-3 [&_.accordion-body_.stat-accordion]:rounded-lg [&_.accordion-body_.stat-accordion]:bg-surface-muted " +
   "[&_.stat-accordion-summary]:flex [&_.stat-accordion-summary]:cursor-pointer [&_.stat-accordion-summary]:list-none [&_.stat-accordion-summary]:items-center [&_.stat-accordion-summary]:gap-2.5 [&_.stat-accordion-summary]:px-3.5 [&_.stat-accordion-summary]:py-2.5 [&_.stat-accordion-summary]:select-none " +
   "[&_.stat-accordion-summary::-webkit-details-marker]:hidden [&_.stat-accordion-summary::marker]:content-none " +
-  "[&_.stat-accordion-title]:flex-1 [&_.stat-accordion-title]:text-[14.5px] [&_.stat-accordion-title]:font-semibold [&_.stat-accordion-title]:text-ink " +
+  // min-w-0 - PHAI co tren flex item co flex-1 chua van ban dai (mac dinh
+  // min-width:auto cua flex item = kich thuoc noi dung, khong cho phep co
+  // lai/xuong dong dung cach khi tieu de dai + man hinh hep, day chinh la
+  // nguyen nhan "vo bo cuc" tren mobile neu thieu - responsive cho tieu de
+  // dai canh badge so luong).
+  "[&_.stat-accordion-title]:min-w-0 [&_.stat-accordion-title]:flex-1 [&_.stat-accordion-title]:text-[14.5px] [&_.stat-accordion-title]:font-semibold [&_.stat-accordion-title]:text-ink " +
   // bg-ink/8 (khong phai bg-surface-muted co dinh) - badge nam tren NEN CO
   // THE la bg-surface (cap ngoai) HOAC bg-surface-muted (cap long nhau, xem
   // ".accordion-body .stat-accordion" o tren), 1 lop toi mo 8% tren CA 2 nen
@@ -1021,7 +1026,7 @@ export const POST_PROSE_CLASS =
   "[&_.stat-accordion-body]:border-t [&_.stat-accordion-body]:border-border [&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
   "[&_.stat-accordion-description]:mb-3 [&_.stat-accordion-description]:text-[13.5px] [&_.stat-accordion-description]:text-ink-muted " +
   "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-4 [&_.stat-accordion-list]:gap-y-1.5 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +
-  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:rounded-md [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
+  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:rounded-md [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:min-w-0 [&_.stat-accordion-item-text]:flex-1 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
   // Dong co toa do (lat/lng) - bam duoc de mo modal globe 3D (xem
   // RegionGlobeModal.tsx/EntryContentWithGlobe.tsx) - chi bao truc quan bang
   // cursor + gach chan luc hover, KHONG doi mau (giu dung tinh than "hover

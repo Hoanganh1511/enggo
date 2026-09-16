@@ -175,7 +175,13 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           {items.map((item, i) => {
             const hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
             return (
-              <div key={i} className="group flex items-center gap-2">
+              // flex-wrap - man hinh hep (editor tren tablet/thu nho trinh
+              // duyet) khong du cho ca color+text+lat+lng+globe+xoa tren 1
+              // dong, cho phep cum lat/lng/globe/xoa TU XUONG DONG duoi text
+              // thay vi bi ep vo bo cuc/tran ngang. Text input co min-w-32
+              // rieng (khac cac input khac van min-w-0) de dung LAM DIEM WRAP
+              // - neu khong, flex-1 se cu co lai vo han truoc khi wrap.
+              <div key={i} className="group flex flex-wrap items-center gap-x-2 gap-y-1.5">
                 <ColorStatusPicker
                   color={item.color || STAT_ACCORDION_DEFAULT_COLOR}
                   onChange={(color) => updateItem(i, { color })}
@@ -188,10 +194,10 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                     value={item.text}
                     onChange={(e) => updateItem(i, { text: e.target.value })}
                     placeholder="Nội dung..."
-                    className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
+                    className="min-w-32 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
                   />
                 ) : (
-                  <span className="min-w-0 flex-1 text-[13.5px] text-ink">{item.text}</span>
+                  <span className="min-w-32 flex-1 text-[13.5px] text-ink">{item.text}</span>
                 )}
                 {canEdit && (
                   <>
@@ -263,7 +269,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
         {(legend.length > 0 || canEdit) && (
           <div className={cn("mt-3 flex flex-col gap-1.5", (items.length > 0 || description) && "border-t border-border pt-3")}>
             {legend.map((l, i) => (
-              <div key={i} className="group flex items-center gap-2">
+              <div key={i} className="group flex flex-wrap items-center gap-x-2 gap-y-1.5">
                 <ColorStatusPicker
                   color={l.color || STAT_ACCORDION_DEFAULT_COLOR}
                   onChange={(color) => updateLegend(i, { color })}
@@ -276,10 +282,10 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                     value={l.label}
                     onChange={(e) => updateLegend(i, { label: e.target.value })}
                     placeholder="Chú thích cho màu này..."
-                    className="min-w-0 flex-1 bg-transparent text-[12.5px] text-ink-faint outline-none placeholder:text-ink-faint"
+                    className="min-w-32 flex-1 bg-transparent text-[12.5px] text-ink-faint outline-none placeholder:text-ink-faint"
                   />
                 ) : (
-                  <span className="min-w-0 flex-1 text-[12.5px] text-ink-faint">{l.label}</span>
+                  <span className="min-w-32 flex-1 text-[12.5px] text-ink-faint">{l.label}</span>
                 )}
                 {canEdit && (
                   <button
