@@ -1,4 +1,5 @@
-import { Node, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Extension, Node, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -854,6 +855,37 @@ export const StatAccordion = Node.create({
   },
 });
 
+// [2026-09-16] TrailingNode - bug that su nguoi dung bao: "thêm 1 cái
+// accordion geographical vào sau cái accordion geographical trước đó đã đặt
+// vào thì ko đặt dc con trỏ vào, kể cả soạn văn bản ấy". Nguyen nhan: Accordion/
+// StatAccordion/Image/CuratedList/... deu la NODE ATOM (khong co "khe" van
+// ban truoc/sau chinh no) - neu 1 node atom nam CUOI CUNG tai lieu (hoac 2
+// node atom nam SAT NHAU), KHONG CON vi tri con tro HOP LE nao de bam vao/go
+// tiep, dung dac ta ProseMirror (chi paragraph/text moi co "khe" cho con
+// tro). Fix CHUAN cua cong dong Tiptap (chua co san trong StarterKit): 1
+// ProseMirror plugin tu dong CHEN THEM 1 paragraph RONG ngay sau node CUOI
+// CUNG tai lieu, moi khi node do KHONG PHAI paragraph - dam bao LUON co 1
+// cho trong de bam con tro/go tiep sau bat ky node atom nao, khong rieng gi
+// Accordion Geographical (ap dung chung moi node atom: anh, CuratedList,
+// TocBlock, QuestionPicker...).
+const TrailingNode = Extension.create({
+  name: "trailingNode",
+  addProseMirrorPlugins() {
+    const pluginKey = new PluginKey(this.name);
+    return [
+      new Plugin({
+        key: pluginKey,
+        appendTransaction: (_transactions, _oldState, newState) => {
+          const { doc, tr } = newState;
+          const lastNode = doc.lastChild;
+          if (!lastNode || lastNode.type.name === "paragraph") return null;
+          return tr.insert(doc.content.size, newState.schema.nodes.paragraph!.create());
+        },
+      }),
+    ];
+  },
+});
+
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
 // them rieng trong PostEditor).
@@ -886,6 +918,7 @@ export function getPostExtensions(): Extensions {
     QuestionPicker,
     Accordion,
     StatAccordion,
+    TrailingNode,
   ];
 }
 
