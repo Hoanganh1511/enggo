@@ -5,15 +5,14 @@ import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { Globe as GlobeIcon, Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import type { StatAccordionItem, StatAccordionLegendItem } from "./post-extensions";
-import { STAT_ACCORDION_DEFAULT_COLOR, STAT_ACCORDION_STATUS_COLORS } from "./post-extensions";
+import type { StatAccordionItem, StatAccordionLegendItem, StatAccordionStatus } from "./post-extensions";
+import { STAT_ACCORDION_DEFAULT_COLOR, STAT_ACCORDION_STATUSES, statAccordionStatusColor } from "./post-extensions";
 import { RegionGlobeModal, type RegionGlobePoint } from "./RegionGlobeModal";
 
-// Nut chon mau dang CHAM TRON - mo popover 5 mau CO SAN (STAT_ACCORDION_STATUS_COLORS)
-// thay vi input[type=color] tu do - yeu cau nguoi dung: "có thể tùy chọn 5
-// loại màu cho 5 trạng thái phổ thông của 1 dạng mặt hàng" (ep vao 1 bang
-// mau CO NGHIA thay vi rainbow tuy y, dong bo mau xuyen suot cac Accordion
-// Geographical khac nhau). Dung chung cho ca dot cua item LAN legend.
+// Popover 5 mau CO SAN (STAT_ACCORDION_STATUSES) danh cho LEGEND - legend van
+// la 1 cap "mau tuy y + nhan tuy chinh" DOC LAP voi status cua item (khac
+// item, xem StatusPicker duoi - legend KHONG bat buoc phai trung nghia voi 1
+// status co san, admin co the dat nhan rieng cho cung 1 mau).
 function ColorStatusPicker({
   color,
   onChange,
@@ -44,9 +43,9 @@ function ColorStatusPicker({
         sideOffset={6}
         className="z-50 flex w-40 flex-col gap-0.5 rounded-lg border border-border bg-surface p-1 shadow-dropdown"
       >
-        {STAT_ACCORDION_STATUS_COLORS.map((c) => (
+        {STAT_ACCORDION_STATUSES.map((c) => (
           <button
-            key={c.value}
+            key={c.id}
             type="button"
             onClick={() => {
               onChange(c.value);
@@ -63,6 +62,60 @@ function ColorStatusPicker({
   );
 }
 
+// Popover chon TRANG THAI (khong phai mau tu do) cho 1 item - yeu cau nguoi
+// dung (dot mau): mau dot la GIA TRI SUY RA tu status, khong con luu hex
+// doc lap tren tung dong. Swatch hien mau TUONG UNG voi status dang chon
+// (statAccordionStatusColor), chon 1 muc = ghi `status.id` (khong phai hex)
+// vao item.status.
+function ItemStatusPicker({
+  status,
+  onChange,
+  disabled,
+  open,
+  onOpenChange,
+}: {
+  status: StatAccordionStatus | undefined;
+  onChange: (status: StatAccordionStatus) => void;
+  disabled?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <PopoverRoot open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          title="Chọn trạng thái"
+          className="size-4 shrink-0 cursor-pointer rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface disabled:cursor-not-allowed"
+          style={{ backgroundColor: statAccordionStatusColor(status) }}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        open={open}
+        align="start"
+        sideOffset={6}
+        className="z-50 flex w-44 flex-col gap-0.5 rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+      >
+        {STAT_ACCORDION_STATUSES.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => {
+              onChange(s.id);
+              onOpenChange(false);
+            }}
+            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          >
+            <span className="size-3 shrink-0 rounded-full ring-1 ring-border" style={{ backgroundColor: s.value }} />
+            {s.label}
+          </button>
+        ))}
+      </PopoverContent>
+    </PopoverRoot>
+  );
+}
+
 // NodeView cua "Accordion Geographical" (bien the khac cua Accordion thuong -
 // yeu cau nguoi dung: "1 biến thể khác của accordion, nhưng có số lượng, có
 // button + - để collapse, bên trong nó có thể có description hoặc không tùy,
@@ -72,7 +125,12 @@ function ColorStatusPicker({
 // ATOM (khac Accordion co content THAT block+) - toan bo du lieu (items/
 // legend) la ATTRS JSON, giong tinh than QuestionPicker/CuratedList (snapshot
 // luc soan, khong phai ProseMirror children that) vi day la danh sach CO
-// CAU TRUC (text + mau), khong phai noi dung tu do can rich text.
+// CAU TRUC, khong phai noi dung tu do can rich text.
+//
+// [2026-09-16] Item cau truc lai theo dung 3 tang AWS Global Infrastructure -
+// yeu cau nguoi dung: "đừng lưu đơn thuần [text/color/lat/lng phẳng]... vì UI
+// của bạn thực chất có 3 tầng: Geographic Area → AWS Region → Availability
+// Zones" (xem dinh nghia StatAccordionItem trong post-extensions.ts).
 export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
   const description = (node.attrs.description as string) ?? "";
@@ -82,13 +140,13 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   const canEdit = editor.isEditable;
   // Test thu hieu ung globe NGAY trong editor (khong can luu/mo lai trang doc
   // that) - dung CHUNG 1 RegionGlobeModal voi ban doc cong khai
-  // (EntryContentWithGlobe.tsx). `points` la TOAN BO cac dong dang co ca
-  // lat/lng (khop y "hiển thị tất cả tọa độ" ap dung ca luc test trong
+  // (EntryContentWithGlobe.tsx). `points` la TOAN BO cac dong dang co
+  // coordinates (khop y "hiển thị tất cả tọa độ" ap dung ca luc test trong
   // editor), `previewFocus` la dong vua bam nut globe.
   const [previewFocus, setPreviewFocus] = useState<RegionGlobePoint | null>(null);
-  // Chi 1 popover chon mau duoc mo tai 1 thoi diem (du danh sach items/legend
-  // co bao nhieu dong) - luu "kind + index" cua dong dang mo thay vi 1 state
-  // rieng cho tung dong.
+  // Chi 1 popover chon mau/trang thai duoc mo tai 1 thoi diem (du danh sach
+  // items/legend co bao nhieu dong) - luu "kind + index" cua dong dang mo
+  // thay vi 1 state rieng cho tung dong.
   const [openColorPicker, setOpenColorPicker] = useState<{ kind: "item" | "legend"; index: number } | null>(null);
   // [2026-09-16] Bam +/- AN/HIEN THAT phan than (description/items/legend)
   // NGAY trong editor (khac ban truoc - giu LUON hien, chi doi attrs `open`
@@ -103,10 +161,24 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
     updateAttributes({ items: items.map((it, i) => (i === index ? { ...it, ...patch } : it)) });
   }
   function addItem() {
-    updateAttributes({ items: [...items, { text: "", color: STAT_ACCORDION_DEFAULT_COLOR }] });
+    updateAttributes({ items: [...items, { name: "", status: "normal" as StatAccordionStatus }] });
   }
   function removeItem(index: number) {
     updateAttributes({ items: items.filter((_, i) => i !== index) });
+  }
+  // lat/lng la 2 O NHAP RIENG (UX quen thuoc) nhung luu chung vao 1
+  // `coordinates` (yeu cau nguoi dung: nhom toa do lai thanh 1 khoi) - CHI
+  // tao coordinates khi CA HAI gia tri deu la so hop le, con thieu 1 trong 2
+  // thi coi nhu CHUA co toa do (undefined), tranh luu nua-vet toa do khong
+  // dung.
+  function updateItemCoordinate(index: number, key: "lat" | "lng", raw: string) {
+    const current = items[index].coordinates;
+    const value = raw === "" ? undefined : Number(raw);
+    const nextLat = key === "lat" ? value : current?.lat;
+    const nextLng = key === "lng" ? value : current?.lng;
+    const coordinates =
+      typeof nextLat === "number" && typeof nextLng === "number" ? { lat: nextLat, lng: nextLng } : undefined;
+    updateItem(index, { coordinates });
   }
 
   function updateLegend(index: number, patch: Partial<StatAccordionLegendItem>) {
@@ -171,36 +243,62 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           description && <p className="mb-3 text-[13.5px] text-ink-muted">{description}</p>
         )}
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           {items.map((item, i) => {
-            const hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
+            const hasCoords = Boolean(item.coordinates);
             return (
-              // flex-wrap - man hinh hep (editor tren tablet/thu nho trinh
-              // duyet) khong du cho ca color+text+lat+lng+globe+xoa tren 1
-              // dong, cho phep cum lat/lng/globe/xoa TU XUONG DONG duoi text
-              // thay vi bi ep vo bo cuc/tran ngang. Text input co min-w-32
-              // rieng (khac cac input khac van min-w-0) de dung LAM DIEM WRAP
-              // - neu khong, flex-1 se cu co lai vo han truoc khi wrap.
-              <div key={i} className="group flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                <ColorStatusPicker
-                  color={item.color || STAT_ACCORDION_DEFAULT_COLOR}
-                  onChange={(color) => updateItem(i, { color })}
-                  disabled={!canEdit}
-                  open={openColorPicker?.kind === "item" && openColorPicker.index === i}
-                  onOpenChange={(o) => setOpenColorPicker(o ? { kind: "item", index: i } : null)}
-                />
-                {canEdit ? (
-                  <input
-                    value={item.text}
-                    onChange={(e) => updateItem(i, { text: e.target.value })}
-                    placeholder="Nội dung..."
-                    className="min-w-32 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
+              // The rieng cho tung dong (thay vi 1 hang flex phang) - danh
+              // sach truong da tang (name/geographicArea/code/lat/lng) khong
+              // con vua 1 dong duy nhat. Hang 1 = trang thai + ten (thuong
+              // dung nhat). Hang 2 (thut le theo hang 1) = khu vuc dia ly +
+              // ma Region + toa do + nut globe - cac truong nay CHI co y
+              // nghia cho danh sach kieu "AWS Region" (vd "Geographic
+              // Regions"), KHONG bat buoc cho danh sach khac (vd "Edge
+              // Locations" - khong phai Region/AZ) nen de trong duoc.
+              <div key={i} className="group rounded-lg border border-border/60 p-2">
+                <div className="flex items-center gap-2">
+                  <ItemStatusPicker
+                    status={item.status}
+                    onChange={(status) => updateItem(i, { status })}
+                    disabled={!canEdit}
+                    open={openColorPicker?.kind === "item" && openColorPicker.index === i}
+                    onOpenChange={(o) => setOpenColorPicker(o ? { kind: "item", index: i } : null)}
                   />
-                ) : (
-                  <span className="min-w-32 flex-1 text-[13.5px] text-ink">{item.text}</span>
-                )}
+                  {canEdit ? (
+                    <input
+                      value={item.name}
+                      onChange={(e) => updateItem(i, { name: e.target.value })}
+                      placeholder="Tên (vd: South America (São Paulo))..."
+                      className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink outline-none placeholder:text-ink-faint"
+                    />
+                  ) : (
+                    <span className="min-w-0 flex-1 text-[13.5px] text-ink">{item.name}</span>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(i)}
+                      aria-label="Bỏ dòng"
+                      className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint opacity-0 hover:bg-hover-bg hover:text-ink group-hover:opacity-100"
+                    >
+                      <X size={12} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
                 {canEdit && (
-                  <>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5 pl-6">
+                    <input
+                      value={item.geographicArea ?? ""}
+                      onChange={(e) => updateItem(i, { geographicArea: e.target.value || undefined })}
+                      placeholder="Khu vực địa lý (vd: South America)"
+                      className="min-w-36 flex-1 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
+                    />
+                    <input
+                      value={item.code ?? ""}
+                      onChange={(e) => updateItem(i, { code: e.target.value || undefined })}
+                      placeholder="Mã Region (vd: sa-east-1)"
+                      className="w-32 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 font-mono text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
+                    />
                     {/* Lat/lng - de trong = dong nay KHONG bam duoc luc doc
                         (xem statAccordionItemAttrs trong post-extensions.ts).
                         Toa do co the tra cuu nhanh tren Google Maps (bam chuot
@@ -208,48 +306,34 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                     <input
                       type="number"
                       step="any"
-                      value={item.lat ?? ""}
-                      onChange={(e) =>
-                        updateItem(i, { lat: e.target.value === "" ? undefined : Number(e.target.value) })
-                      }
+                      value={item.coordinates?.lat ?? ""}
+                      onChange={(e) => updateItemCoordinate(i, "lat", e.target.value)}
                       placeholder="lat"
                       title="Vĩ độ (latitude)"
-                      className="w-14 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
+                      className="w-16 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
                     />
                     <input
                       type="number"
                       step="any"
-                      value={item.lng ?? ""}
-                      onChange={(e) =>
-                        updateItem(i, { lng: e.target.value === "" ? undefined : Number(e.target.value) })
-                      }
+                      value={item.coordinates?.lng ?? ""}
+                      onChange={(e) => updateItemCoordinate(i, "lng", e.target.value)}
                       placeholder="lng"
                       title="Kinh độ (longitude)"
-                      className="w-14 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
+                      className="w-16 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[11.5px] text-ink outline-none focus:border-primary placeholder:text-ink-faint"
                     />
                     <button
                       type="button"
                       disabled={!hasCoords}
                       onClick={() =>
-                        hasCoords &&
-                        setPreviewFocus({ label: item.text, lat: item.lat as number, lng: item.lng as number })
+                        item.coordinates &&
+                        setPreviewFocus({ label: item.name, lat: item.coordinates.lat, lng: item.coordinates.lng })
                       }
                       title={hasCoords ? "Xem thử trên quả địa cầu" : "Nhập lat/lng để xem thử"}
                       className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
                     >
                       <GlobeIcon size={13} strokeWidth={2} />
                     </button>
-                  </>
-                )}
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(i)}
-                    aria-label="Bỏ dòng"
-                    className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint opacity-0 hover:bg-hover-bg hover:text-ink group-hover:opacity-100"
-                  >
-                    <X size={12} strokeWidth={2} />
-                  </button>
+                  </div>
                 )}
               </div>
             );
@@ -316,8 +400,8 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
       <RegionGlobeModal
         focus={previewFocus}
         points={items
-          .filter((it): it is StatAccordionItem & { lat: number; lng: number } => typeof it.lat === "number" && typeof it.lng === "number")
-          .map((it) => ({ label: it.text, lat: it.lat, lng: it.lng }))}
+          .filter((it): it is StatAccordionItem & { coordinates: { lat: number; lng: number } } => Boolean(it.coordinates))
+          .map((it) => ({ label: it.name, lat: it.coordinates.lat, lng: it.coordinates.lng }))}
         onOpenChange={(o) => !o && setPreviewFocus(null)}
       />
     </NodeViewWrapper>

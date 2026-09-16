@@ -589,45 +589,67 @@ export const Accordion = Node.create({
   },
 });
 
-// lat/lng KHONG bat buoc - yeu cau nguoi dung: "tôi có một list các region
-// aws trên thế giới, tôi muốn khi click vào chúng sẽ hiện modal có quả địa
-// cầu 3d rồi quay tới, xong focus vào đúng vị trí đó" (xem RegionGlobeModal.tsx
-// + EntryContentWithGlobe.tsx ve phan xu ly click/globe). Chi dong nao co CA
-// 2 gia tri nay moi duoc hien nhu 1 muc BAM DUOC luc doc (xem CSS
-// [&_.stat-accordion-item[data-lat]] o duoi) - dong khong co toa do van hien
-// binh thuong, khong bam duoc.
-export type StatAccordionItem = { text: string; color: string; lat?: number; lng?: number };
+// [2026-09-16] Cau truc lai item theo dung 3 tang THAT cua AWS Global
+// Infrastructure - yeu cau nguoi dung: "đừng lưu đơn thuần [text/color/lat/lng
+// phang]... vì UI của bạn thực chất có 3 tầng: Geographic Area → AWS Region →
+// Availability Zones" (AWS dinh nghia 1 Region la 1 physical location chua
+// cac AZ, moi Region toi thieu 3 AZ). `name` thay `text` (ten hien thi, vd
+// "South America (São Paulo)"), `geographicArea` (vd "South America" - CHI
+// co y nghia cho tang "AWS Region", KHONG ap dung cho danh sach khac nhu
+// "Edge Locations" - von la 1 khai niem AWS Global Infrastructure RIENG,
+// khong phai Region/AZ), `code` la ma Region chinh thuc cua AWS (vd
+// "sa-east-1"), `coordinates` thay lat/lng PHANG (nhom lai dung 1 khoi toa
+// do thay vi 2 truong roi rac), `status` thay `color` TRUC TIEP - mau dot
+// gio la 1 GIA TRI SUY RA tu status (xem STAT_ACCORDION_STATUSES), khong con
+// luu hex tuy y tren tung dong (dung tinh than "5 trạng thái phổ thông"
+// nguoi dung yeu cau truoc do, gio hoa thanh 1 enum ro nghia thay vi hex).
+export type StatAccordionStatus = "normal" | "active" | "comingSoon" | "discontinued" | "unavailable";
+
+export type StatAccordionItem = {
+  name: string;
+  geographicArea?: string;
+  code?: string;
+  status?: StatAccordionStatus;
+  coordinates?: { lat: number; lng: number };
+};
 export type StatAccordionLegendItem = { color: string; label: string };
 
-// Mau mac dinh cho 1 dot moi tao (chua tuy chinh) - DEN (yeu cau nguoi dung:
-// "Để chấm màu mặc định là Đen").
+// Mau mac dinh cho status "normal" (chua chon) - DEN (yeu cau nguoi dung
+// truoc do: "Để chấm màu mặc định là Đen").
 export const STAT_ACCORDION_DEFAULT_COLOR = "#000000";
 
-// Bang mau CO SAN de chon nhanh cho dot - 5 trang thai pho thong cua 1 dang
-// mat hang (yeu cau nguoi dung: "có thể tùy chọn 5 loại màu cho 5 trạng thái
-// phổ thông của 1 dạng mặt hàng") - thay the han input mau tu do (khong con
-// ep nguoi soan phai tu phoi mau, dong bo nghia mau xuyen suot cac Accordion
-// Geographical khac nhau trong cung 1 bai/series). Dung CHUNG cho ca dot cua
-// item LAN legend (StatAccordionView.tsx).
-export const STAT_ACCORDION_STATUS_COLORS: { value: string; label: string }[] = [
-  { value: "#000000", label: "Bình thường" },
-  { value: "#22c55e", label: "Đang hoạt động" },
-  { value: "#f59e0b", label: "Sắp ra mắt" },
-  { value: "#94a3b8", label: "Ngừng cung cấp" },
-  { value: "#ef4444", label: "Ngừng hoạt động" },
+// 5 trang thai pho thong cua 1 dang mat hang (yeu cau nguoi dung: "có thể
+// tùy chọn 5 loại màu cho 5 trạng thái phổ thông") - moi status co 1 `id` ON
+// DINH duoc LUU vao item.status, mau (`value`) chi la CACH HIEN THI suy ra
+// tu id do (xem statAccordionStatusColor duoi), khong con la du lieu doc lap
+// tren tung dong nua.
+export const STAT_ACCORDION_STATUSES: { id: StatAccordionStatus; value: string; label: string }[] = [
+  { id: "normal", value: "#000000", label: "Bình thường" },
+  { id: "active", value: "#22c55e", label: "Đang hoạt động" },
+  { id: "comingSoon", value: "#f59e0b", label: "Sắp ra mắt" },
+  { id: "discontinued", value: "#94a3b8", label: "Ngừng cung cấp" },
+  { id: "unavailable", value: "#ef4444", label: "Ngừng hoạt động" },
 ];
 
+export function statAccordionStatusColor(status: StatAccordionStatus | undefined): string {
+  return (
+    STAT_ACCORDION_STATUSES.find((s) => s.id === (status ?? "normal"))?.value ?? STAT_ACCORDION_DEFAULT_COLOR
+  );
+}
+
 // Attrs dung chung cho 1 dong item (renderHTML LAN markdown serialize duoi -
-// chi item nao co CA lat/lng moi gan them "data-lat"/"data-lng" + class rieng
-// de CSS bao hieu bam duoc (xem POST_PROSE_CLASS) - EntryContentWithGlobe.tsx
+// chi item nao co `coordinates` moi gan them "data-lat"/"data-lng" + class
+// rieng de CSS bao hieu bam duoc (xem POST_PROSE_CLASS) - EntryContentWithGlobe.tsx
 // doc lai 2 data-* nay qua 1 click handler UY QUYEN (delegated), KHONG can
 // hydrate rieng tung dong (item van la HTML tho thuan tuy, xem comment
 // StatAccordion.addStorage o duoi).
 function statAccordionItemAttrs(item: StatAccordionItem): Record<string, string> {
-  const hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
+  const hasCoords = Boolean(item.coordinates);
   return {
     class: hasCoords ? "stat-accordion-item stat-accordion-item-clickable" : "stat-accordion-item",
-    ...(hasCoords ? { "data-lat": String(item.lat), "data-lng": String(item.lng) } : {}),
+    ...(hasCoords
+      ? { "data-lat": String(item.coordinates!.lat), "data-lng": String(item.coordinates!.lng) }
+      : {}),
   };
 }
 
@@ -732,9 +754,9 @@ export const StatAccordion = Node.create({
             statAccordionItemAttrs(item),
             [
               "span",
-              { class: "stat-accordion-dot", style: `background-color:${item.color || STAT_ACCORDION_DEFAULT_COLOR}` },
+              { class: "stat-accordion-dot", style: `background-color:${statAccordionStatusColor(item.status)}` },
             ],
-            ["span", { class: "stat-accordion-item-text" }, item.text],
+            ["span", { class: "stat-accordion-item-text" }, item.name],
           ]),
         ],
         ...(legend.length
@@ -796,7 +818,7 @@ export const StatAccordion = Node.create({
           const itemsHtml = items
             .map(
               (item) =>
-                `<div ${itemAttrsHtml(item)}>${dot(item.color)}<span class="stat-accordion-item-text">${escapeHtml(item.text)}</span></div>`,
+                `<div ${itemAttrsHtml(item)}>${dot(statAccordionStatusColor(item.status))}<span class="stat-accordion-item-text">${escapeHtml(item.name)}</span></div>`,
             )
             .join("");
           const legendHtml = legend.length

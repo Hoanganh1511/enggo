@@ -231,7 +231,7 @@ export function PostEditorToolbar({
           count: "",
           description: "",
           open: true,
-          items: [{ text: "", color: "#f97316" }],
+          items: [{ name: "", status: "normal" }],
           legend: [],
         },
       })
