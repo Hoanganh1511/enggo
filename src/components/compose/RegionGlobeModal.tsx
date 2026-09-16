@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Portal } from "@radix-ui/react-portal";
 import dynamic from "next/dynamic";
+import * as THREE from "three";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GlobeMethods } from "react-globe.gl";
@@ -14,7 +15,11 @@ import type { GlobeMethods } from "react-globe.gl";
 // vi WebGL/`document` khong ton tai phia server.
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
-export type RegionGlobeTarget = { label: string; lat: number; lng: number };
+export type RegionGlobePoint = { label: string; lat: number; lng: number };
+
+function samePoint(a: RegionGlobePoint, b: RegionGlobePoint | null): boolean {
+  return b !== null && a.lat === b.lat && a.lng === b.lng;
+}
 
 // [2026-09-16 REWRITE] Ban dau dung Radix Dialog + AnimatePresence UNMOUNT
 // het cay (ke ca <Globe>) moi lan dong modal - day chinh la nguyen nhan bug
@@ -26,21 +31,31 @@ export type RegionGlobeTarget = { label: string; lat: number; lng: number };
 // doi CSS opacity/pointer-events (KHONG unmount), giong dung khuyen nghi cua
 // chinh thu vien (API pauseAnimation/resumeAnimation ton tai chinh la cho
 // tinh huong nay) - moi lan doi vi tri chi goi lai pointOfView() tren CUNG 1
-// instance qua 1 effect rieng (khong con dung onGlobeReady moi lan mo, vi
-// callback do gio chi ban DUNG 1 LAN trong ca doi component). Portal thang
-// vao document.body (khong qua Radix Dialog nua) de tu kiem soat viec KHONG
-// unmount - Escape/click-nen-den de dong thay cho Radix.
+// instance qua 1 effect rieng. Portal thang vao document.body (khong qua
+// Radix Dialog nua) de tu kiem soat viec KHONG unmount - Escape/click-nen-den
+// de dong thay cho Radix.
+//
+// [2026-09-16 update] `points` (TOAN BO toa do trong 1 khoi Accordion
+// Geographical, khong chi 1 dong vua bam) hien THEM dang dot nho tren globe -
+// yeu cau nguoi dung: "hiển thị tất cả tọa độ có trong accordion geographic".
+// `focus` (dong vua bam) duoc highlight rieng (dot cam to hon + nhan ten) va
+// la vi tri camera "bay toi". Globe doi sang texture BAN NGAY (blue-marble,
+// sang/nhieu mau hon ban dem) + tang sang den (lights()) - yeu cau nguoi
+// dung: "quả địa cầu nó sáng hơn, đẹp hơn". Modal cung phong to hon
+// (max-w-3xl, cao toi 70% viewport) - yeu cau "cho cái modal to ra hơn".
 export function RegionGlobeModal({
-  target,
+  focus,
+  points,
   onOpenChange,
 }: {
-  target: RegionGlobeTarget | null;
+  focus: RegionGlobePoint | null;
+  points: RegionGlobePoint[];
   onOpenChange: (open: boolean) => void;
 }) {
-  const open = target !== null;
+  const open = focus !== null;
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 400, height: 400 });
+  const [size, setSize] = useState({ width: 600, height: 480 });
   const [ready, setReady] = useState(false);
   // "Adjusting state during rendering" (mau chinh thuc cua React, KHONG phai
   // effect) - tranh loi lint react-hooks/set-state-in-effect (cam goi setState
@@ -65,7 +80,7 @@ export function RegionGlobeModal({
 
   // Container CHI xuat hien tu lan `everOpened` dau tien, nhung TU DO KHONG
   // BAO GIO bi go khoi DOM nua (xem comment dau file) - ResizeObserver gan 1
-  // LAN DUY NHAT la du, khong can gan lai theo `target`/`open` nhu ban cu.
+  // LAN DUY NHAT la du, khong can gan lai theo `focus`/`open` nhu ban cu.
   useEffect(() => {
     if (!everOpened) return;
     const el = containerRef.current;
@@ -80,7 +95,7 @@ export function RegionGlobeModal({
     return () => observer.disconnect();
   }, [everOpened]);
 
-  // "Quay tới, xong focus vào đúng vị trí" - chay LAI moi lan `target` doi
+  // "Quay tới, xong focus vào đúng vị trí" - chay LAI moi lan `focus` doi
   // (ke ca lan mo thu 2/3... voi 1 region khac), KHONG con phu thuoc
   // onGlobeReady (chi ban 1 lan). Bat dau tu goc nhin toan canh (altitude
   // cao, transition=0 - nhay ngay khong hoat hinh) roi moi "bay" toi gan
@@ -88,13 +103,13 @@ export function RegionGlobeModal({
   // truoc khi bat lenh bay toi (2 lenh pointOfView goi lien tiep cung
   // frame de bi lenh sau "de bep" lenh truoc).
   useEffect(() => {
-    if (!target || !ready) return;
-    globeRef.current?.pointOfView({ lat: target.lat, lng: target.lng, altitude: 2.4 }, 0);
+    if (!focus || !ready) return;
+    globeRef.current?.pointOfView({ lat: focus.lat, lng: focus.lng, altitude: 2.4 }, 0);
     const t = setTimeout(() => {
-      globeRef.current?.pointOfView({ lat: target.lat, lng: target.lng, altitude: 1.5 }, 1800);
+      globeRef.current?.pointOfView({ lat: focus.lat, lng: focus.lng, altitude: 1.5 }, 1800);
     }, 60);
     return () => clearTimeout(t);
-  }, [target, ready]);
+  }, [focus, ready]);
 
   return (
     <Portal>
@@ -110,18 +125,19 @@ export function RegionGlobeModal({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={target?.label || "Vị trí trên bản đồ"}
+          aria-label={focus?.label || "Vị trí trên bản đồ"}
           className={cn(
             "fixed inset-0 z-50 flex items-center justify-center px-6 transition-[opacity,transform] duration-200 ease-out",
             open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0",
           )}
         >
-          <div className="flex w-full max-w-125 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
+          <div className="flex w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border p-4">
               <div className="min-w-0">
-                <p className="text-[13px] font-bold text-ink">{target?.label || "Vị trí"}</p>
+                <p className="text-[13px] font-bold text-ink">{focus?.label || "Vị trí"}</p>
                 <p className="mt-0.5 font-mono text-[11px] text-ink-faint">
-                  {target ? `${target.lat.toFixed(4)}, ${target.lng.toFixed(4)}` : ""}
+                  {focus ? `${focus.lat.toFixed(4)}, ${focus.lng.toFixed(4)}` : ""}
+                  {points.length > 1 && ` · ${points.length} vị trí`}
                 </p>
               </div>
               <button
@@ -133,33 +149,46 @@ export function RegionGlobeModal({
                 <X size={16} strokeWidth={2} />
               </button>
             </div>
-            <div ref={containerRef} className="aspect-square w-full bg-[#000410]">
+            <div ref={containerRef} className="h-[min(70vh,620px)] w-full bg-[#050b1a]">
               <Globe
                 ref={globeRef}
                 width={size.width}
                 height={size.height}
                 backgroundColor="rgba(0,0,0,0)"
                 backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
-                globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+                globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
                 bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
                 showAtmosphere
-                atmosphereColor="#60a5fa"
-                atmosphereAltitude={0.22}
-                pointsData={target ? [target] : []}
+                atmosphereColor="#7dd3fc"
+                atmosphereAltitude={0.2}
+                pointsData={points}
                 pointLat="lat"
                 pointLng="lng"
-                pointColor={() => "#f97316"}
+                pointColor={(p) => (samePoint(p as RegionGlobePoint, focus) ? "#f97316" : "#fde68a")}
                 pointAltitude={0.015}
-                pointRadius={0.45}
-                labelsData={target ? [target] : []}
+                pointRadius={(p) => (samePoint(p as RegionGlobePoint, focus) ? 0.55 : 0.28)}
+                pointLabel="label"
+                labelsData={focus ? [focus] : []}
                 labelLat="lat"
                 labelLng="lng"
                 labelText="label"
                 labelSize={1.15}
-                labelDotRadius={0.35}
-                labelColor={() => "#fdba74"}
-                labelAltitude={0.016}
-                onGlobeReady={() => setReady(true)}
+                labelDotRadius={0}
+                labelColor={() => "#fed7aa"}
+                labelAltitude={0.017}
+                // Sang hon ban mac dinh (blue-marble + anh sang mac dinh cua
+                // globe.gl van con 1 mat toi ro ret) - tang cuong do anh sang
+                // moi truong (AmbientLight) + giam bot anh sang huong
+                // (DirectionalLight) de globe hien SANG DEU CA 2 MAT thay vi
+                // nua sang nua toi kieu "ngay/dem that" - yeu cau nguoi dung:
+                // "quả địa cầu nó sáng hơn".
+                onGlobeReady={() => {
+                  setReady(true);
+                  globeRef.current?.lights([
+                    new THREE.AmbientLight(0xffffff, 2.2),
+                    new THREE.DirectionalLight(0xffffff, 0.5),
+                  ]);
+                }}
               />
             </div>
           </div>

@@ -6,7 +6,7 @@ import { Globe as GlobeIcon, Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StatAccordionItem, StatAccordionLegendItem } from "./post-extensions";
 import { STAT_ACCORDION_DEFAULT_COLOR } from "./post-extensions";
-import { RegionGlobeModal, type RegionGlobeTarget } from "./RegionGlobeModal";
+import { RegionGlobeModal, type RegionGlobePoint } from "./RegionGlobeModal";
 
 // NodeView cua "Accordion Geographical" (bien the khac cua Accordion thuong -
 // yeu cau nguoi dung: "1 biến thể khác của accordion, nhưng có số lượng, có
@@ -20,7 +20,6 @@ import { RegionGlobeModal, type RegionGlobeTarget } from "./RegionGlobeModal";
 // CAU TRUC (text + mau), khong phai noi dung tu do can rich text.
 export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
-  const count = (node.attrs.count as string) ?? "";
   const description = (node.attrs.description as string) ?? "";
   const open = node.attrs.open !== false;
   const items = (node.attrs.items ?? []) as StatAccordionItem[];
@@ -28,9 +27,10 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   const canEdit = editor.isEditable;
   // Test thu hieu ung globe NGAY trong editor (khong can luu/mo lai trang doc
   // that) - dung CHUNG 1 RegionGlobeModal voi ban doc cong khai
-  // (EntryContentWithGlobe.tsx), chi khac nguon target la 1 dong item dang
-  // sua thay vi click tu HTML tho.
-  const [previewTarget, setPreviewTarget] = useState<RegionGlobeTarget | null>(null);
+  // (EntryContentWithGlobe.tsx). `points` la TOAN BO cac dong dang co ca
+  // lat/lng (khop y "hiển thị tất cả tọa độ" ap dung ca luc test trong
+  // editor), `previewFocus` la dong vua bam nut globe.
+  const [previewFocus, setPreviewFocus] = useState<RegionGlobePoint | null>(null);
   // Noi dung LUON hien luc soan (khac ban render TINH tu dong an/hien theo
   // attr `open` khi doc that) - giong tinh than AccordionView.tsx, de van sua
   // duoc items/legend/description du dang dat mac dinh dong hay mo. Bam +/-
@@ -73,19 +73,17 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
         ) : (
           <span className="min-w-0 flex-1 text-[14.5px] font-semibold text-ink">{title}</span>
         )}
-        {canEdit ? (
-          <input
-            value={count}
-            onChange={(e) => updateAttributes({ count: e.target.value })}
-            placeholder="Số lượng"
-            className="w-16 shrink-0 rounded-md border border-border bg-surface-muted px-2 py-1 text-center text-[12.5px] font-semibold text-ink outline-none placeholder:text-ink-faint placeholder:font-normal"
-          />
-        ) : (
-          count && (
-            <span className="shrink-0 rounded-md bg-surface-muted px-2 py-1 text-[12.5px] font-semibold text-ink">
-              {count}
-            </span>
-          )
+        {/* So luong TU TINH tu items.length (khong con go tay) - yeu cau
+            nguoi dung: "phần số lượng trong accordion geographic thì bạn tự
+            cho ra theo đúng số lượng được add vào chứ" - go tay de sai/quen
+            cap nhat khi them/bot dong. */}
+        {items.length > 0 && (
+          <span
+            title="Tự tính theo số dòng bên dưới"
+            className="shrink-0 rounded-md bg-surface-muted px-2 py-1 text-[12.5px] font-semibold text-ink"
+          >
+            {items.length}
+          </span>
         )}
         <button
           type="button"
@@ -166,7 +164,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                       disabled={!hasCoords}
                       onClick={() =>
                         hasCoords &&
-                        setPreviewTarget({ label: item.text, lat: item.lat as number, lng: item.lng as number })
+                        setPreviewFocus({ label: item.text, lat: item.lat as number, lng: item.lng as number })
                       }
                       title={hasCoords ? "Xem thử trên quả địa cầu" : "Nhập lat/lng để xem thử"}
                       className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
@@ -247,7 +245,13 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           </div>
         )}
       </div>
-      <RegionGlobeModal target={previewTarget} onOpenChange={(o) => !o && setPreviewTarget(null)} />
+      <RegionGlobeModal
+        focus={previewFocus}
+        points={items
+          .filter((it): it is StatAccordionItem & { lat: number; lng: number } => typeof it.lat === "number" && typeof it.lng === "number")
+          .map((it) => ({ label: it.text, lat: it.lat, lng: it.lng }))}
+        onOpenChange={(o) => !o && setPreviewFocus(null)}
+      />
     </NodeViewWrapper>
   );
 }

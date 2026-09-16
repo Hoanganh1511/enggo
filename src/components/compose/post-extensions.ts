@@ -688,11 +688,15 @@ export const StatAccordion = Node.create({
   },
   renderHTML({ HTMLAttributes, node }) {
     const title = (node.attrs.title as string) || "Tiêu đề";
-    const count = (node.attrs.count as string) ?? "";
     const description = (node.attrs.description as string) ?? "";
     const open = node.attrs.open !== false;
     const items = (node.attrs.items ?? []) as StatAccordionItem[];
     const legend = (node.attrs.legend ?? []) as StatAccordionLegendItem[];
+    // Badge so luong TU TINH tu items.length (KHONG con doc node.attrs.count -
+    // yeu cau nguoi dung: "phần số lượng trong accordion geographic thì bạn
+    // tự cho ra theo đúng số lượng được add vào chứ" - go tay de sai/quen cap
+    // nhat khi them/bot dong, xem StatAccordionView.tsx da bo han o nhap tay).
+    const count = items.length;
     return [
       "details",
       mergeAttributes(HTMLAttributes, { "data-stat-accordion": "", ...(open ? { open: "" } : {}) }),
@@ -700,7 +704,7 @@ export const StatAccordion = Node.create({
         "summary",
         { class: "stat-accordion-summary" },
         ["span", { class: "stat-accordion-title" }, title],
-        ...(count ? [["span", { class: "stat-accordion-badge" }, count]] : []),
+        ...(count > 0 ? [["span", { class: "stat-accordion-badge" }, String(count)]] : []),
       ],
       [
         "div",
@@ -757,11 +761,14 @@ export const StatAccordion = Node.create({
       markdown: {
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
           const title = (node.attrs.title as string) || "Tiêu đề";
-          const count = (node.attrs.count as string) ?? "";
           const description = (node.attrs.description as string) ?? "";
           const open = node.attrs.open !== false;
           const items = (node.attrs.items ?? []) as StatAccordionItem[];
           const legend = (node.attrs.legend ?? []) as StatAccordionLegendItem[];
+          // Badge so luong TU TINH tu items.length (xem comment renderHTML o
+          // tren) - `data-count` van duoc GHI de tuong thich nguoc parseHTML
+          // cua entry cu (attrs.count khong con dung de HIEN THI nua).
+          const count = items.length;
           const escapeHtml = (s: string) =>
             s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
           const dot = (color: string) =>
@@ -791,13 +798,13 @@ export const StatAccordion = Node.create({
           // BAN HIEN THI cho nguoi doc, khong duoc parseHTML dung toi.
           const html =
             `<details class="stat-accordion" data-stat-accordion` +
-            ` data-title="${escapeHtml(title)}" data-count="${escapeHtml(count)}"` +
+            ` data-title="${escapeHtml(title)}"` +
             ` data-description="${escapeHtml(description)}"` +
             ` data-items="${escapeHtml(JSON.stringify(items))}"` +
             ` data-legend="${escapeHtml(JSON.stringify(legend))}"` +
             `${open ? " open" : ""}>` +
             `<summary class="stat-accordion-summary"><span class="stat-accordion-title">${escapeHtml(title)}</span>` +
-            (count ? `<span class="stat-accordion-badge">${escapeHtml(count)}</span>` : "") +
+            (count > 0 ? `<span class="stat-accordion-badge">${count}</span>` : "") +
             `</summary>` +
             `<div class="stat-accordion-body">${descriptionHtml}<div class="stat-accordion-list">${itemsHtml}</div>${legendHtml}</div>` +
             `</details>`;
