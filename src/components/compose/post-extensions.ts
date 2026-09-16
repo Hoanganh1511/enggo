@@ -11,6 +11,7 @@ import { GlossaryHint } from "./glossary-hint-extension";
 import { CuratedListView } from "./curated-list-view";
 import { QuestionPickerView } from "./question-picker-view";
 import { AccordionView } from "./accordion-view";
+import { StatAccordionView } from "./stat-accordion-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -571,6 +572,183 @@ export const Accordion = Node.create({
   },
 });
 
+export type StatAccordionItem = { text: string; color: string };
+export type StatAccordionLegendItem = { color: string; label: string };
+
+// Mau mac dinh cho 1 dot moi tao (chua tuy chinh) - cam AWS, khop tinh than
+// mockup nguoi dung gui (khoi "Geographic Regions"/"Edge Locations").
+export const STAT_ACCORDION_DEFAULT_COLOR = "#f97316";
+
+// "Accordion thống kê" - bien the KHAC voi Accordion thuong o tren (yeu cau
+// nguoi dung sau khi xem mockup AWS Global Infrastructure: "cũng là 1 biến
+// thể khác của accordion, nhưng có số lượng, có button + - để collapse, bên
+// trong nó có thể có description hoặc không tùy, bên dưới là list dạng dot,
+// có thể tùy chỉnh màu sắc của dot, và dưới cuối cùng là chú thích mục đích
+// của dot màu đấy"). La node ATOM (khac Accordion co content THAT block+) -
+// toan bo du lieu (items/legend) la 1 SNAPSHOT attrs JSON, giong tinh than
+// QuestionPicker/CuratedList/TocBlock o tren (danh sach CO CAU TRUC text+mau,
+// khong phai noi dung tu do can rich text nen khong dung ProseMirror children
+// that). Ban render TINH dung <details>/<summary> THUAN (giong Accordion) -
+// "button +/-" chi la 1 CHI BAO truc quan (giong chevron cua Accordion),
+// click dau tren <summary> deu toggle native, khong can JS rieng.
+export const StatAccordion = Node.create({
+  name: "statAccordion",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      title: {
+        default: "Tiêu đề",
+        parseHTML: (el) => el.getAttribute("data-title") ?? "Tiêu đề",
+        renderHTML: (attrs) => ({ "data-title": attrs.title as string }),
+      },
+      count: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-count") ?? "",
+        renderHTML: (attrs) => ({ "data-count": (attrs.count as string) ?? "" }),
+      },
+      description: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-description") ?? "",
+        renderHTML: (attrs) => ({ "data-description": (attrs.description as string) ?? "" }),
+      },
+      open: {
+        default: true,
+        parseHTML: (el) => el.getAttribute("data-open") !== "false",
+        renderHTML: (attrs) => ({ "data-open": attrs.open === false ? "false" : "true" }),
+      },
+      items: {
+        default: [] as StatAccordionItem[],
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-items") ?? "[]") as StatAccordionItem[];
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+      legend: {
+        default: [] as StatAccordionLegendItem[],
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-legend") ?? "[]") as StatAccordionLegendItem[];
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-legend": JSON.stringify(attrs.legend ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "details[data-stat-accordion]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const title = (node.attrs.title as string) || "Tiêu đề";
+    const count = (node.attrs.count as string) ?? "";
+    const description = (node.attrs.description as string) ?? "";
+    const open = node.attrs.open !== false;
+    const items = (node.attrs.items ?? []) as StatAccordionItem[];
+    const legend = (node.attrs.legend ?? []) as StatAccordionLegendItem[];
+    return [
+      "details",
+      mergeAttributes(HTMLAttributes, { "data-stat-accordion": "", ...(open ? { open: "" } : {}) }),
+      [
+        "summary",
+        { class: "stat-accordion-summary" },
+        ["span", { class: "stat-accordion-title" }, title],
+        ...(count ? [["span", { class: "stat-accordion-badge" }, count]] : []),
+      ],
+      [
+        "div",
+        { class: "stat-accordion-body" },
+        ...(description ? [["p", { class: "stat-accordion-description" }, description]] : []),
+        [
+          "div",
+          { class: "stat-accordion-list" },
+          ...items.map((item) => [
+            "div",
+            { class: "stat-accordion-item" },
+            [
+              "span",
+              { class: "stat-accordion-dot", style: `background-color:${item.color || STAT_ACCORDION_DEFAULT_COLOR}` },
+            ],
+            ["span", { class: "stat-accordion-item-text" }, item.text],
+          ]),
+        ],
+        ...(legend.length
+          ? [
+              [
+                "div",
+                { class: "stat-accordion-legend" },
+                ...legend.map((l) => [
+                  "div",
+                  { class: "stat-accordion-legend-item" },
+                  [
+                    "span",
+                    { class: "stat-accordion-dot", style: `background-color:${l.color || STAT_ACCORDION_DEFAULT_COLOR}` },
+                  ],
+                  ["span", {}, l.label],
+                ]),
+              ],
+            ]
+          : []),
+      ],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(StatAccordionView);
+  },
+  // Markdown fallback - toan bo 1 khoi HTML tho (giong QuestionPicker/
+  // CuratedList/TocBlock: du lieu la SNAPSHOT attrs, khong phai ProseMirror
+  // children that nen khong the state.renderContent() nhu Accordion thuong).
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const title = (node.attrs.title as string) || "Tiêu đề";
+          const count = (node.attrs.count as string) ?? "";
+          const description = (node.attrs.description as string) ?? "";
+          const open = node.attrs.open !== false;
+          const items = (node.attrs.items ?? []) as StatAccordionItem[];
+          const legend = (node.attrs.legend ?? []) as StatAccordionLegendItem[];
+          const escapeHtml = (s: string) =>
+            s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          const dot = (color: string) =>
+            `<span class="stat-accordion-dot" style="background-color:${color || STAT_ACCORDION_DEFAULT_COLOR}"></span>`;
+          const itemsHtml = items
+            .map(
+              (item) =>
+                `<div class="stat-accordion-item">${dot(item.color)}<span class="stat-accordion-item-text">${escapeHtml(item.text)}</span></div>`,
+            )
+            .join("");
+          const legendHtml = legend.length
+            ? `<div class="stat-accordion-legend">${legend
+                .map((l) => `<div class="stat-accordion-legend-item">${dot(l.color)}<span>${escapeHtml(l.label)}</span></div>`)
+                .join("")}</div>`
+            : "";
+          const descriptionHtml = description
+            ? `<p class="stat-accordion-description">${escapeHtml(description)}</p>`
+            : "";
+          const html =
+            `<details class="stat-accordion" data-stat-accordion${open ? " open" : ""}>` +
+            `<summary class="stat-accordion-summary"><span class="stat-accordion-title">${escapeHtml(title)}</span>` +
+            (count ? `<span class="stat-accordion-badge">${escapeHtml(count)}</span>` : "") +
+            `</summary>` +
+            `<div class="stat-accordion-body">${descriptionHtml}<div class="stat-accordion-list">${itemsHtml}</div>${legendHtml}</div>` +
+            `</details>`;
+          state.ensureNewLine();
+          state.write(html);
+          state.ensureNewLine();
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
 // them rieng trong PostEditor).
@@ -602,6 +780,7 @@ export function getPostExtensions(): Extensions {
     CuratedList,
     QuestionPicker,
     Accordion,
+    StatAccordion,
   ];
 }
 
@@ -722,4 +901,24 @@ export const POST_PROSE_CLASS =
   "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
   "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
   "[&_div[data-accordion]:not([open])_.accordion-summary]:before:-rotate-90 " +
-  "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1";
+  "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
+  // Accordion thong ke (StatAccordion) - cung <details>/<summary> THUAN nhu
+  // Accordion o tren, nhung marker "+"/"-" thay vi tam giac (dung y mockup
+  // AWS Global Infrastructure nguoi dung gui) + 1 badge so luong canh tieu
+  // de. Danh sach dang GRID 2 cot dam cham mau (giong tinh than
+  // SeriesQuestionPickerToc.tsx), gioi han chieu cao + tu cuon khi qua dai
+  // (dung mockup co thanh cuon rieng cho phan list).
+  "[&_div[data-stat-accordion]]:my-4 [&_div[data-stat-accordion]]:overflow-hidden [&_div[data-stat-accordion]]:rounded-xl [&_div[data-stat-accordion]]:border [&_div[data-stat-accordion]]:border-border " +
+  "[&_.stat-accordion-summary]:flex [&_.stat-accordion-summary]:cursor-pointer [&_.stat-accordion-summary]:list-none [&_.stat-accordion-summary]:items-center [&_.stat-accordion-summary]:gap-2.5 [&_.stat-accordion-summary]:px-3.5 [&_.stat-accordion-summary]:py-2.5 [&_.stat-accordion-summary]:select-none " +
+  "[&_.stat-accordion-summary::-webkit-details-marker]:hidden [&_.stat-accordion-summary::marker]:content-none " +
+  "[&_.stat-accordion-title]:flex-1 [&_.stat-accordion-title]:text-[14.5px] [&_.stat-accordion-title]:font-semibold [&_.stat-accordion-title]:text-ink " +
+  "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-surface-muted [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[12.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-ink " +
+  "[&_.stat-accordion-summary]:after:ml-1 [&_.stat-accordion-summary]:after:flex [&_.stat-accordion-summary]:after:size-5 [&_.stat-accordion-summary]:after:shrink-0 [&_.stat-accordion-summary]:after:items-center [&_.stat-accordion-summary]:after:justify-center [&_.stat-accordion-summary]:after:text-[15px] [&_.stat-accordion-summary]:after:leading-none [&_.stat-accordion-summary]:after:text-ink-faint [&_.stat-accordion-summary]:after:content-['+'] " +
+  "[&_div[data-stat-accordion][open]_.stat-accordion-summary]:after:content-['−'] " +
+  "[&_.stat-accordion-body]:border-t [&_.stat-accordion-body]:border-border [&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
+  "[&_.stat-accordion-description]:mb-3 [&_.stat-accordion-description]:text-[13.5px] [&_.stat-accordion-description]:text-ink-muted " +
+  "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-4 [&_.stat-accordion-list]:gap-y-1.5 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +
+  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
+  "[&_.stat-accordion-dot]:inline-block [&_.stat-accordion-dot]:size-2 [&_.stat-accordion-dot]:shrink-0 [&_.stat-accordion-dot]:rounded-full " +
+  "[&_.stat-accordion-legend]:mt-3 [&_.stat-accordion-legend]:flex [&_.stat-accordion-legend]:flex-col [&_.stat-accordion-legend]:gap-1.5 [&_.stat-accordion-legend]:border-t [&_.stat-accordion-legend]:border-border [&_.stat-accordion-legend]:pt-3 " +
+  "[&_.stat-accordion-legend-item]:flex [&_.stat-accordion-legend-item]:items-center [&_.stat-accordion-legend-item]:gap-2 [&_.stat-accordion-legend-item]:text-[12.5px] [&_.stat-accordion-legend-item]:text-ink-faint";
