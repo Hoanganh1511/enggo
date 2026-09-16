@@ -859,15 +859,21 @@ export const StatAccordion = Node.create({
 // accordion geographical vào sau cái accordion geographical trước đó đã đặt
 // vào thì ko đặt dc con trỏ vào, kể cả soạn văn bản ấy". Nguyen nhan: Accordion/
 // StatAccordion/Image/CuratedList/... deu la NODE ATOM (khong co "khe" van
-// ban truoc/sau chinh no) - neu 1 node atom nam CUOI CUNG tai lieu (hoac 2
-// node atom nam SAT NHAU), KHONG CON vi tri con tro HOP LE nao de bam vao/go
-// tiep, dung dac ta ProseMirror (chi paragraph/text moi co "khe" cho con
-// tro). Fix CHUAN cua cong dong Tiptap (chua co san trong StarterKit): 1
+// ban truoc/sau chinh no) - neu 1 node atom nam CUOI CUNG 1 vung noi dung
+// (khong co paragraph theo sau), KHONG CON vi tri con tro HOP LE nao de bam
+// vao/go tiep, dung dac ta ProseMirror (chi paragraph/text moi co "khe" cho
+// con tro). Fix CHUAN cua cong dong Tiptap (chua co san trong StarterKit): 1
 // ProseMirror plugin tu dong CHEN THEM 1 paragraph RONG ngay sau node CUOI
-// CUNG tai lieu, moi khi node do KHONG PHAI paragraph - dam bao LUON co 1
-// cho trong de bam con tro/go tiep sau bat ky node atom nao, khong rieng gi
-// Accordion Geographical (ap dung chung moi node atom: anh, CuratedList,
-// TocBlock, QuestionPicker...).
+// CUNG cua vung do, moi khi node do KHONG PHAI paragraph.
+//
+// [2026-09-16 fix 2] Ban dau CHI kiem tra doc.lastChild (cap TAI LIEU cao
+// nhat) - nguoi dung bao lai VAN loi khi StatAccordion la node CUOI CUNG
+// BEN TRONG than 1 Accordion thuong long nhau (vd "Geographic Regions" la
+// dong DUY NHAT trong body "Australia & New Zealand" - StatAccordion do la
+// lastChild cua NODE ACCORDION, khong phai cua doc goc, nen kiem tra cu bo
+// sot). Quet THEM moi node "accordion" (content: block+, node DUY NHAT
+// trong app cho phep chua block con tuy y long nhau) qua doc.descendants,
+// ap dung dung logic tuong tu cho CHINH content ben trong no.
 const TrailingNode = Extension.create({
   name: "trailingNode",
   addProseMirrorPlugins() {
@@ -876,10 +882,37 @@ const TrailingNode = Extension.create({
       new Plugin({
         key: pluginKey,
         appendTransaction: (_transactions, _oldState, newState) => {
-          const { doc, tr } = newState;
-          const lastNode = doc.lastChild;
-          if (!lastNode || lastNode.type.name === "paragraph") return null;
-          return tr.insert(doc.content.size, newState.schema.nodes.paragraph!.create());
+          const { doc, schema } = newState;
+          const paragraphType = schema.nodes.paragraph;
+          if (!paragraphType) return null;
+
+          const insertPositions: number[] = [];
+
+          if (doc.lastChild && doc.lastChild.type.name !== "paragraph") {
+            insertPositions.push(doc.content.size);
+          }
+
+          doc.descendants((node, pos) => {
+            if (node.type.name !== "accordion") return;
+            const last = node.lastChild;
+            if (last && last.type.name !== "paragraph") {
+              // pos+node.nodeSize-1 = vi tri NGAY TRUOC dau dong cua chinh
+              // node "accordion" nay - chen 1 paragraph vao do = them lam
+              // PHAN TU CUOI CUNG trong content cua no.
+              insertPositions.push(pos + node.nodeSize - 1);
+            }
+          });
+
+          if (insertPositions.length === 0) return null;
+
+          // Chen tu VI TRI LON den NHO - tranh lam lech offset cac vi tri
+          // con lai chua xu ly trong CUNG 1 transaction.
+          insertPositions.sort((a, b) => b - a);
+          const tr = newState.tr;
+          for (const pos of insertPositions) {
+            tr.insert(pos, paragraphType.create());
+          }
+          return tr;
         },
       }),
     ];
