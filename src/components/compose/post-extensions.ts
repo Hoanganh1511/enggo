@@ -1005,8 +1005,14 @@ export const POST_PROSE_CLASS =
   // de. Danh sach dang GRID 2 cot dam cham mau (giong tinh than
   // SeriesQuestionPickerToc.tsx), gioi han chieu cao + tu cuon khi qua dai
   // (dung mockup co thanh cuon rieng cho phan list).
-  "[&_.stat-accordion]:my-4 [&_.stat-accordion]:overflow-hidden [&_.stat-accordion]:rounded-xl [&_.stat-accordion]:border [&_.stat-accordion]:border-border [&_.stat-accordion]:bg-surface " +
-  "[&_.accordion-body_.stat-accordion]:my-3 [&_.accordion-body_.stat-accordion]:rounded-lg [&_.accordion-body_.stat-accordion]:bg-surface-muted " +
+  // [2026-09-16] Bo han border, chi con mau nen co dinh #F3F3F7 - yeu cau
+  // nguoi dung: "accordion geographic không cần border đâu, có màu nền là
+  // được rồi". Dung 1 mau nen CO DINH DUY NHAT cho ca cap ngoai LAN cap long
+  // nhau trong Accordion thuong (khac truoc day phan biet bg-surface/
+  // bg-surface-muted 2 cap) - vi gio KHONG con border de phan biet ranh gioi
+  // nua, giu 1 mau dong nhat tranh roi mat.
+  "[&_.stat-accordion]:my-4 [&_.stat-accordion]:overflow-hidden [&_.stat-accordion]:rounded-xl [&_.stat-accordion]:bg-[#F3F3F7] " +
+  "[&_.accordion-body_.stat-accordion]:my-3 [&_.accordion-body_.stat-accordion]:rounded-lg " +
   "[&_.stat-accordion-summary]:flex [&_.stat-accordion-summary]:cursor-pointer [&_.stat-accordion-summary]:list-none [&_.stat-accordion-summary]:items-center [&_.stat-accordion-summary]:gap-2.5 [&_.stat-accordion-summary]:px-3.5 [&_.stat-accordion-summary]:py-2.5 [&_.stat-accordion-summary]:select-none " +
   "[&_.stat-accordion-summary::-webkit-details-marker]:hidden [&_.stat-accordion-summary::marker]:content-none " +
   // min-w-0 - PHAI co tren flex item co flex-1 chua van ban dai (mac dinh
@@ -1023,15 +1029,18 @@ export const POST_PROSE_CLASS =
   "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-ink/8 [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[12.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-ink " +
   "[&_.stat-accordion-summary]:after:ml-1 [&_.stat-accordion-summary]:after:flex [&_.stat-accordion-summary]:after:size-5 [&_.stat-accordion-summary]:after:shrink-0 [&_.stat-accordion-summary]:after:items-center [&_.stat-accordion-summary]:after:justify-center [&_.stat-accordion-summary]:after:text-[15px] [&_.stat-accordion-summary]:after:leading-none [&_.stat-accordion-summary]:after:text-ink-faint [&_.stat-accordion-summary]:after:content-['+'] " +
   "[&_.stat-accordion[open]_.stat-accordion-summary]:after:content-['−'] " +
-  "[&_.stat-accordion-body]:border-t [&_.stat-accordion-body]:border-border [&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
+  "[&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
   "[&_.stat-accordion-description]:mb-3 [&_.stat-accordion-description]:text-[13.5px] [&_.stat-accordion-description]:text-ink-muted " +
-  "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-4 [&_.stat-accordion-list]:gap-y-1.5 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +
-  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:rounded-md [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:min-w-0 [&_.stat-accordion-item-text]:flex-1 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
+  "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-3 [&_.stat-accordion-list]:gap-y-2 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +
+  // Moi dong 1 "the" nen trang rieng (yeu cau nguoi dung: "Mỗi cái cho nó
+  // nền trắng, padding, radius như ảnh 2" - dua theo mau tham khao dong dang
+  // pill/card trang tren nen xam #F3F3F7 cua ca khoi).
+  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:rounded-lg [&_.stat-accordion-item]:bg-surface [&_.stat-accordion-item]:px-3 [&_.stat-accordion-item]:py-2.5 [&_.stat-accordion-item-text]:min-w-0 [&_.stat-accordion-item-text]:flex-1 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
   // Dong co toa do (lat/lng) - bam duoc de mo modal globe 3D (xem
-  // RegionGlobeModal.tsx/EntryContentWithGlobe.tsx) - chi bao truc quan bang
-  // cursor + gach chan luc hover, KHONG doi mau (giu dung tinh than "hover
-  // nhe nhang" da ap dung cho SeriesQuestionPickerToc.tsx).
-  "[&_.stat-accordion-item-clickable]:-mx-1.5 [&_.stat-accordion-item-clickable]:cursor-pointer [&_.stat-accordion-item-clickable]:px-1.5 [&_.stat-accordion-item-clickable]:transition-colors [&_.stat-accordion-item-clickable]:duration-150 [&_.stat-accordion-item-clickable]:hover:bg-hover-bg " +
+  // RegionGlobeModal.tsx/EntryContentWithGlobe.tsx) - the trang co san rieng
+  // (xem .stat-accordion-item o tren) nen KHONG con can meo -mx/px rieng cho
+  // hover nua, chi doi sac nen nhe + gach chan ten.
+  "[&_.stat-accordion-item-clickable]:cursor-pointer [&_.stat-accordion-item-clickable]:transition-colors [&_.stat-accordion-item-clickable]:duration-150 [&_.stat-accordion-item-clickable]:hover:bg-surface-muted " +
   "[&_.stat-accordion-item-clickable_.stat-accordion-item-text]:hover:underline [&_.stat-accordion-item-clickable_.stat-accordion-item-text]:underline-offset-2 " +
   "[&_.stat-accordion-dot]:inline-block [&_.stat-accordion-dot]:size-2 [&_.stat-accordion-dot]:shrink-0 [&_.stat-accordion-dot]:rounded-full " +
   "[&_.stat-accordion-legend]:mt-3 [&_.stat-accordion-legend]:flex [&_.stat-accordion-legend]:flex-col [&_.stat-accordion-legend]:gap-1.5 [&_.stat-accordion-legend]:border-t [&_.stat-accordion-legend]:border-border [&_.stat-accordion-legend]:pt-3 " +
