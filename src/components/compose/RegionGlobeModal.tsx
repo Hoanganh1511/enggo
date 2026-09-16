@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Portal } from "@radix-ui/react-portal";
 import dynamic from "next/dynamic";
-import * as Dialog from "@radix-ui/react-dialog";
-import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { GlobeMethods } from "react-globe.gl";
 
 // react-globe.gl dung Canvas/WebGL thuan (khong qua @react-three/fiber du app
@@ -16,14 +16,20 @@ const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 export type RegionGlobeTarget = { label: string; lat: number; lng: number };
 
-// Modal "quay quả địa cầu 3D tới đúng vị trí" - yeu cau nguoi dung: "tôi có
-// một list các region aws trên thế giới, tôi muốn khi click vào chúng sẽ
-// hiện modal có quả địa cầu 3d rồi quay tới, xong focus vào đúng vị trí đó".
-// Dung Radix Dialog THUAN (khong qua SimpleModal.tsx) vi SimpleModal ep
-// title/padding/scroll co dinh, khong hop voi 1 khung canvas WebGL vuong lon
-// can toan quyen kich thuoc - o day tu ve overlay/animation rieng bang
-// framer-motion (scale+fade, cung tinh than animation dropdown chuan cua app
-// nhung phong to cho phu hop 1 modal lon).
+// [2026-09-16 REWRITE] Ban dau dung Radix Dialog + AnimatePresence UNMOUNT
+// het cay (ke ca <Globe>) moi lan dong modal - day chinh la nguyen nhan bug
+// nguoi dung bao "tắt đi bật những cái khác thì đen ngòm, không lên gì nữa":
+// react-globe.gl/three.js KHONG dam bao dispose sach WebGL context luc
+// unmount, tao/huy lien tuc rat de "chet" context o lan mo thu 2. Fix DUNG
+// CACH cho thu vien nay: Globe MOUNT DUY NHAT 1 LAN (lan dau tien nguoi dung
+// bam mo, xem `everOpened`) roi O LAI TRONG DOM MAI MAI - dong/mo sau do CHI
+// doi CSS opacity/pointer-events (KHONG unmount), giong dung khuyen nghi cua
+// chinh thu vien (API pauseAnimation/resumeAnimation ton tai chinh la cho
+// tinh huong nay) - moi lan doi vi tri chi goi lai pointOfView() tren CUNG 1
+// instance qua 1 effect rieng (khong con dung onGlobeReady moi lan mo, vi
+// callback do gio chi ban DUNG 1 LAN trong ca doi component). Portal thang
+// vao document.body (khong qua Radix Dialog nua) de tu kiem soat viec KHONG
+// unmount - Escape/click-nen-den de dong thay cho Radix.
 export function RegionGlobeModal({
   target,
   onOpenChange,
@@ -31,103 +37,134 @@ export function RegionGlobeModal({
   target: RegionGlobeTarget | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const open = target !== null;
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 320, height: 320 });
+  const [size, setSize] = useState({ width: 400, height: 400 });
+  const [ready, setReady] = useState(false);
+  // "Adjusting state during rendering" (mau chinh thuc cua React, KHONG phai
+  // effect) - tranh loi lint react-hooks/set-state-in-effect (cam goi setState
+  // dong bo trong useEffect). Goi setState THANG trong than component khi
+  // phat hien `open` vua doi tu props (so sanh voi `prevOpen` luu lai) la
+  // cach hop le de "nho lai da tung mo" ma khong can effect rieng.
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [everOpened, setEverOpened] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setEverOpened(true);
+  }
 
   useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onOpenChange(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onOpenChange]);
+
+  // Container CHI xuat hien tu lan `everOpened` dau tien, nhung TU DO KHONG
+  // BAO GIO bi go khoi DOM nua (xem comment dau file) - ResizeObserver gan 1
+  // LAN DUY NHAT la du, khong can gan lai theo `target`/`open` nhu ban cu.
+  useEffect(() => {
+    if (!everOpened) return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
       const box = entries[0]?.contentRect;
-      if (box) setSize({ width: Math.round(box.width), height: Math.round(box.height) });
+      if (box && box.width > 0 && box.height > 0) {
+        setSize({ width: Math.round(box.width), height: Math.round(box.height) });
+      }
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [target]);
+  }, [everOpened]);
+
+  // "Quay tới, xong focus vào đúng vị trí" - chay LAI moi lan `target` doi
+  // (ke ca lan mo thu 2/3... voi 1 region khac), KHONG con phu thuoc
+  // onGlobeReady (chi ban 1 lan). Bat dau tu goc nhin toan canh (altitude
+  // cao, transition=0 - nhay ngay khong hoat hinh) roi moi "bay" toi gan
+  // (1800ms) - dung setTimeout ngan de dam bao lenh dau da ap dung xong
+  // truoc khi bat lenh bay toi (2 lenh pointOfView goi lien tiep cung
+  // frame de bi lenh sau "de bep" lenh truoc).
+  useEffect(() => {
+    if (!target || !ready) return;
+    globeRef.current?.pointOfView({ lat: target.lat, lng: target.lng, altitude: 2.4 }, 0);
+    const t = setTimeout(() => {
+      globeRef.current?.pointOfView({ lat: target.lat, lng: target.lng, altitude: 1.5 }, 1800);
+    }, 60);
+    return () => clearTimeout(t);
+  }, [target, ready]);
 
   return (
-    <Dialog.Root open={target !== null} onOpenChange={onOpenChange}>
-      <AnimatePresence>
-        {target && (
-          <Dialog.Portal forceMount>
-            <Dialog.Overlay asChild forceMount>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
-                className="fixed inset-0 z-50 bg-overlay"
-              />
-            </Dialog.Overlay>
-            <Dialog.Content asChild forceMount onOpenAutoFocus={(e) => e.preventDefault()}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className="fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-3rem)] max-w-125 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl focus:outline-none"
-              >
-                <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border p-4">
-                  <div className="min-w-0">
-                    <Dialog.Title className="text-[13px] font-bold text-ink">
-                      {target.label || "Vị trí"}
-                    </Dialog.Title>
-                    <Dialog.Description className="mt-0.5 font-mono text-[11px] text-ink-faint">
-                      {target.lat.toFixed(4)}, {target.lng.toFixed(4)}
-                    </Dialog.Description>
-                  </div>
-                  <Dialog.Close asChild>
-                    <button
-                      type="button"
-                      aria-label="Đóng"
-                      className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint hover:bg-hover-bg hover:text-ink"
-                    >
-                      <X size={16} strokeWidth={2} />
-                    </button>
-                  </Dialog.Close>
-                </div>
-                <div ref={containerRef} className="aspect-square w-full bg-[#000814]">
-                  <Globe
-                    ref={globeRef}
-                    width={size.width}
-                    height={size.height}
-                    backgroundColor="rgba(0,0,0,0)"
-                    globeImageUrl="//unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-                    bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
-                    showAtmosphere
-                    atmosphereColor="#7dd3fc"
-                    pointsData={[target]}
-                    pointLat="lat"
-                    pointLng="lng"
-                    pointColor={() => "#f97316"}
-                    pointAltitude={0.02}
-                    pointRadius={0.6}
-                    labelsData={[target]}
-                    labelLat="lat"
-                    labelLng="lng"
-                    labelText="label"
-                    labelSize={1.1}
-                    labelDotRadius={0.4}
-                    labelColor={() => "#f97316"}
-                    // Bat dau tu 1 goc toan canh (altitude cao), roi "quay tới"
-                    // dung vi tri muc tieu ngay khi globe san sang - dung
-                    // onGlobeReady (KHONG phai setTimeout doan mo) de chac
-                    // chan instance da khoi tao xong truoc khi goi pointOfView.
-                    onGlobeReady={() => {
-                      globeRef.current?.pointOfView({ lat: target.lat, lng: target.lng, altitude: 2.2 }, 0);
-                      globeRef.current?.pointOfView(
-                        { lat: target.lat, lng: target.lng, altitude: 1.4 },
-                        1800,
-                      );
-                    }}
-                  />
-                </div>
-              </motion.div>
-            </Dialog.Content>
-          </Dialog.Portal>
+    <Portal>
+      <div
+        aria-hidden="true"
+        onClick={() => onOpenChange(false)}
+        className={cn(
+          "fixed inset-0 z-50 bg-overlay transition-opacity duration-200 ease-out",
+          open ? "opacity-100" : "pointer-events-none opacity-0",
         )}
-      </AnimatePresence>
-    </Dialog.Root>
+      />
+      {everOpened && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={target?.label || "Vị trí trên bản đồ"}
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center px-6 transition-[opacity,transform] duration-200 ease-out",
+            open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0",
+          )}
+        >
+          <div className="flex w-full max-w-125 flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-xl">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border p-4">
+              <div className="min-w-0">
+                <p className="text-[13px] font-bold text-ink">{target?.label || "Vị trí"}</p>
+                <p className="mt-0.5 font-mono text-[11px] text-ink-faint">
+                  {target ? `${target.lat.toFixed(4)}, ${target.lng.toFixed(4)}` : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Đóng"
+                onClick={() => onOpenChange(false)}
+                className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint hover:bg-hover-bg hover:text-ink"
+              >
+                <X size={16} strokeWidth={2} />
+              </button>
+            </div>
+            <div ref={containerRef} className="aspect-square w-full bg-[#000410]">
+              <Globe
+                ref={globeRef}
+                width={size.width}
+                height={size.height}
+                backgroundColor="rgba(0,0,0,0)"
+                backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+                globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
+                bumpImageUrl="//unpkg.com/three-globe/example/img/earth-topology.png"
+                showAtmosphere
+                atmosphereColor="#60a5fa"
+                atmosphereAltitude={0.22}
+                pointsData={target ? [target] : []}
+                pointLat="lat"
+                pointLng="lng"
+                pointColor={() => "#f97316"}
+                pointAltitude={0.015}
+                pointRadius={0.45}
+                labelsData={target ? [target] : []}
+                labelLat="lat"
+                labelLng="lng"
+                labelText="label"
+                labelSize={1.15}
+                labelDotRadius={0.35}
+                labelColor={() => "#fdba74"}
+                labelAltitude={0.016}
+                onGlobeReady={() => setReady(true)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </Portal>
   );
 }
