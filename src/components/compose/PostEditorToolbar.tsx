@@ -31,6 +31,7 @@ import {
   ListTree,
   GalleryVerticalEnd,
   LayoutGrid,
+  ListCollapse,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -200,6 +201,21 @@ export function PostEditorToolbar({
     editor.chain().focus().insertContent({ type: "questionPicker", attrs: { items } }).run();
   };
 
+  // Chen Accordion - luon chen MOI (khac Callout khong toggleWrap duoc vi
+  // content ben trong can them 1 paragraph mac dinh de co cho go ngay, xem
+  // AccordionView.tsx ve ly do NodeView giu content LUON hien du dong/mo).
+  const insertAccordion = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "accordion",
+        attrs: { title: "Tiêu đề", open: true },
+        content: [{ type: "paragraph", content: [{ type: "text", text: "Nội dung..." }] }],
+      })
+      .run();
+  };
+
   return (
     <div
       className={cn(
@@ -264,6 +280,7 @@ export function PostEditorToolbar({
       <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />
       <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
       <Btn label="TOC dạng box (theo H2)" Icon={LayoutGrid} onClick={insertQuestionPicker} />
+      <Btn label="Accordion (bấm để mở/đóng)" Icon={ListCollapse} onClick={insertAccordion} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />

@@ -10,6 +10,7 @@ import { TableKit } from "@tiptap/extension-table";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { CuratedListView } from "./curated-list-view";
 import { QuestionPickerView } from "./question-picker-view";
+import { AccordionView } from "./accordion-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -494,6 +495,82 @@ export const QuestionPicker = Node.create({
   },
 });
 
+// Accordion - hop "bam de mo/dong" (yeu cau nguoi dung: "Editor chưa có
+// accordion"), content la block+ THAT (khac Callout/GoDeeper deu KHONG cho
+// nguoi dung dat tieu de rieng) - tieu de la 1 attr string sua duoc qua o
+// input trong AccordionView (NodeView CHI phuc vu soan, xem comment file do),
+// content THAT su dung ProseMirror children (khong phai attrs JSON nhu
+// QuestionPicker/CuratedList) nen cho phep bat ky block nao ben trong (list/
+// anh/bang...). Ban render TINH (renderHTML) dung <details>/<summary> THUAN -
+// trinh duyet tu lo mo/dong bang HTML/CSS, khong can JS (giong tinh than
+// QuestionPicker) - attrs `open` la trang thai MAC DINH luc doc (nguoi doc
+// van bam mo/dong lai duoc binh thuong sau do, day chi la gia tri khoi tao).
+export const Accordion = Node.create({
+  name: "accordion",
+  group: "block",
+  content: "block+",
+  defining: true,
+  addAttributes() {
+    return {
+      title: {
+        default: "Tiêu đề",
+        parseHTML: (el) => el.getAttribute("data-title") ?? "Tiêu đề",
+        renderHTML: (attrs) => ({ "data-title": attrs.title as string }),
+      },
+      open: {
+        default: true,
+        parseHTML: (el) => el.getAttribute("data-open") !== "false",
+        renderHTML: (attrs) => ({ "data-open": attrs.open === false ? "false" : "true" }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "details[data-accordion]", contentElement: "div.accordion-body" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const title = (node.attrs.title as string) || "Tiêu đề";
+    const open = node.attrs.open !== false;
+    return [
+      "details",
+      mergeAttributes(HTMLAttributes, { "data-accordion": "", ...(open ? { open: "" } : {}) }),
+      ["summary", { class: "accordion-summary" }, title],
+      ["div", { class: "accordion-body" }, 0],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(AccordionView);
+  },
+  // Markdown fallback (xem comment addStorage cua Callout o tren) - KHAC
+  // Callout/GoDeeper/TocBlock (xuong cap thanh text thuong): nhung THANG the
+  // <details>/<summary> tho vao markdown, chua NOI DUNG THAT o giua duoi dang
+  // markdown that (khong phai HTML) - can 2 dong trong truoc/sau (giong ly do
+  // QuestionPicker giai thich) de CommonMark/rehype-raw (DocsMarkdown.tsx)
+  // nhan dung day la markdown long trong 1 khoi HTML tho, khong bi nuot lam 1
+  // dong text. An toan nhu QuestionPicker vi noi dung Series/docs CHI admin
+  // soan duoc.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const title = (node.attrs.title as string) || "Tiêu đề";
+          const open = node.attrs.open !== false;
+          const escapeHtml = (s: string) =>
+            s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          state.ensureNewLine();
+          state.write(
+            `<details class="accordion-block" data-accordion${open ? " open" : ""}>\n` +
+              `<summary class="accordion-summary">${escapeHtml(title)}</summary>\n\n`,
+          );
+          state.renderContent(node);
+          state.ensureNewLine();
+          state.write("\n</details>");
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
 // them rieng trong PostEditor).
@@ -524,6 +601,7 @@ export function getPostExtensions(): Extensions {
     TocBlock,
     CuratedList,
     QuestionPicker,
+    Accordion,
   ];
 }
 
@@ -633,4 +711,15 @@ export const POST_PROSE_CLASS =
   "[&_.question-picker-question]:flex-1 [&_.question-picker-question]:text-[14.5px] [&_.question-picker-question]:font-semibold [&_.question-picker-question]:text-ink " +
   "[&_.question-picker-chevron]:shrink-0 [&_.question-picker-chevron]:text-ink-faint [&_.question-picker-chevron]:transition-transform [&_.question-picker-chevron]:duration-150 " +
   "[&_.question-picker-item[open]_.question-picker-chevron]:rotate-180 " +
-  "[&_.question-picker-description]:mb-3.5 [&_.question-picker-description]:text-[13.5px] [&_.question-picker-description]:text-ink-muted";
+  "[&_.question-picker-description]:mb-3.5 [&_.question-picker-description]:text-[13.5px] [&_.question-picker-description]:text-ink-muted " +
+  // Accordion - <details>/<summary> THUAN (trinh duyet tu lo mo/dong, xem
+  // comment Accordion trong node o tren). ::-webkit-details-marker/::marker
+  // an di de dung rieng chevron SVG (xoay -90deg khi DONG, khac
+  // QuestionPicker xoay 180deg khi MO - huong nguoc lai vi Accordion mac
+  // dinh MO con QuestionPicker mac dinh DONG).
+  "[&_div[data-accordion]]:my-4 [&_div[data-accordion]]:overflow-hidden [&_div[data-accordion]]:rounded-xl [&_div[data-accordion]]:border [&_div[data-accordion]]:border-border " +
+  "[&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-2 [&_.accordion-summary]:px-3.5 [&_.accordion-summary]:py-2.5 [&_.accordion-summary]:text-[14.5px] [&_.accordion-summary]:font-semibold [&_.accordion-summary]:text-ink [&_.accordion-summary]:select-none " +
+  "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
+  "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
+  "[&_div[data-accordion]:not([open])_.accordion-summary]:before:-rotate-90 " +
+  "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1";
