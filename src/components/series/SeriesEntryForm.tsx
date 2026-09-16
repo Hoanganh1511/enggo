@@ -89,7 +89,14 @@ export function SeriesEntryForm({
         navTitle: isEdit ? navTitle.trim() : navTitle.trim() || undefined,
         slug: slug.trim() || undefined,
         subtitle: subtitle.trim() || undefined,
-        icon: icon.trim() || undefined,
+        // Mode edit: gui nguyen (ke ca rong) de XOA icon that su - cung loi
+        // voi navTitle o tren. Truoc do luon "|| undefined" nen luc bam nut
+        // "x" xoa icon (SeriesIconPicker.tsx dat icon="") thi payload gui di
+        // lai la `undefined` -> fetch tu BO HAN key nay khoi JSON body ->
+        // backend hieu la "khong doi gi", icon cu VAN CON trong DB (yeu cau
+        // nguoi dung: "Tính năng xóa icon... chưa hoạt động, bên ngoài vẫn
+        // hiện").
+        icon: isEdit ? icon.trim() : icon.trim() || undefined,
         source: source.trim() || undefined,
         contentMarkdown,
         faq: hasFaq ? faq : [],
