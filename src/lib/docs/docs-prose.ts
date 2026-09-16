@@ -40,4 +40,38 @@ export const DOCS_PROSE_CLASS =
   "[&_.question-picker-question]:flex-1 [&_.question-picker-question]:text-[14.5px] [&_.question-picker-question]:font-semibold [&_.question-picker-question]:text-ink " +
   "[&_.question-picker-chevron]:shrink-0 [&_.question-picker-chevron]:text-ink-faint [&_.question-picker-chevron]:transition-transform [&_.question-picker-chevron]:duration-150 " +
   "[&_.question-picker-item[open]_.question-picker-chevron]:rotate-180 " +
-  "[&_.question-picker-description]:mb-3.5 [&_.question-picker-description]:text-[13.5px] [&_.question-picker-description]:text-ink-muted";
+  "[&_.question-picker-description]:mb-3.5 [&_.question-picker-description]:text-[13.5px] [&_.question-picker-description]:text-ink-muted " +
+  // Accordion + Accordion Geographical (StatAccordion) - COPY tu
+  // POST_PROSE_CLASS y het (cung ly do khong import truc tiep, xem comment
+  // dau file). [2026-09-16] Truoc do THIEU HAN 2 khoi CSS nay o day - Accordion/
+  // StatAccordion.addStorage() ghi ra HTML THAT (<details>/<summary>, giong
+  // QuestionPicker o tren) nen CAN co CSS tuong ung khi doc qua
+  // DocsMarkdown.tsx (trang Entry cong khai LAN "Live preview" trong
+  // SeriesEntryForm.tsx deu dung DocsMarkdown, khong dung POST_PROSE_CLASS) -
+  // thieu khien ca 2 loai accordion hien FLAT, khong khung/khong dam mau,
+  // khong phan biet duoc cap long nhau (nguoi dung bao "vẫn thô kệch một
+  // loạt thẳng hàng"). Giu 2 file dong bo THU CONG moi khi sua 1 trong 2.
+  "[&_.accordion-block]:my-4 [&_.accordion-block]:overflow-hidden [&_.accordion-block]:rounded-xl [&_.accordion-block]:border [&_.accordion-block]:border-border [&_.accordion-block]:bg-surface " +
+  "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:bg-surface-muted " +
+  "[&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-2 [&_.accordion-summary]:px-3.5 [&_.accordion-summary]:py-2.5 [&_.accordion-summary]:text-[14.5px] [&_.accordion-summary]:font-semibold [&_.accordion-summary]:text-ink [&_.accordion-summary]:select-none " +
+  "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
+  "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
+  "[&_.accordion-block:not([open])_.accordion-summary]:before:-rotate-90 " +
+  "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
+  "[&_.stat-accordion]:my-4 [&_.stat-accordion]:overflow-hidden [&_.stat-accordion]:rounded-xl [&_.stat-accordion]:border [&_.stat-accordion]:border-border [&_.stat-accordion]:bg-surface " +
+  "[&_.accordion-body_.stat-accordion]:my-3 [&_.accordion-body_.stat-accordion]:rounded-lg [&_.accordion-body_.stat-accordion]:bg-surface-muted " +
+  "[&_.stat-accordion-summary]:flex [&_.stat-accordion-summary]:cursor-pointer [&_.stat-accordion-summary]:list-none [&_.stat-accordion-summary]:items-center [&_.stat-accordion-summary]:gap-2.5 [&_.stat-accordion-summary]:px-3.5 [&_.stat-accordion-summary]:py-2.5 [&_.stat-accordion-summary]:select-none " +
+  "[&_.stat-accordion-summary::-webkit-details-marker]:hidden [&_.stat-accordion-summary::marker]:content-none " +
+  "[&_.stat-accordion-title]:flex-1 [&_.stat-accordion-title]:text-[14.5px] [&_.stat-accordion-title]:font-semibold [&_.stat-accordion-title]:text-ink " +
+  "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-ink/8 [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[12.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-ink " +
+  "[&_.stat-accordion-summary]:after:ml-1 [&_.stat-accordion-summary]:after:flex [&_.stat-accordion-summary]:after:size-5 [&_.stat-accordion-summary]:after:shrink-0 [&_.stat-accordion-summary]:after:items-center [&_.stat-accordion-summary]:after:justify-center [&_.stat-accordion-summary]:after:text-[15px] [&_.stat-accordion-summary]:after:leading-none [&_.stat-accordion-summary]:after:text-ink-faint [&_.stat-accordion-summary]:after:content-['+'] " +
+  "[&_.stat-accordion[open]_.stat-accordion-summary]:after:content-['−'] " +
+  "[&_.stat-accordion-body]:border-t [&_.stat-accordion-body]:border-border [&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
+  "[&_.stat-accordion-description]:mb-3 [&_.stat-accordion-description]:text-[13.5px] [&_.stat-accordion-description]:text-ink-muted " +
+  "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-4 [&_.stat-accordion-list]:gap-y-1.5 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +
+  "[&_.stat-accordion-item]:flex [&_.stat-accordion-item]:items-center [&_.stat-accordion-item]:gap-2 [&_.stat-accordion-item]:rounded-md [&_.stat-accordion-item]:py-0.5 [&_.stat-accordion-item-text]:text-[13.5px] [&_.stat-accordion-item-text]:text-ink " +
+  "[&_.stat-accordion-item-clickable]:-mx-1.5 [&_.stat-accordion-item-clickable]:cursor-pointer [&_.stat-accordion-item-clickable]:px-1.5 [&_.stat-accordion-item-clickable]:transition-colors [&_.stat-accordion-item-clickable]:duration-150 [&_.stat-accordion-item-clickable]:hover:bg-hover-bg " +
+  "[&_.stat-accordion-item-clickable_.stat-accordion-item-text]:hover:underline [&_.stat-accordion-item-clickable_.stat-accordion-item-text]:underline-offset-2 " +
+  "[&_.stat-accordion-dot]:inline-block [&_.stat-accordion-dot]:size-2 [&_.stat-accordion-dot]:shrink-0 [&_.stat-accordion-dot]:rounded-full " +
+  "[&_.stat-accordion-legend]:mt-3 [&_.stat-accordion-legend]:flex [&_.stat-accordion-legend]:flex-col [&_.stat-accordion-legend]:gap-1.5 [&_.stat-accordion-legend]:border-t [&_.stat-accordion-legend]:border-border [&_.stat-accordion-legend]:pt-3 " +
+  "[&_.stat-accordion-legend-item]:flex [&_.stat-accordion-legend-item]:items-center [&_.stat-accordion-legend-item]:gap-2 [&_.stat-accordion-legend-item]:text-[12.5px] [&_.stat-accordion-legend-item]:text-ink-faint";

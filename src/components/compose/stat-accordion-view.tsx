@@ -8,7 +8,7 @@ import type { StatAccordionItem, StatAccordionLegendItem } from "./post-extensio
 import { STAT_ACCORDION_DEFAULT_COLOR } from "./post-extensions";
 import { RegionGlobeModal, type RegionGlobeTarget } from "./RegionGlobeModal";
 
-// NodeView cua "Accordion thống kê" (bien the khac cua Accordion thuong -
+// NodeView cua "Accordion Geographical" (bien the khac cua Accordion thuong -
 // yeu cau nguoi dung: "1 biến thể khác của accordion, nhưng có số lượng, có
 // button + - để collapse, bên trong nó có thể có description hoặc không tùy,
 // bên dưới là list dạng dot, có thể tùy chỉnh màu sắc của dot, và dưới cuối

@@ -217,7 +217,7 @@ export function PostEditorToolbar({
       .run();
   };
 
-  // Chen "Accordion thống kê" - bien the co so luong/dot mau/chu thich (xem
+  // Chen "Accordion Geographical" - bien the co so luong/dot mau/chu thich (xem
   // StatAccordion trong post-extensions.ts). La atom nen chi can insertContent
   // 1 lan voi attrs mac dinh, khong can content con nhu Accordion thuong.
   const insertStatAccordion = () => {
@@ -303,7 +303,7 @@ export function PostEditorToolbar({
       <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
       <Btn label="TOC dạng box (theo H2)" Icon={LayoutGrid} onClick={insertQuestionPicker} />
       <Btn label="Accordion (bấm để mở/đóng)" Icon={ListCollapse} onClick={insertAccordion} />
-      <Btn label="Accordion thống kê (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
+      <Btn label="Accordion Geographical (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />

@@ -617,7 +617,7 @@ function statAccordionItemAttrs(item: StatAccordionItem): Record<string, string>
   };
 }
 
-// "Accordion thống kê" - bien the KHAC voi Accordion thuong o tren (yeu cau
+// "Accordion Geographical" - bien the KHAC voi Accordion thuong o tren (yeu cau
 // nguoi dung sau khi xem mockup AWS Global Infrastructure: "cũng là 1 biến
 // thể khác của accordion, nhưng có số lượng, có button + - để collapse, bên
 // trong nó có thể có description hoặc không tùy, bên dưới là list dạng dot,
