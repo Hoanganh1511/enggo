@@ -599,9 +599,23 @@ export const Accordion = Node.create({
 export type StatAccordionItem = { text: string; color: string; lat?: number; lng?: number };
 export type StatAccordionLegendItem = { color: string; label: string };
 
-// Mau mac dinh cho 1 dot moi tao (chua tuy chinh) - cam AWS, khop tinh than
-// mockup nguoi dung gui (khoi "Geographic Regions"/"Edge Locations").
-export const STAT_ACCORDION_DEFAULT_COLOR = "#f97316";
+// Mau mac dinh cho 1 dot moi tao (chua tuy chinh) - DEN (yeu cau nguoi dung:
+// "Để chấm màu mặc định là Đen").
+export const STAT_ACCORDION_DEFAULT_COLOR = "#000000";
+
+// Bang mau CO SAN de chon nhanh cho dot - 5 trang thai pho thong cua 1 dang
+// mat hang (yeu cau nguoi dung: "có thể tùy chọn 5 loại màu cho 5 trạng thái
+// phổ thông của 1 dạng mặt hàng") - thay the han input mau tu do (khong con
+// ep nguoi soan phai tu phoi mau, dong bo nghia mau xuyen suot cac Accordion
+// Geographical khac nhau trong cung 1 bai/series). Dung CHUNG cho ca dot cua
+// item LAN legend (StatAccordionView.tsx).
+export const STAT_ACCORDION_STATUS_COLORS: { value: string; label: string }[] = [
+  { value: "#000000", label: "Bình thường" },
+  { value: "#22c55e", label: "Đang hoạt động" },
+  { value: "#f59e0b", label: "Sắp ra mắt" },
+  { value: "#94a3b8", label: "Ngừng cung cấp" },
+  { value: "#ef4444", label: "Ngừng hoạt động" },
+];
 
 // Attrs dung chung cho 1 dong item (renderHTML LAN markdown serialize duoi -
 // chi item nao co CA lat/lng moi gan them "data-lat"/"data-lng" + class rieng

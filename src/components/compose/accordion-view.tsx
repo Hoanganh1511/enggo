@@ -4,13 +4,18 @@ import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tipt
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// NodeView cua Accordion - CHI phuc vu luc SOAN (giu noi dung LUON hien de
-// sua duoc du dang o trang thai dong/mo mac dinh nao, khac ban render TINH
-// luc doc that qua <details> thuan tu dong an/hien theo attrs `open` - xem
-// comment Accordion trong post-extensions.ts, cung tinh than "NodeView chi
-// phuc vu preview/tuong tac luc soan" nhu QuestionPickerView/CuratedListView).
-// Bam chevron o day CHI doi GIA TRI MAC DINH luc doc (attrs `open`), KHONG an
-// noi dung luc dang soan.
+// NodeView cua Accordion. [2026-09-16] Bam chevron gio AN/HIEN noi dung
+// NGAY TRONG LUC SOAN (khac ban truoc - giu noi dung LUON hien, chi doi
+// attrs `open` NGAM, khong thay doi gi tren man hinh) - yeu cau nguoi dung:
+// "ấn đóng mở mà không thay đổi vậy? Nó lại chỉ thay đổi bên preview bên
+// phải" (bam nut trong editor nhung KHONG thay gi, phai nhin sang Live
+// preview moi thay hieu ung, gay kho hieu/tuong nut hong). Dung CSS "hidden"
+// (display:none) len TREN <NodeViewContent> thay vi go han no khoi cay -
+// NodeViewContent PHAI luon o lai trong DOM (ProseMirror can no de theo doi
+// vi tri/selection cua content ben trong), chi AN DI bang CSS la an toan,
+// khac voi that su unmount se lam mat theo doi noi dung do. Muon sua noi
+// dung ben trong: bam chevron mo ra truoc (dung tinh than "mo accordion that
+// de sua, dong lai khi xong" - khop voi cach nguoi doc trai nghiem).
 export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
   const open = node.attrs.open !== false;
@@ -42,7 +47,9 @@ export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewP
           <span className="min-w-0 flex-1 text-[14.5px] font-semibold text-ink">{title}</span>
         )}
       </div>
-      <NodeViewContent className="accordion-body border-t border-border px-3.5 py-3" />
+      <div className={cn("border-t border-border", !open && "hidden")}>
+        <NodeViewContent className="accordion-body px-3.5 py-3" />
+      </div>
     </NodeViewWrapper>
   );
 }

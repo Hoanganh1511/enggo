@@ -4,9 +4,64 @@ import { useState } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { Globe as GlobeIcon, Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import type { StatAccordionItem, StatAccordionLegendItem } from "./post-extensions";
-import { STAT_ACCORDION_DEFAULT_COLOR } from "./post-extensions";
+import { STAT_ACCORDION_DEFAULT_COLOR, STAT_ACCORDION_STATUS_COLORS } from "./post-extensions";
 import { RegionGlobeModal, type RegionGlobePoint } from "./RegionGlobeModal";
+
+// Nut chon mau dang CHAM TRON - mo popover 5 mau CO SAN (STAT_ACCORDION_STATUS_COLORS)
+// thay vi input[type=color] tu do - yeu cau nguoi dung: "có thể tùy chọn 5
+// loại màu cho 5 trạng thái phổ thông của 1 dạng mặt hàng" (ep vao 1 bang
+// mau CO NGHIA thay vi rainbow tuy y, dong bo mau xuyen suot cac Accordion
+// Geographical khac nhau). Dung chung cho ca dot cua item LAN legend.
+function ColorStatusPicker({
+  color,
+  onChange,
+  disabled,
+  open,
+  onOpenChange,
+}: {
+  color: string;
+  onChange: (color: string) => void;
+  disabled?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <PopoverRoot open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          title="Chọn màu chấm"
+          className="size-4 shrink-0 cursor-pointer rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface disabled:cursor-not-allowed"
+          style={{ backgroundColor: color || STAT_ACCORDION_DEFAULT_COLOR }}
+        />
+      </PopoverTrigger>
+      <PopoverContent
+        open={open}
+        align="start"
+        sideOffset={6}
+        className="z-50 flex w-40 flex-col gap-0.5 rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+      >
+        {STAT_ACCORDION_STATUS_COLORS.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => {
+              onChange(c.value);
+              onOpenChange(false);
+            }}
+            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          >
+            <span className="size-3 shrink-0 rounded-full ring-1 ring-border" style={{ backgroundColor: c.value }} />
+            {c.label}
+          </button>
+        ))}
+      </PopoverContent>
+    </PopoverRoot>
+  );
+}
 
 // NodeView cua "Accordion Geographical" (bien the khac cua Accordion thuong -
 // yeu cau nguoi dung: "1 biến thể khác của accordion, nhưng có số lượng, có
@@ -31,11 +86,18 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   // lat/lng (khop y "hiển thị tất cả tọa độ" ap dung ca luc test trong
   // editor), `previewFocus` la dong vua bam nut globe.
   const [previewFocus, setPreviewFocus] = useState<RegionGlobePoint | null>(null);
-  // Noi dung LUON hien luc soan (khac ban render TINH tu dong an/hien theo
-  // attr `open` khi doc that) - giong tinh than AccordionView.tsx, de van sua
-  // duoc items/legend/description du dang dat mac dinh dong hay mo. Bam +/-
-  // o day doi THANG attr `open` that (khac gia mockup chi la 1 nut xem
-  // truoc) - vi day chinh la trang thai MAC DINH se ap dung luc doc that.
+  // Chi 1 popover chon mau duoc mo tai 1 thoi diem (du danh sach items/legend
+  // co bao nhieu dong) - luu "kind + index" cua dong dang mo thay vi 1 state
+  // rieng cho tung dong.
+  const [openColorPicker, setOpenColorPicker] = useState<{ kind: "item" | "legend"; index: number } | null>(null);
+  // [2026-09-16] Bam +/- AN/HIEN THAT phan than (description/items/legend)
+  // NGAY trong editor (khac ban truoc - giu LUON hien, chi doi attrs `open`
+  // ngam) - yeu cau nguoi dung: "ấn đóng mở mà không thay đổi vậy? Nó lại chỉ
+  // thay đổi bên preview bên phải" (ban cu bam nut trong editor khong thay
+  // gi, phai nhin Live preview moi thay). An toan de conditional-render han
+  // (khong nhu AccordionView.tsx phai dung CSS "hidden" giu lai trong DOM) vi
+  // day la ATOM node, khong co ProseMirror content that can theo doi ben
+  // trong - muon sua description/items/legend thi bam +/- mo ra truoc.
 
   function updateItem(index: number, patch: Partial<StatAccordionItem>) {
     updateAttributes({ items: items.map((it, i) => (i === index ? { ...it, ...patch } : it)) });
@@ -95,6 +157,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
         </button>
       </div>
 
+      {open && (
       <div className="border-t border-border px-3.5 py-3">
         {canEdit ? (
           <textarea
@@ -113,13 +176,12 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
             const hasCoords = typeof item.lat === "number" && typeof item.lng === "number";
             return (
               <div key={i} className="group flex items-center gap-2">
-                <input
-                  type="color"
-                  value={item.color || STAT_ACCORDION_DEFAULT_COLOR}
-                  onChange={(e) => updateItem(i, { color: e.target.value })}
+                <ColorStatusPicker
+                  color={item.color || STAT_ACCORDION_DEFAULT_COLOR}
+                  onChange={(color) => updateItem(i, { color })}
                   disabled={!canEdit}
-                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:rounded-full [&::-webkit-color-swatch-wrapper]:border-none [&::-webkit-color-swatch-wrapper]:p-0"
-                  title="Màu chấm"
+                  open={openColorPicker?.kind === "item" && openColorPicker.index === i}
+                  onOpenChange={(o) => setOpenColorPicker(o ? { kind: "item", index: i } : null)}
                 />
                 {canEdit ? (
                   <input
@@ -202,13 +264,12 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           <div className={cn("mt-3 flex flex-col gap-1.5", (items.length > 0 || description) && "border-t border-border pt-3")}>
             {legend.map((l, i) => (
               <div key={i} className="group flex items-center gap-2">
-                <input
-                  type="color"
-                  value={l.color || STAT_ACCORDION_DEFAULT_COLOR}
-                  onChange={(e) => updateLegend(i, { color: e.target.value })}
+                <ColorStatusPicker
+                  color={l.color || STAT_ACCORDION_DEFAULT_COLOR}
+                  onChange={(color) => updateLegend(i, { color })}
                   disabled={!canEdit}
-                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:rounded-full [&::-webkit-color-swatch-wrapper]:border-none [&::-webkit-color-swatch-wrapper]:p-0"
-                  title="Màu chấm"
+                  open={openColorPicker?.kind === "legend" && openColorPicker.index === i}
+                  onOpenChange={(o) => setOpenColorPicker(o ? { kind: "legend", index: i } : null)}
                 />
                 {canEdit ? (
                   <input
@@ -245,6 +306,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
           </div>
         )}
       </div>
+      )}
       <RegionGlobeModal
         focus={previewFocus}
         points={items
