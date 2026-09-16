@@ -142,7 +142,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
         {items.length > 0 && (
           <span
             title="Tự tính theo số dòng bên dưới"
-            className="shrink-0 rounded-md bg-surface-muted px-2 py-1 text-[12.5px] font-semibold text-ink"
+            className="shrink-0 rounded-md bg-surface-muted px-2 py-1 text-[10.5px] font-semibold text-black/80"
           >
             {items.length}
           </span>

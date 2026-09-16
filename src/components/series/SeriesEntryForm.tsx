@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Monitor, Tablet, Smartphone } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 import { createContentSeriesEntryAction } from "@/actions/discover/content-series/create-content-series-entry";
 import { updateContentSeriesEntryAction } from "@/actions/discover/content-series/update-content-series-entry";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
@@ -24,6 +26,22 @@ import type {
 const inputClass =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px] outline-none focus:border-primary";
 const labelClass = "mb-1 block text-[13px] font-medium text-ink";
+
+// Tab gia lap device cho Live preview - doi max-width cua khung chua (xem
+// comment chi tiet o cho dung trong JSX ve gioi han: chi la mo phong be
+// rong, khong phai iframe device-emulator that su nen 1 vai class Tailwind
+// "sm:" (phan hoi theo VIEWPORT trinh duyet, khong phai container nay) co
+// the khong doi theo.
+const PREVIEW_DEVICES = [
+  { id: "desktop" as const, label: "Desktop", Icon: Monitor },
+  { id: "tablet" as const, label: "Tablet", Icon: Tablet },
+  { id: "mobile" as const, label: "Mobile", Icon: Smartphone },
+];
+const PREVIEW_DEVICE_WIDTH: Record<(typeof PREVIEW_DEVICES)[number]["id"], number> = {
+  desktop: 9999,
+  tablet: 480,
+  mobile: 360,
+};
 
 function estimateReadTime(markdown: string): number {
   const words = markdown.trim().split(/\s+/).filter(Boolean).length;
@@ -68,6 +86,8 @@ export function SeriesEntryForm({
   const [contentBlocks, setContentBlocks] = useState<EntryContentBlock[]>(
     initial?.contentBlocks ?? [],
   );
+  const [previewDevice, setPreviewDevice] =
+    useState<(typeof PREVIEW_DEVICES)[number]["id"]>("desktop");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -346,15 +366,53 @@ export function SeriesEntryForm({
         </button>
       </form>
 
-      <div className="hidden w-80 shrink-0 lg:block">
-        <p className="mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
-          Live preview
-        </p>
-        <div className="rounded-xl border border-border p-4">
-          <h2 className="text-[18px] font-bold text-ink">{title || "(chưa có tiêu đề)"}</h2>
-          {subtitle && <p className="mt-1 text-[13px] text-ink-faint">{subtitle}</p>}
-          <div className="mt-3">
-            <DocsMarkdown markdown={contentMarkdown || "*chưa có nội dung*"} />
+      {/* [2026-09-16] Rong gap doi (w-80 -> w-160) - yeu cau nguoi dung: "tăng
+          chiều rộng của phần LivePreview này thêm gấp đôi đi. Chứ như này
+          không đúng view". Them tabs gia lap device (Desktop/Tablet/Mobile) -
+          yeu cau "nếu có thể thì thêm hẳn tabs có các tab content là các
+          view device khác nhau". Luu y: day CHI la mo phong chieu RONG (doi
+          max-width khung chua) - cac class Tailwind "sm:" trong app phan hoi
+          theo chieu rong THAT cua CUA SO TRINH DUYET (media query), khong
+          phai theo container nay, nen 1-2 cho dung "sm:" (vd grid StatAccordion)
+          co the KHONG tu doi lai khi chon tab Mobile - van du de xem chu
+          xuong dong/khoang cach/kich thuoc anh thay doi ra sao o be rong hep
+          hon, dung nhu muc dich chinh cua 1 "live preview" nhanh (khac han 1
+          iframe device-emulator that su, ngoai pham vi 1 preview ben canh
+          form). */}
+      <div className="hidden w-160 shrink-0 lg:block">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
+            Live preview
+          </p>
+          <div className="flex gap-0.5 rounded-md bg-surface-muted p-0.5">
+            {PREVIEW_DEVICES.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setPreviewDevice(d.id)}
+                title={d.label}
+                className={cn(
+                  "flex size-6 cursor-pointer items-center justify-center rounded transition-colors duration-150 ease-out",
+                  previewDevice === d.id
+                    ? "bg-surface text-ink shadow-sm"
+                    : "text-ink-faint hover:text-ink-muted",
+                )}
+              >
+                <d.Icon size={13} strokeWidth={2} />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-surface-muted/40 p-4">
+          <div
+            className="mx-auto overflow-hidden rounded-lg border border-border bg-surface p-4 transition-[max-width] duration-200 ease-out"
+            style={{ maxWidth: PREVIEW_DEVICE_WIDTH[previewDevice] }}
+          >
+            <h2 className="text-[18px] font-bold text-ink">{title || "(chưa có tiêu đề)"}</h2>
+            {subtitle && <p className="mt-1 text-[13px] text-ink-faint">{subtitle}</p>}
+            <div className="mt-3">
+              <DocsMarkdown markdown={contentMarkdown || "*chưa có nội dung*"} />
+            </div>
           </div>
         </div>
       </div>

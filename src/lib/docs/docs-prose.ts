@@ -68,7 +68,10 @@ export const DOCS_PROSE_CLASS =
   // min-w-0 - responsive cho tieu de dai canh badge so luong tren man hinh
   // hep (xem comment giai thich chi tiet trong POST_PROSE_CLASS).
   "[&_.stat-accordion-title]:min-w-0 [&_.stat-accordion-title]:flex-1 [&_.stat-accordion-title]:text-[14.5px] [&_.stat-accordion-title]:font-semibold [&_.stat-accordion-title]:text-ink " +
-  "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-ink/8 [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[12.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-ink " +
+  // Nen trang, chu den 80% opacity, size nho hon tieu de - yeu cau nguoi
+  // dung: "Cái số lượng trong accordion này để nền trắng, text đen 80%,
+  // size nhỏ hơn 2px nhé".
+  "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-white [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[10.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-black/80 " +
   "[&_.stat-accordion-summary]:after:ml-1 [&_.stat-accordion-summary]:after:flex [&_.stat-accordion-summary]:after:size-5 [&_.stat-accordion-summary]:after:shrink-0 [&_.stat-accordion-summary]:after:items-center [&_.stat-accordion-summary]:after:justify-center [&_.stat-accordion-summary]:after:text-[15px] [&_.stat-accordion-summary]:after:leading-none [&_.stat-accordion-summary]:after:text-ink-faint [&_.stat-accordion-summary]:after:content-['+'] " +
   "[&_.stat-accordion[open]_.stat-accordion-summary]:after:content-['−'] " +
   "[&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
