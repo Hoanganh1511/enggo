@@ -958,11 +958,25 @@ export const POST_PROSE_CLASS =
   // an di de dung rieng chevron SVG (xoay -90deg khi DONG, khac
   // QuestionPicker xoay 180deg khi MO - huong nguoc lai vi Accordion mac
   // dinh MO con QuestionPicker mac dinh DONG).
-  "[&_div[data-accordion]]:my-4 [&_div[data-accordion]]:overflow-hidden [&_div[data-accordion]]:rounded-xl [&_div[data-accordion]]:border [&_div[data-accordion]]:border-border " +
+  //
+  // [2026-09-16 FIX] Selector goc dung "div[data-accordion]"/
+  // "div[data-stat-accordion]" nhung THE THAT su la <details> (khong phai
+  // <div>) - CSS nay CHUA BAO GIO khop, khien toan bo khung/border/padding
+  // KHONG AP DUNG (chi may class thuan nhu .accordion-summary la con chay) -
+  // bug that su nguoi dung phat hien khi long StatAccordion vao trong
+  // Accordion ("2 loại accordion lồng nhau... không phân biệt được cấp nào").
+  // Doi sang class ".accordion-block"/".stat-accordion" (co san tren chinh
+  // <details>, khong phu thuoc ten the) + THEM 1 lop rieng cho truong hop
+  // LONG NHAU (".accordion-body .accordion-block"/".accordion-body
+  // .stat-accordion") - nen MO hon (bg-surface-muted) + margin nho hon de
+  // TUONG PHAN ro voi khung ngoai, giup phan biet cap do long thay vi ca 2
+  // cap trong y HET nhau.
+  "[&_.accordion-block]:my-4 [&_.accordion-block]:overflow-hidden [&_.accordion-block]:rounded-xl [&_.accordion-block]:border [&_.accordion-block]:border-border [&_.accordion-block]:bg-surface " +
+  "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:bg-surface-muted " +
   "[&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-2 [&_.accordion-summary]:px-3.5 [&_.accordion-summary]:py-2.5 [&_.accordion-summary]:text-[14.5px] [&_.accordion-summary]:font-semibold [&_.accordion-summary]:text-ink [&_.accordion-summary]:select-none " +
   "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
   "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
-  "[&_div[data-accordion]:not([open])_.accordion-summary]:before:-rotate-90 " +
+  "[&_.accordion-block:not([open])_.accordion-summary]:before:-rotate-90 " +
   "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
   // Accordion thong ke (StatAccordion) - cung <details>/<summary> THUAN nhu
   // Accordion o tren, nhung marker "+"/"-" thay vi tam giac (dung y mockup
@@ -970,13 +984,19 @@ export const POST_PROSE_CLASS =
   // de. Danh sach dang GRID 2 cot dam cham mau (giong tinh than
   // SeriesQuestionPickerToc.tsx), gioi han chieu cao + tu cuon khi qua dai
   // (dung mockup co thanh cuon rieng cho phan list).
-  "[&_div[data-stat-accordion]]:my-4 [&_div[data-stat-accordion]]:overflow-hidden [&_div[data-stat-accordion]]:rounded-xl [&_div[data-stat-accordion]]:border [&_div[data-stat-accordion]]:border-border " +
+  "[&_.stat-accordion]:my-4 [&_.stat-accordion]:overflow-hidden [&_.stat-accordion]:rounded-xl [&_.stat-accordion]:border [&_.stat-accordion]:border-border [&_.stat-accordion]:bg-surface " +
+  "[&_.accordion-body_.stat-accordion]:my-3 [&_.accordion-body_.stat-accordion]:rounded-lg [&_.accordion-body_.stat-accordion]:bg-surface-muted " +
   "[&_.stat-accordion-summary]:flex [&_.stat-accordion-summary]:cursor-pointer [&_.stat-accordion-summary]:list-none [&_.stat-accordion-summary]:items-center [&_.stat-accordion-summary]:gap-2.5 [&_.stat-accordion-summary]:px-3.5 [&_.stat-accordion-summary]:py-2.5 [&_.stat-accordion-summary]:select-none " +
   "[&_.stat-accordion-summary::-webkit-details-marker]:hidden [&_.stat-accordion-summary::marker]:content-none " +
   "[&_.stat-accordion-title]:flex-1 [&_.stat-accordion-title]:text-[14.5px] [&_.stat-accordion-title]:font-semibold [&_.stat-accordion-title]:text-ink " +
-  "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-surface-muted [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[12.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-ink " +
+  // bg-ink/8 (khong phai bg-surface-muted co dinh) - badge nam tren NEN CO
+  // THE la bg-surface (cap ngoai) HOAC bg-surface-muted (cap long nhau, xem
+  // ".accordion-body .stat-accordion" o tren), 1 lop toi mo 8% tren CA 2 nen
+  // do deu tao du tuong phan thay vi co dinh 1 mau de bi "chim" khi trung mau
+  // nen.
+  "[&_.stat-accordion-badge]:rounded-md [&_.stat-accordion-badge]:bg-ink/8 [&_.stat-accordion-badge]:px-2 [&_.stat-accordion-badge]:py-1 [&_.stat-accordion-badge]:text-[12.5px] [&_.stat-accordion-badge]:font-semibold [&_.stat-accordion-badge]:text-ink " +
   "[&_.stat-accordion-summary]:after:ml-1 [&_.stat-accordion-summary]:after:flex [&_.stat-accordion-summary]:after:size-5 [&_.stat-accordion-summary]:after:shrink-0 [&_.stat-accordion-summary]:after:items-center [&_.stat-accordion-summary]:after:justify-center [&_.stat-accordion-summary]:after:text-[15px] [&_.stat-accordion-summary]:after:leading-none [&_.stat-accordion-summary]:after:text-ink-faint [&_.stat-accordion-summary]:after:content-['+'] " +
-  "[&_div[data-stat-accordion][open]_.stat-accordion-summary]:after:content-['−'] " +
+  "[&_.stat-accordion[open]_.stat-accordion-summary]:after:content-['−'] " +
   "[&_.stat-accordion-body]:border-t [&_.stat-accordion-body]:border-border [&_.stat-accordion-body]:px-3.5 [&_.stat-accordion-body]:py-3 " +
   "[&_.stat-accordion-description]:mb-3 [&_.stat-accordion-description]:text-[13.5px] [&_.stat-accordion-description]:text-ink-muted " +
   "[&_.stat-accordion-list]:grid [&_.stat-accordion-list]:max-h-64 [&_.stat-accordion-list]:grid-cols-1 [&_.stat-accordion-list]:gap-x-4 [&_.stat-accordion-list]:gap-y-1.5 [&_.stat-accordion-list]:overflow-y-auto sm:[&_.stat-accordion-list]:grid-cols-2 " +

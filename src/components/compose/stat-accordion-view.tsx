@@ -120,7 +120,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                   value={item.color || STAT_ACCORDION_DEFAULT_COLOR}
                   onChange={(e) => updateItem(i, { color: e.target.value })}
                   disabled={!canEdit}
-                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none"
+                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:rounded-full [&::-webkit-color-swatch-wrapper]:border-none [&::-webkit-color-swatch-wrapper]:p-0"
                   title="Màu chấm"
                 />
                 {canEdit ? (
@@ -209,7 +209,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                   value={l.color || STAT_ACCORDION_DEFAULT_COLOR}
                   onChange={(e) => updateLegend(i, { color: e.target.value })}
                   disabled={!canEdit}
-                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none"
+                  className="size-4 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:rounded-full [&::-webkit-color-swatch-wrapper]:border-none [&::-webkit-color-swatch-wrapper]:p-0"
                   title="Màu chấm"
                 />
                 {canEdit ? (
