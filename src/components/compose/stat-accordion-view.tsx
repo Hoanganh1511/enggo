@@ -333,7 +333,17 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
               // nghia cho danh sach kieu "AWS Region" (vd "Geographic
               // Regions"), KHONG bat buoc cho danh sach khac (vd "Edge
               // Locations" - khong phai Region/AZ) nen de trong duoc.
-              <div key={i} className="group rounded-lg border border-border/60 p-2">
+              // focus-within:scale - phong nhe dong dang tuong tac (bam vao 1
+              // o nhap ben trong) len tren cac dong con lai - yeu cau nguoi
+              // dung: "Khi mà đang tương tác con trỏ ở cái nào thì anime
+              // scale nhẹ focus cái đấy lên tí nhé". Dung THUAN CSS
+              // (:focus-within, khong can React state rieng theo doi dong
+              // nao dang focus) - tu dong ap dung cho BAT KY input/button nao
+              // trong dong nhan focus (text/lat/lng/status picker/globe...).
+              <div
+                key={i}
+                className="group relative rounded-lg border border-border/60 bg-surface p-2 transition-transform duration-150 ease-out focus-within:z-10 focus-within:scale-[1.02] focus-within:border-border focus-within:shadow-sm"
+              >
                 <div className="flex items-center gap-2">
                   <ItemStatusPicker
                     status={item.status}
