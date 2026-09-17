@@ -604,7 +604,12 @@ export const Accordion = Node.create({
 // gio la 1 GIA TRI SUY RA tu status (xem STAT_ACCORDION_STATUSES), khong con
 // luu hex tuy y tren tung dong (dung tinh than "5 trạng thái phổ thông"
 // nguoi dung yeu cau truoc do, gio hoa thanh 1 enum ro nghia thay vi hex).
-export type StatAccordionStatus = "normal" | "active" | "comingSoon" | "discontinued" | "unavailable";
+// [2026-09-17] Them "none" - yeu cau nguoi dung: "Cho phép config có chấm
+// tròn màu hoặc không" (mot so danh sach nhu "Edge Locations" khong thuc su
+// can bieu dien trang thai bang mau, chi can 1 danh sach ten thuan). Khac 4
+// trang thai con lai (LUON co mau), "none" nghia la KHONG render dot nao ca
+// (xem statAccordionStatusColor - tra ve null rieng cho truong hop nay).
+export type StatAccordionStatus = "none" | "normal" | "active" | "comingSoon" | "discontinued" | "unavailable";
 
 export type StatAccordionItem = {
   name: string;
@@ -624,7 +629,11 @@ export const STAT_ACCORDION_DEFAULT_COLOR = "#000000";
 // DINH duoc LUU vao item.status, mau (`value`) chi la CACH HIEN THI suy ra
 // tu id do (xem statAccordionStatusColor duoi), khong con la du lieu doc lap
 // tren tung dong nua.
+// "none" dat DAU DANH SACH - 1 lua chon "tat" ro rang, khong lan voi 5 mau
+// that. `value` cua no chi mang tinh trang tri (khong dung de render dot
+// that, xem statAccordionStatusColor tra null truoc khi tra bang nay).
 export const STAT_ACCORDION_STATUSES: { id: StatAccordionStatus; value: string; label: string }[] = [
+  { id: "none", value: "transparent", label: "Không hiện chấm màu" },
   { id: "normal", value: "#000000", label: "Bình thường" },
   { id: "active", value: "#22c55e", label: "Đang hoạt động" },
   { id: "comingSoon", value: "#f59e0b", label: "Sắp ra mắt" },
@@ -632,7 +641,11 @@ export const STAT_ACCORDION_STATUSES: { id: StatAccordionStatus; value: string; 
   { id: "unavailable", value: "#ef4444", label: "Ngừng hoạt động" },
 ];
 
-export function statAccordionStatusColor(status: StatAccordionStatus | undefined): string {
+// Tra ve null khi status="none" (KHONG render dot nao ca) - cac cho goi ham
+// nay (renderHTML/markdown serialize duoi) phai tu kiem tra null truoc khi
+// ve span dot.
+export function statAccordionStatusColor(status: StatAccordionStatus | undefined): string | null {
+  if (status === "none") return null;
   return (
     STAT_ACCORDION_STATUSES.find((s) => s.id === (status ?? "normal"))?.value ?? STAT_ACCORDION_DEFAULT_COLOR
   );
@@ -750,15 +763,17 @@ export const StatAccordion = Node.create({
         [
           "div",
           { class: "stat-accordion-list" },
-          ...items.map((item) => [
-            "div",
-            statAccordionItemAttrs(item),
-            [
-              "span",
-              { class: "stat-accordion-dot", style: `background-color:${statAccordionStatusColor(item.status)}` },
-            ],
-            ["span", { class: "stat-accordion-item-text" }, item.name],
-          ]),
+          ...items.map((item) => {
+            const dotColor = statAccordionStatusColor(item.status);
+            return [
+              "div",
+              statAccordionItemAttrs(item),
+              ...(dotColor
+                ? [["span", { class: "stat-accordion-dot", style: `background-color:${dotColor}` }]]
+                : []),
+              ["span", { class: "stat-accordion-item-text" }, item.name],
+            ];
+          }),
         ],
         ...(legend.length
           ? [
@@ -817,10 +832,10 @@ export const StatAccordion = Node.create({
               .join(" ");
           };
           const itemsHtml = items
-            .map(
-              (item) =>
-                `<div ${itemAttrsHtml(item)}>${dot(statAccordionStatusColor(item.status))}<span class="stat-accordion-item-text">${escapeHtml(item.name)}</span></div>`,
-            )
+            .map((item) => {
+              const dotColor = statAccordionStatusColor(item.status);
+              return `<div ${itemAttrsHtml(item)}>${dotColor ? dot(dotColor) : ""}<span class="stat-accordion-item-text">${escapeHtml(item.name)}</span></div>`;
+            })
             .join("");
           const legendHtml = legend.length
             ? `<div class="stat-accordion-legend">${legend

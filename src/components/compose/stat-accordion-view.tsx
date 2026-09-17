@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { Globe as GlobeIcon, Minus, Plus, X } from "lucide-react";
+import { Globe as GlobeIcon, Grip, Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import type { StatAccordionItem, StatAccordionLegendItem, StatAccordionStatus } from "./post-extensions";
@@ -80,15 +80,22 @@ function ItemStatusPicker({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const dotColor = statAccordionStatusColor(status);
   return (
     <PopoverRoot open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <button
           type="button"
           disabled={disabled}
-          title="Chọn trạng thái"
-          className="size-4 shrink-0 cursor-pointer rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface disabled:cursor-not-allowed"
-          style={{ backgroundColor: statAccordionStatusColor(status) }}
+          title={dotColor ? "Chọn trạng thái" : "Chọn trạng thái (đang: không hiện chấm màu)"}
+          // status="none" - vien net dut (KHONG to mau) de phan biet ro voi
+          // "co mau nhung mau la den" - yeu cau nguoi dung: "Cho phép config
+          // có chấm tròn màu hoặc không".
+          className={cn(
+            "size-4 shrink-0 cursor-pointer rounded-full ring-offset-1 ring-offset-surface disabled:cursor-not-allowed",
+            dotColor ? "ring-1 ring-border" : "border border-dashed border-ink-faint",
+          )}
+          style={dotColor ? { backgroundColor: dotColor } : undefined}
         />
       </PopoverTrigger>
       <PopoverContent
@@ -107,10 +114,71 @@ function ItemStatusPicker({
             }}
             className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
           >
-            <span className="size-3 shrink-0 rounded-full ring-1 ring-border" style={{ backgroundColor: s.value }} />
+            {s.id === "none" ? (
+              <span className="size-3 shrink-0 rounded-full border border-dashed border-ink-faint" />
+            ) : (
+              <span className="size-3 shrink-0 rounded-full ring-1 ring-border" style={{ backgroundColor: s.value }} />
+            )}
             {s.label}
           </button>
         ))}
+      </PopoverContent>
+    </PopoverRoot>
+  );
+}
+
+// Nut menu "9 chấm dạng lưới" (nen trong suot) - yeu cau nguoi dung: "Thêm 1
+// button icon nền trong suốt, chỉ có icon kiểu 9 dots grid, khi click vào sẽ
+// hiện popover 2 options: Duplicate..., Delete...". Thay THANG cho nut "x"
+// go rieng truoc do (Delete gio la 1 trong 2 muc cua popover nay).
+function ItemMenuButton({
+  open,
+  onOpenChange,
+  onDuplicate,
+  onDelete,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <PopoverRoot open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Tuỳ chọn dòng"
+          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md bg-transparent text-ink-faint opacity-0 hover:bg-hover-bg hover:text-ink group-hover:opacity-100"
+        >
+          <Grip size={13} strokeWidth={2} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        open={open}
+        align="end"
+        sideOffset={6}
+        className="z-50 flex w-36 flex-col gap-0.5 rounded-lg border border-border bg-surface p-1 shadow-dropdown"
+      >
+        <button
+          type="button"
+          onClick={() => {
+            onDuplicate();
+            onOpenChange(false);
+          }}
+          className="flex w-full cursor-pointer items-center rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+        >
+          Nhân bản
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onDelete();
+            onOpenChange(false);
+          }}
+          className="flex w-full cursor-pointer items-center rounded-md px-2 py-1.5 text-left text-[12.5px] text-danger transition-colors duration-150 ease-out hover:bg-danger/10"
+        >
+          Xoá
+        </button>
       </PopoverContent>
     </PopoverRoot>
   );
@@ -148,6 +216,8 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   // items/legend co bao nhieu dong) - luu "kind + index" cua dong dang mo
   // thay vi 1 state rieng cho tung dong.
   const [openColorPicker, setOpenColorPicker] = useState<{ kind: "item" | "legend"; index: number } | null>(null);
+  // Popover menu "9 chấm" (Nhân bản/Xoá) - chi 1 dong mo tai 1 thoi diem.
+  const [openItemMenu, setOpenItemMenu] = useState<number | null>(null);
   // [2026-09-16] Bam +/- AN/HIEN THAT phan than (description/items/legend)
   // NGAY trong editor (khac ban truoc - giu LUON hien, chi doi attrs `open`
   // ngam) - yeu cau nguoi dung: "ấn đóng mở mà không thay đổi vậy? Nó lại chỉ
@@ -165,6 +235,14 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   }
   function removeItem(index: number) {
     updateAttributes({ items: items.filter((_, i) => i !== index) });
+  }
+  // Nhan ban - chen 1 BAN SAO cua dong `index` NGAY PHIA DUOI no (khong phai
+  // cuoi danh sach) - yeu cau nguoi dung: "Duplicate (tạo bản sao của config
+  // này ngay phía dưới nó)".
+  function duplicateItem(index: number) {
+    const next = [...items];
+    next.splice(index + 1, 0, { ...items[index] });
+    updateAttributes({ items: next });
   }
   // lat/lng la 2 O NHAP RIENG (UX quen thuoc) nhung luu chung vao 1
   // `coordinates` (yeu cau nguoi dung: nhom toa do lai thanh 1 khoi) - CHI
@@ -275,14 +353,12 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
                     <span className="min-w-0 flex-1 text-[13.5px] text-ink">{item.name}</span>
                   )}
                   {canEdit && (
-                    <button
-                      type="button"
-                      onClick={() => removeItem(i)}
-                      aria-label="Bỏ dòng"
-                      className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-ink-faint opacity-0 hover:bg-hover-bg hover:text-ink group-hover:opacity-100"
-                    >
-                      <X size={12} strokeWidth={2} />
-                    </button>
+                    <ItemMenuButton
+                      open={openItemMenu === i}
+                      onOpenChange={(o) => setOpenItemMenu(o ? i : null)}
+                      onDuplicate={() => duplicateItem(i)}
+                      onDelete={() => removeItem(i)}
+                    />
                   )}
                 </div>
                 {canEdit && (
