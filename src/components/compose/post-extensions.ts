@@ -1142,8 +1142,13 @@ export const POST_PROSE_CLASS =
   // RegionGlobeModal.tsx/EntryContentWithGlobe.tsx) - the trang co san rieng
   // (xem .stat-accordion-item o tren) nen KHONG con can meo -mx/px rieng cho
   // hover nua, chi doi sac nen nhe + gach chan ten.
-  "[&_.stat-accordion-item-clickable]:cursor-pointer [&_.stat-accordion-item-clickable]:transition-colors [&_.stat-accordion-item-clickable]:duration-150 [&_.stat-accordion-item-clickable]:hover:bg-surface-muted " +
-  "[&_.stat-accordion-item-clickable_.stat-accordion-item-text]:hover:underline [&_.stat-accordion-item-clickable_.stat-accordion-item-text]:underline-offset-2 " +
+  // [2026-09-17] Doi hieu ung hover - yeu cau nguoi dung: "Đổi hiệu ứng hover
+  // đi nhé" (gach chan + nen xam truoc do). outline-none phong ho ca truong
+  // hop trinh duyet tu ve vien focus mac dinh (khong chu dich) luc bam. Hover
+  // moi: nen tim (bg-primary/8) + CHINH van ban doi mau primary (khong con
+  // gach chan) - bao hieu "co the bam" bang mau thay vi duong ke.
+  "[&_.stat-accordion-item-clickable]:cursor-pointer [&_.stat-accordion-item-clickable]:outline-none [&_.stat-accordion-item-clickable]:transition-colors [&_.stat-accordion-item-clickable]:duration-150 [&_.stat-accordion-item-clickable]:hover:bg-primary/8 " +
+  "[&_.stat-accordion-item-clickable_.stat-accordion-item-text]:transition-colors [&_.stat-accordion-item-clickable_.stat-accordion-item-text]:duration-150 [&_.stat-accordion-item-clickable:hover_.stat-accordion-item-text]:text-primary " +
   "[&_.stat-accordion-dot]:inline-block [&_.stat-accordion-dot]:size-2 [&_.stat-accordion-dot]:shrink-0 [&_.stat-accordion-dot]:rounded-full " +
   "[&_.stat-accordion-legend]:mt-3 [&_.stat-accordion-legend]:flex [&_.stat-accordion-legend]:flex-col [&_.stat-accordion-legend]:gap-1.5 [&_.stat-accordion-legend]:border-t [&_.stat-accordion-legend]:border-border [&_.stat-accordion-legend]:pt-3 " +
   "[&_.stat-accordion-legend-item]:flex [&_.stat-accordion-legend-item]:items-center [&_.stat-accordion-legend-item]:gap-2 [&_.stat-accordion-legend-item]:text-[12.5px] [&_.stat-accordion-legend-item]:text-ink-faint";
