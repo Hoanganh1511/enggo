@@ -224,7 +224,7 @@ function BotHelpBlock({
     // p-8 (32px 4 huong) - yeu cau nguoi dung: "padding của cả block đấy
     // cho thành 32px 4 hướng hết nhé".
     <div className="font-content flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-8">
-      <div className="flex min-w-0 items-center">
+      <div className="flex min-w-0 items-center gap-2.5">
         {/* Anh chibi rieng nguoi dung tu them (public/assets/images/), thay
             the icon Bot mac dinh - yeu cau nguoi dung: "dùng thay vào cho
             chỗ ảnh logo bên cạnh cụm thông tin 'Not sure where to start'

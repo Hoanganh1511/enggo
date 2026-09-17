@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Monitor, Tablet, Smartphone } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
+import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes-guard";
 import { createContentSeriesEntryAction } from "@/actions/discover/content-series/create-content-series-entry";
 import { updateContentSeriesEntryAction } from "@/actions/discover/content-series/update-content-series-entry";
 import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
@@ -16,6 +17,7 @@ import { EntryContentBlocksEditor } from "@/components/series/EntryContentBlocks
 import { DictionarySectionsEditor } from "@/components/series/DictionarySectionsEditor";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { LayoutSpinnerOverlay } from "@/components/ui/layout-spinner";
+import { UnsavedChangesModal } from "@/components/ui/unsaved-changes-modal";
 import type {
   ContentSeriesCategory,
   ContentSeriesEntryDetail,
@@ -95,6 +97,43 @@ export function SeriesEntryForm({
   const [previewDevice, setPreviewDevice] =
     useState<(typeof PREVIEW_DEVICES)[number]["id"]>("desktop");
 
+  // Bao ve du lieu chua luu - yeu cau nguoi dung: "Các trang cần thêm tính
+  // năng bảo vệ dữ liệu khi có bất kỳ hành động nào rời khỏi trang hiện tại
+  // nếu có thay đổi trong nội dung. Cần bật modal để confirm trước khi
+  // quyết định thoát". `isDirty` bat len khi BAT KY state nao o tren doi
+  // (mountedRef bo qua LAN CHAY DAU do useEffect luon chay 1 lan luc mount,
+  // khong tinh la "thay doi") - don gian hon nhieu so voi so sanh sau tung
+  // truong voi `initial`, du co the "duong" (vd go roi xoa lai y het cu van
+  // tinh la dirty) - chap nhan duoc cho 1 tinh nang canh bao, uu tien AN
+  // TOAN (tha canh bao thua con hon bo sot mat that noi dung that).
+  const [isDirty, setIsDirty] = useState(false);
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    setIsDirty(true);
+  }, [
+    categoryId,
+    title,
+    navTitle,
+    slug,
+    icon,
+    subtitle,
+    source,
+    contentMarkdown,
+    hasFaq,
+    faq,
+    installOverride,
+    installTabs,
+    readTimeOverride,
+    contentBlocks,
+    hasDictionary,
+    dictionarySections,
+  ]);
+  const { pendingHref, confirmLeave, cancelLeave } = useUnsavedChangesGuard(isDirty);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     // Chan double-submit bang GUARD o day thay vi thuoc tinh HTML
@@ -140,10 +179,12 @@ export function SeriesEntryForm({
         // tu tinh lai) ma KHONG doi URL.
         await updateContentSeriesEntryAction(seriesSlug, initial.id, payload);
         toast.success("Đã lưu Entry");
+        setIsDirty(false);
         router.refresh();
       } else {
         await createContentSeriesEntryAction(seriesSlug, payload);
         toast.success("Đã tạo Entry");
+        setIsDirty(false);
         router.push(`/series/${seriesSlug}/manage`);
       }
     } catch (err) {
@@ -445,6 +486,7 @@ export function SeriesEntryForm({
           </div>
         </div>
       </div>
+      <UnsavedChangesModal open={pendingHref !== null} onConfirm={confirmLeave} onCancel={cancelLeave} />
     </div>
   );
 }

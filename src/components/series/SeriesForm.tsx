@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { ImagePlus, UserRound, X } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
+import { useUnsavedChangesGuard } from "@/lib/use-unsaved-changes-guard";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
 import { createContentSeriesAction } from "@/actions/discover/content-series/create-content-series";
@@ -15,6 +16,7 @@ import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterFiel
 import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
 import { PostLinkAutocomplete } from "@/components/series/PostLinkAutocomplete";
 import { SeriesLivePreview } from "@/components/series/SeriesLivePreview";
+import { UnsavedChangesModal } from "@/components/ui/unsaved-changes-modal";
 import type {
   ContentSeriesOverview,
   ContentSeriesStat,
@@ -102,6 +104,34 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
     );
   }
 
+  // Bao ve du lieu chua luu - xem comment chi tiet trong SeriesEntryForm.tsx
+  // (cung 1 co che: "isDirty" bat len khi bat ky state nao doi sau lan mount
+  // dau tien).
+  const [isDirty, setIsDirty] = useState(false);
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    setIsDirty(true);
+  }, [
+    title,
+    slug,
+    description,
+    authorName,
+    authorAvatarUrl,
+    coverImageUrl,
+    emailCourseEnabled,
+    emailCourseTitle,
+    emailCourseDescription,
+    stats,
+    installTabs,
+    externalLinks,
+    shareChannels,
+  ]);
+  const { pendingHref, confirmLeave, cancelLeave } = useUnsavedChangesGuard(isDirty);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !description.trim() || !effectiveAuthorName.trim()) {
@@ -131,10 +161,12 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
       if (isEdit && initial) {
         await updateContentSeriesAction(initial.slug, payload);
         toast.success("Đã lưu thông tin Series");
+        setIsDirty(false);
         router.refresh();
       } else {
         const created = await createContentSeriesAction(payload);
         toast.success("Đã tạo Series");
+        setIsDirty(false);
         router.push(`/series/${created.slug}/manage`);
       }
     } catch (err) {
@@ -420,6 +452,7 @@ export function SeriesForm({ initial }: { initial?: ContentSeriesOverview }) {
           emailCourseDescription={emailCourseDescription}
         />
       </div>
+      <UnsavedChangesModal open={pendingHref !== null} onConfirm={confirmLeave} onCancel={cancelLeave} />
     </div>
   );
 }
