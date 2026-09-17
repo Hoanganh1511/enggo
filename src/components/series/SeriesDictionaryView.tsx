@@ -1,130 +1,42 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Search, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-type DictionaryTerm = { term: string; description: string };
-type DictionarySection = { id: string; title: string; terms: DictionaryTerm[] };
+import type { DictionarySection, DictionaryTerm } from "@/lib/api/content-series";
 
 // [2026-09-17] "Guides > Dictionary" - yeu cau nguoi dung: "bổ sung thêm 1
 // cate Guides ngay tiếp theo dưới Explore, trong này sẽ có 1 page mặc định
 // là: Dictionary. Tạm thời cứ thiết kế trước layout như trong ảnh cho nó."
-// Day CHI la khung LAYOUT (du lieu mau tinh, chua noi voi contentMarkdown
-// that cua Entry) - dung tinh than "thiết kế trước layout" nguoi dung yeu
-// cau, danh gia noi dung/nguon du lieu that cho ban sau. Sections KHAC "The
-// Model" chua co noi dung that (chi hien placeholder khi bam vao) - so
-// luong hien trong SECTIONS la GIA TRI MUC TIEU tham khao tu mockup, khong
-// phai items.length (khac quy uoc "tu tinh" da ap dung cho Accordion
-// Geographical, vi cac section nay CHUA co du lieu that de tinh).
-const SECTIONS: DictionarySection[] = [
-  {
-    id: "the-model",
-    title: "The Model",
-    terms: [
-      {
-        term: "AI",
-        description:
-          "A moving label, not a technology. Points at whatever computers can newly, impressively do — right now, large language models.",
-      },
-      {
-        term: "Model",
-        description:
-          "The parameters. Stateless — does next-token prediction and nothing else. Cannot do anything agentic on its own.",
-      },
-      {
-        term: "Parameters",
-        description:
-          "The numbers inside a model — often billions — tuned during training. Everything the model knows lives in them. Also called weights.",
-      },
-      {
-        term: "Training",
-        description:
-          "The process that sets a model's parameters by exposing it to vast amounts of text and adjusting to improve next-token prediction.",
-      },
-      {
-        term: "Inference",
-        description:
-          "Running a trained model to generate output — what happens on every model provider request. Parameters stay fixed.",
-      },
-      {
-        term: "Effort",
-        description:
-          "A dial for how much reasoning the model does before it answers. More effort spends more output tokens for a better shot at hard problems.",
-      },
-      {
-        term: "Token",
-        description:
-          "The atomic unit a model reads and writes. Roughly word-sized but not exactly. Context window size, cost, and latency all count tokens.",
-      },
-      {
-        term: "Next-token prediction",
-        description:
-          "What the model actually does. Samples one next token from the context, appends it, and runs again. Its only mode of operation.",
-      },
-      {
-        term: "Non-determinism",
-        description:
-          "The same input can produce different output. A property of how models generate text and how providers serve requests.",
-      },
-      {
-        term: "Model provider",
-        description:
-          "Whatever serves a model for inference. Usually remote (Anthropic, OpenAI, Google), but can also be local (Ollama, llama.cpp).",
-      },
-      {
-        term: "Harness",
-        description:
-          "Everything around the model that turns it into an agent: tools, system prompt, context-window management, permissions, hooks.",
-      },
-      {
-        term: "Model provider request",
-        description: "One round-trip from the harness to the model provider. The harness sends context; the provider returns one response.",
-      },
-      {
-        term: "Input tokens",
-        description: "Everything sent to the model provider in a request — system prompt, history, tool results.",
-      },
-      {
-        term: "Output tokens",
-        description: "Everything the model generates in a response — the reply text, plus any tool calls.",
-      },
-    ],
-  },
-  { id: "sessions", title: "Sessions, Context Windows & Compaction", terms: [] },
-  { id: "tools-environment", title: "Tools & Environment", terms: [] },
-  { id: "failure-modes", title: "Failure Modes", terms: [] },
-  { id: "handoffs", title: "Handoffs", terms: [] },
-  { id: "memory-steering", title: "Memory and Steering", terms: [] },
-  { id: "patterns-of-work", title: "Patterns of Work", terms: [] },
-];
-
-// So luong hien canh moi section trong SECTIONS - gia tri MUC TIEU tu
-// mockup (xem comment dau file), rieng "the-model" moi la con so THAT
-// (SECTIONS[0].terms.length).
-const SECTION_TARGET_COUNT: Record<string, number> = {
-  "the-model": SECTIONS[0].terms.length,
-  sessions: 8,
-  "tools-environment": 10,
-  "failure-modes": 9,
-  handoffs: 9,
-  "memory-steering": 6,
-  "patterns-of-work": 11,
-};
-
-export function SeriesDictionaryView() {
+// roi sau do "Làm đi" (chuyen tu du lieu tinh HARDCODE trong component nay
+// sang DB-backed - `sections` gio la 1 PROP that su, doc tu
+// entry.dictionarySections, sua duoc qua DictionarySectionsEditor.tsx trong
+// form soan Entry - xem SeriesEntryForm.tsx). So luong canh moi section gio
+// la items.length THAT (khong con "gia tri muc tieu" tinh nhu ban thiet ke
+// layout truoc).
+export function SeriesDictionaryView({ sections }: { sections: DictionarySection[] }) {
   const [query, setQuery] = useState("");
-  const [activeSectionId, setActiveSectionId] = useState(SECTIONS[0].id);
+  const [activeSectionId, setActiveSectionId] = useState(sections[0]?.id ?? "");
 
-  const activeSection = SECTIONS.find((s) => s.id === activeSectionId) ?? SECTIONS[0];
+  const activeSection = sections.find((s) => s.id === activeSectionId) ?? sections[0];
 
   const filteredTerms = useMemo(() => {
+    if (!activeSection) return [];
     const q = query.trim().toLowerCase();
     if (!q) return activeSection.terms;
     return activeSection.terms.filter(
       (t) => t.term.toLowerCase().includes(q) || t.description.toLowerCase().includes(q),
     );
   }, [activeSection, query]);
+
+  if (!activeSection) {
+    return (
+      <div className="font-content flex min-h-[calc(100vh-var(--header-height))] items-center justify-center">
+        <p className="text-[13px] text-ink-faint">Chưa có nội dung nào trong Dictionary.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="font-content -mx-6 -my-6 flex min-h-[calc(100vh-var(--header-height))] lg:-mx-10">
@@ -148,7 +60,7 @@ export function SeriesDictionaryView() {
             Sections
           </p>
           <nav className="flex flex-col gap-0.5">
-            {SECTIONS.map((section) => (
+            {sections.map((section) => (
               <button
                 key={section.id}
                 type="button"
@@ -168,7 +80,7 @@ export function SeriesDictionaryView() {
                   {section.title}
                 </span>
                 <span className="shrink-0 font-mono text-[11px] text-ink-faint">
-                  {SECTION_TARGET_COUNT[section.id]}
+                  {section.terms.length}
                 </span>
               </button>
             ))}
@@ -176,8 +88,8 @@ export function SeriesDictionaryView() {
         </div>
       </aside>
 
-      {/* Luoi thuat ngu 2 cot - moi the: tieu de + mui ten (trang tri, chua
-          gan link that vi day chi la khung layout) + mo ta. */}
+      {/* Luoi thuat ngu 2 cot - moi the: tieu de + mui ten (LINK THAT neu co
+          href, xem DictionaryTermCard) + mo ta. */}
       <div className="min-w-0 flex-1 p-6 lg:p-8">
         {filteredTerms.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 py-20 text-center">
@@ -193,17 +105,59 @@ export function SeriesDictionaryView() {
         ) : (
           <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
             {filteredTerms.map((item) => (
-              <div key={item.term}>
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[15px] font-bold text-ink">{item.term}</p>
-                  <ArrowUpRight size={15} strokeWidth={2} className="mt-0.5 shrink-0 text-ink-faint" aria-hidden="true" />
-                </div>
-                <p className="mt-1 text-[13.5px] text-ink-muted">{item.description}</p>
-              </div>
+              <DictionaryTermCard key={item.term} item={item} />
             ))}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+// Co `href` -> mui ten tro thanh LINK THAT (thuong toi 1 Series Entry day du
+// giai thich rieng cho khai niem do - yeu cau nguoi dung: "ví dụ tôi có
+// những từ cần bài viết giải thích chi tiết thì có thể viết những bài cho
+// concept đấy ở Dictionary được?") + hover doi mau bao hieu bam duoc. Khong
+// co `href` -> giu nguyen the tinh (mui ten chi trang tri).
+function DictionaryTermCard({ item }: { item: DictionaryTerm }) {
+  const body = (
+    <>
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className={cn(
+            "text-[15px] font-bold text-ink",
+            item.href && "group-hover:text-primary",
+          )}
+        >
+          {item.term}
+        </p>
+        <ArrowUpRight
+          size={15}
+          strokeWidth={2}
+          className={cn(
+            "mt-0.5 shrink-0 text-ink-faint",
+            item.href && "transition-colors duration-150 ease-out group-hover:text-primary",
+          )}
+          aria-hidden="true"
+        />
+      </div>
+      <p className="mt-1 text-[13.5px] text-ink-muted">{item.description}</p>
+    </>
+  );
+
+  if (!item.href) return <div>{body}</div>;
+
+  const isExternal = /^https?:\/\//.test(item.href);
+  if (isExternal) {
+    return (
+      <a href={item.href} target="_blank" rel="noreferrer" className="group block cursor-pointer">
+        {body}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.href} className="group block cursor-pointer">
+      {body}
+    </Link>
   );
 }

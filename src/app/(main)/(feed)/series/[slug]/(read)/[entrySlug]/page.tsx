@@ -417,20 +417,24 @@ export default async function SeriesEntryPage({
   params: Promise<{ slug: string; entrySlug: string }>;
 }) {
   const { slug, entrySlug } = await params;
-
-  // [2026-09-17] "Guides > Dictionary" - bo cuc HOAN TOAN KHAC (search + danh
-  // sach Sections ben trai + luoi thuat ngu 2 cot, khong phai bai viet
-  // tuan tu) nen re nhanh SOM, bo qua toan bo may Suspense/skeleton/breadcrumb/
-  // TOC cua Entry thuong - yeu cau nguoi dung: "Tạm thời cứ thiết kế trước
-  // layout như trong ảnh cho nó" (SeriesDictionaryView.tsx dang dung du lieu
-  // mau tinh, chua noi voi contentMarkdown that cua Entry nay).
-  if (slug === "xay-dung-ai-agents-cho-doanh-nghiep" && entrySlug === "dictionary") {
-    return <SeriesDictionaryView />;
-  }
-
   const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(
     () => null,
   );
+
+  // [2026-09-17] Layout "Dictionary" (search + sidebar Sections + luoi thuat
+  // ngu 2 cot, KHAC HOAN TOAN bai viet tuan tu thuong) - yeu cau nguoi dung:
+  // "bổ sung thêm 1 cate Guides... trong này sẽ có 1 page mặc định là:
+  // Dictionary" roi "Làm đi" (DB-backed - xem entry.dictionarySections,
+  // SeriesEntryForm.tsx). Quyet dinh DUA TREN DU LIEU (dictionarySections co
+  // noi dung hay khong), KHONG con hardcode theo slug entry/series cu the
+  // nhu ban thiet ke layout ban dau - bat ky Entry nao (o bat ky Series nao)
+  // co du lieu nay deu tu dong render layout Dictionary. Phai AWAIT som (1
+  // lan, thay vi truyen Promise chua await xuong nhu cac nhanh Suspense
+  // khac ben duoi) vi CAN biet ngay du lieu that de quyet dinh nhanh nao.
+  const data = await dataPromise;
+  if (data?.entry.dictionarySections?.length) {
+    return <SeriesDictionaryView sections={data.entry.dictionarySections} />;
+  }
 
   return (
     <div className="pb-20">

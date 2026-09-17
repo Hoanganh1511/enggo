@@ -13,6 +13,7 @@ import { SeriesEntryEditor } from "@/components/series/SeriesEntryEditor";
 import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { EntryContentBlocksEditor } from "@/components/series/EntryContentBlocksEditor";
+import { DictionarySectionsEditor } from "@/components/series/DictionarySectionsEditor";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { LayoutSpinnerOverlay } from "@/components/ui/layout-spinner";
 import type {
@@ -20,6 +21,7 @@ import type {
   ContentSeriesEntryDetail,
   ContentSeriesFaqItem,
   ContentSeriesInstallTab,
+  DictionarySection,
   EntryContentBlock,
 } from "@/lib/api/content-series";
 
@@ -86,6 +88,10 @@ export function SeriesEntryForm({
   const [contentBlocks, setContentBlocks] = useState<EntryContentBlock[]>(
     initial?.contentBlocks ?? [],
   );
+  const [hasDictionary, setHasDictionary] = useState(Boolean(initial?.dictionarySections?.length));
+  const [dictionarySections, setDictionarySections] = useState<DictionarySection[]>(
+    initial?.dictionarySections ?? [],
+  );
   const [previewDevice, setPreviewDevice] =
     useState<(typeof PREVIEW_DEVICES)[number]["id"]>("desktop");
 
@@ -122,6 +128,7 @@ export function SeriesEntryForm({
         faq: hasFaq ? faq : [],
         installTabs: installOverride ? installTabs : undefined,
         contentBlocks,
+        dictionarySections: hasDictionary ? dictionarySections : [],
         readTimeMinutes: readTimeOverride,
       };
       if (isEdit && initial) {
@@ -296,6 +303,28 @@ export function SeriesEntryForm({
                   </div>
                 )}
               />
+            </div>
+          )}
+        </div>
+
+        {/* [2026-09-17] Layout "Dictionary" - yeu cau nguoi dung: "bổ sung
+            thêm 1 cate Guides... trong này sẽ có 1 page mặc định là:
+            Dictionary" roi "Làm đi" (DB-backed, sua duoc o day thay vi hardcode
+            trong component). Bat cong tac nay -> Entry render bang
+            SeriesDictionaryView (search + sidebar Sections + luoi thuat ngu)
+            THAY VI bai viet Markdown binh thuong, xem [entrySlug]/page.tsx. */}
+        <div className="rounded-xl border border-border p-4">
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+            <input
+              type="checkbox"
+              checked={hasDictionary}
+              onChange={(e) => setHasDictionary(e.target.checked)}
+            />
+            Dùng layout Dictionary cho Entry này (thay thế nội dung Markdown)
+          </label>
+          {hasDictionary && (
+            <div className="mt-3">
+              <DictionarySectionsEditor sections={dictionarySections} onChange={setDictionarySections} />
             </div>
           )}
         </div>

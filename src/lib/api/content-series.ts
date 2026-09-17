@@ -229,6 +229,16 @@ export type ContentSeriesOverview = {
   updatedAt: string;
 } & ContentSeriesCardFields;
 
+// [2026-09-17] Layout "Dictionary" (search + sidebar Sections + luoi thuat
+// ngu 2 cot) - yeu cau nguoi dung: "bổ sung thêm 1 cate Guides... trong này
+// sẽ có 1 page mặc định là: Dictionary" roi "Làm đi" (chuyen tu du lieu tinh
+// hardcode trong SeriesDictionaryView.tsx sang DB-backed, sua duoc qua admin
+// UI). `href` KHONG bat buoc tren tung term - CHI thuat ngu can 1 bai giai
+// thich rieng (1 Series Entry khac) moi gan, xem
+// SeriesDictionaryView.tsx/DictionarySectionsEditor.tsx.
+export type DictionaryTerm = { term: string; description: string; href?: string };
+export type DictionarySection = { id: string; title: string; terms: DictionaryTerm[] };
+
 export type ContentSeriesEntryDetail = {
   id: string;
   seriesId: string;
@@ -244,6 +254,7 @@ export type ContentSeriesEntryDetail = {
   installTabs: ContentSeriesInstallTab[] | null;
   faq: ContentSeriesFaqItem[] | null;
   contentBlocks: EntryContentBlock[] | null;
+  dictionarySections: DictionarySection[] | null;
   readTimeMinutes: number;
   createdAt: string;
   updatedAt: string;
@@ -417,6 +428,7 @@ export type ContentSeriesEntryInput = {
   installTabs?: ContentSeriesInstallTab[];
   faq?: ContentSeriesFaqItem[];
   contentBlocks?: EntryContentBlock[];
+  dictionarySections?: DictionarySection[];
   readTimeMinutes?: number;
 };
 
