@@ -17,6 +17,7 @@ import { SeriesInstallWidget } from "@/components/series/SeriesInstallWidget";
 import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
 import { SeriesEntryContentBlocks } from "@/components/series/SeriesEntryContentBlocks";
+import { SeriesDictionaryView } from "@/components/series/SeriesDictionaryView";
 import { EntryPageActionsRow } from "@/components/series/EntryPageActionsRow";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
@@ -416,6 +417,17 @@ export default async function SeriesEntryPage({
   params: Promise<{ slug: string; entrySlug: string }>;
 }) {
   const { slug, entrySlug } = await params;
+
+  // [2026-09-17] "Guides > Dictionary" - bo cuc HOAN TOAN KHAC (search + danh
+  // sach Sections ben trai + luoi thuat ngu 2 cot, khong phai bai viet
+  // tuan tu) nen re nhanh SOM, bo qua toan bo may Suspense/skeleton/breadcrumb/
+  // TOC cua Entry thuong - yeu cau nguoi dung: "Tạm thời cứ thiết kế trước
+  // layout như trong ảnh cho nó" (SeriesDictionaryView.tsx dang dung du lieu
+  // mau tinh, chua noi voi contentMarkdown that cua Entry nay).
+  if (slug === "xay-dung-ai-agents-cho-doanh-nghiep" && entrySlug === "dictionary") {
+    return <SeriesDictionaryView />;
+  }
+
   const dataPromise = getContentSeriesEntryAction(slug, entrySlug).catch(
     () => null,
   );
