@@ -77,7 +77,20 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
   const currentBg = (editor.getAttributes("textStyle").backgroundColor as string | undefined) ?? null;
 
   return (
-    <BubbleMenu editor={editor} options={{ placement: "top" }}>
+    // appendTo: document.body - BUG THAT SU nguoi dung bao "sao không thấy":
+    // mac dinh (khong khai bao gi) BubbleMenuPlugin gan phan tu noi cua no
+    // vao NGAY view.dom.parentElement (trong long chinh editor), roi dinh
+    // vi bang position:absolute (floating-ui strategy="absolute" mac dinh) -
+    // toa do do TINH THEO to tien GAN NHAT co position khac static. Trang
+    // soan Entry (SeriesEntryForm.tsx) co 1 wrapper ngoai cung dat
+    // "position: relative" (LayoutSpinnerOverlay can no) NAM PHIA TREN
+    // editor trong cay DOM - bubble menu vo tinh bam toa do theo GOC cua
+    // wrapper do (thuong nam tren cao, ngoai vung nhin thuc te cua doan van
+    // ban dang chon) thay vi theo vi tri THAT cua vung chon, nen luon bi
+    // day ra ngoai man hinh/khong the thay duoc. Chi dinh appendTo THANG ve
+    // document.body de thoat het moi anh huong tu to tien, bat ke trang nao
+    // nhung editor nay duoc dat vao trong tuong lai.
+    <BubbleMenu editor={editor} appendTo={() => document.body} options={{ placement: "top" }}>
       <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2 shadow-dropdown">
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] font-medium text-ink-faint">Chữ</span>
