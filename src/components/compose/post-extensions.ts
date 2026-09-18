@@ -995,38 +995,62 @@ const TrailingNode = Extension.create({
     return [
       new Plugin({
         key: pluginKey,
-        appendTransaction: (_transactions, _oldState, newState) => {
-          const { doc, schema } = newState;
-          const paragraphType = schema.nodes.paragraph;
-          if (!paragraphType) return null;
+        appendTransaction: (transactions, _oldState, newState) => {
+          // [2026-09-18] 2 lop phong ho THEM - bug that su nguoi dung bao:
+          // "Vưa đặt con trỏ vào trong vùng soạn, thì lỗi trang như này
+          // luôn" (crash toan trang, dung luc bam CHON VI TRI con tro - tuc
+          // 1 transaction CHI DOI SELECTION, KHONG DOI NOI DUNG). appendTransaction
+          // truoc do chay LAI logic quet+chen NGAY CA khi khong co gi thay
+          // doi ve NOI DUNG (chi doi con tro) - vua thua (quet lai toan bo
+          // van ban MOI LAN bam chuot), vua la nghi pham chinh cho crash nay
+          // (dung THOI DIEM voi transaction dau tien nguoi dung tao ra sau
+          // khi mo 1 Entry dai/nhieu Accordion long nhau - lan dau tien logic
+          // chen paragraph THAT SU chay).
+          // 1) Bo qua HOAN TOAN neu KHONG co transaction nao thay doi NOI
+          //    DUNG (tr.docChanged) - chi con tro doi thi khong lien quan gi
+          //    toi tinh nang nay ca.
+          // 2) Boc TOAN BO trong try/catch - 1 tinh nang "tu sua nho" nhu
+          //    the nay TUYET DOI khong duoc phep lam SAP CA TRANG neu co 1
+          //    truong hop bien nao chua luong toi (vd RangeError tu ProseMirror) -
+          //    tha bo qua 1 lan sua khong hoan hao con hon lam vo ca editor.
+          if (!transactions.some((tr) => tr.docChanged)) return null;
 
-          const insertPositions: number[] = [];
+          try {
+            const { doc, schema } = newState;
+            const paragraphType = schema.nodes.paragraph;
+            if (!paragraphType) return null;
 
-          if (doc.lastChild && doc.lastChild.type.name !== "paragraph") {
-            insertPositions.push(doc.content.size);
-          }
+            const insertPositions: number[] = [];
 
-          doc.descendants((node, pos) => {
-            if (node.type.name !== "accordion") return;
-            const last = node.lastChild;
-            if (last && last.type.name !== "paragraph") {
-              // pos+node.nodeSize-1 = vi tri NGAY TRUOC dau dong cua chinh
-              // node "accordion" nay - chen 1 paragraph vao do = them lam
-              // PHAN TU CUOI CUNG trong content cua no.
-              insertPositions.push(pos + node.nodeSize - 1);
+            if (doc.lastChild && doc.lastChild.type.name !== "paragraph") {
+              insertPositions.push(doc.content.size);
             }
-          });
 
-          if (insertPositions.length === 0) return null;
+            doc.descendants((node, pos) => {
+              if (node.type.name !== "accordion") return;
+              const last = node.lastChild;
+              if (last && last.type.name !== "paragraph") {
+                // pos+node.nodeSize-1 = vi tri NGAY TRUOC dau dong cua chinh
+                // node "accordion" nay - chen 1 paragraph vao do = them lam
+                // PHAN TU CUOI CUNG trong content cua no.
+                insertPositions.push(pos + node.nodeSize - 1);
+              }
+            });
 
-          // Chen tu VI TRI LON den NHO - tranh lam lech offset cac vi tri
-          // con lai chua xu ly trong CUNG 1 transaction.
-          insertPositions.sort((a, b) => b - a);
-          const tr = newState.tr;
-          for (const pos of insertPositions) {
-            tr.insert(pos, paragraphType.create());
+            if (insertPositions.length === 0) return null;
+
+            // Chen tu VI TRI LON den NHO - tranh lam lech offset cac vi tri
+            // con lai chua xu ly trong CUNG 1 transaction.
+            insertPositions.sort((a, b) => b - a);
+            const tr = newState.tr;
+            for (const pos of insertPositions) {
+              tr.insert(pos, paragraphType.create());
+            }
+            return tr;
+          } catch (err) {
+            console.error("[trailingNode] bo qua 1 lan tu sua do loi:", err);
+            return null;
           }
-          return tr;
         },
       }),
     ];

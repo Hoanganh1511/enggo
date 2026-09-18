@@ -418,11 +418,21 @@ export function SeriesEntryForm({
           )}
         </div>
 
-        {/* aria-disabled (KHONG dung thuoc tinh HTML `disabled`) - nut nay
+        {/* [2026-09-18] Chuyen thanh nut NOI (fixed, luon thay du cuon toi
+            dau) - yeu cau nguoi dung: "giờ tôi muốn nút Lưu này ở đâu đó mà
+            dù đang biên soạn ở đâu, cuộn tới đâu cũng vẫn thấy nó xuất hiện
+            ý". z-50 (CAO HON z-40 cua LayoutSpinnerOverlay o tren) - bug UI
+            nguoi dung bao ("Nút Lưu lỗi UI"): nut CU nam TRONG vung overlay
+            phu luc dang luu (khong co z-index rieng, mac dinh THAP HON lop
+            phu mo/backdrop-blur cua overlay) nen bi CHINH overlay do de
+            mo/nhoe len tren, nhin nhu "vỡ giao diện" thay vi 1 nut binh
+            thuong dang hien chu "Đang lưu...". Dat z-50 rieng de LUON nam
+            TREN overlay, giu nguyen ro net ca luc dang luu.
+            aria-disabled (KHONG dung thuoc tinh HTML `disabled`) - nut nay
             dang GIU FOCUS luc bam submit; disabled that su se lam trinh
             duyet tu dong bo focus khoi phan tu, keo theo cuon trang VE DAU
-            (bug nguoi dung bao: "ngay khi [spinner] bật lên... cuộn lên đầu
-            luôn"). Guard chong double-submit da chuyen sang dau
+            (bug nguoi dung bao truoc do: "ngay khi [spinner] bật lên...
+            cuộn lên đầu luôn"). Guard chong double-submit da chuyen sang dau
             handleSubmit (if (saving) return). */}
         <button
           type="submit"
@@ -430,7 +440,7 @@ export function SeriesEntryForm({
           onClick={(e) => {
             if (saving) e.preventDefault();
           }}
-          className="cursor-pointer self-start rounded-lg bg-ink px-5 py-2.5 text-[14px] font-semibold text-surface transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+          className="fixed right-6 bottom-6 z-50 cursor-pointer rounded-full bg-ink px-6 py-3 text-[14px] font-semibold text-surface shadow-lg transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-70"
         >
           {saving ? "Đang lưu..." : isEdit ? "Lưu Entry" : "Tạo Entry"}
         </button>

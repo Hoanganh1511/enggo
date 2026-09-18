@@ -1,6 +1,7 @@
 "use client";
 
 import { BubbleMenu } from "@tiptap/react/menus";
+import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/react";
 import { cn } from "@/lib/utils";
 
@@ -73,8 +74,18 @@ function ColorSwatchRow({
 // dinh kiem tra `!selection.empty`), dung y "con trỏ giữ bôi tô" nguoi dung
 // mo ta - khong can tu viet dieu kien hien/an.
 export function SelectionColorMenu({ editor }: { editor: Editor }) {
-  const currentColor = (editor.getAttributes("textStyle").color as string | undefined) ?? null;
-  const currentBg = (editor.getAttributes("textStyle").backgroundColor as string | undefined) ?? null;
+  // Boc try/catch - tinh nang phu (mau chu/nen) TUYET DOI khong duoc phep
+  // lam SAP CA TRANG soan (bug that su nguoi dung bao: "Vưa đặt con trỏ vào
+  // trong vùng soạn, thì lỗi trang như này luôn" - dung luc tao 1 selection
+  // MOI, xem them shouldShow duoi ve ly do chinh xac hon).
+  let currentColor: string | null = null;
+  let currentBg: string | null = null;
+  try {
+    currentColor = (editor.getAttributes("textStyle").color as string | undefined) ?? null;
+    currentBg = (editor.getAttributes("textStyle").backgroundColor as string | undefined) ?? null;
+  } catch {
+    // bo qua, giu mac dinh null
+  }
 
   return (
     // appendTo: document.body - BUG THAT SU nguoi dung bao "sao không thấy":
@@ -90,7 +101,24 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
     // day ra ngoai man hinh/khong the thay duoc. Chi dinh appendTo THANG ve
     // document.body de thoat het moi anh huong tu to tien, bat ke trang nao
     // nhung editor nay duoc dat vao trong tuong lai.
-    <BubbleMenu editor={editor} appendTo={() => document.body} options={{ placement: "top" }}>
+    <BubbleMenu
+      editor={editor}
+      appendTo={() => document.body}
+      options={{ placement: "top" }}
+      // shouldShow RIENG - mac dinh cua thu vien chi kiem tra "selection
+      // khong rong", nhung 1 NodeSelection (bam chon NGUYEN 1 khoi atom nhu
+      // Accordion Geographical/Sơ đồ luồng, khong phai bôi đen VĂN BẢN) CUNG
+      // tinh la "khong rong" - to mau chu/nen vo nghia cho ca 1 khoi block
+      // nhu vay, nen loai tru han truong hop nay (an toan hon LAN dung nghia
+      // hon "bôi đen văn bản" nguoi dung mo ta).
+      shouldShow={({ editor: ed, state }: { editor: Editor; state: EditorState }) => {
+        if (!ed.isEditable) return false;
+        const { selection } = state;
+        if (selection.empty) return false;
+        if (selection instanceof NodeSelection) return false;
+        return true;
+      }}
+    >
       <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2 shadow-dropdown">
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] font-medium text-ink-faint">Chữ</span>
