@@ -67,6 +67,30 @@ function ColorSwatchRow({
   );
 }
 
+// [2026-09-18] CA HAI ham duoi day PHAI la reference ON DINH (khai bao NGOAI
+// component, khong phai arrow function tao lai moi lan render) - bug that su
+// nguoi dung bao: loi React #185 "Maximum update depth exceeded" dung LUC
+// bam con tro vao vung soan. Nguyen nhan: SeriesEntryEditor dat
+// `shouldRerenderOnTransaction: true` tren useEditor() nen component nay
+// RE-RENDER tren MOI transaction (ke ca transaction CHI DOI SELECTION, tuc
+// moi lan bam chuot). Truoc day `appendTo`/`shouldShow` la arrow function
+// MOI moi lan render -> effect noi bo cua BubbleMenu (phu thuoc tham chieu
+// 2 prop nay) huy+dung lai vong theo doi vi tri (floating-ui autoUpdate) MOI
+// LAN render -> qua trinh dung lai do tu kich hoat 1 cap nhat khac -> vong
+// lap vo han dung luc tao selection DAU TIEN (click vao editor). Hoisted ra
+// ngoai = tham chieu KHONG DOI qua cac lan render => effect chi chay 1 lan.
+function appendToBody() {
+  return document.body;
+}
+
+function shouldShowTextSelectionOnly({ editor: ed, state }: { editor: Editor; state: EditorState }) {
+  if (!ed.isEditable) return false;
+  const { selection } = state;
+  if (selection.empty) return false;
+  if (selection instanceof NodeSelection) return false;
+  return true;
+}
+
 // Bubble menu chon MAU CHU/MAU NEN cho vung van ban dang chon - yeu cau
 // nguoi dung: "khi một vùng text được focus (con trỏ giữ bôi tô) thì nút đó
 // sẽ hiện lên, chọn màu nền, màu chữ". `BubbleMenu` (tu @tiptap/react/menus)
@@ -103,7 +127,7 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
     // nhung editor nay duoc dat vao trong tuong lai.
     <BubbleMenu
       editor={editor}
-      appendTo={() => document.body}
+      appendTo={appendToBody}
       options={{ placement: "top" }}
       // shouldShow RIENG - mac dinh cua thu vien chi kiem tra "selection
       // khong rong", nhung 1 NodeSelection (bam chon NGUYEN 1 khoi atom nhu
@@ -111,13 +135,7 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
       // tinh la "khong rong" - to mau chu/nen vo nghia cho ca 1 khoi block
       // nhu vay, nen loai tru han truong hop nay (an toan hon LAN dung nghia
       // hon "bôi đen văn bản" nguoi dung mo ta).
-      shouldShow={({ editor: ed, state }: { editor: Editor; state: EditorState }) => {
-        if (!ed.isEditable) return false;
-        const { selection } = state;
-        if (selection.empty) return false;
-        if (selection instanceof NodeSelection) return false;
-        return true;
-      }}
+      shouldShow={shouldShowTextSelectionOnly}
     >
       <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2 shadow-dropdown">
         <div className="flex items-center gap-1.5">
