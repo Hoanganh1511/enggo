@@ -5,6 +5,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-extensions";
 import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
+import { SelectionColorMenu } from "@/components/compose/SelectionColorMenu";
 
 // Editor RICH cho Nội dung Entry - DUNG DUNG 1 bo extension/toolbar VOI
 // Composer.tsx (yeu cau nguoi dung: "đồng bộ tất cả giống compose" - lan
@@ -64,6 +65,11 @@ export function SeriesEntryEditor({
     // doi chap nhan duoc de sticky hoat dong dung.
     <div className="rounded-lg border border-border bg-surface">
       <PostEditorToolbar editor={editor} />
+      {/* Bubble menu chon mau chu/nen - hien noi khi CO vung van ban dang
+          duoc bôi đen (yeu cau nguoi dung: "khi một vùng text được focus
+          (con trỏ giữ bôi tô) thì nút đó sẽ hiện lên, chọn màu nền, màu
+          chữ"). */}
+      <SelectionColorMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>
   );

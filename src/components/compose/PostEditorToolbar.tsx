@@ -33,6 +33,7 @@ import {
   LayoutGrid,
   ListCollapse,
   CircleDot,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -238,6 +239,22 @@ export function PostEditorToolbar({
       .run();
   };
 
+  // Chen "Sơ đồ luồng" (FlowDiagram) - yeu cau nguoi dung dua tren 1 so do
+  // ASCII: cac buoc noi tiep bang mui ten, moi mui ten co the co 1 cau giai
+  // thich VI SAO can buoc tiep theo (xem FlowDiagram trong post-extensions.ts).
+  // La atom nen chi can insertContent 1 lan voi 2 buoc mac dinh de co san 1
+  // mui ten de sua ngay.
+  const insertFlowDiagram = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "flowDiagram",
+        attrs: { steps: [{ title: "" }, { title: "" }] },
+      })
+      .run();
+  };
+
   return (
     <div
       className={cn(
@@ -304,6 +321,7 @@ export function PostEditorToolbar({
       <Btn label="TOC dạng box (theo H2)" Icon={LayoutGrid} onClick={insertQuestionPicker} />
       <Btn label="Accordion (bấm để mở/đóng)" Icon={ListCollapse} onClick={insertAccordion} />
       <Btn label="Accordion Geographical (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
+      <Btn label="Sơ đồ luồng (các bước nối tiếp, có mô tả trên mũi tên)" Icon={Workflow} onClick={insertFlowDiagram} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />

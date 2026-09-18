@@ -8,11 +8,13 @@ import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
+import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { CuratedListView } from "./curated-list-view";
 import { QuestionPickerView } from "./question-picker-view";
 import { AccordionView } from "./accordion-view";
 import { StatAccordionView } from "./stat-accordion-view";
+import { FlowDiagramView } from "./flow-diagram-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -870,6 +872,103 @@ export const StatAccordion = Node.create({
   },
 });
 
+// [2026-09-18] "Sơ đồ luồng" (Flow Diagram) - yeu cau nguoi dung dua tren 1
+// so do ASCII lam vi du (AWS Global Infrastructure -> Region -> Availability
+// Zones -> Local Zones -> Edge Locations, moi mui ten noi 2 buoc co 1 cau
+// giai thich VI SAO can buoc tiep theo, vd "One geographic area is not
+// enough for resilience."): "Trong editor giờ thêm tính năng có thể hiển thị
+// mô tả cho dạng sơ đồ như này". Cau truc: 1 danh sach BUOC theo THU TU doc
+// (steps), moi buoc co `title` + `note` RIENG - `note` la cau mo ta gan
+// TREN MUI TEN roi khoi CHINH buoc nay toi buoc KE TIEP (buoc CUOI CUNG
+// khong co mui ten nao di ra nen `note` cua no khong duoc hien, du co dien).
+// La node ATOM (giong QuestionPicker/StatAccordion) - toan bo la 1 SNAPSHOT
+// attrs JSON, khong phai ProseMirror children that (danh sach CO CAU TRUC,
+// khong can rich text tren tung buoc).
+export type FlowDiagramStep = { title: string; note?: string };
+
+function escapeHtmlAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+export const FlowDiagram = Node.create({
+  name: "flowDiagram",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      steps: {
+        default: [] as FlowDiagramStep[],
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-steps") ?? "[]") as FlowDiagramStep[];
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-steps": JSON.stringify(attrs.steps ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-flow-diagram]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const steps = (node.attrs.steps ?? []) as FlowDiagramStep[];
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "flow-diagram", "data-flow-diagram": "" }),
+      ...steps.flatMap((step, i) => {
+        const isLast = i === steps.length - 1;
+        return [
+          ["div", { class: "flow-diagram-step" }, step.title],
+          ...(isLast
+            ? []
+            : [
+                [
+                  "div",
+                  { class: "flow-diagram-arrow" },
+                  ...(step.note ? [["p", { class: "flow-diagram-note" }, step.note]] : []),
+                ],
+              ]),
+        ];
+      }),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(FlowDiagramView);
+  },
+  // Markdown fallback - toan bo 1 khoi HTML tho DUY NHAT (giong QuestionPicker/
+  // TocBlock: du lieu la SNAPSHOT attrs, khong phai ProseMirror children
+  // that) - data-steps la NGUON THAT SU parseHTML doc lai (xem addAttributes),
+  // phan HTML con lai (step/arrow/note) chi la BAN HIEN THI cho nguoi doc.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const steps = (node.attrs.steps ?? []) as FlowDiagramStep[];
+          const stepsHtml = steps
+            .flatMap((step, i) => {
+              const isLast = i === steps.length - 1;
+              const stepHtml = `<div class="flow-diagram-step">${escapeHtmlAttr(step.title)}</div>`;
+              if (isLast) return [stepHtml];
+              const noteHtml = step.note
+                ? `<p class="flow-diagram-note">${escapeHtmlAttr(step.note)}</p>`
+                : "";
+              return [stepHtml, `<div class="flow-diagram-arrow">${noteHtml}</div>`];
+            })
+            .join("");
+          const html = `<div class="flow-diagram" data-flow-diagram data-steps="${escapeHtmlAttr(JSON.stringify(steps))}">${stepsHtml}</div>`;
+          state.ensureNewLine();
+          state.write(html);
+          state.ensureNewLine();
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // [2026-09-16] TrailingNode - bug that su nguoi dung bao: "thêm 1 cái
 // accordion geographical vào sau cái accordion geographical trước đó đã đặt
 // vào thì ko đặt dc con trỏ vào, kể cả soạn văn bản ấy". Nguyen nhan: Accordion/
@@ -958,6 +1057,15 @@ export function getPostExtensions(): Extensions {
     Link.configure({ openOnClick: false }),
     Image.configure({ inline: false, allowBase64: false }),
     TableKit.configure({ table: { resizable: true } }),
+    // TextStyle la mark NEN bat buoc de Color/BackgroundColor gan attrs len
+    // (ca 2 deu luu vao style cua chinh mark "textStyle", khong phai mark
+    // rieng) - yeu cau nguoi dung: "khi một vùng text được focus (con trỏ
+    // giữ bôi tô) thì nút đó sẽ hiện lên, chọn màu nền, màu chữ" (xem
+    // SelectionColorMenu.tsx - bubble menu noi dung nay hien khi co vung
+    // chon van ban).
+    TextStyle,
+    Color,
+    BackgroundColor,
     Callout,
     GlossaryHint,
     GoDeeper,
@@ -966,6 +1074,7 @@ export function getPostExtensions(): Extensions {
     QuestionPicker,
     Accordion,
     StatAccordion,
+    FlowDiagram,
     TrailingNode,
   ];
 }
@@ -1151,4 +1260,16 @@ export const POST_PROSE_CLASS =
   "[&_.stat-accordion-item-clickable_.stat-accordion-item-text]:transition-colors [&_.stat-accordion-item-clickable_.stat-accordion-item-text]:duration-150 [&_.stat-accordion-item-clickable:hover_.stat-accordion-item-text]:text-primary " +
   "[&_.stat-accordion-dot]:inline-block [&_.stat-accordion-dot]:size-2 [&_.stat-accordion-dot]:shrink-0 [&_.stat-accordion-dot]:rounded-full " +
   "[&_.stat-accordion-legend]:mt-3 [&_.stat-accordion-legend]:flex [&_.stat-accordion-legend]:flex-col [&_.stat-accordion-legend]:gap-1.5 [&_.stat-accordion-legend]:border-t [&_.stat-accordion-legend]:border-border [&_.stat-accordion-legend]:pt-3 " +
-  "[&_.stat-accordion-legend-item]:flex [&_.stat-accordion-legend-item]:items-center [&_.stat-accordion-legend-item]:gap-2 [&_.stat-accordion-legend-item]:text-[12.5px] [&_.stat-accordion-legend-item]:text-ink-faint";
+  "[&_.stat-accordion-legend-item]:flex [&_.stat-accordion-legend-item]:items-center [&_.stat-accordion-legend-item]:gap-2 [&_.stat-accordion-legend-item]:text-[12.5px] [&_.stat-accordion-legend-item]:text-ink-faint " +
+  // "Sơ đồ luồng" (FlowDiagram) - cac buoc xep doc, giua 2 buoc la 1 mui ten
+  // (duong ke doc + dau mui ten bang border-trick, ve THUAN CSS khong can
+  // SVG/icon nao) - mo ta (neu co) hien BEN PHAI duong ke bang absolute
+  // positioning (left: 50% + khoang cach co dinh), dung y "so do ASCII"
+  // nguoi dung gui (duong ke chinh giua, chu giai thich nam le sang phai).
+  "[&_.flow-diagram]:mx-auto [&_.flow-diagram]:my-6 [&_.flow-diagram]:flex [&_.flow-diagram]:max-w-sm [&_.flow-diagram]:flex-col [&_.flow-diagram]:items-center " +
+  "[&_.flow-diagram-step]:w-full [&_.flow-diagram-step]:rounded-lg [&_.flow-diagram-step]:border [&_.flow-diagram-step]:border-border [&_.flow-diagram-step]:bg-surface [&_.flow-diagram-step]:px-4 [&_.flow-diagram-step]:py-2.5 [&_.flow-diagram-step]:text-center [&_.flow-diagram-step]:text-[14px] [&_.flow-diagram-step]:font-semibold [&_.flow-diagram-step]:text-ink " +
+  "[&_.flow-diagram-arrow]:relative [&_.flow-diagram-arrow]:h-10 [&_.flow-diagram-arrow]:w-full " +
+  "[&_.flow-diagram-arrow]:before:absolute [&_.flow-diagram-arrow]:before:top-0 [&_.flow-diagram-arrow]:before:bottom-0 [&_.flow-diagram-arrow]:before:left-1/2 [&_.flow-diagram-arrow]:before:w-0.5 [&_.flow-diagram-arrow]:before:-translate-x-1/2 [&_.flow-diagram-arrow]:before:bg-border [&_.flow-diagram-arrow]:before:content-[''] " +
+  "[&_.flow-diagram-arrow]:after:absolute [&_.flow-diagram-arrow]:after:bottom-0 [&_.flow-diagram-arrow]:after:left-1/2 [&_.flow-diagram-arrow]:after:-translate-x-1/2 [&_.flow-diagram-arrow]:after:border-x-[5px] [&_.flow-diagram-arrow]:after:border-t-[7px] [&_.flow-diagram-arrow]:after:border-x-transparent [&_.flow-diagram-arrow]:after:border-t-ink-faint [&_.flow-diagram-arrow]:after:content-[''] " +
+  "[&_.flow-diagram-note]:absolute [&_.flow-diagram-note]:top-1/2 [&_.flow-diagram-note]:-translate-y-1/2 [&_.flow-diagram-note]:text-[12px] [&_.flow-diagram-note]:text-ink-faint [&_.flow-diagram-note]:italic " +
+  "[&_.flow-diagram-note]:left-[calc(50%+16px)] [&_.flow-diagram-note]:w-48";
