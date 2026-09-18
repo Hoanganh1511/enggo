@@ -85,6 +85,46 @@ function FlowNodeEditor({
         )}
       </div>
 
+      {/* [2026-09-18 fix] Nut dieu khien cua CHINH buoc nay - PHAI dat NGAY O
+          DAY (truoc khi de quy xuong con), khong dat SAU nhu ban dau - bug
+          nguoi dung bao "Thêm nhánh bị lỗi": ban dau nut nay nam SAU toan bo
+          khoi de quy children, nen voi 1 chuoi dai, TAT CA nut cua MOI cap
+          (root, con, chau...) bi don xuong DUOI CUNG dung sat nhau, trong khi
+          THUC RA moi nut thuoc VE 1 cap KHAC NHAU trong cay - bam lien tiep
+          tuong dang bam 1 nut duy nhat nhung thuc ra moi lan roi vao 1 buoc
+          khac (luon la chuoi thang, khong ra nhanh that). Dat o day = luon
+          hien NGAY DUOI dung buoc cua no, ro rang khong nham lan - dong thoi
+          giai quyet luon y "phải cho rẽ nhánh ngay sau bước đầu chứ": ROOT
+          gio cung co nut rieng cua no o day, khong con phai xuong den la moi
+          co. Buoc CHUA co con (0) -> chi "Thêm bước tiếp theo" (rẽ nhánh vo
+          nghia khi chua co gi de re THEM). Buoc DA co >=1 con -> "Thêm nhánh"
+          (bam se them 1 con NUA, tu dong chuyen sang giao dien re nhanh
+          ngang khi dat 2 con tro len). */}
+      {canEdit && (
+        <div className="mt-2 flex items-center gap-3">
+          {children.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => onAddChild(path)}
+              className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-faint hover:text-ink"
+            >
+              <Plus size={13} strokeWidth={2} />
+              Thêm bước tiếp theo
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onAddBranch(path)}
+              title="Thêm 1 nhánh mới rẽ ra từ bước này"
+              className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-faint hover:text-ink"
+            >
+              <Split size={13} strokeWidth={2} />
+              Thêm nhánh
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 1 nhanh duy nhat - y HET truoc day: 1 mui ten thang, co the kem 1 o
           nhap "note" giai thich vi sao can buoc tiep theo. */}
       {children.length === 1 && (
@@ -151,30 +191,6 @@ function FlowNodeEditor({
               />
             </div>
           ))}
-        </div>
-      )}
-
-      {canEdit && (
-        <div className="mt-2 flex items-center gap-3">
-          {children.length === 0 && (
-            <button
-              type="button"
-              onClick={() => onAddChild(path)}
-              className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-faint hover:text-ink"
-            >
-              <Plus size={13} strokeWidth={2} />
-              Thêm bước tiếp theo
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onAddBranch(path)}
-            title="Thêm 1 nhánh mới rẽ ra từ bước này"
-            className="flex cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-ink-faint hover:text-ink"
-          >
-            <Split size={13} strokeWidth={2} />
-            Thêm nhánh
-          </button>
         </div>
       )}
     </div>

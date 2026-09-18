@@ -1316,4 +1316,14 @@ export const POST_PROSE_CLASS =
   "[&_.flow-diagram-branch:not(:last-child)]:after:absolute [&_.flow-diagram-branch:not(:last-child)]:after:top-0 [&_.flow-diagram-branch:not(:last-child)]:after:left-1/2 [&_.flow-diagram-branch:not(:last-child)]:after:h-0.5 [&_.flow-diagram-branch:not(:last-child)]:after:w-[calc(50%+16px)] [&_.flow-diagram-branch:not(:last-child)]:after:bg-border [&_.flow-diagram-branch:not(:last-child)]:after:content-[''] " +
   "[&_.flow-diagram-branch-stem]:relative [&_.flow-diagram-branch-stem]:h-4 [&_.flow-diagram-branch-stem]:w-0.5 [&_.flow-diagram-branch-stem]:bg-border " +
   "[&_.flow-diagram-branch-stem]:after:absolute [&_.flow-diagram-branch-stem]:after:bottom-0 [&_.flow-diagram-branch-stem]:after:left-1/2 [&_.flow-diagram-branch-stem]:after:-translate-x-1/2 [&_.flow-diagram-branch-stem]:after:border-x-[5px] [&_.flow-diagram-branch-stem]:after:border-t-[7px] [&_.flow-diagram-branch-stem]:after:border-x-transparent [&_.flow-diagram-branch-stem]:after:border-t-ink-faint [&_.flow-diagram-branch-stem]:after:content-[''] " +
-  "[&_.flow-diagram-note-branch]:mt-1 [&_.flow-diagram-note-branch]:mb-1 [&_.flow-diagram-note-branch]:max-w-[10rem] [&_.flow-diagram-note-branch]:text-center [&_.flow-diagram-note-branch]:text-[11px] [&_.flow-diagram-note-branch]:text-ink-faint [&_.flow-diagram-note-branch]:italic";
+  "[&_.flow-diagram-note-branch]:mt-1 [&_.flow-diagram-note-branch]:mb-1 [&_.flow-diagram-note-branch]:max-w-[10rem] [&_.flow-diagram-note-branch]:text-center [&_.flow-diagram-note-branch]:text-[11px] [&_.flow-diagram-note-branch]:text-ink-faint [&_.flow-diagram-note-branch]:italic " +
+  // [2026-09-18] Mau NEN (BackgroundColor) - yeu cau nguoi dung: "cho cái
+  // khoảng cách xung quanh trong cái màu có tí cách cách ra, trục y thêm
+  // 2px, trục x thêm 4px" (mau nen truoc do om SAT chu, nhin chat). Nhan
+  // dang qua attribute selector `[style*=background-color]` vi BackgroundColor
+  // (tu @tiptap/extension-text-style) chi gan 1 inline style truc tiep len
+  // <span>, khong co class rieng. `box-decoration-clone` - dam bao padding
+  // nay LAP LAI DUNG tren MOI dong khi doan to mau bi ngat dong (mac dinh
+  // "slice" chi chua padding trai/phai o dau/cuoi CA CUM, giua chung cac dong
+  // se om sat lai).
+  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5";

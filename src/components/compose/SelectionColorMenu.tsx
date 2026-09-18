@@ -51,10 +51,16 @@ function ColorSwatchRow({
           style={{ backgroundColor: c.value ?? "transparent" }}
         >
           {/* value=null ("Mặc định"/"Không nền") - vach cheo trang tri thay
-              vi 1 mau that, bao hieu "xoá về gốc". */}
+              vi 1 mau that, bao hieu "xoá về gốc". cursor-pointer THEM o day -
+              bug nguoi dung bao: con tro van la mui ten mac dinh khi di
+              CHINH GIUA len swatch nay (khac cac swatch mau khac khong co
+              lop <span> con phu kin nut). `pointer-events-none` la fix DUNG
+              hon (span nay chi de TRANG TRI, khong can nhan click rieng) -
+              chuot "xuyen qua" thang toi <button> cha, tu dong ke thua đúng
+              cursor cua no thay vi phai khai bao lai. */}
           {c.value === null && (
             <span
-              className="block size-full"
+              className="pointer-events-none block size-full"
               style={{
                 backgroundImage:
                   "repeating-linear-gradient(45deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 4px)",

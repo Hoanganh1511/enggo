@@ -1,3 +1,4 @@
+import { Portal } from "@radix-ui/react-portal";
 import { LoadingSpinner } from "./loading-spinner";
 import { cn } from "@/lib/utils";
 
@@ -27,23 +28,30 @@ export function LayoutSpinnerOverlay({
       role="status"
       aria-live="polite"
     >
-      {/* [2026-09-18] Spinner FIXED giua VIEWPORT - bug nguoi dung bao: "mới
-          chỉ làm mờ" (khong thay spinner dau). Nguyen nhan: khoi spinner
-          truoc day chi `flex items-center justify-center` BEN TRONG chinh
-          div nay - voi 1 Entry dai (nhieu Accordion), div nay cao hang nghin
-          px nen "giữa" cua no nam ngoai tam nhin hien tai neu dang cuon o
-          giua/cuoi trang luc bam Lưu, chi con thay duoc lop mo phu ben tren.
-          `fixed` + `top/left-1/2` thoat khoi chieu cao cua div cha, luon bam
-          dung GIUA MAN HINH THAT du dang cuon toi dau. */}
-      <div className="fixed top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3">
-        <LoadingSpinner size={28} className="text-ink-muted" />
-        {label && (
-          <p className="max-w-xs text-center text-[13px] font-medium text-ink">
-            {label}
-            <LoadingDots />
-          </p>
-        )}
-      </div>
+      {/* [2026-09-18 fix 2] Spinner render qua Portal THANG vao document.body -
+          bug nguoi dung bao lai: "đang chính giữa theo chiều dài của cả bài
+          viết" (van sai, dung `fixed` truoc day KHONG du). Nguyen nhan that
+          su: `position: fixed` chi thoat duoc RA NGOAI to tien theo dung dac
+          ta CSS neu KHONG co to tien nao tao "containing block" rieng (vd 1
+          to tien co `transform`/`filter`/`will-change: transform`) - trang
+          soan Entry (qua cac lop FadeIn/motion.div cua framer-motion o cac
+          Layout cha) rat de co 1 to tien nhu vay (framer-motion thuong de
+          lai `transform: translate(...)` qua inline style ke ca luc dung
+          yen), khien `fixed` bi "bat" boi to tien do thay vi bam theo THAT
+          man hinh. Portal (dung CHUNG cach RegionGlobeModal.tsx da lam) dua
+          hang DOM nay ra NGOAI CUNG (con truc tiep cua body) - khong con to
+          tien nao o giua co the "bat" no nua, `fixed` luon dung. */}
+      <Portal>
+        <div className="fixed top-1/2 left-1/2 z-40 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3">
+          <LoadingSpinner size={28} className="text-ink-muted" />
+          {label && (
+            <p className="max-w-xs text-center text-[13px] font-medium text-ink">
+              {label}
+              <LoadingDots />
+            </p>
+          )}
+        </div>
+      </Portal>
     </div>
   );
 }
