@@ -883,10 +883,96 @@ export const StatAccordion = Node.create({
 // La node ATOM (giong QuestionPicker/StatAccordion) - toan bo la 1 SNAPSHOT
 // attrs JSON, khong phai ProseMirror children that (danh sach CO CAU TRUC,
 // khong can rich text tren tung buoc).
-export type FlowDiagramStep = { title: string; note?: string };
+// [2026-09-18] Doi tu MANG PHANG "steps[]" sang CAY - yeu cau nguoi dung:
+// "muốn rẽ nhánh thì làm sao?" (vd 1 AWS Region re ra 3 AZ, moi AZ lai co
+// Workload rieng - khong con la 1 chuoi thang duy nhat nua). `children` la
+// DANH SACH NHANH xuat phat TU chinh buoc nay (0 nhanh = buoc cuoi, 1 nhanh =
+// van la 1 duong thang nhu truoc, >1 nhanh = re nhieu huong). `note` gan
+// TREN CANH DAN TOI chinh no (khac quy uoc CU la note gan tren buoc nguon -
+// xem legacyStepsToTree() ve ly do doi chieu khi doc du lieu cu).
+export type FlowDiagramStep = { title: string; note?: string; children?: FlowDiagramStep[] };
 
 function escapeHtmlAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Du lieu CU (truoc khi co re nhanh) luu 1 mang phang "steps[]", moi step co
+// `note` mo ta CANH RA (toi step ke tiep). Chuyen thanh 1 cay CHUOI DON (moi
+// buoc dung 1 `children` duy nhat) de tuong thich nguoc voi cac FlowDiagram
+// da luu trong noi dung Entry TU TRUOC - khong can migrate DB, chi doc lai
+// dung o day. `note` cua step[i] (canh i -> i+1) tro thanh `note` cua CHINH
+// step[i+1] trong cay moi (canh DAN TOI no).
+function legacyStepsToTree(steps: { title: string; note?: string }[]): FlowDiagramStep | null {
+  if (steps.length === 0) return null;
+  let node: FlowDiagramStep = { title: steps[steps.length - 1].title };
+  for (let i = steps.length - 2; i >= 0; i--) {
+    node = { title: steps[i].title, children: [{ ...node, note: steps[i].note }] };
+  }
+  return node;
+}
+
+// Render 1 NUT (buoc) va toan bo cay con cua no thanh cac the HTML (dung
+// CHUNG cho ca renderHTML cua ProseMirror lan serialize markdown - xem duoi).
+// - 0 nhanh: dung lai, khong ve gi them.
+// - 1 nhanh: y HET truoc day (1 mui ten thang xuong, co the kem note).
+// - >1 nhanh: 1 "than cay" (trunk) xuong 1 THANH NGANG dung chung, roi tung
+//   "nhanh" (branch) rieng xuong tung buoc con - CSS o POST_PROSE_CLASS/
+//   docs-prose.ts ve ky thuat noi thanh ngang toi CHINH GIUA tung buoc, bat
+//   ke cac buoc rong/hep khac nhau.
+function renderFlowNode(node: FlowDiagramStep): unknown[] {
+  const children = node.children ?? [];
+  const stepEl = ["div", { class: "flow-diagram-step" }, node.title];
+  if (children.length === 0) return [stepEl];
+  if (children.length === 1) {
+    const child = children[0];
+    return [
+      stepEl,
+      [
+        "div",
+        { class: "flow-diagram-arrow" },
+        ...(child.note ? [["p", { class: "flow-diagram-note" }, child.note]] : []),
+      ],
+      ...renderFlowNode(child),
+    ];
+  }
+  return [
+    stepEl,
+    ["div", { class: "flow-diagram-trunk" }],
+    [
+      "div",
+      { class: "flow-diagram-branches" },
+      ...children.map((child) => [
+        "div",
+        { class: "flow-diagram-branch" },
+        ["div", { class: "flow-diagram-branch-stem" }],
+        ...(child.note ? [["p", { class: "flow-diagram-note-branch" }, child.note]] : []),
+        ["div", { class: "flow-diagram-node" }, ...renderFlowNode(child)],
+      ]),
+    ],
+  ];
+}
+
+function flowNodeToHtml(node: FlowDiagramStep): string {
+  const children = node.children ?? [];
+  const stepHtml = `<div class="flow-diagram-step">${escapeHtmlAttr(node.title)}</div>`;
+  if (children.length === 0) return stepHtml;
+  if (children.length === 1) {
+    const child = children[0];
+    const noteHtml = child.note ? `<p class="flow-diagram-note">${escapeHtmlAttr(child.note)}</p>` : "";
+    return `${stepHtml}<div class="flow-diagram-arrow">${noteHtml}</div>${flowNodeToHtml(child)}`;
+  }
+  const branchesHtml = children
+    .map((child) => {
+      const noteHtml = child.note
+        ? `<p class="flow-diagram-note-branch">${escapeHtmlAttr(child.note)}</p>`
+        : "";
+      return (
+        `<div class="flow-diagram-branch"><div class="flow-diagram-branch-stem"></div>` +
+        `${noteHtml}<div class="flow-diagram-node">${flowNodeToHtml(child)}</div></div>`
+      );
+    })
+    .join("");
+  return `${stepHtml}<div class="flow-diagram-trunk"></div><div class="flow-diagram-branches">${branchesHtml}</div>`;
 }
 
 export const FlowDiagram = Node.create({
@@ -896,16 +982,29 @@ export const FlowDiagram = Node.create({
   selectable: true,
   addAttributes() {
     return {
-      steps: {
-        default: [] as FlowDiagramStep[],
+      root: {
+        default: null as FlowDiagramStep | null,
         parseHTML: (el) => {
-          try {
-            return JSON.parse(el.getAttribute("data-steps") ?? "[]") as FlowDiagramStep[];
-          } catch {
-            return [];
+          const rootAttr = el.getAttribute("data-root");
+          if (rootAttr) {
+            try {
+              return JSON.parse(rootAttr) as FlowDiagramStep;
+            } catch {
+              return null;
+            }
           }
+          // Fallback du lieu CU (truoc khi co re nhanh) - xem legacyStepsToTree().
+          const stepsAttr = el.getAttribute("data-steps");
+          if (stepsAttr) {
+            try {
+              return legacyStepsToTree(JSON.parse(stepsAttr) as { title: string; note?: string }[]);
+            } catch {
+              return null;
+            }
+          }
+          return null;
         },
-        renderHTML: (attrs) => ({ "data-steps": JSON.stringify(attrs.steps ?? []) }),
+        renderHTML: (attrs) => ({ "data-root": JSON.stringify(attrs.root ?? null) }),
       },
     };
   },
@@ -913,25 +1012,11 @@ export const FlowDiagram = Node.create({
     return [{ tag: "div[data-flow-diagram]" }];
   },
   renderHTML({ HTMLAttributes, node }) {
-    const steps = (node.attrs.steps ?? []) as FlowDiagramStep[];
+    const root = node.attrs.root as FlowDiagramStep | null;
     return [
       "div",
       mergeAttributes(HTMLAttributes, { class: "flow-diagram", "data-flow-diagram": "" }),
-      ...steps.flatMap((step, i) => {
-        const isLast = i === steps.length - 1;
-        return [
-          ["div", { class: "flow-diagram-step" }, step.title],
-          ...(isLast
-            ? []
-            : [
-                [
-                  "div",
-                  { class: "flow-diagram-arrow" },
-                  ...(step.note ? [["p", { class: "flow-diagram-note" }, step.note]] : []),
-                ],
-              ]),
-        ];
-      }),
+      ...(root ? renderFlowNode(root) : []),
     ];
   },
   addNodeView() {
@@ -939,25 +1024,17 @@ export const FlowDiagram = Node.create({
   },
   // Markdown fallback - toan bo 1 khoi HTML tho DUY NHAT (giong QuestionPicker/
   // TocBlock: du lieu la SNAPSHOT attrs, khong phai ProseMirror children
-  // that) - data-steps la NGUON THAT SU parseHTML doc lai (xem addAttributes),
-  // phan HTML con lai (step/arrow/note) chi la BAN HIEN THI cho nguoi doc.
+  // that) - data-root la NGUON THAT SU parseHTML doc lai (xem addAttributes),
+  // phan HTML con lai (step/arrow/note/nhanh) chi la BAN HIEN THI cho nguoi doc.
   addStorage() {
     return {
       markdown: {
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
-          const steps = (node.attrs.steps ?? []) as FlowDiagramStep[];
-          const stepsHtml = steps
-            .flatMap((step, i) => {
-              const isLast = i === steps.length - 1;
-              const stepHtml = `<div class="flow-diagram-step">${escapeHtmlAttr(step.title)}</div>`;
-              if (isLast) return [stepHtml];
-              const noteHtml = step.note
-                ? `<p class="flow-diagram-note">${escapeHtmlAttr(step.note)}</p>`
-                : "";
-              return [stepHtml, `<div class="flow-diagram-arrow">${noteHtml}</div>`];
-            })
-            .join("");
-          const html = `<div class="flow-diagram" data-flow-diagram data-steps="${escapeHtmlAttr(JSON.stringify(steps))}">${stepsHtml}</div>`;
+          const root = node.attrs.root as FlowDiagramStep | null;
+          const bodyHtml = root ? flowNodeToHtml(root) : "";
+          const html = `<div class="flow-diagram" data-flow-diagram data-root="${escapeHtmlAttr(
+            JSON.stringify(root),
+          )}">${bodyHtml}</div>`;
           state.ensureNewLine();
           state.write(html);
           state.ensureNewLine();
@@ -1215,10 +1292,27 @@ export const POST_PROSE_CLASS =
   // SVG/icon nao) - mo ta (neu co) hien BEN PHAI duong ke bang absolute
   // positioning (left: 50% + khoang cach co dinh), dung y "so do ASCII"
   // nguoi dung gui (duong ke chinh giua, chu giai thich nam le sang phai).
-  "[&_.flow-diagram]:mx-auto [&_.flow-diagram]:my-6 [&_.flow-diagram]:flex [&_.flow-diagram]:max-w-sm [&_.flow-diagram]:flex-col [&_.flow-diagram]:items-center " +
-  "[&_.flow-diagram-step]:w-full [&_.flow-diagram-step]:rounded-lg [&_.flow-diagram-step]:border [&_.flow-diagram-step]:border-border [&_.flow-diagram-step]:bg-surface [&_.flow-diagram-step]:px-4 [&_.flow-diagram-step]:py-2.5 [&_.flow-diagram-step]:text-center [&_.flow-diagram-step]:text-[14px] [&_.flow-diagram-step]:font-semibold [&_.flow-diagram-step]:text-ink " +
-  "[&_.flow-diagram-arrow]:relative [&_.flow-diagram-arrow]:h-10 [&_.flow-diagram-arrow]:w-full " +
+  "[&_.flow-diagram]:mx-auto [&_.flow-diagram]:my-6 [&_.flow-diagram]:flex [&_.flow-diagram]:w-full [&_.flow-diagram]:max-w-2xl [&_.flow-diagram]:flex-col [&_.flow-diagram]:items-center " +
+  "[&_.flow-diagram-node]:flex [&_.flow-diagram-node]:w-full [&_.flow-diagram-node]:flex-col [&_.flow-diagram-node]:items-center " +
+  "[&_.flow-diagram-step]:w-full [&_.flow-diagram-step]:max-w-sm [&_.flow-diagram-step]:rounded-lg [&_.flow-diagram-step]:border [&_.flow-diagram-step]:border-border [&_.flow-diagram-step]:bg-surface [&_.flow-diagram-step]:px-4 [&_.flow-diagram-step]:py-2.5 [&_.flow-diagram-step]:text-center [&_.flow-diagram-step]:text-[14px] [&_.flow-diagram-step]:font-semibold [&_.flow-diagram-step]:text-ink " +
+  "[&_.flow-diagram-arrow]:relative [&_.flow-diagram-arrow]:h-10 [&_.flow-diagram-arrow]:w-full [&_.flow-diagram-arrow]:max-w-sm " +
   "[&_.flow-diagram-arrow]:before:absolute [&_.flow-diagram-arrow]:before:top-0 [&_.flow-diagram-arrow]:before:bottom-0 [&_.flow-diagram-arrow]:before:left-1/2 [&_.flow-diagram-arrow]:before:w-0.5 [&_.flow-diagram-arrow]:before:-translate-x-1/2 [&_.flow-diagram-arrow]:before:bg-border [&_.flow-diagram-arrow]:before:content-[''] " +
   "[&_.flow-diagram-arrow]:after:absolute [&_.flow-diagram-arrow]:after:bottom-0 [&_.flow-diagram-arrow]:after:left-1/2 [&_.flow-diagram-arrow]:after:-translate-x-1/2 [&_.flow-diagram-arrow]:after:border-x-[5px] [&_.flow-diagram-arrow]:after:border-t-[7px] [&_.flow-diagram-arrow]:after:border-x-transparent [&_.flow-diagram-arrow]:after:border-t-ink-faint [&_.flow-diagram-arrow]:after:content-[''] " +
   "[&_.flow-diagram-note]:absolute [&_.flow-diagram-note]:top-1/2 [&_.flow-diagram-note]:-translate-y-1/2 [&_.flow-diagram-note]:text-[12px] [&_.flow-diagram-note]:text-ink-faint [&_.flow-diagram-note]:italic " +
-  "[&_.flow-diagram-note]:left-[calc(50%+16px)] [&_.flow-diagram-note]:w-48";
+  "[&_.flow-diagram-note]:left-[calc(50%+16px)] [&_.flow-diagram-note]:w-48 " +
+  // [2026-09-18] Re nhanh (branching) - yeu cau nguoi dung dua tren vi du AWS
+  // Region -> AZ-A/AZ-B/AZ-C: "trunk" la 1 doan ke doc ngan tu buoc CHA
+  // xuong THANH NGANG dung chung, roi tung "branch" (cot rieng) di xuong tung
+  // buoc con. Ky thuat noi thanh ngang toi DUNG CHINH GIUA tung cot (du cac
+  // cot rong/hep khac nhau) = 2 doan rieng tren MOI cot (`:not(:first-child)`
+  // noi sang trai, `:not(:last-child)` noi sang phai), moi doan dai 50% +
+  // nua khoang gap (16px = nua cua gap-8/32px) tu tam cot do - ghep 2 doan
+  // cua 2 cot ke nhau se khop CHINH XAC giua khoang gap, bat ke be rong cot.
+  "[&_.flow-diagram-trunk]:h-4 [&_.flow-diagram-trunk]:w-0.5 [&_.flow-diagram-trunk]:bg-border " +
+  "[&_.flow-diagram-branches]:relative [&_.flow-diagram-branches]:flex [&_.flow-diagram-branches]:w-full [&_.flow-diagram-branches]:items-start [&_.flow-diagram-branches]:justify-center [&_.flow-diagram-branches]:gap-8 " +
+  "[&_.flow-diagram-branch]:relative [&_.flow-diagram-branch]:flex [&_.flow-diagram-branch]:min-w-[110px] [&_.flow-diagram-branch]:flex-1 [&_.flow-diagram-branch]:flex-col [&_.flow-diagram-branch]:items-center " +
+  "[&_.flow-diagram-branch:not(:first-child)]:before:absolute [&_.flow-diagram-branch:not(:first-child)]:before:top-0 [&_.flow-diagram-branch:not(:first-child)]:before:right-1/2 [&_.flow-diagram-branch:not(:first-child)]:before:h-0.5 [&_.flow-diagram-branch:not(:first-child)]:before:w-[calc(50%+16px)] [&_.flow-diagram-branch:not(:first-child)]:before:bg-border [&_.flow-diagram-branch:not(:first-child)]:before:content-[''] " +
+  "[&_.flow-diagram-branch:not(:last-child)]:after:absolute [&_.flow-diagram-branch:not(:last-child)]:after:top-0 [&_.flow-diagram-branch:not(:last-child)]:after:left-1/2 [&_.flow-diagram-branch:not(:last-child)]:after:h-0.5 [&_.flow-diagram-branch:not(:last-child)]:after:w-[calc(50%+16px)] [&_.flow-diagram-branch:not(:last-child)]:after:bg-border [&_.flow-diagram-branch:not(:last-child)]:after:content-[''] " +
+  "[&_.flow-diagram-branch-stem]:relative [&_.flow-diagram-branch-stem]:h-4 [&_.flow-diagram-branch-stem]:w-0.5 [&_.flow-diagram-branch-stem]:bg-border " +
+  "[&_.flow-diagram-branch-stem]:after:absolute [&_.flow-diagram-branch-stem]:after:bottom-0 [&_.flow-diagram-branch-stem]:after:left-1/2 [&_.flow-diagram-branch-stem]:after:-translate-x-1/2 [&_.flow-diagram-branch-stem]:after:border-x-[5px] [&_.flow-diagram-branch-stem]:after:border-t-[7px] [&_.flow-diagram-branch-stem]:after:border-x-transparent [&_.flow-diagram-branch-stem]:after:border-t-ink-faint [&_.flow-diagram-branch-stem]:after:content-[''] " +
+  "[&_.flow-diagram-note-branch]:mt-1 [&_.flow-diagram-note-branch]:mb-1 [&_.flow-diagram-note-branch]:max-w-[10rem] [&_.flow-diagram-note-branch]:text-center [&_.flow-diagram-note-branch]:text-[11px] [&_.flow-diagram-note-branch]:text-ink-faint [&_.flow-diagram-note-branch]:italic";

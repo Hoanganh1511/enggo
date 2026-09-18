@@ -1,4 +1,4 @@
-import Spinner from "./spinner";
+import { LoadingSpinner } from "./loading-spinner";
 import { cn } from "@/lib/utils";
 
 // "Spinner layout" (dat ten theo yeu cau nguoi dung) - phu 1 LOP MO NHE +
@@ -23,15 +23,20 @@ export function LayoutSpinnerOverlay({
   if (!active) return null;
   return (
     <div
-      className={cn(
-        "absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-surface/60 backdrop-blur-[1.5px]",
-        className,
-      )}
+      className={cn("absolute inset-0 z-40 rounded-xl bg-surface/60 backdrop-blur-[1.5px]", className)}
       role="status"
       aria-live="polite"
     >
-      <div className="flex flex-col items-center gap-3">
-        <Spinner size={28} />
+      {/* [2026-09-18] Spinner FIXED giua VIEWPORT - bug nguoi dung bao: "mới
+          chỉ làm mờ" (khong thay spinner dau). Nguyen nhan: khoi spinner
+          truoc day chi `flex items-center justify-center` BEN TRONG chinh
+          div nay - voi 1 Entry dai (nhieu Accordion), div nay cao hang nghin
+          px nen "giữa" cua no nam ngoai tam nhin hien tai neu dang cuon o
+          giua/cuoi trang luc bam Lưu, chi con thay duoc lop mo phu ben tren.
+          `fixed` + `top/left-1/2` thoat khoi chieu cao cua div cha, luon bam
+          dung GIUA MAN HINH THAT du dang cuon toi dau. */}
+      <div className="fixed top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3">
+        <LoadingSpinner size={28} className="text-ink-muted" />
         {label && (
           <p className="max-w-xs text-center text-[13px] font-medium text-ink">
             {label}

@@ -241,16 +241,17 @@ export function PostEditorToolbar({
 
   // Chen "Sơ đồ luồng" (FlowDiagram) - yeu cau nguoi dung dua tren 1 so do
   // ASCII: cac buoc noi tiep bang mui ten, moi mui ten co the co 1 cau giai
-  // thich VI SAO can buoc tiep theo (xem FlowDiagram trong post-extensions.ts).
-  // La atom nen chi can insertContent 1 lan voi 2 buoc mac dinh de co san 1
-  // mui ten de sua ngay.
+  // thich VI SAO can buoc tiep theo, sau do mo rong them RE NHANH (xem
+  // FlowDiagram trong post-extensions.ts - du lieu la 1 CAY `root`, khong
+  // con la mang phang `steps` nua). La atom nen chi can insertContent 1 lan
+  // voi 1 buoc dau + 1 buoc ke tiep mac dinh de co san 1 mui ten de sua ngay.
   const insertFlowDiagram = () => {
     editor
       .chain()
       .focus()
       .insertContent({
         type: "flowDiagram",
-        attrs: { steps: [{ title: "" }, { title: "" }] },
+        attrs: { root: { title: "", children: [{ title: "" }] } },
       })
       .run();
   };
