@@ -13,6 +13,7 @@ export const DOCS_PROSE_CLASS =
   "[&_h1]:mt-8 [&_h1]:mb-3 [&_h1]:text-[30px] [&_h1]:font-bold [&_h1]:leading-tight [&_h1]:tracking-tight " +
   "[&_h2]:mt-7 [&_h2]:mb-2.5 [&_h2]:text-[23px] [&_h2]:font-bold [&_h2]:leading-snug " +
   "[&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:text-[18px] [&_h3]:font-semibold " +
+  "[&_h4]:mt-4 [&_h4]:mb-1.5 [&_h4]:text-[15.5px] [&_h4]:font-semibold " +
   "[&_p]:my-1 " +
   "[&_ul]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-2 [&_li_p]:my-0 " +
   "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 " +

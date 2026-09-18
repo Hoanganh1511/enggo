@@ -136,6 +136,15 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
     <BubbleMenu
       editor={editor}
       appendTo={appendToBody}
+      // z-50 - bug nguoi dung bao "bị chìm dưới nền editor": phan tu noi cua
+      // BubbleMenu (menuEl trong BubbleMenu.tsx) khong tu mang z-index nao,
+      // trong khi no la CON TRUC TIEP cua document.body (xem appendToBody o
+      // tren) - cac phan tu KHAC trong app (form/sidebar nen trang, z-index
+      // mac dinh "auto" nhung xep SAU no trong DOM neu nam ben trong 1 the
+      // sticky/toolbar co tao stacking context rieng) co the ve DE LEN TREN.
+      // className truyen vao day duoc gan THANG len chinh element noi (xem
+      // useMenuElementProps.ts trong @tiptap/react), khong phai len children.
+      className="z-50"
       options={BUBBLE_MENU_OPTIONS}
       // shouldShow RIENG - mac dinh cua thu vien chi kiem tra "selection
       // khong rong", nhung 1 NodeSelection (bam chon NGUYEN 1 khoi atom nhu
