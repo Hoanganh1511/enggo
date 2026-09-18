@@ -1,5 +1,4 @@
-import { Extension, Node, mergeAttributes, type Extensions } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { Node, mergeAttributes, type Extensions } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -969,93 +968,20 @@ export const FlowDiagram = Node.create({
   },
 });
 
-// [2026-09-16] TrailingNode - bug that su nguoi dung bao: "thêm 1 cái
-// accordion geographical vào sau cái accordion geographical trước đó đã đặt
-// vào thì ko đặt dc con trỏ vào, kể cả soạn văn bản ấy". Nguyen nhan: Accordion/
-// StatAccordion/Image/CuratedList/... deu la NODE ATOM (khong co "khe" van
-// ban truoc/sau chinh no) - neu 1 node atom nam CUOI CUNG 1 vung noi dung
-// (khong co paragraph theo sau), KHONG CON vi tri con tro HOP LE nao de bam
-// vao/go tiep, dung dac ta ProseMirror (chi paragraph/text moi co "khe" cho
-// con tro). Fix CHUAN cua cong dong Tiptap (chua co san trong StarterKit): 1
-// ProseMirror plugin tu dong CHEN THEM 1 paragraph RONG ngay sau node CUOI
-// CUNG cua vung do, moi khi node do KHONG PHAI paragraph.
-//
-// [2026-09-16 fix 2] Ban dau CHI kiem tra doc.lastChild (cap TAI LIEU cao
-// nhat) - nguoi dung bao lai VAN loi khi StatAccordion la node CUOI CUNG
-// BEN TRONG than 1 Accordion thuong long nhau (vd "Geographic Regions" la
-// dong DUY NHAT trong body "Australia & New Zealand" - StatAccordion do la
-// lastChild cua NODE ACCORDION, khong phai cua doc goc, nen kiem tra cu bo
-// sot). Quet THEM moi node "accordion" (content: block+, node DUY NHAT
-// trong app cho phep chua block con tuy y long nhau) qua doc.descendants,
-// ap dung dung logic tuong tu cho CHINH content ben trong no.
-const TrailingNode = Extension.create({
-  name: "trailingNode",
-  addProseMirrorPlugins() {
-    const pluginKey = new PluginKey(this.name);
-    return [
-      new Plugin({
-        key: pluginKey,
-        appendTransaction: (transactions, _oldState, newState) => {
-          // [2026-09-18] 2 lop phong ho THEM - bug that su nguoi dung bao:
-          // "Vưa đặt con trỏ vào trong vùng soạn, thì lỗi trang như này
-          // luôn" (crash toan trang, dung luc bam CHON VI TRI con tro - tuc
-          // 1 transaction CHI DOI SELECTION, KHONG DOI NOI DUNG). appendTransaction
-          // truoc do chay LAI logic quet+chen NGAY CA khi khong co gi thay
-          // doi ve NOI DUNG (chi doi con tro) - vua thua (quet lai toan bo
-          // van ban MOI LAN bam chuot), vua la nghi pham chinh cho crash nay
-          // (dung THOI DIEM voi transaction dau tien nguoi dung tao ra sau
-          // khi mo 1 Entry dai/nhieu Accordion long nhau - lan dau tien logic
-          // chen paragraph THAT SU chay).
-          // 1) Bo qua HOAN TOAN neu KHONG co transaction nao thay doi NOI
-          //    DUNG (tr.docChanged) - chi con tro doi thi khong lien quan gi
-          //    toi tinh nang nay ca.
-          // 2) Boc TOAN BO trong try/catch - 1 tinh nang "tu sua nho" nhu
-          //    the nay TUYET DOI khong duoc phep lam SAP CA TRANG neu co 1
-          //    truong hop bien nao chua luong toi (vd RangeError tu ProseMirror) -
-          //    tha bo qua 1 lan sua khong hoan hao con hon lam vo ca editor.
-          if (!transactions.some((tr) => tr.docChanged)) return null;
-
-          try {
-            const { doc, schema } = newState;
-            const paragraphType = schema.nodes.paragraph;
-            if (!paragraphType) return null;
-
-            const insertPositions: number[] = [];
-
-            if (doc.lastChild && doc.lastChild.type.name !== "paragraph") {
-              insertPositions.push(doc.content.size);
-            }
-
-            doc.descendants((node, pos) => {
-              if (node.type.name !== "accordion") return;
-              const last = node.lastChild;
-              if (last && last.type.name !== "paragraph") {
-                // pos+node.nodeSize-1 = vi tri NGAY TRUOC dau dong cua chinh
-                // node "accordion" nay - chen 1 paragraph vao do = them lam
-                // PHAN TU CUOI CUNG trong content cua no.
-                insertPositions.push(pos + node.nodeSize - 1);
-              }
-            });
-
-            if (insertPositions.length === 0) return null;
-
-            // Chen tu VI TRI LON den NHO - tranh lam lech offset cac vi tri
-            // con lai chua xu ly trong CUNG 1 transaction.
-            insertPositions.sort((a, b) => b - a);
-            const tr = newState.tr;
-            for (const pos of insertPositions) {
-              tr.insert(pos, paragraphType.create());
-            }
-            return tr;
-          } catch (err) {
-            console.error("[trailingNode] bo qua 1 lan tu sua do loi:", err);
-            return null;
-          }
-        },
-      }),
-    ];
-  },
-});
+// [2026-09-18] DA GO BO "TrailingNode" (tung o day) - tung them de fix bug
+// "thêm 1 cái accordion geographical vào sau cái accordion geographical
+// trước đó đã đặt vào thì ko đặt dc con trỏ vào" (khong co "khe" con tro sau
+// 1 node atom nam cuoi 1 vung noi dung). Extension nay tu dong chen paragraph
+// qua 1 ProseMirror `appendTransaction` chay tren MOI transaction thay doi
+// noi dung. Da qua 2 lan vá (bỏ qua transaction chỉ đổi selection, bọc
+// try/catch) nhung nguoi dung VAN bao crash "Maximum update depth exceeded"
+// (React error #185) MOI LAN bam con tro vao vung soan cua entry co nhieu
+// Accordion long StatAccordion (architecture-map) - khong the xac dinh chac
+// chan vong lap o dau trong plugin nay ma KHONG tai hien truc tiep duoc, nen
+// go han thay vi tiep tuc va mu (loi crash ca trang nghiem trong hon nhieu
+// so voi tien loi UX nho cua no). Neu can lai cho "khe con tro" nay trong
+// tuong lai, nguoi dung van co the bam Enter/dung phim mui ten de di chuyen
+// thay vi bam thang vao ngay sau node atom.
 
 // Bo extension DUNG CHUNG giua editor (soan) va viewer (doc read-only) - render
 // giong het nhau vi cung 1 schema. Placeholder KHONG o day (chi can khi soan,
@@ -1099,7 +1025,6 @@ export function getPostExtensions(): Extensions {
     Accordion,
     StatAccordion,
     FlowDiagram,
-    TrailingNode,
   ];
 }
 

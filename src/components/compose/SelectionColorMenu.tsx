@@ -91,6 +91,14 @@ function shouldShowTextSelectionOnly({ editor: ed, state }: { editor: Editor; st
   return true;
 }
 
+// [2026-09-18] CUNG ly do nhu 2 ham tren - `options={{ placement: "top" }}`
+// truoc day la OBJECT LITERAL MOI moi lan render, CUNG nam trong dependency
+// array cua useEffect noi bo BubbleMenu (xem BubbleMenu.tsx trong
+// @tiptap/react) nen TU NO cung du gay dung vong lap "Maximum update depth
+// exceeded" DU 2 ham kia da hoisted xong - day la manh con thieu that su gay
+// crash van tiep dien sau lan fix truoc.
+const BUBBLE_MENU_OPTIONS = { placement: "top" as const };
+
 // Bubble menu chon MAU CHU/MAU NEN cho vung van ban dang chon - yeu cau
 // nguoi dung: "khi một vùng text được focus (con trỏ giữ bôi tô) thì nút đó
 // sẽ hiện lên, chọn màu nền, màu chữ". `BubbleMenu` (tu @tiptap/react/menus)
@@ -128,7 +136,7 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
     <BubbleMenu
       editor={editor}
       appendTo={appendToBody}
-      options={{ placement: "top" }}
+      options={BUBBLE_MENU_OPTIONS}
       // shouldShow RIENG - mac dinh cua thu vien chi kiem tra "selection
       // khong rong", nhung 1 NodeSelection (bam chon NGUYEN 1 khoi atom nhu
       // Accordion Geographical/Sơ đồ luồng, khong phai bôi đen VĂN BẢN) CUNG
