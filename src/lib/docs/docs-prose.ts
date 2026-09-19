@@ -131,4 +131,17 @@ export const DOCS_PROSE_CLASS =
   "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-8 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-1.5 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-3 " +
   "[&_.grid-cell-badge]:inline-block [&_.grid-cell-badge]:size-2 [&_.grid-cell-badge]:shrink-0 [&_.grid-cell-badge]:rounded-full " +
   "[&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[12px] [&_.grid-cell-step]:font-semibold [&_.grid-cell-step]:text-primary " +
-  "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0";
+  "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
+  // CardGrid + SplitBlock - xem comment chi tiet trong POST_PROSE_CLASS.
+  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:grid-cols-1 [&_[data-card-grid]]:gap-3 sm:[&_[data-card-grid]]:grid-cols-2 lg:[&_[data-card-grid]]:grid-cols-4 " +
+  "[&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-3.5 [&_.card-grid-item]:no-underline " +
+  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
+  "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-2 " +
+  "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-8 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-md [&_.card-grid-item-icon]:text-[14px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
+  "[&_.card-grid-item-title]:min-w-0 [&_.card-grid-item-title]:flex-1 [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:text-[14px] [&_.card-grid-item-title]:font-semibold [&_.card-grid-item-title]:text-ink " +
+  "[&_.card-grid-item-dot]:size-2 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
+  "[&_.card-grid-item-desc]:mt-2 [&_.card-grid-item-desc]:text-[12.5px] [&_.card-grid-item-desc]:leading-snug [&_.card-grid-item-desc]:text-ink-muted " +
+  "[&_.card-grid-item-link]:mt-2 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[12.5px] [&_.card-grid-item-link]:font-medium [&_.card-grid-item-link]:text-primary " +
+  "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +
+  "[&_.split-column]:min-w-0 [&_.split-column]:flex-1 [&_.split-column_p:first-child]:mt-0 [&_.split-column_p:last-child]:mb-0 " +
+  "[&_.split-column:first-child]:sm:flex-[0_0_32%]";

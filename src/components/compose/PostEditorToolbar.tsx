@@ -34,6 +34,8 @@ import {
   CircleDot,
   Workflow,
   Grid3x3,
+  IdCard,
+  Columns2,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -275,6 +277,43 @@ export function PostEditorToolbar({
     editor.chain().focus().insertContent({ type: "grid", attrs: { cols }, content: cells }).run();
   };
 
+  // Chen CardGrid - yeu cau nguoi dung kem anh mau (7 card AWS service:
+  // icon vuong mau + cham trang thai + tieu de + mo ta + link "→ nhãn").
+  // La atom (xem CardGrid trong post-extensions.ts) - chi can 1 lan
+  // insertContent voi 1 item mac dinh de co san 1 card sua ngay, dung nut
+  // "+" trong CardGridView.tsx de them tiep.
+  const insertCardGrid = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "cardGrid",
+        attrs: {
+          items: [
+            { icon: "★", iconBg: "#6366f1", title: "Tiêu đề", status: "none", description: "", linkLabel: "", linkHref: "" },
+          ],
+        },
+      })
+      .run();
+  };
+
+  // Chen block chia doi - yeu cau nguoi dung kem anh mau (cot trai tieu de,
+  // cot phai nhieu doan van) - "Vẫn soạn được bình thường mọi thứ ở cả 2
+  // bên" - moi cot can 1 paragraph rong san (giong Accordion/Grid).
+  const insertSplitBlock = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "splitBlock",
+        content: [
+          { type: "splitColumn", content: [{ type: "paragraph" }] },
+          { type: "splitColumn", content: [{ type: "paragraph" }] },
+        ],
+      })
+      .run();
+  };
+
   return (
     <div
       className={cn(
@@ -333,6 +372,8 @@ export function PostEditorToolbar({
       <Btn label="Accordion Geographical (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
       <Btn label="Sơ đồ luồng (các bước nối tiếp, có mô tả trên mũi tên)" Icon={Workflow} onClick={insertFlowDiagram} />
       <Btn label="Grid (tuỳ chỉnh số hàng/cột)" Icon={Grid3x3} onClick={insertGrid} />
+      <Btn label="Grid card (icon + trạng thái + mô tả + link)" Icon={IdCard} onClick={insertCardGrid} />
+      <Btn label="Chia đôi (soạn được cả 2 bên)" Icon={Columns2} onClick={insertSplitBlock} />
       <Divider />
       <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
       <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />

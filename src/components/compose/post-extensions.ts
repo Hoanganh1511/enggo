@@ -17,6 +17,7 @@ import { StatAccordionView } from "./stat-accordion-view";
 import { FlowDiagramView } from "./flow-diagram-view";
 import { GridView } from "./grid-view";
 import { GridCellView } from "./grid-cell-view";
+import { CardGridView } from "./card-grid-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -1239,6 +1240,204 @@ export const Grid = Node.create({
   },
 });
 
+// CardGrid - "grid các card" (icon vuông màu + chấm trạng thái + tiêu đề +
+// mô tả + link "→ nhãn") - yêu cầu người dùng kèm ảnh mẫu (7 card AWS
+// service: EC2/Lambda/ECS/EKS/Fargate/Batch/EMR). KHAC HAN Grid/GridCell o
+// tren (content THAT, block+): moi truong o day (icon/mo ta/link) la du
+// lieu CO CAU TRUC ro rang, KHONG can rich text tu do - nen dung lai dung
+// tinh than StatAccordion (1 node ATOM DUY NHAT, du lieu la SNAPSHOT attrs
+// JSON `items[]`), da CHUNG MINH long duoc trong Accordion an toan (yeu cau
+// nguoi dung: "đảm bảo nó hoạt động trong cả accordion nhé" - StatAccordion
+// SAN CO trong production da long trong Accordion nhieu noi, vd entry
+// "architecture-map" nguoi dung dang dung, xem min-h-16 da them cho
+// accordion-body trong accordion-view.tsx danh RIENG cho truong hop nay).
+export type CardGridStatus = "none" | "red" | "yellow" | "green" | "gray";
+
+export type CardGridItem = {
+  icon: string;
+  iconBg: string;
+  title: string;
+  status: CardGridStatus;
+  description: string;
+  linkLabel: string;
+  linkHref: string;
+};
+
+// Mau cham trang thai - CUNG bo mau voi GRID_BADGE_COLORS o tren (dong nhat
+// 1 bang mau trang thai DUY NHAT trong toan bo cac tinh nang Grid/CardGrid),
+// them "none" (an han cham, giong STAT_ACCORDION_STATUSES) vi khong phai
+// card nao cung can bao hieu trang thai.
+export const CARD_GRID_STATUS_COLORS: { id: CardGridStatus; value: string | null; label: string }[] = [
+  { id: "none", value: null, label: "Không hiện chấm" },
+  { id: "red", value: "#ef4444", label: "Đỏ" },
+  { id: "yellow", value: "#eab308", label: "Vàng" },
+  { id: "green", value: "#22c55e", label: "Xanh lá" },
+  { id: "gray", value: "#94a3b8", label: "Xám" },
+];
+
+export function cardGridStatusColor(status: CardGridStatus | undefined): string | null {
+  return CARD_GRID_STATUS_COLORS.find((s) => s.id === (status ?? "none"))?.value ?? null;
+}
+
+const DEFAULT_CARD_GRID_ITEMS: CardGridItem[] = [
+  { icon: "★", iconBg: "#6366f1", title: "Tiêu đề", status: "none", description: "", linkLabel: "", linkHref: "" },
+];
+
+export const CardGrid = Node.create({
+  name: "cardGrid",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      items: {
+        default: DEFAULT_CARD_GRID_ITEMS,
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-items") ?? "[]") as CardGridItem[];
+          } catch {
+            return DEFAULT_CARD_GRID_ITEMS;
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-card-grid]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const items = (node.attrs.items ?? []) as CardGridItem[];
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-card-grid": "" }),
+      ...items.map((item) => {
+        const dotColor = cardGridStatusColor(item.status);
+        return [
+          "a",
+          { class: "card-grid-item", href: item.linkHref || undefined },
+          [
+            "div",
+            { class: "card-grid-item-top" },
+            ["span", { class: "card-grid-item-icon", style: `background-color:${item.iconBg || "#6366f1"}` }, item.icon],
+            ["span", { class: "card-grid-item-title" }, item.title],
+            ...(dotColor ? [["span", { class: "card-grid-item-dot", style: `background-color:${dotColor}` }]] : []),
+          ],
+          ...(item.description ? [["p", { class: "card-grid-item-desc" }, item.description]] : []),
+          ...(item.linkLabel ? [["span", { class: "card-grid-item-link" }, `→ ${item.linkLabel}`]] : []),
+        ];
+      }),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(CardGridView);
+  },
+  // Markdown fallback - toan bo 1 khoi HTML tho DUY NHAT (giong QuestionPicker/
+  // StatAccordion/TocBlock o tren: du lieu la SNAPSHOT attrs, khong phai
+  // ProseMirror children that).
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const items = (node.attrs.items ?? []) as CardGridItem[];
+          const cardsHtml = items
+            .map((item) => {
+              const dotColor = cardGridStatusColor(item.status);
+              const dotHtml = dotColor
+                ? `<span class="card-grid-item-dot" style="background-color:${dotColor}"></span>`
+                : "";
+              const descHtml = item.description
+                ? `<p class="card-grid-item-desc">${escapeHtmlAttr(item.description)}</p>`
+                : "";
+              const linkHtml = item.linkLabel
+                ? `<span class="card-grid-item-link">→ ${escapeHtmlAttr(item.linkLabel)}</span>`
+                : "";
+              const tag = item.linkHref ? "a" : "div";
+              const hrefAttr = item.linkHref ? ` href="${escapeHtmlAttr(item.linkHref)}"` : "";
+              return (
+                `<${tag} class="card-grid-item"${hrefAttr}>` +
+                `<div class="card-grid-item-top">` +
+                `<span class="card-grid-item-icon" style="background-color:${escapeHtmlAttr(item.iconBg || "#6366f1")}">${escapeHtmlAttr(item.icon)}</span>` +
+                `<span class="card-grid-item-title">${escapeHtmlAttr(item.title)}</span>${dotHtml}` +
+                `</div>${descHtml}${linkHtml}</${tag}>`
+              );
+            })
+            .join("");
+          state.ensureNewLine();
+          state.write(`<div data-card-grid data-items="${escapeHtmlAttr(JSON.stringify(items))}">${cardsHtml}</div>`);
+          state.ensureNewLine();
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
+// SplitBlock + SplitColumn - "block chia đôi, soạn được bình thường ở cả 2
+// bên" (yeu cau nguoi dung kem anh mau: cot trai hep chua tieu de, cot phai
+// rong chua nhieu doan van). Dung content THAT "block+" cho MOI cot (giong
+// tinh than GridCell o tren) vi 2 ben can RICH TEXT day du (dam/nghieng/
+// list/heading...), khong phai du lieu co cau truc co dinh nhu CardGrid.
+// KHONG can addNodeView() rieng cho ca 2 node nay (khac Grid/GridCell/
+// CardGrid) - khong co dieu khien tuong tac nao rieng (khong doi ty le
+// cot, khong doi mau...), nen DOM output mac dinh cua schema (renderHTML
+// duoi day) DA DU de ProseMirror tu ve LUON ban soan (giong cach "paragraph"/
+// "bulletList" hoat dong ma khong can NodeView rieng) - don gian va it rui
+// ro hon (session nay da gap vai bug NodeView-long-nhau that su voi Accordion/
+// StatAccordion, xem comment "DA GO BO TrailingNode" ngay duoi day).
+export const SplitColumn = Node.create({
+  name: "splitColumn",
+  content: "block+",
+  defining: true,
+  isolating: true,
+  parseHTML() {
+    return [{ tag: "div[data-split-column]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["div", mergeAttributes(HTMLAttributes, { class: "split-column", "data-split-column": "" }), 0];
+  },
+});
+
+export const SplitBlock = Node.create({
+  name: "splitBlock",
+  group: "block",
+  // "splitColumn splitColumn" (khong phai "splitColumn+") - LUON DUNG 2 cot,
+  // khop dung y "chia đôi" nguoi dung mo ta (khong phai chia N cot tuy y).
+  content: "splitColumn splitColumn",
+  defining: true,
+  isolating: true,
+  parseHTML() {
+    return [{ tag: "div[data-split-block]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["div", mergeAttributes(HTMLAttributes, { class: "split-block", "data-split-block": "" }), 0];
+  },
+  // Markdown fallback - giong tinh than Accordion/Grid (dong trong TRUOC/SAU
+  // moi doan long trong bat buoc, xem giai thich chi tiet o Accordion.addStorage
+  // phia tren) - NOI DUNG THAT cua tung cot van la markdown that qua
+  // state.renderContent(col), KHONG xuong cap thanh text/JSON.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const columnsNode = node as unknown as { forEach: (fn: (col: TiptapNode) => void) => void };
+          state.ensureNewLine();
+          state.write("<div data-split-block>\n\n");
+          columnsNode.forEach((col) => {
+            state.ensureNewLine();
+            state.write("<div data-split-column>\n\n");
+            state.renderContent(col);
+            state.ensureNewLine();
+            state.write("\n</div>\n\n");
+          });
+          state.write("</div>");
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // [2026-09-18] DA GO BO "TrailingNode" (tung o day) - tung them de fix bug
 // "thêm 1 cái accordion geographical vào sau cái accordion geographical
 // trước đó đã đặt vào thì ko đặt dc con trỏ vào" (khong co "khe" con tro sau
@@ -1344,6 +1543,9 @@ export function getPostExtensions(): Extensions {
     FlowDiagram,
     GridCell,
     Grid,
+    CardGrid,
+    SplitColumn,
+    SplitBlock,
   ];
 }
 
@@ -1585,4 +1787,20 @@ export const POST_PROSE_CLASS =
   "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-8 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-1.5 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-3 " +
   "[&_.grid-cell-badge]:inline-block [&_.grid-cell-badge]:size-2 [&_.grid-cell-badge]:shrink-0 [&_.grid-cell-badge]:rounded-full " +
   "[&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[12px] [&_.grid-cell-step]:font-semibold [&_.grid-cell-step]:text-primary " +
-  "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0";
+  "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
+  // CardGrid (yeu cau nguoi dung: grid cac card kieu AWS service - icon
+  // vuong mau + tieu de + cham trang thai + mo ta + link "→ nhan").
+  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:grid-cols-1 [&_[data-card-grid]]:gap-3 sm:[&_[data-card-grid]]:grid-cols-2 lg:[&_[data-card-grid]]:grid-cols-4 " +
+  "[&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-3.5 [&_.card-grid-item]:no-underline " +
+  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
+  "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-2 " +
+  "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-8 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-md [&_.card-grid-item-icon]:text-[14px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
+  "[&_.card-grid-item-title]:min-w-0 [&_.card-grid-item-title]:flex-1 [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:text-[14px] [&_.card-grid-item-title]:font-semibold [&_.card-grid-item-title]:text-ink " +
+  "[&_.card-grid-item-dot]:size-2 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
+  "[&_.card-grid-item-desc]:mt-2 [&_.card-grid-item-desc]:text-[12.5px] [&_.card-grid-item-desc]:leading-snug [&_.card-grid-item-desc]:text-ink-muted " +
+  "[&_.card-grid-item-link]:mt-2 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[12.5px] [&_.card-grid-item-link]:font-medium [&_.card-grid-item-link]:text-primary " +
+  // SplitBlock (yeu cau nguoi dung: block chia doi, soan binh thuong o ca 2
+  // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.
+  "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +
+  "[&_.split-column]:min-w-0 [&_.split-column]:flex-1 [&_.split-column_p:first-child]:mt-0 [&_.split-column_p:last-child]:mb-0 " +
+  "[&_.split-column:first-child]:sm:flex-[0_0_32%]";
