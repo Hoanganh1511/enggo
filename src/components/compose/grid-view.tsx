@@ -144,7 +144,20 @@ export function GridView({ node, editor, getPos }: ReactNodeViewProps) {
           </span>
         </div>
       )}
-      <NodeViewContent className="grid-cells" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }} />
+      {/* [2026-09-19 fix] display/gap dat THANG qua inline style (khong con
+          chi dua vao Tailwind class "[&_.grid-cells]:grid") - bug nguoi dung
+          bao "Lỗi grid à?" kem anh chup: cac o xep DOC 1-cot-1-hang thay vi
+          dan ngang theo dung `cols`, moi hang chiem 1 khoang hep + con lai
+          trong het ve phia phai - dau hieu display:grid KHONG duoc ap dung
+          (rot ve display mac dinh cua <div>, tung o TU CO LAI theo noi dung
+          thay vi dan theo track luoi). Inline style co do UU TIEN CAO NHAT
+          (chi thua !important) nen CHAC CHAN thang the moi xung dot/thu tu
+          nap CSS ngoai y muon, khong con phu thuoc lieu class Tailwind [&_...]
+          co duoc ap dung dung hay khong. */}
+      <NodeViewContent
+        className="grid-cells"
+        style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      />
     </NodeViewWrapper>
   );
 }
