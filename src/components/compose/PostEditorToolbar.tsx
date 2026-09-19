@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { TextSelection } from "@tiptap/pm/state";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   Bold,
@@ -163,11 +164,27 @@ function insertBlockWithSpacing(editor: Editor, blockJson: Record<string, unknow
       const cursorOnEmptyParagraph = empty && parent.type.name === "paragraph" && parent.content.size === 0;
       const paragraphType = state.schema.nodes.paragraph;
       const blockNode = state.schema.nodeFromJSON(blockJson);
+      const trailingParagraph = paragraphType.create();
+      let blockStart: number;
       if (cursorOnEmptyParagraph) {
-        tr.insert($from.after(), [blockNode, paragraphType.create()]);
+        blockStart = $from.after();
+        tr.insert(blockStart, [blockNode, trailingParagraph]);
       } else {
-        tr.insert($from.pos, [paragraphType.create(), blockNode, paragraphType.create()]);
+        const leadingParagraph = paragraphType.create();
+        blockStart = $from.pos + leadingParagraph.nodeSize;
+        tr.insert($from.pos, [leadingParagraph, blockNode, trailingParagraph]);
       }
+      // [2026-09-20 fix] Con tro TRUOC DAY khong duoc di chuyen sau khi chen -
+      // ProseMirror tu map vi tri chon CU (dong trong PHIA TRUOC khoi, dung de
+      // "chua khoang trong") toi sau transaction, nen con tro/focus VAN nam o
+      // dong trong do thay vi vao khoi/xuong dong sau - yeu cau nguoi dung
+      // (kem anh chup man hinh 1 ProfileBlock vua chen, con tro dang o dong
+      // rong PHIA TREN no): "insert xong thì con trỏ phải ở dưới và bên trên
+      // k còn chứ ?". Chu dong dat lai selection vao dong trong NGAY SAU khoi
+      // vua chen (trailingParagraph) - dung tinh than "chen xong san sang go
+      // tiep ngay ben duoi", khong con dong trong PHIA TRUOC "vo chu" giu con tro.
+      const afterBlock = blockStart + blockNode.nodeSize;
+      tr.setSelection(TextSelection.near(tr.doc.resolve(afterBlock), 1));
       return true;
     })
     .run();

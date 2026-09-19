@@ -565,6 +565,13 @@ export const Accordion = Node.create({
   group: "block",
   content: "block+",
   defining: true,
+  // selectable:false - xem comment day du o GridCell (post-extensions.ts):
+  // Accordion co 1 hang dieu khien contentEditable=false (chevron, tieu de
+  // input, BlockActionsMenu) ngay SAT vung noi dung that - cung rui ro bi
+  // ProseMirror chon nguyen NodeSelection cua ca Accordion khi thao tac gan
+  // bien, gay bug nguoi dung bao: "copy text trong 1 thẻ của grid nó lại
+  // copy cả cái accordion bên ngoài".
+  selectable: false,
   addAttributes() {
     return {
       // parseHTML doc TRUC TIEP tu DOM con (summary/thuoc tinh open) thay vi
@@ -1202,6 +1209,22 @@ export const GridCell = Node.create({
   content: "block+",
   defining: true,
   isolating: true,
+  // selectable:false - yeu cau nguoi dung: "Sao tôi copy text trong 1 thẻ
+  // của grid nó lại copy cả cái accordion bên ngoài ?". Moi node type trong
+  // ProseMirror MAC DINH la selectable:true (co the tro thanh 1 NodeSelection
+  // "chon nguyen ca khoi", khong chi TextSelection ben trong) - GridCell nam
+  // sat nhieu vung contentEditable=false (GridCellHead) NGAY BEN CANH vung
+  // van ban that, nen 1 thao tac keo-chon/click gan bien co the de dang bi
+  // ProseMirror/trinh duyet "nhay" thanh NodeSelection cua GridCell (hoac cha
+  // no, Grid/Accordion, neu GridCell cung selectable) thay vi TextSelection
+  // dung trong doan van - copy 1 NodeSelection se sao chep NGUYEN CA NODE (va
+  // moi anh em/cha cua no trong markdown xuat ra), khop dung trieu chung "chỉ
+  // bôi đen chữ trong 1 ô mà lại copy cả Accordion bên ngoài". Tat selectable
+  // tren CHINH GridCell (va Grid/Accordion o duoi) ep ProseMirror luon phai
+  // tim 1 TextSelection hop le gan nhat thay vi cho phep "chon nguyen khoi" -
+  // khong anh huong tinh nang nao khac (nhan doi/xoa khoi da dung BlockActionsMenu
+  // qua getPos()+node.nodeSize truc tiep, khong dua vao NodeSelection).
+  selectable: false,
   addAttributes() {
     return {
       headColor: {
@@ -1275,6 +1298,10 @@ export const Grid = Node.create({
   content: "gridCell+",
   defining: true,
   isolating: true,
+  // selectable:false - xem comment day du o GridCell o tren (cung 1 ly do:
+  // tranh ProseMirror "nhay" thanh NodeSelection cua ca Grid khi thao tac gan
+  // bien thanh dieu khien Hang/Cot, gay copy nhau ca khoi Grid ngoai y muon).
+  selectable: false,
   addAttributes() {
     return {
       cols: {
@@ -1595,6 +1622,8 @@ export const SplitColumn = Node.create({
   content: "block+",
   defining: true,
   isolating: true,
+  // selectable:false - xem comment day du o GridCell.
+  selectable: false,
   parseHTML() {
     return [{ tag: "div[data-split-column]" }];
   },
@@ -1611,6 +1640,8 @@ export const SplitBlock = Node.create({
   content: "splitColumn splitColumn",
   defining: true,
   isolating: true,
+  // selectable:false - xem comment day du o GridCell.
+  selectable: false,
   parseHTML() {
     return [{ tag: "div[data-split-block]" }];
   },
@@ -1663,6 +1694,8 @@ export const ProfileBlock = Node.create({
   content: "block+",
   defining: true,
   isolating: true,
+  // selectable:false - xem comment day du o GridCell.
+  selectable: false,
   addAttributes() {
     return {
       avatarUrl: {
