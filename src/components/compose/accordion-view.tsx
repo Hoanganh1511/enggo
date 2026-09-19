@@ -48,7 +48,21 @@ export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewP
         )}
       </div>
       <div className={cn("border-t border-border", !open && "hidden")}>
-        <NodeViewContent className="accordion-body px-3.5 py-3" />
+        {/* min-h-16 - bug nguoi dung bao "click ra xung quanh phía ngoài nó
+            mà không thể soạn tiếp bên trong accordion ngoài" (accordion
+            THUONG long 1 Accordion Geographical/StatAccordion ben trong -
+            node ATOM, contentEditable=false, chiem SAT het be rong/cao cua
+            accordion-body vi khong co min-height rieng). Khi atom la con
+            DUY NHAT va khong con khoang trong nao de bam vao, khong co vi
+            tri hop le nao trong VUNG THAT CO THE SOAN (accordion-body) cho
+            trinh duyet/ProseMirror dat con tro - nguoi dung "bấm ra xung
+            quanh" thuc chat la bam TRUNG chinh atom (chon nguyen no) hoac ra
+            NGOAI accordion-body luon. Them min-height tao 1 khoang trong
+            THAT LUON con lai duoi atom (thuoc accordion-body that, van la
+            vung contentEditable that) de co the bam vao do va tiep tuc go -
+            khong can logic rieng, day la hanh vi mac dinh cua ProseMirror
+            khi co du khong gian de nhan click. */}
+        <NodeViewContent className="accordion-body min-h-16 px-3.5 py-3" />
       </div>
     </NodeViewWrapper>
   );

@@ -45,9 +45,19 @@ export function EntryHeadingsToc({ editor }: { editor: Editor }) {
   const headings = collectHeadings(editor);
 
   return (
+    // z-30 (KHONG phai z-40) - bug nguoi dung bao "cả phần toc cũng lỗi
+    // kìa" (kem anh chup luc dang luu): LayoutSpinnerOverlay (SeriesEntryForm.tsx)
+    // cung dung z-40 de phu mo TOAN BO form trong luc luu - 2 phan tu z-index
+    // BANG NHAU thi phan tu nam SAU trong DOM thang the (panel nay nam SAU,
+    // long sau trong cay cua SeriesEntryEditor), khien no LUON hien RO NET,
+    // khong bi lop overlay mo dan len nhu phan con lai cua form - nhin lech
+    // hoan toan (1 goc net cang, phan con lai mo nhoe). Ha xuong z-30 (thap
+    // hon overlay) de overlay PHU DUNG len ca panel nay khi dang luu, dong
+    // bo voi toan bo phan con lai - van cao hon noi dung thuong (khong z-index,
+    // mac dinh) nen ngay luc KHONG luu van noi len tren binh thuong.
     <nav
       aria-label="Mục lục bài viết"
-      className="fixed top-28 right-6 bottom-24 z-40 hidden w-56 overflow-y-auto xl:block"
+      className="fixed top-28 right-6 bottom-24 z-30 hidden w-56 overflow-y-auto xl:block"
     >
       <p className="mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Mục lục</p>
       {headings.length === 0 ? (

@@ -333,16 +333,24 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
               // nghia cho danh sach kieu "AWS Region" (vd "Geographic
               // Regions"), KHONG bat buoc cho danh sach khac (vd "Edge
               // Locations" - khong phai Region/AZ) nen de trong duoc.
-              // focus-within:scale - phong nhe dong dang tuong tac (bam vao 1
-              // o nhap ben trong) len tren cac dong con lai - yeu cau nguoi
-              // dung: "Khi mà đang tương tác con trỏ ở cái nào thì anime
-              // scale nhẹ focus cái đấy lên tí nhé". Dung THUAN CSS
-              // (:focus-within, khong can React state rieng theo doi dong
-              // nao dang focus) - tu dong ap dung cho BAT KY input/button nao
-              // trong dong nhan focus (text/lat/lng/status picker/globe...).
+              // has-[input:focus]:scale (KHONG con focus-within:scale) - bug
+              // nguoi dung bao "giờ phải click 2 lần mới mở lên chọn được. 1
+              // lần như kiểu nó scale lên ý" tren nut ItemStatusPicker/
+              // ColorStatusPicker (popover): ban truoc dung focus-within,
+              // TU DONG kich hoat scale KHI CHINH nut mo popover nhan focus -
+              // nut do vua la ANCHOR de Radix Popover do vi tri, vua bi chinh
+              // hieu ung scale cua the cha lam DOI kich thuoc/vi tri ngay
+              // GIUA luc popover dang mo (transition-transform 150ms), khien
+              // lan do vi tri dau tien SAI/nam ngoai tam nhin - bam lai LAN 2
+              // (luc do scale da on dinh, khong con doi giua chung) moi thay
+              // popover dung cho. `has-[input:focus]` CHI kich hoat scale khi
+              // 1 O NHAP VAN BAN THAT (input) dang focus (dung y ban dau
+              // "đang tương tác con trỏ" = go chu) - KHONG con phan ung voi
+              // nut popover/globe nhan focus nua, loai tru hoan toan xung dot
+              // voi vi tri neo cua popover ben trong.
               <div
                 key={i}
-                className="group relative rounded-lg border border-border/60 bg-surface p-2 transition-transform duration-150 ease-out focus-within:z-10 focus-within:scale-[1.02] focus-within:border-border focus-within:shadow-sm"
+                className="group relative rounded-lg border border-border/60 bg-surface p-2 transition-transform duration-150 ease-out has-[input:focus]:z-10 has-[input:focus]:scale-[1.02] has-[input:focus]:border-border has-[input:focus]:shadow-sm"
               >
                 <div className="flex items-center gap-2">
                   <ItemStatusPicker
