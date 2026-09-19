@@ -7,13 +7,14 @@ import { ArrowRight, Plus, X } from "lucide-react";
 import { CuratedItemPickerModal } from "./CuratedItemPickerModal";
 import type { CuratedListItem } from "./post-extensions";
 import { cn } from "@/lib/utils";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 
 // NodeView cua khoi "Đọc thêm" (4 the ngang) - CHI chay khi mount trong 1
 // Editor THAT (soan hoac 1 mat doc "song" nao do dung useEditor), KHONG chay
 // trong duong render tinh renderTiptapHTML()/generateHTML() - xem
 // post-extensions.ts). editable=false (doc) thi moi the la 1 link that toi
 // bai, khong con nut "+"/"x" - editable=true (soan) moi mo modal chon bai.
-export function CuratedListView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function CuratedListView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const [pickingIndex, setPickingIndex] = useState<number | null>(null);
   const items = (node.attrs.items ?? []) as (CuratedListItem | null)[];
   const canEdit = editor.isEditable;
@@ -31,7 +32,12 @@ export function CuratedListView({ node, updateAttributes, editor }: ReactNodeVie
   }
 
   return (
-    <NodeViewWrapper contentEditable={false} className="my-4 flex flex-col gap-2.5">
+    <NodeViewWrapper contentEditable={false} className="group my-4 flex flex-col gap-2.5">
+      {canEdit && (
+        <div className="flex justify-end">
+          <BlockActionsMenu editor={editor} getPos={getPos} node={node} />
+        </div>
+      )}
       {items.map((item, i) => (
         <div
           key={i}

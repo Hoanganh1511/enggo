@@ -19,6 +19,7 @@ import { GridView } from "./grid-view";
 import { GridCellView } from "./grid-cell-view";
 import { CardGridView } from "./card-grid-view";
 import { ProfileBlockView } from "./profile-block-view";
+import { SplitBlockView } from "./split-block-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -1608,6 +1609,12 @@ export const SplitBlock = Node.create({
   },
   renderHTML({ HTMLAttributes }) {
     return ["div", mergeAttributes(HTMLAttributes, { class: "split-block", "data-split-block": "" }), 0];
+  },
+  // NodeView TOI THIEU (xem split-block-view.tsx) - CHI de co cho neo
+  // BlockActionsMenu (nut "..." xoa/nhan doi ca khoi), khong doi gi ve
+  // layout/style (van dung y het className "split-block" cu qua NodeViewContent).
+  addNodeView() {
+    return ReactNodeViewRenderer(SplitBlockView);
   },
   // Markdown fallback - giong tinh than Accordion/Grid (dong trong TRUOC/SAU
   // moi doan long trong bat buoc, xem giai thich chi tiet o Accordion.addStorage

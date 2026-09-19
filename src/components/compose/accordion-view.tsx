@@ -5,6 +5,7 @@ import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tipt
 import { ChevronDown, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ImagePickerModal } from "./ImagePickerModal";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 
 // NodeView cua Accordion. [2026-09-16] Bam chevron gio AN/HIEN noi dung
 // NGAY TRONG LUC SOAN (khac ban truoc - giu noi dung LUON hien, chi doi
@@ -18,7 +19,7 @@ import { ImagePickerModal } from "./ImagePickerModal";
 // khac voi that su unmount se lam mat theo doi noi dung do. Muon sua noi
 // dung ben trong: bam chevron mo ra truoc (dung tinh than "mo accordion that
 // de sua, dong lai khi xong" - khop voi cach nguoi doc trai nghiem).
-export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function AccordionView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
   const open = node.attrs.open !== false;
   const mediaHeader = Boolean(node.attrs.mediaHeader);
@@ -28,7 +29,7 @@ export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewP
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
-    <NodeViewWrapper className="accordion-block my-4 overflow-hidden rounded-xl border border-border">
+    <NodeViewWrapper className="accordion-block group relative my-4 overflow-hidden rounded-xl border border-border">
       <div className="flex items-center gap-2 px-3.5 py-2.5" contentEditable={false}>
         <button
           type="button"
@@ -108,6 +109,7 @@ export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewP
         ) : (
           <span className="min-w-0 flex-1 text-[14.5px] font-semibold text-ink">{title}</span>
         )}
+        {canEdit && <BlockActionsMenu editor={editor} getPos={getPos} node={node} />}
       </div>
       <div className={cn("border-t border-border", !open && "hidden")}>
         {/* min-h-16 - bug nguoi dung bao "click ra xung quanh phía ngoài nó

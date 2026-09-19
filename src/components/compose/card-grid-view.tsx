@@ -5,6 +5,7 @@ import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { Plus, X } from "lucide-react";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 import {
   CARD_GRID_STATUS_COLORS,
   cardGridStatusColor,
@@ -373,7 +374,7 @@ function CardGridItemView({
 // (khac Grid/GridCell can NodeViewContent that de ProseMirror theo doi
 // children thuc su - CardGrid khong co children nao ca, moi du lieu la attrs
 // `items[]`).
-export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function CardGridView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const items = ((node.attrs.items ?? []) as Partial<CardGridItem>[]).map(normalizeCardGridItem);
   const canEdit = editor.isEditable;
 
@@ -388,7 +389,16 @@ export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewPr
   }
 
   return (
-    <NodeViewWrapper contentEditable={false} className="card-grid-view my-4">
+    <NodeViewWrapper contentEditable={false} className="card-grid-view group my-4">
+      {/* Menu cho CA khoi CardGrid (tat ca card cung luc) - khac nut "x" rieng
+          tren tung card (chi xoa 1 card, xem CardGridItemView). Dat trong 1
+          hang RIENG (khong absolute) - tranh de len goc tren-phai cua chinh
+          the DAU TIEN trong luoi (cham trang thai/icon tien ich cua no). */}
+      {canEdit && (
+        <div className="mb-1.5 flex justify-end">
+          <BlockActionsMenu editor={editor} getPos={getPos} node={node} />
+        </div>
+      )}
       <div className="grid gap-3" style={CARD_GRID_STYLE}>
         {items.map((item, i) => (
           <CardGridItemView

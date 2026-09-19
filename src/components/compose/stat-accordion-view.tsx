@@ -8,6 +8,7 @@ import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/pop
 import type { StatAccordionItem, StatAccordionLegendItem, StatAccordionStatus } from "./post-extensions";
 import { STAT_ACCORDION_DEFAULT_COLOR, STAT_ACCORDION_STATUSES, statAccordionStatusColor } from "./post-extensions";
 import { RegionGlobeModal, type RegionGlobePoint } from "./RegionGlobeModal";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 
 // Popover 5 mau CO SAN (STAT_ACCORDION_STATUSES) danh cho LEGEND - legend van
 // la 1 cap "mau tuy y + nhan tuy chinh" DOC LAP voi status cua item (khac
@@ -199,7 +200,7 @@ function ItemMenuButton({
 // yeu cau nguoi dung: "đừng lưu đơn thuần [text/color/lat/lng phẳng]... vì UI
 // của bạn thực chất có 3 tầng: Geographic Area → AWS Region → Availability
 // Zones" (xem dinh nghia StatAccordionItem trong post-extensions.ts).
-export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function StatAccordionView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
   const description = (node.attrs.description as string) ?? "";
   const open = node.attrs.open !== false;
@@ -272,7 +273,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
   return (
     <NodeViewWrapper
       contentEditable={false}
-      className="stat-accordion-view my-4 overflow-hidden rounded-xl border border-border"
+      className="stat-accordion-view group relative my-4 overflow-hidden rounded-xl border border-border"
     >
       <div className="flex items-center gap-2.5 px-3.5 py-2.5">
         {canEdit ? (
@@ -305,6 +306,7 @@ export function StatAccordionView({ node, updateAttributes, editor }: ReactNodeV
         >
           {open ? <Minus size={14} strokeWidth={2} /> : <Plus size={14} strokeWidth={2} />}
         </button>
+        {canEdit && <BlockActionsMenu editor={editor} getPos={getPos} node={node} />}
       </div>
 
       {open && (

@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 import { ArrowDown, Plus, Split, X } from "lucide-react";
 import type { FlowDiagramStep } from "./post-extensions";
 
@@ -244,7 +245,7 @@ function FlowNodeEditor({
 // JSON, ban render TINH luc doc dung <div>/CSS thuan, xem post-extensions.ts).
 // Du lieu la 1 CAY (`root: FlowDiagramStep`, xem post-extensions.ts) thay vi
 // mang phang truoc day - cho phep re nhanh (1 buoc co NHIEU buoc ke tiep).
-export function FlowDiagramView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function FlowDiagramView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const root = (node.attrs.root ?? { title: "" }) as FlowDiagramStep;
   const canEdit = editor.isEditable;
 
@@ -259,7 +260,12 @@ export function FlowDiagramView({ node, updateAttributes, editor }: ReactNodeVie
   }
 
   return (
-    <NodeViewWrapper contentEditable={false} className="flow-diagram-view my-4 flex flex-col items-center gap-0">
+    <NodeViewWrapper contentEditable={false} className="flow-diagram-view group my-4 flex w-full flex-col items-center gap-0">
+      {canEdit && (
+        <div className="mb-1.5 flex w-full justify-end">
+          <BlockActionsMenu editor={editor} getPos={getPos} node={node} />
+        </div>
+      )}
       <FlowNodeEditor
         node={root}
         path={[]}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tiptap/react";
 import { ImagePlus } from "lucide-react";
 import { ImagePickerModal } from "./ImagePickerModal";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 
 // NodeView cua ProfileBlock - "block layout" DAU TIEN (yeu cau nguoi dung:
 // "Ảnh đại diện vuông, tên, sau đó phía dưới là nội dung"). Head (anh vuong +
@@ -12,14 +13,14 @@ import { ImagePickerModal } from "./ImagePickerModal";
 // URL) - yeu cau nguoi dung: "không để dán url, cho bật modal, có thể lựa
 // chọn giữa 2 tab upload hoặc dán url". Body la NodeViewContent THAT (rich
 // text day du, xem post-extensions.ts).
-export function ProfileBlockView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function ProfileBlockView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const avatarUrl = (node.attrs.avatarUrl as string | null) ?? null;
   const name = (node.attrs.name as string) ?? "";
   const canEdit = editor.isEditable;
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
-    <NodeViewWrapper className="profile-block my-4">
+    <NodeViewWrapper className="profile-block group relative my-4">
       <div className="profile-block-head flex items-center gap-3" contentEditable={false}>
         {canEdit ? (
           <button
@@ -47,6 +48,7 @@ export function ProfileBlockView({ node, updateAttributes, editor }: ReactNodeVi
         ) : (
           <span className="profile-block-name">{name}</span>
         )}
+        {canEdit && <BlockActionsMenu editor={editor} getPos={getPos} node={node} />}
       </div>
       <NodeViewContent className="profile-block-body" />
       <ImagePickerModal

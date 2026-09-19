@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import { Plus, Minus } from "lucide-react";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 
 // 4 ham thao tac hang/cot cua Grid - dung THANG 1 transaction ProseMirror
 // (khong qua lenh insertContent/API cao cap) vi can kiem soat CHINH XAC vi
@@ -159,7 +160,7 @@ export function GridView({ node, editor, getPos }: ReactNodeViewProps) {
   });
 
   return (
-    <NodeViewWrapper className="grid-block my-4">
+    <NodeViewWrapper className="grid-block group relative my-4">
       {canEdit && (
         <div contentEditable={false} className="mb-2 flex items-center gap-3 text-[11px] font-medium text-ink-faint">
           <span className="flex items-center gap-1 rounded-md border border-border px-1.5 py-1">
@@ -172,6 +173,7 @@ export function GridView({ node, editor, getPos }: ReactNodeViewProps) {
             <StepperBtn label="Thêm cột" Icon={Plus} onClick={withPos(addColumn)} />
             <StepperBtn label="Bớt cột" Icon={Minus} onClick={withPos(removeColumn)} />
           </span>
+          <BlockActionsMenu editor={editor} getPos={getPos} node={node} className="ml-auto" />
         </div>
       )}
       <div ref={wrapperRef}>

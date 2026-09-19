@@ -5,6 +5,7 @@ import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { ChevronDown, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { QuestionPickerItem } from "./post-extensions";
+import { BlockActionsMenu } from "./BlockActionsMenu";
 
 const MAX_ITEMS = 8;
 
@@ -15,7 +16,7 @@ const MAX_ITEMS = 8;
 // attrs) chi de xem truoc luc soan - luc doc THAT, hanh vi mo/dong do chinh
 // nguoi doc bam <summary> quyet dinh qua CSS/HTML thuan, khong lien quan gi
 // state nay.
-export function QuestionPickerView({ node, updateAttributes, editor }: ReactNodeViewProps) {
+export function QuestionPickerView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const items = (node.attrs.items ?? []) as QuestionPickerItem[];
   const canEdit = editor.isEditable;
   const [openIndex, setOpenIndex] = useState(0);
@@ -39,7 +40,12 @@ export function QuestionPickerView({ node, updateAttributes, editor }: ReactNode
   }
 
   return (
-    <NodeViewWrapper contentEditable={false} className="my-4">
+    <NodeViewWrapper contentEditable={false} className="group my-4">
+      {canEdit && (
+        <div className="mb-1.5 flex justify-end">
+          <BlockActionsMenu editor={editor} getPos={getPos} node={node} />
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {items.map((item, i) => {
           const open = openIndex === i;
