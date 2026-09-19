@@ -1813,15 +1813,22 @@ export const POST_PROSE_CLASS =
   "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
   // CardGrid (yeu cau nguoi dung: grid cac card kieu AWS service - icon
   // vuong mau + tieu de + cham trang thai + mo ta + link "→ nhan").
+  // [2026-09-20] Kich thuoc/khoang cach doi lai KHOP DUNG anh mau nguoi dung
+  // gui ("Cấu trúc thẻ trong grid đúng như này cho tôi" - the EC2/Lambda):
+  // icon vuong LON hon han (size-8 -> size-13, ro net nhu 1 "logo" chu khong
+  // phai 1 chu cai nho), tieu de to/dam hon, cham trang thai to hon va nam
+  // O GOC TREN PHAI (khong con chen sat canh tieu de). Radius CARD giu
+  // NGUYEN rounded-lg (KHONG tang len rounded-xl/2xl) - quy uoc rieng cua
+  // du an: "keep radii small, rounded-lg cards max, never rounded-2xl/3xl".
   "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:grid-cols-1 [&_[data-card-grid]]:gap-3 sm:[&_[data-card-grid]]:grid-cols-2 lg:[&_[data-card-grid]]:grid-cols-4 " +
-  "[&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-3.5 [&_.card-grid-item]:no-underline " +
+  "[&_.card-grid-item]:relative [&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline " +
   "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
-  "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-2 " +
-  "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-8 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-md [&_.card-grid-item-icon]:text-[14px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
-  "[&_.card-grid-item-title]:min-w-0 [&_.card-grid-item-title]:flex-1 [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:text-[14px] [&_.card-grid-item-title]:font-semibold [&_.card-grid-item-title]:text-ink " +
-  "[&_.card-grid-item-dot]:size-2 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
-  "[&_.card-grid-item-desc]:mt-2 [&_.card-grid-item-desc]:text-[12.5px] [&_.card-grid-item-desc]:leading-snug [&_.card-grid-item-desc]:text-ink-muted " +
-  "[&_.card-grid-item-link]:mt-2 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[12.5px] [&_.card-grid-item-link]:font-medium [&_.card-grid-item-link]:text-primary " +
+  "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-3 " +
+  "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-13 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-lg [&_.card-grid-item-icon]:text-[22px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
+  "[&_.card-grid-item-title]:min-w-0 [&_.card-grid-item-title]:flex-1 [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:pr-4 [&_.card-grid-item-title]:text-[17px] [&_.card-grid-item-title]:font-bold [&_.card-grid-item-title]:text-ink " +
+  "[&_.card-grid-item-dot]:absolute [&_.card-grid-item-dot]:top-4 [&_.card-grid-item-dot]:right-4 [&_.card-grid-item-dot]:size-3.5 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
+  "[&_.card-grid-item-desc]:mt-3.5 [&_.card-grid-item-desc]:text-[13.5px] [&_.card-grid-item-desc]:leading-snug [&_.card-grid-item-desc]:text-ink-muted " +
+  "[&_.card-grid-item-link]:mt-3 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[13.5px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
   // SplitBlock (yeu cau nguoi dung: block chia doi, soan binh thuong o ca 2
   // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.
   "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +

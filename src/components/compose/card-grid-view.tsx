@@ -65,7 +65,7 @@ function IconPicker({
         <button
           type="button"
           title="Icon + màu nền"
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-[13px] font-bold text-white"
+          className="flex size-13 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[22px] font-bold text-white"
           style={{ backgroundColor: iconBg || "#6366f1" }}
         >
           {icon || "★"}
@@ -124,7 +124,7 @@ function StatusPicker({
         <button
           type="button"
           title="Chấm trạng thái"
-          className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface"
+          className="flex size-3.5 shrink-0 cursor-pointer items-center justify-center self-start rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface"
           style={dotColor ? { backgroundColor: dotColor } : undefined}
         >
           {!dotColor && <span className="size-full rounded-full border border-dashed border-ink-faint" />}
@@ -206,7 +206,7 @@ export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewPr
     <NodeViewWrapper contentEditable={false} className="card-grid-view my-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((item, i) => (
-          <div key={i} className="group relative flex flex-col rounded-lg border border-border bg-surface p-3">
+          <div key={i} className="group relative flex flex-col rounded-lg border border-border bg-surface p-4">
             {items.length > 1 && (
               <button
                 type="button"
@@ -217,13 +217,19 @@ export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewPr
                 <X size={11} strokeWidth={2} />
               </button>
             )}
-            <div className="flex items-center gap-2">
+            {/* [2026-09-20] Icon to (size-13) + tieu de 17px/bold - khop dung
+                cau truc anh mau nguoi dung gui (EC2/Lambda): "Cấu trúc thẻ
+                trong grid đúng như này cho tôi" (xem CSS ban doc trong
+                POST_PROSE_CLASS/docs-prose.ts, giao dien luc SOAN o day dong
+                bo cung ty le de khong bi "giat hinh" giua luc soan va luc
+                xuat ban). */}
+            <div className="flex items-center gap-3">
               <IconPicker icon={item.icon} iconBg={item.iconBg} onChange={(patch) => updateItem(i, patch)} />
               <input
                 value={item.title}
                 onChange={(e) => updateItem(i, { title: e.target.value })}
                 placeholder="Tiêu đề"
-                className={inputClass + " font-semibold"}
+                className={inputClass + " text-[17px] font-bold"}
               />
               <StatusPicker
                 status={item.status}
@@ -237,9 +243,9 @@ export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewPr
               onChange={(e) => updateItem(i, { description: e.target.value })}
               placeholder="Mô tả ngắn..."
               rows={2}
-              className="mt-2 w-full resize-none rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[12.5px] text-ink-muted outline-none placeholder:text-ink-faint hover:border-border focus:border-primary"
+              className="mt-3.5 w-full resize-none rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[13.5px] text-ink-muted outline-none placeholder:text-ink-faint hover:border-border focus:border-primary"
             />
-            <div className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium text-primary">
+            <div className="mt-3 flex items-center gap-1 text-[13.5px] font-semibold text-primary">
               <span className="shrink-0">→</span>
               <input
                 value={item.linkLabel}
