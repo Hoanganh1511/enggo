@@ -150,4 +150,10 @@ export const DOCS_PROSE_CLASS =
   "[&_.card-grid-item-link]:mt-3 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[13.5px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
   "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +
   "[&_.split-column]:min-w-0 [&_.split-column]:flex-1 [&_.split-column_p:first-child]:mt-0 [&_.split-column_p:last-child]:mb-0 " +
-  "[&_.split-column:first-child]:sm:flex-[0_0_32%]";
+  "[&_.split-column:first-child]:sm:flex-[0_0_32%] " +
+  // ProfileBlock - xem comment chi tiet trong POST_PROSE_CLASS.
+  "[&_.profile-block-head]:mb-3 [&_.profile-block-head]:flex [&_.profile-block-head]:items-center [&_.profile-block-head]:gap-3 " +
+  "[&_.profile-block-avatar]:size-13 [&_.profile-block-avatar]:shrink-0 [&_.profile-block-avatar]:rounded-lg [&_.profile-block-avatar]:border [&_.profile-block-avatar]:border-border [&_.profile-block-avatar]:object-cover " +
+  "[&_.profile-block-avatar-empty]:bg-surface-muted " +
+  "[&_.profile-block-name]:text-[17px] [&_.profile-block-name]:font-bold [&_.profile-block-name]:text-ink " +
+  "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0";

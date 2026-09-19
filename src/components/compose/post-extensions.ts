@@ -18,6 +18,7 @@ import { FlowDiagramView } from "./flow-diagram-view";
 import { GridView } from "./grid-view";
 import { GridCellView } from "./grid-cell-view";
 import { CardGridView } from "./card-grid-view";
+import { ProfileBlockView } from "./profile-block-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -1446,6 +1447,85 @@ export const SplitBlock = Node.create({
   },
 });
 
+// ProfileBlock - "block dạng layout" DAU TIEN trong 1 he thong nhieu layout
+// se bo sung dan (yeu cau nguoi dung: "Bổ sung thêm trong editor việc thêm
+// các block dạng layout khác nhau, trước mắt thêm 1 block có layout như
+// trong ảnh... Ảnh đại diện vuông, tên, sau đó phía dưới là nội dung"). Cau
+// truc: HEAD la attrs THUAN (avatarUrl + name, khong phai ProseMirror
+// children - khong can rich text cho ten) + BODY la content THAT "block+"
+// (dung tinh than GridCell/SplitColumn o tren) vi "nội dung" phia duoi can
+// soan binh thuong (dam/nghieng/list...), khong phai 1 chuoi JSON.
+export const ProfileBlock = Node.create({
+  name: "profileBlock",
+  group: "block",
+  content: "block+",
+  defining: true,
+  isolating: true,
+  addAttributes() {
+    return {
+      avatarUrl: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-avatar-url") || null,
+        renderHTML: (attrs) => (attrs.avatarUrl ? { "data-avatar-url": attrs.avatarUrl as string } : {}),
+      },
+      name: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-name") || "",
+        renderHTML: (attrs) => (attrs.name ? { "data-name": attrs.name as string } : {}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-profile-block]", contentElement: ":scope > div.profile-block-body" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const avatarUrl = node.attrs.avatarUrl as string | null;
+    const name = (node.attrs.name as string) || "";
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "profile-block", "data-profile-block": "" }),
+      [
+        "div",
+        { class: "profile-block-head", contenteditable: "false" },
+        ...(avatarUrl
+          ? [["img", { class: "profile-block-avatar", src: avatarUrl, alt: name }]]
+          : [["div", { class: "profile-block-avatar profile-block-avatar-empty" }]]),
+        ["span", { class: "profile-block-name" }, name],
+      ],
+      ["div", { class: "profile-block-body" }, 0],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ProfileBlockView);
+  },
+  // Markdown fallback - giong tinh than SplitBlock o tren (dong trong TRUOC/
+  // SAU doan long trong bat buoc) - NOI DUNG THAT trong body van la markdown
+  // that qua state.renderContent(node), KHONG xuong cap thanh text/JSON.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const avatarUrl = node.attrs.avatarUrl as string | null;
+          const name = (node.attrs.name as string) || "";
+          const avatarHtml = avatarUrl
+            ? `<img class="profile-block-avatar" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(name)}">`
+            : `<div class="profile-block-avatar profile-block-avatar-empty"></div>`;
+          state.ensureNewLine();
+          state.write(
+            `<div data-profile-block${avatarUrl ? ` data-avatar-url="${escapeHtmlAttr(avatarUrl)}"` : ""}${name ? ` data-name="${escapeHtmlAttr(name)}"` : ""}>` +
+              `<div class="profile-block-head">${avatarHtml}<span class="profile-block-name">${escapeHtmlAttr(name)}</span></div>` +
+              `<div class="profile-block-body">\n\n`,
+          );
+          state.renderContent(node);
+          state.ensureNewLine();
+          state.write("\n</div></div>");
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // [2026-09-18] DA GO BO "TrailingNode" (tung o day) - tung them de fix bug
 // "thêm 1 cái accordion geographical vào sau cái accordion geographical
 // trước đó đã đặt vào thì ko đặt dc con trỏ vào" (khong co "khe" con tro sau
@@ -1554,6 +1634,7 @@ export function getPostExtensions(): Extensions {
     CardGrid,
     SplitColumn,
     SplitBlock,
+    ProfileBlock,
   ];
 }
 
@@ -1833,4 +1914,11 @@ export const POST_PROSE_CLASS =
   // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.
   "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +
   "[&_.split-column]:min-w-0 [&_.split-column]:flex-1 [&_.split-column_p:first-child]:mt-0 [&_.split-column_p:last-child]:mb-0 " +
-  "[&_.split-column:first-child]:sm:flex-[0_0_32%]";
+  "[&_.split-column:first-child]:sm:flex-[0_0_32%] " +
+  // ProfileBlock - "block layout" DAU TIEN (anh vuong + ten + noi dung ben
+  // duoi, xem comment chi tiet trong post-extensions.ts).
+  "[&_.profile-block-head]:mb-3 [&_.profile-block-head]:flex [&_.profile-block-head]:items-center [&_.profile-block-head]:gap-3 " +
+  "[&_.profile-block-avatar]:size-13 [&_.profile-block-avatar]:shrink-0 [&_.profile-block-avatar]:rounded-lg [&_.profile-block-avatar]:border [&_.profile-block-avatar]:border-border [&_.profile-block-avatar]:object-cover " +
+  "[&_.profile-block-avatar-empty]:bg-surface-muted " +
+  "[&_.profile-block-name]:text-[17px] [&_.profile-block-name]:font-bold [&_.profile-block-name]:text-ink " +
+  "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0";

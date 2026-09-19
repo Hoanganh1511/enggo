@@ -36,6 +36,7 @@ import {
   Grid3x3,
   IdCard,
   Columns2,
+  Contact,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -314,6 +315,23 @@ export function PostEditorToolbar({
       .run();
   };
 
+  // Chen ProfileBlock - "block dạng layout" DAU TIEN (yeu cau nguoi dung:
+  // "Bổ sung thêm trong editor việc thêm các block dạng layout khác nhau,
+  // trước mắt thêm 1 block có layout như trong ảnh... Ảnh đại diện vuông,
+  // tên, sau đó phía dưới là nội dung"). 1 paragraph rong san trong body
+  // (giong Accordion/Grid/SplitBlock).
+  const insertProfileBlock = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "profileBlock",
+        attrs: { avatarUrl: null, name: "" },
+        content: [{ type: "paragraph" }],
+      })
+      .run();
+  };
+
   return (
     <div
       className={cn(
@@ -374,6 +392,7 @@ export function PostEditorToolbar({
       <Btn label="Grid (tuỳ chỉnh số hàng/cột)" Icon={Grid3x3} onClick={insertGrid} />
       <Btn label="Grid card (icon + trạng thái + mô tả + link)" Icon={IdCard} onClick={insertCardGrid} />
       <Btn label="Chia đôi (soạn được cả 2 bên)" Icon={Columns2} onClick={insertSplitBlock} />
+      <Btn label="Block Hồ sơ (ảnh vuông + tên + nội dung)" Icon={Contact} onClick={insertProfileBlock} />
       <Divider />
       <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
       <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />
