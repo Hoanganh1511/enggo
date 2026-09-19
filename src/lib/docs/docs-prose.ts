@@ -125,7 +125,12 @@ export const DOCS_PROSE_CLASS =
   "[&_.flow-diagram-note-branch]:mt-1 [&_.flow-diagram-note-branch]:mb-1 [&_.flow-diagram-note-branch]:max-w-[10rem] [&_.flow-diagram-note-branch]:text-center [&_.flow-diagram-note-branch]:text-[11px] [&_.flow-diagram-note-branch]:text-ink-faint [&_.flow-diagram-note-branch]:italic " +
   // Mau NEN (BackgroundColor) - xem comment chi tiet trong POST_PROSE_CLASS.
   "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5 " +
-  // Grid - xem comment chi tiet trong POST_PROSE_CLASS.
+  // Grid - trang doc cong khai render tu HTML tho (Grid.addStorage() da ghi
+  // SAN grid-template-columns lam inline style ngay trong chuoi HTML, xem
+  // post-extensions.ts) - CHI can display:grid qua class o day, KHONG can
+  // xu ly lop "react-renderer"/"data-node-view-content-react" nhu
+  // POST_PROSE_CLASS (do la dac thu rieng cua NodeView luc SOAN, khong ton
+  // tai trong HTML tinh o day).
   "[&_.grid-cells]:my-4 [&_.grid-cells]:grid [&_.grid-cells]:gap-3 " +
   "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface " +
   "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-8 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-1.5 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-3 " +

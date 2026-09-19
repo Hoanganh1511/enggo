@@ -1782,7 +1782,22 @@ export const POST_PROSE_CLASS =
   // rounded-lg, cach nhau qua `gap`) thay vi 1 luoi border-collapse chung
   // nhu bang thuong (xem ly do tranh loi "border cong queo" da fix cho
   // table o tren - khong lap lai kieu border chia se giua o voi grid nay).
-  "[&_.grid-cells]:my-4 [&_.grid-cells]:grid [&_.grid-cells]:gap-3 " +
+  // [2026-09-19 fix #3] display:grid/grid-template-columns KHONG con dat qua
+  // class/CSS o day nua - dat THANG bang DOM API trong grid-view.tsx (xem
+  // comment chi tiet o do ve ly do: <NodeViewContent> voi 1 node co content
+  // THAT nhu Grid CHI la 1 lop vo ngoai, contentDOM THAT (noi GridCell con
+  // nam) la 1 <div data-node-view-content-react> Tiptap tu tao rieng BEN
+  // TRONG no - 2 lan fix truoc (inline style roi bien CSS `--grid-cols` deu
+  // dat TREN lop vo ngoai) van chua chac chan se ke thua/ap dung dung xuong
+  // duoi, nen chuyen han sang DOM API cho CHAC CHAN). CSS o day gio CHI con
+  // lo phan TINH (khong doi theo `cols`): `react-renderer` - 1 lop boc RIENG
+  // BIET nua (Tiptap tu them cho MOI GridCell co addNodeView rieng) nam BEN
+  // TRONG [data-node-view-content-react] - `display:contents` xoa lop nay
+  // khoi model box de .grid-cell that nhay THANG len lam grid item (khong
+  // co dong nay, grid-view.tsx co gan display:grid dung cho `[data-node-view-content-react]`
+  // thi cac o VAN se sai kich thuoc vi grid item THAT SU la cai vo react-renderer
+  // rong, khong phai .grid-cell).
+  "[&_.grid-cells_[data-node-view-content-react]>.react-renderer]:contents " +
   "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface " +
   "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-8 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-1.5 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-3 " +
   "[&_.grid-cell-badge]:inline-block [&_.grid-cell-badge]:size-2 [&_.grid-cell-badge]:shrink-0 [&_.grid-cell-badge]:rounded-full " +

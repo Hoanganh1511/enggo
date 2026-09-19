@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import { Plus, Minus } from "lucide-react";
@@ -128,6 +129,35 @@ export function GridView({ node, editor, getPos }: ReactNodeViewProps) {
     if (pos !== undefined) fn(editor, pos);
   };
 
+  // [2026-09-19 fix #3] Sau 2 lan fix (dat inline style THANG len
+  // <NodeViewContent>, roi doi qua bien CSS `--grid-cols` ke thua) VAN chua
+  // chac chan - ca 2 deu dua vao viec Tiptap/CSS ke thua/Tailwind arbitrary
+  // property hoat dong dung y tren MOI trinh duyet. Lan nay dung THANG DOM
+  // API (khong qua CSS/Tailwind nua) de loai het rui ro: <NodeViewContent>
+  // (voi 1 node KHONG phai atom nhu Grid) chi la 1 lop VO NGOAI - contentDOM
+  // THAT (noi cac GridCell con thuc su nam) la 1 <div data-node-view-content-react>
+  // Tiptap TU TAO RIENG va chen VAO BEN TRONG lop vo do (xem chi tiet trong
+  // node_modules/@tiptap/react). wrapperRef tro toi 1 <div> THUONG bao NGOAI
+  // <NodeViewContent> - moi lan `cols` doi, tu tim dung phan tu con that
+  // (querySelector) va GAN THANG style qua DOM API, chac chan 100% khong
+  // phu thuoc CSS/Tailwind nao ca.
+  // useLayoutEffect (khong phai useEffect) + KHONG gioi han dependency array
+  // (chay lai sau MOI lan render, khong chi khi `cols` doi) - Tiptap tu tao
+  // contentDOMElement o thoi diem hoi khac nhau tuy tinh huong (lan dau mount
+  // co the CHUA kip gan vao luc effect nay chay lan dau), nen chay lai tren
+  // MOI render (component nay von da re-render lien tuc do
+  // shouldRerenderOnTransaction:true o SeriesEntryEditor.tsx, nen chi phi
+  // them 1 querySelector + gan 3 style moi lan la khong dang ke) dam bao
+  // BAT KY luc nao phan tu that xuat hien deu duoc gan dung style ngay.
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const inner = wrapperRef.current?.querySelector<HTMLElement>("[data-node-view-content-react]");
+    if (!inner) return;
+    inner.style.display = "grid";
+    inner.style.gap = "0.75rem";
+    inner.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+  });
+
   return (
     <NodeViewWrapper className="grid-block my-4">
       {canEdit && (
@@ -144,20 +174,9 @@ export function GridView({ node, editor, getPos }: ReactNodeViewProps) {
           </span>
         </div>
       )}
-      {/* [2026-09-19 fix] display/gap dat THANG qua inline style (khong con
-          chi dua vao Tailwind class "[&_.grid-cells]:grid") - bug nguoi dung
-          bao "Lỗi grid à?" kem anh chup: cac o xep DOC 1-cot-1-hang thay vi
-          dan ngang theo dung `cols`, moi hang chiem 1 khoang hep + con lai
-          trong het ve phia phai - dau hieu display:grid KHONG duoc ap dung
-          (rot ve display mac dinh cua <div>, tung o TU CO LAI theo noi dung
-          thay vi dan theo track luoi). Inline style co do UU TIEN CAO NHAT
-          (chi thua !important) nen CHAC CHAN thang the moi xung dot/thu tu
-          nap CSS ngoai y muon, khong con phu thuoc lieu class Tailwind [&_...]
-          co duoc ap dung dung hay khong. */}
-      <NodeViewContent
-        className="grid-cells"
-        style={{ display: "grid", gap: "0.75rem", gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      />
+      <div ref={wrapperRef}>
+        <NodeViewContent className="grid-cells" />
+      </div>
     </NodeViewWrapper>
   );
 }
