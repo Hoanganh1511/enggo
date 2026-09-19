@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Monitor, Tablet, Smartphone } from "lucide-react";
+import Link from "next/link";
+import { Monitor, Tablet, Smartphone, ExternalLink } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -434,16 +435,37 @@ export function SeriesEntryForm({
             (bug nguoi dung bao truoc do: "ngay khi [spinner] bật lên...
             cuộn lên đầu luôn"). Guard chong double-submit da chuyen sang dau
             handleSubmit (if (saving) return). */}
-        <button
-          type="submit"
-          aria-disabled={saving}
-          onClick={(e) => {
-            if (saving) e.preventDefault();
-          }}
-          className="fixed right-6 bottom-6 z-50 cursor-pointer rounded-full bg-ink px-6 py-3 text-[14px] font-semibold text-surface shadow-lg transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-70"
-        >
-          {saving ? "Đang lưu..." : isEdit ? "Lưu Entry" : "Tạo Entry"}
-        </button>
+        {/* Box nut goc duoi phai - yeu cau nguoi dung: "Góc dưới phải màn
+            hình, tôi muốn có một box button" + nut "Đi tới màn chi tiết của
+            bài viết hiện tại đang sửa". Chi hien khi DA co trang chi tiet
+            that su (isEdit + con slug da luu) - tao moi (chua submit lan
+            nao) thi chua co URL nao de xem. Dung <Link> THAT (khong phai
+            router.push thu cong) de tan dung LUON co che chan click co san
+            cua useUnsavedChangesGuard (xem file do) - listener "click" o cap
+            document da tu bat MOI the <a> noi bo khi isDirty va hoi xac nhan
+            qua UnsavedChangesModal ben duoi, khong can tu viet lai logic
+            confirm rieng o day. */}
+        <div className="fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-full bg-surface p-1.5 shadow-lg">
+          {isEdit && initial?.slug && (
+            <Link
+              href={`/series/${seriesSlug}/${initial.slug}`}
+              className="flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold text-ink-muted transition hover:bg-hover-bg hover:text-ink"
+            >
+              <ExternalLink size={14} strokeWidth={2} aria-hidden="true" />
+              Xem bài viết
+            </Link>
+          )}
+          <button
+            type="submit"
+            aria-disabled={saving}
+            onClick={(e) => {
+              if (saving) e.preventDefault();
+            }}
+            className="cursor-pointer rounded-full bg-ink px-6 py-2.5 text-[14px] font-semibold text-surface transition hover:opacity-90 aria-disabled:cursor-not-allowed aria-disabled:opacity-70"
+          >
+            {saving ? "Đang lưu..." : isEdit ? "Lưu Entry" : "Tạo Entry"}
+          </button>
+        </div>
       </form>
 
       {/* [2026-09-16] Rong gap doi (w-80 -> w-160) - yeu cau nguoi dung: "tăng
