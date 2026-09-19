@@ -247,11 +247,13 @@
    app. Component moi trong khu vuc nay dung bg-[var(--background)] v.v. thay
    vi hex thang, doi mau = sua 1 cho o day. */
 .dashboard-scope {
-  /* #fbfbfd (khop --background toan app) - yeu cau nguoi dung: "Cho nền
-     toàn web màu này: #FBFBFD" - CHI doi rieng token nen nay o day, cac
-     token khac (--foreground/--border/--primary...) van giu tach biet co
-     chu dich voi phan con lai cua app (xem comment file nay). */
-  --background: #ffffff;
+  /* [2026-09-19] #F1F2F5 - yeu cau nguoi dung: "Đổi màu nền của trang /home
+     sang màu này" (truoc do #ffffff, tung dong bo voi --background toan app
+     #fbfbfd/#ffffff theo yeu cau cu "Cho nền toàn web màu này: #FBFBFD") -
+     CHI doi rieng token nen nay o day, cac token khac (--foreground/--border/
+     --primary...) van giu tach biet co chu dich voi phan con lai cua app
+     (xem comment file nay). */
+  --background: #f1f2f5;
   --surface: #ffffff;
   --surface-subtle: #f7f7f5;
   --foreground: #172033;

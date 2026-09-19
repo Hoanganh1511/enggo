@@ -15,6 +15,7 @@ import {
   MessageCircle,
   Settings,
   Target,
+  Users,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -71,6 +72,13 @@ const PRIMARY_NAV: NavEntry[] = [
     label: "Series",
     href: "/series",
     match: (p) => p.startsWith("/series"),
+  },
+  {
+    kind: "link",
+    icon: Users,
+    label: "Tác giả",
+    href: "/creators",
+    match: (p) => p.startsWith("/creators"),
   },
   { kind: "coming-soon", icon: GitBranch, label: "Roadmap" },
   { kind: "coming-soon", icon: Target, label: "Learning" },

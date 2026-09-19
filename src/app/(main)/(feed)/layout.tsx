@@ -17,7 +17,20 @@ export default function FeedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-scope">
+    // bg-background + min-h-full THEM (2026-09-19) - yeu cau nguoi dung:
+    // "Đổi màu nền của trang /home sang màu này [#F1F2F5]". Doi rieng GIA TRI
+    // token --background trong .dashboard-scope (globals.css) la CHUA DU: to
+    // day tu no chi KHAI BAO lai 1 CSS custom property pham vi cuc bo, KHONG
+    // TU SON nen cho chinh no - mau trang dang thay tren /home THAT RA la cua
+    // 1 the CHA o ngoai pham vi nay ((main)/layout.tsx, dung --background goc
+    // cua :root, khong thay duoc gia tri moi vua doi trong .dashboard-scope
+    // vi CSS custom property chi chay XUONG con chau, khong chay NGUOC len
+    // cha). bg-background o day moi la thu THAT SU son mau (doc dung
+    // --background cuc bo cua .dashboard-scope nho o CUNG 1 phan tu). min-h-full
+    // de nen phu HET chieu cao vung cuon (MainContentArea, khong chi cao bang
+    // noi dung) - tranh de lo mau trang cua the cha o duoi khi noi dung ngan
+    // hon 1 man hinh.
+    <div className="dashboard-scope min-h-full bg-background">
       <HomeDashboardSidebar />
       {/* Container chung cho BODY cua moi trang trong nhom (feed) - truoc day
           /home va /articles moi trang tu khai bao container rieng (bi lech

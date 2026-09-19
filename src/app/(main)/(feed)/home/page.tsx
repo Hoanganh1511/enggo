@@ -100,6 +100,8 @@ export default async function ArticlesPage() {
         icon={Users}
         title="Tác giả nổi bật"
         sub="Rút từ các bài viết gần đây"
+        actionHref="/creators"
+        actionLabel="Xem tất cả"
       />
       <CreatorRail creators={creators} />
 
