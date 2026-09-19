@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SeriesCardLink } from "./SeriesCardLink";
 import type { ContentSeriesAction, ContentSeriesListItem } from "@/lib/api/content-series";
@@ -112,11 +112,15 @@ export function SeriesCampaignCard({
     : "text-ink";
   const mutedColorClass = cardBg ? (isLightBg ? "text-white/75" : "text-ink-muted") : "text-ink-muted";
 
+  // [2026-09-19] compact doi tu h-28 CO DINH sang aspect-[250/140] - yeu cau
+  // nguoi dung: "Tham khảo cấu trúc UI của card Seri ở trang home... Sao cho
+  // giống UI của họ nhất" (kem HTML mau tu note.com - the co anh ty le
+  // 250x140, ~1.79:1, KHONG phai chieu cao co dinh doc lap voi be rong the).
   const image = series.coverImageUrl && (
     <div
       className={cn(
         "relative shrink-0 overflow-hidden bg-surface-muted",
-        variant === "compact" ? "h-28 w-full" : "h-full",
+        variant === "compact" ? "aspect-250/140 w-full" : "h-full",
       )}
       style={variant === "banner" ? { width: `${series.imageWidthPercent}%` } : undefined}
     >
@@ -160,8 +164,27 @@ export function SeriesCampaignCard({
       >
         {series.title}
       </p>
-      {variant === "banner" && (
-        <p className={cn("line-clamp-2 text-[13px] leading-snug", mutedColorClass)}>{series.description}</p>
+      {/* [2026-09-19] Hang so lieu (icon + so phan) + mo ta 2 dong THEM cho
+          compact - yeu cau nguoi dung: "Tham khảo cấu trúc UI của card Seri ở
+          trang home... Sao cho giống UI của họ nhất" (kem HTML mau tu
+          note.com: anh -> tieu de -> 1 dong icon+so lieu -> mo ta 2 dong).
+          Truoc do compact CHI co tieu de, khong co ca 2 phan nay. */}
+      {variant === "compact" && (
+        <p className={cn("flex items-center gap-1 text-[11px] font-semibold", mutedColorClass)}>
+          <BookOpen size={11} aria-hidden="true" />
+          {series._count.entries} phần
+        </p>
+      )}
+      {(variant === "banner" || variant === "compact") && (
+        <p
+          className={cn(
+            "line-clamp-2 leading-snug",
+            mutedColorClass,
+            variant === "banner" ? "text-[13px]" : "text-[12px]",
+          )}
+        >
+          {series.description}
+        </p>
       )}
       {hasActions && (
         <div className={cn("mt-1 flex flex-wrap items-center gap-2", isLightBg && "text-white")}>
