@@ -1069,24 +1069,23 @@ export const FlowDiagram = Node.create({
 // bug crash thật đã xảy ra với chính Accordion+StatAccordion): các thao tác
 // thêm/bớt hàng-cột (grid-view.tsx) LUÔN tự tạo sẵn 1 paragraph rỗng bên
 // trong mỗi ô mới - KHÔNG bao giờ dựa vào 1 plugin auto-fix content rỗng.
-export type GridBadgeColor = "red" | "yellow" | "green" | "blue" | "gray";
-
-// Bang mau san cho badge (dung tinh than STAT_ACCORDION_STATUSES o tren) -
-// yeu cau nguoi dung: "gắn badge cho mỗi ô nữa. 🔴🟡🟢, chẳng hạn vậy" - 1
-// CHAM MAU don gian (khong phai emoji that, de doi mau/style nhat quan qua
-// CSS thay vi phu thuoc font emoji cua tung he dieu hanh).
-export const GRID_BADGE_COLORS: { id: GridBadgeColor; value: string; label: string }[] = [
-  { id: "red", value: "#ef4444", label: "Đỏ" },
-  { id: "yellow", value: "#eab308", label: "Vàng" },
-  { id: "green", value: "#22c55e", label: "Xanh lá" },
-  { id: "blue", value: "#3b82f6", label: "Xanh dương" },
-  { id: "gray", value: "#94a3b8", label: "Xám" },
+// [2026-09-19] Danh sach mau CHI la GOI Y NHANH (quick-pick), khong con la
+// TAP HOP DUY NHAT nguoi dung duoc chon - yeu cau nguoi dung: "sao cứ set
+// màu cố định? Cho color picker vào, cho tùy biến tên với mã màu chứ" (ban
+// truoc: badge chi la 1 ENUM 5 gia tri co dinh "red/yellow/green/blue/gray",
+// khong tu nhap duoc ma mau/ten rieng). Badge gio luu THANG 2 gia tri tu do:
+// `badgeColor` (chuoi hex/rgba, cung validate voi headColor qua
+// isValidCssColor) va `badgeLabel` (ten tuy y, hien qua thuoc tinh title/
+// tooltip) - danh sach duoi day CHI con dung de ve cac nut "bam nhanh" goi y
+// trong popover (GridCellHead.tsx), nguoi dung van tu go ma mau/ten khac neu
+// muon.
+export const GRID_BADGE_PRESETS: { value: string; label: string }[] = [
+  { value: "#ef4444", label: "Đỏ" },
+  { value: "#eab308", label: "Vàng" },
+  { value: "#22c55e", label: "Xanh lá" },
+  { value: "#3b82f6", label: "Xanh dương" },
+  { value: "#94a3b8", label: "Xám" },
 ];
-
-export function gridBadgeColorValue(id: GridBadgeColor | string | null | undefined): string | null {
-  if (!id) return null;
-  return GRID_BADGE_COLORS.find((b) => b.id === id)?.value ?? null;
-}
 
 // Validate mau nen head - yeu cau nguoi dung: "Cho pick color hoặc nhập mã
 // màu: hex, hoặc rgba, validate chuẩn". Chap nhan hex 3/6/8 ky tu VA
@@ -1123,10 +1122,15 @@ export const GridCell = Node.create({
         parseHTML: (el) => el.getAttribute("data-show-step") === "true",
         renderHTML: (attrs) => ({ "data-show-step": attrs.showStep ? "true" : "false" }),
       },
-      badge: {
-        default: null as GridBadgeColor | null,
-        parseHTML: (el) => (el.getAttribute("data-badge") as GridBadgeColor | null) || null,
-        renderHTML: (attrs) => (attrs.badge ? { "data-badge": attrs.badge as string } : {}),
+      badgeColor: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-badge-color") || null,
+        renderHTML: (attrs) => (attrs.badgeColor ? { "data-badge-color": attrs.badgeColor as string } : {}),
+      },
+      badgeLabel: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-badge-label") || "",
+        renderHTML: (attrs) => (attrs.badgeLabel ? { "data-badge-label": attrs.badgeLabel as string } : {}),
       },
     };
   },
@@ -1136,7 +1140,8 @@ export const GridCell = Node.create({
   renderHTML({ HTMLAttributes, node }) {
     const headColor = node.attrs.headColor as string | null;
     const showStep = node.attrs.showStep as boolean;
-    const badgeColor = gridBadgeColorValue(node.attrs.badge as GridBadgeColor | null);
+    const badgeColor = node.attrs.badgeColor as string | null;
+    const badgeLabel = node.attrs.badgeLabel as string;
     return [
       "div",
       mergeAttributes(HTMLAttributes, { class: "grid-cell", "data-grid-cell": "" }),
@@ -1147,7 +1152,9 @@ export const GridCell = Node.create({
           contenteditable: "false",
           ...(headColor ? { style: `background-color:${headColor}` } : {}),
         },
-        ...(badgeColor ? [["span", { class: "grid-cell-badge", style: `background-color:${badgeColor}` }]] : []),
+        ...(badgeColor
+          ? [["span", { class: "grid-cell-badge", style: `background-color:${badgeColor}`, ...(badgeLabel ? { title: badgeLabel } : {}) }]]
+          : []),
         // So buoc THAT (index trong grid) chi tinh dung o GridView.tsx (luc
         // soan) VA Grid.addStorage() (luc xuat markdown that) - o day (renderHTML
         // TINH, ngoai 2 duong do) khong biet vi tri cua chinh no giua cac anh
@@ -1213,10 +1220,11 @@ export const Grid = Node.create({
             index += 1;
             const headColor = cell.attrs.headColor as string | null;
             const showStep = Boolean(cell.attrs.showStep);
-            const badgeColor = gridBadgeColorValue(cell.attrs.badge as GridBadgeColor | null);
+            const badgeColor = cell.attrs.badgeColor as string | null;
+            const badgeLabel = (cell.attrs.badgeLabel as string) || "";
             const headStyle = headColor ? ` style="background-color:${escapeHtmlAttr(headColor)}"` : "";
             const badgeHtml = badgeColor
-              ? `<span class="grid-cell-badge" style="background-color:${badgeColor}"></span>`
+              ? `<span class="grid-cell-badge" style="background-color:${escapeHtmlAttr(badgeColor)}"${badgeLabel ? ` title="${escapeHtmlAttr(badgeLabel)}"` : ""}></span>`
               : "";
             const stepHtml = showStep
               ? `<span class="grid-cell-step">${String(index).padStart(2, "0")}</span>`
@@ -1224,7 +1232,7 @@ export const Grid = Node.create({
             state.ensureNewLine();
             state.write(
               `<div class="grid-cell" data-grid-cell${headColor ? ` data-head-color="${escapeHtmlAttr(headColor)}"` : ""}` +
-                `${showStep ? ' data-show-step="true"' : ""}${cell.attrs.badge ? ` data-badge="${cell.attrs.badge}"` : ""}>` +
+                `${showStep ? ' data-show-step="true"' : ""}${badgeColor ? ` data-badge-color="${escapeHtmlAttr(badgeColor)}"` : ""}${badgeLabel ? ` data-badge-label="${escapeHtmlAttr(badgeLabel)}"` : ""}>` +
                 `<div class="grid-cell-head"${headStyle}>${badgeHtml}${stepHtml}</div>` +
                 `<div class="grid-cell-body">\n\n`,
             );

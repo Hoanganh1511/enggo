@@ -2,7 +2,6 @@
 
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tiptap/react";
 import { GridCellHead } from "./GridCellHead";
-import type { GridBadgeColor } from "./post-extensions";
 
 // NodeView cua GridCell - noi GridCellHead (component THUAN, xem file do)
 // voi editor that: doc gia tri tu node.attrs, ghi lai qua updateAttributes,
@@ -18,12 +17,13 @@ export function GridCellView({ node, updateAttributes, editor, getPos }: ReactNo
     <NodeViewWrapper className="grid-cell">
       <GridCellHead
         color={(node.attrs.headColor as string | null) ?? null}
-        badge={(node.attrs.badge as GridBadgeColor | null) ?? null}
+        badgeColor={(node.attrs.badgeColor as string | null) ?? null}
+        badgeLabel={(node.attrs.badgeLabel as string) ?? ""}
         showStep={Boolean(node.attrs.showStep)}
         stepNumber={stepNumber}
         editable={canEdit}
         onColorChange={(headColor) => updateAttributes({ headColor })}
-        onBadgeChange={(badge) => updateAttributes({ badge })}
+        onBadgeChange={(patch) => updateAttributes(patch)}
         onShowStepChange={(showStep) => updateAttributes({ showStep })}
       />
       <NodeViewContent className="grid-cell-body" />

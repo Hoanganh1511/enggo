@@ -271,7 +271,7 @@ export function PostEditorToolbar({
     const rows = 2;
     const cells = Array.from({ length: cols * rows }, () => ({
       type: "gridCell",
-      attrs: { headColor: null, showStep: false, badge: null },
+      attrs: { headColor: null, showStep: false },
       content: [{ type: "paragraph" }],
     }));
     editor.chain().focus().insertContent({ type: "grid", attrs: { cols }, content: cells }).run();

@@ -22,7 +22,7 @@ function addRow(editor: Editor, gridPos: number) {
     const paragraphType = state.schema.nodes.paragraph;
     if (!cellType || !paragraphType) return false;
     const cells = Array.from({ length: cols }, () =>
-      cellType.create({ headColor: null, showStep: false, badge: null }, paragraphType.create()),
+      cellType.create({ headColor: null, showStep: false }, paragraphType.create()),
     );
     tr.insert(gridPos + gridNode.nodeSize - 1, cells);
     return true;
@@ -72,7 +72,7 @@ function addColumn(editor: Editor, gridPos: number) {
     for (let r = rowCount - 1; r >= 0; r--) {
       const lastIndexInRow = Math.min((r + 1) * cols, offsets.length) - 1;
       const insertAt = offsets[lastIndexInRow] + gridNode.child(lastIndexInRow).nodeSize;
-      tr.insert(insertAt, cellType.create({ headColor: null, showStep: false, badge: null }, paragraphType.create()));
+      tr.insert(insertAt, cellType.create({ headColor: null, showStep: false }, paragraphType.create()));
     }
     tr.setNodeMarkup(gridPos, undefined, { ...gridNode.attrs, cols: cols + 1 });
     return true;
