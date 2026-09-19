@@ -50,6 +50,38 @@ function removeRow(editor: Editor, gridPos: number) {
   });
 }
 
+// Them/bot 1 O DUY NHAT (khac addRow/removeRow luon thao tac ca cum `cols`
+// phan tu cung luc) - yeu cau nguoi dung (kem anh chup 1 Grid dang dung lam
+// "khung" chua tung CardGrid 1-card rieng biet moi o, qua GridCellHead de co
+// badge/mau/so buoc rieng cho tung the): "Giờ mới chỉ thêm hàng, cột. Bổ
+// sung thêm chỉ thêm 1 card trong grid" - can them dung 1 o le (vd hang cuoi
+// dang thieu 1-2 o so voi `cols`), khong bat buoc phai them nguyen ca hang.
+// Hang cuoi co SO O IT HON `cols` la 1 pattern CSS grid hop le binh thuong
+// (cac cot con lai cua hang do don gian bo trong, khong gay loi layout gi).
+function addCell(editor: Editor, gridPos: number) {
+  editor.commands.command(({ tr, state }) => {
+    const gridNode = state.doc.nodeAt(gridPos);
+    if (!gridNode || gridNode.type.name !== "grid") return false;
+    const cellType = state.schema.nodes.gridCell;
+    const paragraphType = state.schema.nodes.paragraph;
+    if (!cellType || !paragraphType) return false;
+    tr.insert(gridPos + gridNode.nodeSize - 1, cellType.create({ headColor: null, showStep: false }, paragraphType.create()));
+    return true;
+  });
+}
+
+function removeCell(editor: Editor, gridPos: number) {
+  editor.commands.command(({ tr, state }) => {
+    const gridNode = state.doc.nodeAt(gridPos);
+    if (!gridNode) return false;
+    if (gridNode.childCount <= 1) return false; // giu it nhat 1 o
+    const to = gridPos + gridNode.nodeSize - 1;
+    const from = to - gridNode.lastChild!.nodeSize;
+    tr.delete(from, to);
+    return true;
+  });
+}
+
 // Them 1 cot - chen 1 o RONG vao CUOI moi hang (dua theo `cols` CU, TRUOC khi
 // tang) roi moi cap nhat attrs `cols`. Duyet hang theo thu tu NGUOC (cuoi ve
 // dau) khi chen - vi tri cac hang o TRUOC (nho hon) KHONG bi lech boi thao
@@ -172,6 +204,14 @@ export function GridView({ node, editor, getPos }: ReactNodeViewProps) {
             Cột
             <StepperBtn label="Thêm cột" Icon={Plus} onClick={withPos(addColumn)} />
             <StepperBtn label="Bớt cột" Icon={Minus} onClick={withPos(removeColumn)} />
+          </span>
+          {/* "Ô" (1 o le) - khac Hang/Cot o tren luon thao tac ca cum `cols`
+              phan tu, nut nay chi them/bot DUNG 1 o o cuoi - yeu cau nguoi
+              dung: "chỉ thêm 1 card trong grid" (xem addCell/removeCell). */}
+          <span className="flex items-center gap-1 rounded-md border border-border px-1.5 py-1">
+            Ô
+            <StepperBtn label="Thêm 1 ô" Icon={Plus} onClick={withPos(addCell)} />
+            <StepperBtn label="Bớt 1 ô" Icon={Minus} onClick={withPos(removeCell)} />
           </span>
           <BlockActionsMenu editor={editor} getPos={getPos} node={node} className="ml-auto" />
         </div>

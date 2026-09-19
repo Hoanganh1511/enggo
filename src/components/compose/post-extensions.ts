@@ -1509,7 +1509,16 @@ function cardGridItemNode(item: CardGridItem): unknown[] {
           [
             "div",
             { class: "card-grid-item-footer" },
-            ...(item.linkLabel ? [["span", { class: "card-grid-item-link" }, `${item.linkLabel} →`]] : []),
+            ...(item.linkLabel
+              ? [
+                  [
+                    "span",
+                    { class: "card-grid-item-link" },
+                    ["span", { class: "card-grid-item-link-label" }, item.linkLabel],
+                    "→",
+                  ],
+                ]
+              : []),
             ...(item.footerNote ? [["span", { class: "card-grid-item-footnote" }, item.footerNote]] : []),
           ],
         ]
@@ -1544,7 +1553,7 @@ function cardGridItemHtml(item: CardGridItem): string {
     : "";
   const footerHtml =
     item.linkLabel || item.footerNote
-      ? `<div class="card-grid-item-footer">${item.linkLabel ? `<span class="card-grid-item-link">${esc(item.linkLabel)} →</span>` : ""}${
+      ? `<div class="card-grid-item-footer">${item.linkLabel ? `<span class="card-grid-item-link"><span class="card-grid-item-link-label">${esc(item.linkLabel)}</span>→</span>` : ""}${
           item.footerNote ? `<span class="card-grid-item-footnote">${esc(item.footerNote)}</span>` : ""
         }</div>`
       : "";
@@ -2217,7 +2226,14 @@ export const POST_PROSE_CLASS =
   // qua hep (bug da tung xay ra, xem "Làm thì phải test chứ?").
   "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] " +
   "[&_.card-grid-item]:relative [&_.card-grid-item]:flex [&_.card-grid-item]:flex-col [&_.card-grid-item]:overflow-hidden [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline [&_.card-grid-item]:shadow-xs " +
-  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-all [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong [&_a.card-grid-item:hover]:shadow-sm " +
+  // Hieu ung hover "glow" - yeu cau nguoi dung (kem 2 anh truoc/sau, tham
+  // khao card Series ngoai trang): the nang len nhe + 1 vien sang mau
+  // thuong hieu (khong phai xam trung tinh nhu truoc) bao quanh, cung luc
+  // nhan lien ket footer ("→") "no ra" thanh ca nhan day du ("Xem ngành →").
+  // border-transparent (khong con border-border-strong) - vien mau THAT
+  // (color-mix voi --primary) dam nhiem het vai tro "vien noi bat" luc hover,
+  // tranh 2 lop vien (border xam + box-shadow mau) chong nhau nhin roi.
+  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-all [&_a.card-grid-item]:duration-200 [&_a.card-grid-item:hover]:-translate-y-0.5 [&_a.card-grid-item:hover]:border-transparent [&_a.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)] " +
   // Khoi trang tri goc tren-phai ("Small soft gradient/geometric decorative
   // element") - 1 vong tron mo suy tu --primary (KHONG gan cung 1 mau/linh
   // vuc cu the), dat SAU noi dung (z-index am voi cac vung khac + pointer-
@@ -2252,7 +2268,14 @@ export const POST_PROSE_CLASS =
   // grid) nen mt-auto day footer xuong DUNG DAY moi the, thang hang nhau du
   // noi dung dai/ngan khac nhau.
   "[&_.card-grid-item-footer]:relative [&_.card-grid-item-footer]:z-10 [&_.card-grid-item-footer]:mt-auto [&_.card-grid-item-footer]:flex [&_.card-grid-item-footer]:items-center [&_.card-grid-item-footer]:justify-between [&_.card-grid-item-footer]:gap-3 [&_.card-grid-item-footer]:border-t [&_.card-grid-item-footer]:border-border [&_.card-grid-item-footer]:pt-3 " +
-  "[&_.card-grid-item-link]:text-[13px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
+  "[&_.card-grid-item-link]:inline-flex [&_.card-grid-item-link]:items-center [&_.card-grid-item-link]:text-[13px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
+  // Nhan "Xem ngành..." AN mac dinh (max-width:0, overflow ẩn), CHI "no ra"
+  // khi hover CA THE (khong phai hover rieng span nay) - yeu cau nguoi dung
+  // (anh mau): mac dinh chi thay "→" gon, hover moi hien du "Xem ngành →".
+  // transition rieng cho max-width/margin (khong dung "transition-all" o
+  // day de tranh giat/nhap nhay voi transition mau chu ke thua tu the ngoai).
+  "[&_.card-grid-item-link-label]:inline-block [&_.card-grid-item-link-label]:max-w-0 [&_.card-grid-item-link-label]:overflow-hidden [&_.card-grid-item-link-label]:whitespace-nowrap [&_.card-grid-item-link-label]:opacity-0 [&_.card-grid-item-link-label]:transition-all [&_.card-grid-item-link-label]:duration-200 [&_.card-grid-item-link-label]:ease-out " +
+  "[&_a.card-grid-item:hover_.card-grid-item-link-label]:mr-1 [&_a.card-grid-item:hover_.card-grid-item-link-label]:max-w-40 [&_a.card-grid-item:hover_.card-grid-item-link-label]:opacity-100 " +
   "[&_.card-grid-item-footnote]:truncate [&_.card-grid-item-footnote]:text-[11.5px] [&_.card-grid-item-footnote]:text-ink-faint " +
   // SplitBlock (yeu cau nguoi dung: block chia doi, soan binh thuong o ca 2
   // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.
