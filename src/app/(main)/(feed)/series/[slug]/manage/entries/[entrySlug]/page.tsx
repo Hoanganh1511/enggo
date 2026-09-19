@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { getContentSeriesEntryAction } from "@/actions/discover/content-series/get-content-series-entry";
 import { SeriesEntryForm } from "@/components/series/SeriesEntryForm";
+import { ManageBreadcrumb } from "@/components/series/ManageBreadcrumb";
 
 export default async function EditSeriesEntryPage({
   params,
@@ -19,13 +18,13 @@ export default async function EditSeriesEntryPage({
 
   return (
     <div>
-      <Link
-        href={`/series/${slug}/manage`}
-        className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-      >
-        <ArrowLeft size={13} />
-        Quay lại quản lý
-      </Link>
+      <ManageBreadcrumb
+        items={[
+          { label: "Series", href: "/series" },
+          { label: data.series.title, href: `/series/${slug}/manage` },
+          { label: `Sửa: ${data.entry.title}` },
+        ]}
+      />
 
       <h1 className="mb-6 text-[22px] font-bold text-ink">
         Sửa Entry - {data.series.title}

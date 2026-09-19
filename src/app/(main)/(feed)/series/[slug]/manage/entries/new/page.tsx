@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { SeriesEntryForm } from "@/components/series/SeriesEntryForm";
+import { ManageBreadcrumb } from "@/components/series/ManageBreadcrumb";
 
 export default async function NewSeriesEntryPage({
   params,
@@ -27,6 +28,13 @@ export default async function NewSeriesEntryPage({
 
   return (
     <div>
+      <ManageBreadcrumb
+        items={[
+          { label: "Series", href: "/series" },
+          { label: series.title, href: `/series/${slug}/manage` },
+          { label: "Entry mới" },
+        ]}
+      />
       <h1 className="mb-6 text-[22px] font-bold text-ink">Entry mới - {series.title}</h1>
       <SeriesEntryForm
         seriesSlug={slug}

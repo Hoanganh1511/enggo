@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { SeriesManageTabs } from "@/components/series/SeriesManageTabs";
+import { ManageBreadcrumb } from "@/components/series/ManageBreadcrumb";
 
 // Trang quan ly 1 Series (Cap 1: thong tin chung + Cap 2: cay category/entry) -
 // nam NGOAI nhom route (read) (xem [slug]/(read)/layout.tsx) nen KHONG bi
@@ -25,6 +26,8 @@ export default async function SeriesManagePage({
 
   return (
     <div className="w-full pb-20">
+      <ManageBreadcrumb items={[{ label: "Series", href: "/series" }, { label: series.title }]} />
+
       {/* /map (khong phai bare /series/{slug}) - dong bo voi moi noi khac
           da tro toi Series (yeu cau nguoi dung: "về nguyên seri thì phải có
           /map chứ?" - cho nay bi sot lai lan truoc). */}

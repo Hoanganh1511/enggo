@@ -33,6 +33,10 @@ import {
   ListCollapse,
   CircleDot,
   Workflow,
+  Grid3x3,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -255,6 +259,22 @@ export function PostEditorToolbar({
       .run();
   };
 
+  // Chen Grid - yeu cau nguoi dung: "grid, grid sau khi thêm vào trong biên
+  // soạn có thể tùy chỉnh số lượng cột, hàng... Trong mỗi grid sẽ có một
+  // phần head và phần body". Mac dinh 3 cot x 2 hang (6 o) - du de thay ro
+  // hinh dang luoi ngay, chinh sua so luong sau qua GridView.tsx. Moi o can
+  // 1 paragraph rong san (giong Accordion) - KHONG dua vao plugin auto-fix.
+  const insertGrid = () => {
+    const cols = 3;
+    const rows = 2;
+    const cells = Array.from({ length: cols * rows }, () => ({
+      type: "gridCell",
+      attrs: { headColor: null, showStep: false, badge: null },
+      content: [{ type: "paragraph" }],
+    }));
+    editor.chain().focus().insertContent({ type: "grid", attrs: { cols }, content: cells }).run();
+  };
+
   return (
     <div
       className={cn(
@@ -312,6 +332,11 @@ export function PostEditorToolbar({
       <Btn label="Accordion (bấm để mở/đóng)" Icon={ListCollapse} onClick={insertAccordion} />
       <Btn label="Accordion Geographical (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
       <Btn label="Sơ đồ luồng (các bước nối tiếp, có mô tả trên mũi tên)" Icon={Workflow} onClick={insertFlowDiagram} />
+      <Btn label="Grid (tuỳ chỉnh số hàng/cột)" Icon={Grid3x3} onClick={insertGrid} />
+      <Divider />
+      <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
+      <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />
+      <Btn label="Căn phải" Icon={AlignRight} active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()} />
       <Divider />
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />

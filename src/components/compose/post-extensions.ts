@@ -1,4 +1,4 @@
-import { Node, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Node, Extension, mergeAttributes, type Extensions } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -8,12 +8,15 @@ import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
+import TextAlign from "@tiptap/extension-text-align";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { CuratedListView } from "./curated-list-view";
 import { QuestionPickerView } from "./question-picker-view";
 import { AccordionView } from "./accordion-view";
 import { StatAccordionView } from "./stat-accordion-view";
 import { FlowDiagramView } from "./flow-diagram-view";
+import { GridView } from "./grid-view";
+import { GridCellView } from "./grid-cell-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -1054,6 +1057,188 @@ export const FlowDiagram = Node.create({
   },
 });
 
+// Grid + GridCell - "grid tuỳ chỉnh số hàng/cột, mỗi ô có phần HEAD (màu
+// nền tuỳ chỉnh + số bước tự động 01/02/03... + badge chấm màu) và phần
+// BODY (rich text thật: đậm/nghiêng/list/căn lề)" - yêu cầu người dùng (kèm
+// ảnh mẫu 5 ô "01".."05"). KHÁC HẲN QuestionPicker/StatAccordion/TocBlock
+// (dữ liệu là SNAPSHOT attrs JSON, không có ProseMirror children thật):
+// GridCell dùng content THẬT "block+" (giống tinh thần Accordion) vì nội
+// dung body cần RICH TEXT thật sự (đậm/nghiêng/list...), không nhét vừa vào
+// 1 chuỗi JSON. LƯU Ý (xem comment "DA GO BO TrailingNode" ngay dưới đây,
+// bug crash thật đã xảy ra với chính Accordion+StatAccordion): các thao tác
+// thêm/bớt hàng-cột (grid-view.tsx) LUÔN tự tạo sẵn 1 paragraph rỗng bên
+// trong mỗi ô mới - KHÔNG bao giờ dựa vào 1 plugin auto-fix content rỗng.
+export type GridBadgeColor = "red" | "yellow" | "green" | "blue" | "gray";
+
+// Bang mau san cho badge (dung tinh than STAT_ACCORDION_STATUSES o tren) -
+// yeu cau nguoi dung: "gắn badge cho mỗi ô nữa. 🔴🟡🟢, chẳng hạn vậy" - 1
+// CHAM MAU don gian (khong phai emoji that, de doi mau/style nhat quan qua
+// CSS thay vi phu thuoc font emoji cua tung he dieu hanh).
+export const GRID_BADGE_COLORS: { id: GridBadgeColor; value: string; label: string }[] = [
+  { id: "red", value: "#ef4444", label: "Đỏ" },
+  { id: "yellow", value: "#eab308", label: "Vàng" },
+  { id: "green", value: "#22c55e", label: "Xanh lá" },
+  { id: "blue", value: "#3b82f6", label: "Xanh dương" },
+  { id: "gray", value: "#94a3b8", label: "Xám" },
+];
+
+export function gridBadgeColorValue(id: GridBadgeColor | string | null | undefined): string | null {
+  if (!id) return null;
+  return GRID_BADGE_COLORS.find((b) => b.id === id)?.value ?? null;
+}
+
+// Validate mau nen head - yeu cau nguoi dung: "Cho pick color hoặc nhập mã
+// màu: hex, hoặc rgba, validate chuẩn". Chap nhan hex 3/6/8 ky tu VA
+// rgb()/rgba() (khoang trang linh hoat giua cac phan) - export de
+// GridCellHead.tsx (UI nhap tay) dung chung, tranh 2 noi tu dinh nghia lech
+// nhau quy tac hop le.
+const HEX_COLOR_RE = /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const RGBA_COLOR_RE = /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(,\s*(0|1|0?\.\d+)\s*)?\)$/i;
+export function isValidCssColor(value: string): boolean {
+  const trimmed = value.trim();
+  return HEX_COLOR_RE.test(trimmed) || RGBA_COLOR_RE.test(trimmed);
+}
+
+// Kieu 1 dong (row) khong ton tai rieng trong schema - "hang" chi la 1 CACH
+// GOM cac GridCell theo tung nhom `cols` phan tu lien tiep (dung CSS Grid tu
+// nhien de xep, xem "grid-template-columns" trong renderHTML/GridView.tsx),
+// khong can 1 node "gridRow" bao ngoai rieng - don gian hoa them/bot
+// hang-cot (grid-view.tsx) xuong con thao tac THANG tren danh sach GridCell
+// phang, khong can dieu huong qua 1 tang long nhau nua.
+export const GridCell = Node.create({
+  name: "gridCell",
+  content: "block+",
+  defining: true,
+  isolating: true,
+  addAttributes() {
+    return {
+      headColor: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-head-color") || null,
+        renderHTML: (attrs) => (attrs.headColor ? { "data-head-color": attrs.headColor as string } : {}),
+      },
+      showStep: {
+        default: false,
+        parseHTML: (el) => el.getAttribute("data-show-step") === "true",
+        renderHTML: (attrs) => ({ "data-show-step": attrs.showStep ? "true" : "false" }),
+      },
+      badge: {
+        default: null as GridBadgeColor | null,
+        parseHTML: (el) => (el.getAttribute("data-badge") as GridBadgeColor | null) || null,
+        renderHTML: (attrs) => (attrs.badge ? { "data-badge": attrs.badge as string } : {}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-grid-cell]", contentElement: ":scope > div.grid-cell-body" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const headColor = node.attrs.headColor as string | null;
+    const showStep = node.attrs.showStep as boolean;
+    const badgeColor = gridBadgeColorValue(node.attrs.badge as GridBadgeColor | null);
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "grid-cell", "data-grid-cell": "" }),
+      [
+        "div",
+        {
+          class: "grid-cell-head",
+          contenteditable: "false",
+          ...(headColor ? { style: `background-color:${headColor}` } : {}),
+        },
+        ...(badgeColor ? [["span", { class: "grid-cell-badge", style: `background-color:${badgeColor}` }]] : []),
+        // So buoc THAT (index trong grid) chi tinh dung o GridView.tsx (luc
+        // soan) VA Grid.addStorage() (luc xuat markdown that) - o day (renderHTML
+        // TINH, ngoai 2 duong do) khong biet vi tri cua chinh no giua cac anh
+        // em, de trong khi showStep=true la 1 xuong cap CHAP NHAN DUOC (giong
+        // triet ly "fallback don gian hon" cua cac node khac trong file nay).
+        ...(showStep ? [["span", { class: "grid-cell-step" }]] : []),
+      ],
+      ["div", { class: "grid-cell-body" }, 0],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(GridCellView);
+  },
+});
+
+export const Grid = Node.create({
+  name: "grid",
+  group: "block",
+  content: "gridCell+",
+  defining: true,
+  isolating: true,
+  addAttributes() {
+    return {
+      cols: {
+        default: 3,
+        parseHTML: (el) => Number(el.getAttribute("data-cols")) || 3,
+        renderHTML: (attrs) => ({ "data-cols": String(attrs.cols as number) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-grid]", contentElement: ":scope > div.grid-cells" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const cols = node.attrs.cols as number;
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-grid": "" }),
+      ["div", { class: "grid-cells", style: `grid-template-columns:repeat(${cols},1fr)` }, 0],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(GridView);
+  },
+  // Markdown fallback - giong tinh than Accordion (xem addStorage cua no o
+  // tren): ghi THANG the <div> tho boc quanh, nhung NOI DUNG THAT ben trong
+  // (than moi o) van la markdown that qua state.renderContent(cell) - PHAI
+  // co dong trong TRUOC/SAU moi doan long trong (giong ly do Accordion da
+  // ghi chu rat ky) de CommonMark/rehype-raw (DocsMarkdown.tsx) nhan dung
+  // day la HTML tho long markdown, khong nuot lam text thuong.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const cols = (node.attrs.cols as number) ?? 3;
+          const cellsNode = node as unknown as {
+            forEach: (fn: (cell: TiptapNode, offset: number, index: number) => void) => void;
+          };
+          state.ensureNewLine();
+          state.write(`<div data-grid data-cols="${cols}"><div class="grid-cells" style="grid-template-columns:repeat(${cols},1fr)">\n\n`);
+          let index = 0;
+          cellsNode.forEach((cell) => {
+            index += 1;
+            const headColor = cell.attrs.headColor as string | null;
+            const showStep = Boolean(cell.attrs.showStep);
+            const badgeColor = gridBadgeColorValue(cell.attrs.badge as GridBadgeColor | null);
+            const headStyle = headColor ? ` style="background-color:${escapeHtmlAttr(headColor)}"` : "";
+            const badgeHtml = badgeColor
+              ? `<span class="grid-cell-badge" style="background-color:${badgeColor}"></span>`
+              : "";
+            const stepHtml = showStep
+              ? `<span class="grid-cell-step">${String(index).padStart(2, "0")}</span>`
+              : "";
+            state.ensureNewLine();
+            state.write(
+              `<div class="grid-cell" data-grid-cell${headColor ? ` data-head-color="${escapeHtmlAttr(headColor)}"` : ""}` +
+                `${showStep ? ' data-show-step="true"' : ""}${cell.attrs.badge ? ` data-badge="${cell.attrs.badge}"` : ""}>` +
+                `<div class="grid-cell-head"${headStyle}>${badgeHtml}${stepHtml}</div>` +
+                `<div class="grid-cell-body">\n\n`,
+            );
+            state.renderContent(cell);
+            state.ensureNewLine();
+            state.write("\n</div></div>\n\n");
+          });
+          state.write("</div></div>");
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // [2026-09-18] DA GO BO "TrailingNode" (tung o day) - tung them de fix bug
 // "thêm 1 cái accordion geographical vào sau cái accordion geographical
 // trước đó đã đặt vào thì ko đặt dc con trỏ vào" (khong co "khe" con tro sau
@@ -1084,9 +1269,33 @@ export const FlowDiagram = Node.create({
 // (link:false, underline:false) de CHI CON 1 ban duy nhat (ban .configure()
 // rieng ben duoi, giu dung { openOnClick: false }) - dung y het cach
 // getOverviewExtensions() ben duoi da lam voi heading/blockquote/codeBlock...
+// Tab/Shift-Tab trong danh sach so/cham - yeu cau nguoi dung (kem anh chup
+// "1. Phân loại theo category" roi 1 dong trong, roi lai "1. dsandsa" thay
+// vi "2."): "khi xuống dòng ở 1., tôi tab vào thì nó sẽ là nội dung của 1.
+// chứ đừng làm mất liên kết của 1. 2.". Mac dinh StarterKit KHONG gan phim
+// tat nao cho Tab/Shift-Tab ca (xac nhan qua node_modules) - Tab trong
+// contentEditable roi vao hanh vi goc cua trinh duyet (chuyen focus RA
+// KHOI vung soan), dung luc do nguoi dung tuong nhu bi "mất liên kết" (con
+// tro thoat khoi list, go tiep se khong con nam trong list nua, so voi ProseMirror
+// hieu la bat dau lai tu "1." o VI TRI MOI). sinkListItem/liftListItem la
+// lenh CO SAN cua chinh ListItem (dang ky boi StarterKit qua "listItem"),
+// chi thieu phim tat goi toi - tra ve false khi khong ap dung duoc (khong o
+// trong list, hoac list item DAU TIEN khong the sink) de Tab/Shift-Tab roi
+// lai hanh vi mac dinh o noi khac (vd trong bang, TableKit tu xu ly rieng).
+const ListTabKeymap = Extension.create({
+  name: "listTabKeymap",
+  addKeyboardShortcuts() {
+    return {
+      Tab: () => this.editor.commands.sinkListItem("listItem"),
+      "Shift-Tab": () => this.editor.commands.liftListItem("listItem"),
+    };
+  },
+});
+
 export function getPostExtensions(): Extensions {
   return [
     StarterKit.configure({ link: false, underline: false }),
+    ListTabKeymap,
     Underline,
     TaskList,
     TaskItem.configure({ nested: true }),
@@ -1114,6 +1323,16 @@ export function getPostExtensions(): Extensions {
     TextStyle.extend({ inclusive: false }),
     Color,
     BackgroundColor,
+    // Can le trai/giua/phai - yeu cau nguoi dung cho phan body cua Grid ("text
+    // body thì cho soạn bình thường, có căn chỉnh trái phải giữa, in đậm, in
+    // nghiêng, list"). Ap dung cho ca "paragraph" (dung chung TOAN BO schema,
+    // khong rieng gi Grid) - Grid.addStorage() ghi RA HTML tho (rehype-raw
+    // doc dung), style="text-align:..." qua duoc nguyen ven; paragraph THUONG
+    // (ngoai Grid, markdown thuan) neu can le khac "left" se tu xuong cap ve
+    // trai khi luu (CommonMark khong co cu phap can le) - danh doi CHAP NHAN
+    // DUOC, giong triet ly "xuong cap don gian hon" cua cac node khac trong
+    // file nay khi ra khoi ngu canh HTML tho.
+    TextAlign.configure({ types: ["paragraph"] }),
     Callout,
     GlossaryHint,
     GoDeeper,
@@ -1123,6 +1342,8 @@ export function getPostExtensions(): Extensions {
     Accordion,
     StatAccordion,
     FlowDiagram,
+    GridCell,
+    Grid,
   ];
 }
 
@@ -1353,4 +1574,15 @@ export const POST_PROSE_CLASS =
   // nay LAP LAI DUNG tren MOI dong khi doan to mau bi ngat dong (mac dinh
   // "slice" chi chua padding trai/phai o dau/cuoi CA CUM, giua chung cac dong
   // se om sat lai).
-  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5";
+  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5 " +
+  // Grid (yeu cau nguoi dung: grid tuy chinh hang/cot, moi o co head mau
+  // nen/badge/so buoc + body rich text) - moi o la 1 THE rieng (bo vien
+  // rounded-lg, cach nhau qua `gap`) thay vi 1 luoi border-collapse chung
+  // nhu bang thuong (xem ly do tranh loi "border cong queo" da fix cho
+  // table o tren - khong lap lai kieu border chia se giua o voi grid nay).
+  "[&_.grid-cells]:my-4 [&_.grid-cells]:grid [&_.grid-cells]:gap-3 " +
+  "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface " +
+  "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-8 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-1.5 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-3 " +
+  "[&_.grid-cell-badge]:inline-block [&_.grid-cell-badge]:size-2 [&_.grid-cell-badge]:shrink-0 [&_.grid-cell-badge]:rounded-full " +
+  "[&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[12px] [&_.grid-cell-step]:font-semibold [&_.grid-cell-step]:text-primary " +
+  "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0";
