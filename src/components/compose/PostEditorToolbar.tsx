@@ -21,8 +21,6 @@ import {
   ImageIcon,
   CircleHelp,
   Table as TableIcon,
-  Rows3,
-  Columns3,
   TriangleAlert,
   OctagonAlert,
   Lightbulb,
@@ -299,24 +297,13 @@ export function PostEditorToolbar({
         disabled={editor.state.selection.empty}
         onClick={addGlossaryHint}
       />
+      {/* Chen/xoa hang-cot sau khi da co bang: xem TableControlsMenu.tsx -
+          mot bubble menu rieng hien NGAY CANH bang dang sua (yeu cau nguoi
+          dung: "Table trong này chưa có các button bố trí hợp lý để tăng
+          giảm số lượng cột, hàng, chèn, xóa"), thay cho 2 nut "Thêm hàng"/
+          "Thêm cột" co dinh truoc day (luon hien tren toolbar chinh du chi
+          dung duoc khi con tro o trong bang, va thieu han thao tac xoa). */}
       <Btn label="Bảng" Icon={TableIcon} active={editor.isActive("table")} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
-      {/* Chi bam duoc khi con tro DANG O TRONG 1 bang - insertTable() o tren
-          chi tao bang co dinh 3x3, truoc day KHONG co cach nao them hang/cot
-          sau do (bao loi nguoi dung). addRowAfter/addColumnAfter la lenh co
-          san cua @tiptap/extension-table (prosemirror-tables), chi thieu nut
-          bam. */}
-      <Btn
-        label="Thêm hàng"
-        Icon={Rows3}
-        disabled={!editor.can().addRowAfter()}
-        onClick={() => editor.chain().focus().addRowAfter().run()}
-      />
-      <Btn
-        label="Thêm cột"
-        Icon={Columns3}
-        disabled={!editor.can().addColumnAfter()}
-        onClick={() => editor.chain().focus().addColumnAfter().run()}
-      />
       <Divider />
       <Btn label="Go deeper" Icon={Asterisk} onClick={insertGoDeeper} />
       <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />

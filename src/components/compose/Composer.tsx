@@ -64,6 +64,7 @@ import {
 } from "@/components/ui/popover";
 import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-extensions";
 import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
+import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
 
 type PublishVisibility = "draft" | "public" | "limited";
 type RightTab = "publish" | "ai";
@@ -687,6 +688,7 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
               // troi ben duoi khi da dinh lai.
               <div className="sticky top-0 z-10 flex items-center gap-1 border-t border-b border-border bg-surface-muted px-3 py-1.5">
                 <PostEditorToolbar editor={editor} bare />
+                <TableControlsMenu editor={editor} />
                 <PopoverRoot open={aiPopoverOpen} onOpenChange={setAiPopoverOpen}>
                   <PopoverTrigger asChild>
                     <button

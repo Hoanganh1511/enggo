@@ -6,6 +6,7 @@ import { Markdown } from "tiptap-markdown";
 import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-extensions";
 import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
 import { SelectionColorMenu } from "@/components/compose/SelectionColorMenu";
+import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
 
 // Editor RICH cho Nội dung Entry - DUNG DUNG 1 bo extension/toolbar VOI
 // Composer.tsx (yeu cau nguoi dung: "đồng bộ tất cả giống compose" - lan
@@ -70,6 +71,11 @@ export function SeriesEntryEditor({
           (con trỏ giữ bôi tô) thì nút đó sẽ hiện lên, chọn màu nền, màu
           chữ"). */}
       <SelectionColorMenu editor={editor} />
+      {/* Thanh dieu khien bang (hang/cot: chen/xoa) - hien noi khi con tro
+          dang o trong 1 bang (yeu cau nguoi dung: "Table trong này chưa có
+          các button bố trí hợp lý để tăng giảm số lượng cột, hàng, chèn,
+          xóa"). */}
+      <TableControlsMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>
   );
