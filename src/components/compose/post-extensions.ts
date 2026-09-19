@@ -1099,7 +1099,19 @@ export function getPostExtensions(): Extensions {
     // giữ bôi tô) thì nút đó sẽ hiện lên, chọn màu nền, màu chữ" (xem
     // SelectionColorMenu.tsx - bubble menu noi dung nay hien khi co vung
     // chon van ban).
-    TextStyle,
+    // inclusive:false - bug nguoi dung bao "Tô màu xong không cách ra được
+    // thêm 1 ký tự để thoát cái màu": mac dinh (inclusive:true, hanh vi goc
+    // cua ProseMirror) khi con tro dung DUNG O RIA PHAI 1 vung da to mau, ky
+    // tu go TIEP THEO se TU DONG "thua ke" mark do (van bi to mau nhu cu) -
+    // hop ly cho bold/italic (muon go tiep tuc IN DAM) nhung PHAN TAC DUNG
+    // voi mau nen/chu vi nguoi dung thuong go THEM 1 ky tu/dau cach NGAY SAU
+    // vung mau chi de "thoat ra" khoi no. inclusive:false: mark KHONG con tu
+    // mo rong o ria phai nua - go tiep tuc ngay sau vung mau se ra van ban
+    // THUONG (mac dinh), giu nguyen kha nang chon "In đậm" tiep tuc binh
+    // thuong o cac mark khac (bold/italic) vi day CHI doi rieng mark
+    // "textStyle" (Color/BackgroundColor), khong dung chung schema voi cac
+    // mark do.
+    TextStyle.extend({ inclusive: false }),
     Color,
     BackgroundColor,
     Callout,

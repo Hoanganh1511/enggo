@@ -94,6 +94,16 @@ function shouldShowTextSelectionOnly({ editor: ed, state }: { editor: Editor; st
   const { selection } = state;
   if (selection.empty) return false;
   if (selection instanceof NodeSelection) return false;
+  // Bôi đen văn bản BÊN TRONG 1 bảng - loai tru rieng truong hop nay (bug
+  // nguoi dung bao "Bị trùng 2 cái này nè. Đè nhau", kem anh chup 2 bubble
+  // menu deu cung placement:"top" nen chong khit len nhau): TableControlsMenu.tsx
+  // (them/xoa hang-cot) CUNG hien bat ke selection rong hay khong, mien la
+  // con tro dang o trong bang - 2 dieu kien "co bôi đen" va "dang o trong
+  // bang" hoan toan doc lap voi nhau nen co the CUNG dung 1 luc. Uu tien
+  // TableControlsMenu (menu DAC THU cho ngu canh dang o) khi ca 2 deu du
+  // dieu kien hien, thay vi co gang xep 2 bubble menu canh nhau (BubbleMenu
+  // cua tiptap khong ho tro dat vi tri tuong doi giua 2 instance voi nhau).
+  if (ed.isActive("table")) return false;
   return true;
 }
 
