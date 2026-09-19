@@ -139,7 +139,9 @@ export const DOCS_PROSE_CLASS =
   "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
   // CardGrid + SplitBlock - xem comment chi tiet trong POST_PROSE_CLASS.
   // Kich thuoc/khoang cach - xem comment chi tiet trong POST_PROSE_CLASS.
-  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:grid-cols-1 [&_[data-card-grid]]:gap-3 sm:[&_[data-card-grid]]:grid-cols-2 lg:[&_[data-card-grid]]:grid-cols-4 " +
+  // grid-template-columns qua auto-fit/minmax - xem giai thich chi tiet
+  // trong POST_PROSE_CLASS / card-grid-view.tsx.
+  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] " +
   "[&_.card-grid-item]:relative [&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline " +
   "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
   "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-3 " +

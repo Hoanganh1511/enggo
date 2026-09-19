@@ -1,24 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tiptap/react";
 import { ImagePlus } from "lucide-react";
+import { ImagePickerModal } from "./ImagePickerModal";
 
 // NodeView cua ProfileBlock - "block layout" DAU TIEN (yeu cau nguoi dung:
 // "Ảnh đại diện vuông, tên, sau đó phía dưới là nội dung"). Head (anh vuong +
-// ten) la attrs THUAN, khong phai ProseMirror children - bam vao o anh mo
-// window.prompt() dan URL (dung y het addImage() trong PostEditorToolbar.tsx,
-// khong tu dung mot co che upload rieng ngoai pham vi yeu cau). Body la
-// NodeViewContent THAT (rich text day du, xem post-extensions.ts).
+// ten) la attrs THUAN, khong phai ProseMirror children. [2026-09-20] Doi tu
+// window.prompt() (chi dan URL) sang ImagePickerModal (2 tab Tải lên/Dán
+// URL) - yeu cau nguoi dung: "không để dán url, cho bật modal, có thể lựa
+// chọn giữa 2 tab upload hoặc dán url". Body la NodeViewContent THAT (rich
+// text day du, xem post-extensions.ts).
 export function ProfileBlockView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   const avatarUrl = (node.attrs.avatarUrl as string | null) ?? null;
   const name = (node.attrs.name as string) ?? "";
   const canEdit = editor.isEditable;
-
-  function changeAvatar() {
-    const url = window.prompt("Dán URL ảnh đại diện (https://...)", avatarUrl ?? "");
-    if (url === null) return;
-    updateAttributes({ avatarUrl: url || null });
-  }
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <NodeViewWrapper className="profile-block my-4">
@@ -26,7 +24,7 @@ export function ProfileBlockView({ node, updateAttributes, editor }: ReactNodeVi
         {canEdit ? (
           <button
             type="button"
-            onClick={changeAvatar}
+            onClick={() => setPickerOpen(true)}
             title="Đổi ảnh đại diện"
             className="profile-block-avatar flex cursor-pointer items-center justify-center overflow-hidden bg-surface-muted text-ink-faint hover:text-ink"
             style={avatarUrl ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
@@ -51,6 +49,11 @@ export function ProfileBlockView({ node, updateAttributes, editor }: ReactNodeVi
         )}
       </div>
       <NodeViewContent className="profile-block-body" />
+      <ImagePickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={(url) => updateAttributes({ avatarUrl: url })}
+      />
     </NodeViewWrapper>
   );
 }

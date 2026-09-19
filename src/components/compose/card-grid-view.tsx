@@ -157,6 +157,21 @@ function StatusPicker({
 const inputClass =
   "min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[13px] outline-none placeholder:text-ink-faint hover:border-border focus:border-primary";
 
+// [2026-09-20 fix] grid-template-columns dua theo BE RONG THAT cua chinh no
+// (auto-fit/minmax), KHONG con dung breakpoint theo VIEWPORT (sm:/lg:) -
+// bug nguoi dung bao "Sao lại như này? Làm thì phải test chứ?" (kem anh
+// CardGrid bi nhet 4 the vao 1 hang RAT HEP khi long BEN TRONG 1 o cua Grid
+// khac - chu "Mô tả" vo tung ky tu 1 dong): sm:/lg: chi doi theo be rong
+// CUA SO TRINH DUYET, khong biet CardGrid dang nam trong 1 khong gian hep
+// hon nhieu (vd 1/3 be rong trang, ben trong 1 GridCell) - man hinh du rong
+// van ep du 2-4 cot vao 1 vung chi co ~200px thuc te. auto-fit tinh theo
+// KHONG GIAN THAT co san cho chinh no (bat ke long sau bao nhieu lop), tu
+// giam ve 1 cot khi khong du 180px cho cot thu 2 - dung moi ngu canh, khong
+// can biet truoc no se bi dat o dau.
+const CARD_GRID_STYLE: React.CSSProperties = {
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+};
+
 // NodeView cua CardGrid - yeu cau nguoi dung kem anh mau (7 card AWS
 // service). La node ATOM (xem post-extensions.ts ve ly do chon huong nay
 // thay vi content that) - NodeViewWrapper contentEditable=false TRON VEN
@@ -180,7 +195,7 @@ export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewPr
 
   if (!canEdit) {
     return (
-      <NodeViewWrapper contentEditable={false} className="card-grid-view my-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <NodeViewWrapper contentEditable={false} className="card-grid-view my-4 grid gap-3" style={CARD_GRID_STYLE}>
         {items.map((item, i) => {
           const dot = cardGridStatusColor(item.status);
           const Wrapper = item.linkHref ? "a" : "div";
@@ -204,7 +219,7 @@ export function CardGridView({ node, updateAttributes, editor }: ReactNodeViewPr
 
   return (
     <NodeViewWrapper contentEditable={false} className="card-grid-view my-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3" style={CARD_GRID_STYLE}>
         {items.map((item, i) => (
           <div key={i} className="group relative flex flex-col rounded-lg border border-border bg-surface p-4">
             {items.length > 1 && (

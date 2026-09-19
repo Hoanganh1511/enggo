@@ -1901,7 +1901,12 @@ export const POST_PROSE_CLASS =
   // O GOC TREN PHAI (khong con chen sat canh tieu de). Radius CARD giu
   // NGUYEN rounded-lg (KHONG tang len rounded-xl/2xl) - quy uoc rieng cua
   // du an: "keep radii small, rounded-lg cards max, never rounded-2xl/3xl".
-  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:grid-cols-1 [&_[data-card-grid]]:gap-3 sm:[&_[data-card-grid]]:grid-cols-2 lg:[&_[data-card-grid]]:grid-cols-4 " +
+  // grid-template-columns qua auto-fit/minmax (khong con breakpoint sm:/lg:
+  // theo VIEWPORT) - xem giai thich chi tiet ("Làm thì phải test chứ?") o
+  // CARD_GRID_STYLE trong card-grid-view.tsx: CardGrid co the bi long BEN
+  // TRONG 1 khong gian hep hon nhieu (vd 1 o cua Grid khac), sm:/lg: chi
+  // biet be rong CUA SO trinh duyet nen van ep nhieu cot vao 1 vung qua hep.
+  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] " +
   "[&_.card-grid-item]:relative [&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline " +
   "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
   "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-3 " +
