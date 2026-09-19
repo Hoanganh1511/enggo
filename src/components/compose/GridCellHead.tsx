@@ -74,7 +74,7 @@ export function GridCellHead({
 
   if (!editable) {
     return (
-      <div className="grid-cell-head flex h-7 items-center gap-1.5 px-3" style={color ? { backgroundColor: color } : undefined}>
+      <div className="grid-cell-head flex h-9 items-center gap-1.5 px-2.5" style={color ? { backgroundColor: color } : undefined}>
         {badgeColor && <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: badgeColor }} title={badgeLabel || undefined} />}
         {showStep && (
           <span className="font-mono text-[12px] font-semibold text-primary">{String(stepNumber).padStart(2, "0")}</span>
@@ -86,7 +86,7 @@ export function GridCellHead({
   return (
     <div
       contentEditable={false}
-      className="grid-cell-head flex h-8 items-center gap-1.5 px-2"
+      className="grid-cell-head flex h-9 items-center gap-2 px-2.5"
       style={color ? { backgroundColor: color } : undefined}
     >
       {/* Badge cham mau - yeu cau nguoi dung (lan 1): "gắn badge cho mỗi ô
@@ -112,7 +112,7 @@ export function GridCellHead({
             type="button"
             title={badgeLabel || "Chọn badge"}
             className={cn(
-              "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface",
+              "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface transition-transform duration-150 ease-out hover:scale-110",
               !badgeColor && "border border-dashed border-ink-faint",
             )}
             style={badgeColor ? { backgroundColor: badgeColor } : undefined}
@@ -180,9 +180,20 @@ export function GridCellHead({
         </PopoverContent>
       </PopoverRoot>
 
+      <span className="h-4 w-px shrink-0 bg-border" aria-hidden="true" />
+
       {/* Checkbox "Hiện số bước" - yêu cầu người dùng: "checkbox hiển thị số
-          bước, ví dụ như trong ảnh đính kèm thì nó là các chỗ 01,02,03...". */}
-      <label className="flex cursor-pointer items-center gap-1 text-[11px] text-ink-faint select-none">
+          bước, ví dụ như trong ảnh đính kèm thì nó là các chỗ 01,02,03...".
+          [2026-09-20 redesign] Boc trong 1 "pill" rieng (border+rounded) de
+          tach nhom ro rang voi badge/mau nen ben canh, thay vi 3 dieu khien
+          chen sat nhau kho phan biet - yeu cau nguoi dung: "design lại cái
+          card của grid tùy chỉnh số hàng/cột ấy". */}
+      <label
+        className={cn(
+          "flex cursor-pointer items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] transition-colors duration-150 ease-out select-none",
+          showStep ? "border-primary/30 bg-primary-soft text-primary" : "border-border text-ink-faint hover:text-ink",
+        )}
+      >
         <input
           type="checkbox"
           checked={showStep}
@@ -190,10 +201,8 @@ export function GridCellHead({
           className="size-3 cursor-pointer accent-primary"
         />
         <Hash size={11} strokeWidth={2} aria-hidden="true" />
+        {showStep && <span className="font-mono text-[11px] font-semibold">{String(stepNumber).padStart(2, "0")}</span>}
       </label>
-      {showStep && (
-        <span className="font-mono text-[12px] font-semibold text-primary">{String(stepNumber).padStart(2, "0")}</span>
-      )}
 
       {/* Màu nền head - yêu cầu người dùng: "Phần head có thể tùy chỉnh màu
           nền. Cho pick color hoặc nhập mã màu: hex, hoặc rgba, validate
@@ -212,10 +221,10 @@ export function GridCellHead({
           <button
             type="button"
             title="Màu nền head"
-            className="ml-auto flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-md ring-1 ring-border"
+            className="ml-auto flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border transition-transform duration-150 ease-out hover:scale-110"
             style={{ backgroundColor: color ?? "transparent" }}
           >
-            {!color && <Palette size={11} strokeWidth={2} className="text-ink-faint" />}
+            {!color && <Palette size={12} strokeWidth={2} className="text-ink-faint" />}
           </button>
         </PopoverTrigger>
         <PopoverContent open={colorOpen} align="end" sideOffset={6} className="z-50 w-56 rounded-lg border border-border bg-surface p-2.5 shadow-dropdown">

@@ -1774,10 +1774,53 @@ const ListTabKeymap = Extension.create({
   },
 });
 
+// [2026-09-20] Backspace XOA doan van RONG khi mac ket - yeu cau nguoi dung:
+// "Sao không xóa được dòng trống?" (kem anh: 1 doan van rong nam TRUOC 1
+// khoi CardGrid/Grid/... - chinh la dong "khong gian click phia truoc" ma
+// insertBlockWithSpacing() trong PostEditorToolbar.tsx TU DONG giu lai/tao
+// ra, xem comment o do). Bam Backspace tai vi tri 0 cua 1 doan van RONG la
+// CON DAU TIEN cua 1 node isolating (GridCell/SplitColumn/accordion-body...)
+// mac dinh KHONG LAM GI CA: chuoi lenh goc cua ProseMirror (deleteSelection
+// -> joinBackward -> selectNodeBackward) can "hop nhat/nhay ra ngoai" node
+// TRUOC do, nhung `isolating:true` chan dung dieu do co chu dich (tranh
+// merge/pha vo ranh gioi cell/column) - ket qua la nguoi dung bam Backspace
+// hoai KHONG THAY GI XAY RA, khong co cach nao xoa dong thua khong can dung.
+//
+// Dat SAU StarterKit trong mang extensions (thu tu quan trong!) - Tiptap thu
+// cac extension gan CUNG 1 phim theo DUNG THU TU dang ky, dung handler DAU
+// TIEN tra ve true; StarterKit da bao gom san chuoi Backspace goc (qua
+// baseKeymap cua prosemirror-commands) va se LUON duoc thu TRUOC - handler o
+// day chi bao gio CHAY TOI khi chuoi do da that bai (tra ve false), nen
+// KHONG he doi hanh vi Backspace binh thuong o bat ky noi nao khac (xoa
+// chu, gop 2 doan van, gop muc danh sach...) - CHI xu ly rieng truong hop
+// "bi mac ket" nay.
+const EmptyParagraphBackspaceKeymap = Extension.create({
+  name: "emptyParagraphBackspaceKeymap",
+  addKeyboardShortcuts() {
+    return {
+      Backspace: () => {
+        const { state } = this.editor;
+        const { $from, empty } = state.selection;
+        if (!empty || $from.parentOffset !== 0) return false;
+        const parent = $from.parent;
+        if (parent.type.name !== "paragraph" || parent.content.size > 0) return false;
+        // node(-1) = CHA THAT SU cua doan van nay (vd GridCell/SplitColumn) -
+        // CHI xoa neu no con LAI it nhat 1 con khac sau khi xoa (tranh vi
+        // pham content:"block+" bat buoc, se lam sap trang luc mo lai sau).
+        const grandParent = $from.node(-1);
+        if (!grandParent || grandParent.childCount <= 1) return false;
+        const pos = $from.before();
+        return this.editor.chain().deleteRange({ from: pos, to: pos + parent.nodeSize }).run();
+      },
+    };
+  },
+});
+
 export function getPostExtensions(): Extensions {
   return [
     StarterKit.configure({ link: false, underline: false }),
     ListTabKeymap,
+    EmptyParagraphBackspaceKeymap,
     Underline,
     TaskList,
     TaskItem.configure({ nested: true }),
@@ -2093,11 +2136,15 @@ export const POST_PROSE_CLASS =
   // thi cac o VAN se sai kich thuoc vi grid item THAT SU la cai vo react-renderer
   // rong, khong phai .grid-cell).
   "[&_.grid-cells_[data-node-view-content-react]>.react-renderer]:contents " +
-  "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface " +
-  "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-8 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-1.5 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-3 " +
+  // [2026-09-20 redesign] "design lại cái card của grid tùy chỉnh số
+  // hàng/cột ấy" - shadow-xs/hover:shadow-sm + transition (dong bo tinh
+  // than "premium" da lam cho CardGrid), head cao hon (h-8 -> h-9, khop
+  // dung ban SOAN da doi trong GridCellHead.tsx) va body doc thoai mai hon.
+  "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface [&_.grid-cell]:shadow-xs [&_.grid-cell]:transition-shadow [&_.grid-cell]:duration-150 [&_.grid-cell]:hover:shadow-sm " +
+  "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-9 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-2 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-2.5 " +
   "[&_.grid-cell-badge]:inline-block [&_.grid-cell-badge]:size-2 [&_.grid-cell-badge]:shrink-0 [&_.grid-cell-badge]:rounded-full " +
   "[&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[12px] [&_.grid-cell-step]:font-semibold [&_.grid-cell-step]:text-primary " +
-  "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
+  "[&_.grid-cell-body]:p-3.5 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body]:leading-relaxed [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
   // CardGrid (yeu cau nguoi dung: grid cac card kieu AWS service - icon
   // vuong mau + tieu de + cham trang thai + mo ta + link "→ nhan").
   // [2026-09-20] Kich thuoc/khoang cach doi lai KHOP DUNG anh mau nguoi dung

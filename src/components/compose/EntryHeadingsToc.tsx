@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { cn } from "@/lib/utils";
 
@@ -8,11 +9,23 @@ type HeadingItem = { level: HeadingLevel; text: string; pos: number };
 
 // Quet TOAN BO doc lay heading H2/H3/H4 THEO DUNG THU TU xuat hien - dung
 // tinh than insertToc()/insertQuestionPicker() trong PostEditorToolbar.tsx
-// (cung quet H2 tu editor.state.doc), khac o cho: TOC nay la 1 PANEL LUON
-// HIEN o canh, TU CAP NHAT lai MOI LAN render (SeriesEntryEditor.tsx da dat
-// shouldRerenderOnTransaction:true nen component nay von da re-render tren
-// moi transaction - tinh lai o day la RE, khong can them listener/state
-// rieng), khong phai 1 khoi CHEN 1 LAN roi dung yen nhu TocBlock.
+// (cung quet H2 tu editor.state.doc).
+//
+// [2026-09-20 fix hieu nang] TRUOC DAY tinh lai TRUC TIEP trong render (dua
+// vao SeriesEntryEditor.tsx dat shouldRerenderOnTransaction:true) - nghia la
+// MOI LAN component nay re-render (tuc la MOI transaction, KE CA transaction
+// CHI DOI SELECTION nhu di chuyen con tro/bam chuot, khong doi noi dung gi
+// ca) deu quet lai TOAN BO document. Voi bai viet dai/nhieu heading, day la
+// 1 vong quet O(n) chay LIEN TUC tren MOI ky tu go BAT KY dau trong tai
+// lieu, khong chi noi dang go - nguoi dung hoi "nếu nội dung lớn, nhiều
+// element thì nó lag phải k". Sua bang cach chuyen sang state + subscribe
+// `editor.on("update", ...)` (chi bao khi NOI DUNG THAT SU thay doi, KHONG
+// bao khi chi doi selection - khac voi re-render cua ca component me) +
+// debounce nhe (200ms) - vua giam so lan quet xuong CHI khi noi dung dung
+// thay doi, vua gop nhieu lan go lien tuc (vd go nhanh 1 tu) thanh 1 lan
+// quet duy nhat sau khi nguoi dung tam ngung, thay vi quet lai SAU TUNG ky
+// tu. Danh doi: TOC cham hon noi dung dung 200ms (khong nhan ra duoc bang
+// mat thuong) de doi lay khong con quet toan bo tai lieu tren moi transaction.
 function collectHeadings(editor: Editor): HeadingItem[] {
   const items: HeadingItem[] = [];
   editor.state.doc.descendants((node, pos) => {
@@ -42,7 +55,33 @@ const LEVEL_INDENT: Record<HeadingLevel, string> = {
 // box nut do, tu dieu chinh chieu cao cuon noi bo theo khong gian con lai
 // giua header va box nut.
 export function EntryHeadingsToc({ editor, disabled = false }: { editor: Editor; disabled?: boolean }) {
-  const headings = collectHeadings(editor);
+  const [headings, setHeadings] = useState<HeadingItem[]>(() => collectHeadings(editor));
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // KHONG goi setHeadings() ngay dau effect - lazy initializer cua
+    // useState() o tren da lo san lan tinh DAU TIEN (luc mount); goi them o
+    // day se bi coi la "setState dong bo trong effect" (react-hooks/set-state-in-effect),
+    // du KHONG sai ve logic (editor la 1 prop on dinh, hau nhu khong doi
+    // identity) nhung khong can thiet.
+    function scheduleUpdate() {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => {
+        setHeadings(collectHeadings(editor));
+      }, 200);
+    }
+
+    // "update" (KHONG phai "selectionUpdate"/"transaction") - CHI bao khi
+    // NOI DUNG tai lieu thuc su thay doi (go chu, chen/xoa khoi...), tu
+    // dong bo qua cac transaction chi doi vi tri con tro/bam chuot chon
+    // vung - dung chinh xac dieu kien "content thuc su thay doi" ma khong
+    // can tu kiem tra sai khac gi ca.
+    editor.on("update", scheduleUpdate);
+    return () => {
+      editor.off("update", scheduleUpdate);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [editor]);
 
   return (
     // [2026-09-20 fix #2] Lan truoc ha z-index (z-30, thap hon z-40 cua
