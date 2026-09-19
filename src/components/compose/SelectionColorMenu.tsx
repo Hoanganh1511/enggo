@@ -37,7 +37,7 @@ function ColorSwatchRow({
   onPick: (value: string | null) => void;
 }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       {colors.map((c) => (
         <button
           key={c.label}
@@ -45,7 +45,7 @@ function ColorSwatchRow({
           title={c.label}
           onClick={() => onPick(c.value)}
           className={cn(
-            "flex size-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface transition-shadow duration-100 ease-out",
+            "flex size-6 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface transition-shadow duration-100 ease-out",
             activeValue === c.value && "ring-2 ring-ink",
           )}
           style={{ backgroundColor: c.value ?? "transparent" }}
@@ -160,9 +160,19 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
       // hon "bôi đen văn bản" nguoi dung mo ta).
       shouldShow={shouldShowTextSelectionOnly}
     >
-      <div className="flex items-center gap-3 rounded-lg border border-border bg-surface p-2 shadow-dropdown">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-medium text-ink-faint">Chữ</span>
+      {/* [2026-09-19] Xep 2 hang DOC (nhan tren, swatch duoi) thay vi 1 hang
+          NGANG duy nhat voi vach doc o giua - yeu cau nguoi dung: "Bố cục
+          lại phần chọn màu này UI/UX cho chuẩn" (ban cu: "Chữ" + 7 cham +
+          vach + "Nền" + 7 cham don het vao 1 dong, kho phan biet nhom nao
+          voi nhom nao khi luot nhanh qua). Nhan dat NGAY TREN swatch cua
+          chinh no (khong con canh nhau tren cung 1 dong) - ro rang hon ve
+          PHAN CAP thi giac: 1 nhan luon di kem 1 hang swatch BEN DUOI no,
+          vach ngang mong (thay vach doc) tach 2 nhom mot cach tu nhien
+          giong 2 "muc" doc lap trong 1 danh sach, khong phai 2 cot chen
+          chung 1 hang chat choi. */}
+      <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-2.5 shadow-dropdown">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Màu chữ</span>
           <ColorSwatchRow
             colors={TEXT_COLORS}
             activeValue={currentColor}
@@ -173,9 +183,9 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
             }}
           />
         </div>
-        <div className="h-5 w-px shrink-0 bg-border" aria-hidden="true" />
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-medium text-ink-faint">Nền</span>
+        <div className="h-px w-full bg-border" aria-hidden="true" />
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Màu nền</span>
           <ColorSwatchRow
             colors={BG_COLORS}
             activeValue={currentBg}

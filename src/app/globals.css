@@ -865,6 +865,100 @@ body {
   animation: comment-confirm-flash 0.5s ease-out;
 }
 
+/* TableControlsMenu.tsx - yeu cau nguoi dung: "Khi tôi hover vào một tính
+   năng trong này, bạn làm cho một animation nhấp nháy ở nơi nó sẽ xảy ra
+   hành động đó" (rê chuot vao 1 nut Chen/Xoa hang/cot/bang, nhap nhay NGAY
+   TAI hang/cot/bang se bi anh huong, truoc khi bam that). Dung box-shadow
+   inset (khong doi border-width) cho 4 canh chen - box-shadow KHONG chiem
+   dien tich/khong lam reflow bang khi bat/tat, an toan hon doi border that
+   (co the lam bang nhinh/co lai vai px moi lan hover). */
+@keyframes tcm-cell-flash {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+}
+.tcm-cell-flash {
+  animation: tcm-cell-flash 0.7s ease-in-out infinite;
+}
+@keyframes tcm-cell-flash-danger {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: color-mix(in srgb, var(--danger) 25%, transparent);
+  }
+}
+.tcm-cell-flash-danger {
+  animation: tcm-cell-flash-danger 0.7s ease-in-out infinite;
+}
+@keyframes tcm-edge-top {
+  0%,
+  100% {
+    box-shadow: inset 0 3px 0 0 transparent;
+  }
+  50% {
+    box-shadow: inset 0 3px 0 0 var(--primary);
+  }
+}
+.tcm-edge-top {
+  animation: tcm-edge-top 0.7s ease-in-out infinite;
+}
+@keyframes tcm-edge-bottom {
+  0%,
+  100% {
+    box-shadow: inset 0 -3px 0 0 transparent;
+  }
+  50% {
+    box-shadow: inset 0 -3px 0 0 var(--primary);
+  }
+}
+.tcm-edge-bottom {
+  animation: tcm-edge-bottom 0.7s ease-in-out infinite;
+}
+@keyframes tcm-edge-left {
+  0%,
+  100% {
+    box-shadow: inset 3px 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: inset 3px 0 0 0 var(--primary);
+  }
+}
+.tcm-edge-left {
+  animation: tcm-edge-left 0.7s ease-in-out infinite;
+}
+@keyframes tcm-edge-right {
+  0%,
+  100% {
+    box-shadow: inset -3px 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: inset -3px 0 0 0 var(--primary);
+  }
+}
+.tcm-edge-right {
+  animation: tcm-edge-right 0.7s ease-in-out infinite;
+}
+@keyframes tcm-table-flash-danger {
+  0%,
+  100% {
+    outline-color: transparent;
+  }
+  50% {
+    outline-color: var(--danger);
+  }
+}
+.tcm-table-flash-danger {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  animation: tcm-table-flash-danger 0.7s ease-in-out infinite;
+}
+
 .react-flow__controls {
   box-shadow: none;
   border: 1px solid var(--border);

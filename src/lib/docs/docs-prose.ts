@@ -23,9 +23,27 @@ export const DOCS_PROSE_CLASS =
   "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-[#0d1117] [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-[13px] [&_pre]:text-[#e6edf3] " +
   "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[#e6edf3] " +
   "[&_img]:my-4 [&_img]:rounded-xl [&_img]:border [&_img]:border-border [&_img]:max-w-full " +
-  "[&_table]:my-5 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:text-[14px] " +
-  "[&_th]:border [&_th]:border-border [&_th]:bg-surface-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold " +
-  "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top " +
+  // border-separate + border-spacing-0 (thay vi border-collapse) - loi
+  // hien thi that su nguoi dung bao ("Xử lý clean phần border radius của
+  // table đi, lỗi", kem anh 1 canh bi "cong" bat thuong o giua bang): voi
+  // border-collapse, 2 canh border ke nhau (vd border-phai cua o A + border-
+  // trai cua o B) GOP LAM MOT theo thuat toan rieng cua trinh duyet, thuat
+  // toan do XUNG DOT voi border-radius+overflow-hidden tren <table> (radius
+  // chi cat duoc o NGOAI CUNG do trinh duyet ve, khong "biet" ve cac canh
+  // collapse ben trong) - sinh ra 1 mau border THUA/cong queo tai giao diem
+  // giua cac o, ro nhat o hang/cot gan goc bo tron. border-separate coi moi
+  // border la 1 duong RIENG BIET (khong gop), khong con xung dot voi bo tron
+  // nua - doi lai phai TU quan ly khong cho border bi "gap doi" o giua 2 o
+  // (border-phai cua o TRUOC + border-trai cua o SAU): chi ke border-duoi/
+  // border-phai cho MOI o (khong con border-trai/border-tren rieng), de
+  // CHINH border cua <table> (border-border ben duoi) dam nhiem canh
+  // tren/trai NGOAI CUNG, roi bo border-phai cua o CUOI moi hang + border-
+  // duoi cua hang CUOI cung (da trung voi border cua <table>, xem 2 dong
+  // duoi) - ra dung 1 luoi ke, khong con o nao ke 2 lan.
+  "[&_table]:my-5 [&_table]:w-full [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:border [&_table]:border-border [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[14px] " +
+  "[&_th]:border-r [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold " +
+  "[&_td]:border-r [&_td]:border-b [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top " +
+  "[&_tr>*:last-child]:border-r-0 [&_tbody_tr:last-child>*]:border-b-0 " +
   // "TOC 4-box cau hoi" (QuestionPicker, xem post-extensions.ts) - COPY tu
   // POST_PROSE_CLASS y het (cung ly do khong import truc tiep, xem comment
   // dau file). QuestionPicker.addStorage() ghi RA HTML THAT (khac

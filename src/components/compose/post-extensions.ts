@@ -1165,10 +1165,16 @@ export const POST_PROSE_CLASS =
   "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-[#0d1117] [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-[13px] [&_pre]:text-[#e6edf3] " +
   "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[#e6edf3] " +
   "[&_img]:my-4 [&_img]:rounded-xl [&_img]:border [&_img]:border-border [&_img]:max-w-full " +
-  // Table
-  "[&_table]:my-5 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:text-[14px] " +
-  "[&_th]:border [&_th]:border-border [&_th]:bg-surface-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold " +
-  "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top " +
+  // Table - border-separate (khong phai border-collapse) + border-radius o
+  // <table>, moi o CHI ke border-phai/border-duoi (khong ke border-trai/tren
+  // rieng, de border cua chinh <table> dam nhiem canh ngoai cung) - tranh loi
+  // "border cong queo" tai giao diem giua cac o khi border-collapse xung
+  // dot voi overflow-hidden+rounded-lg (xem giai thich chi tiet trong
+  // DOCS_PROSE_CLASS o docs-prose.ts, 2 file COPY nhau, sua dong bo).
+  "[&_table]:my-5 [&_table]:w-full [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:border [&_table]:border-border [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:text-[14px] " +
+  "[&_th]:border-r [&_th]:border-b [&_th]:border-border [&_th]:bg-surface-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold " +
+  "[&_td]:border-r [&_td]:border-b [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top " +
+  "[&_tr>*:last-child]:border-r-0 [&_tbody_tr:last-child>*]:border-b-0 " +
   // Task list
   "[&_ul[data-type='taskList']]:list-none [&_ul[data-type='taskList']]:pl-0 " +
   "[&_li[data-type='taskItem']]:flex [&_li[data-type='taskItem']]:items-start [&_li[data-type='taskItem']]:gap-2 " +

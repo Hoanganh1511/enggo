@@ -212,7 +212,18 @@ export function SeriesEntryForm({
           </>
         }
       />
-      <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-5">
+      {/* xl:pr-72 - danh CHO THAT khoang trong ben phai cho panel TOC (fixed,
+          w-56 + right-6, xem EntryHeadingsToc.tsx) - bug nguoi dung bao "TOC
+          phần này đè lên nội dung chỉnh sửa à?": truoc do form CHIEM HET be
+          rong (khong con cot rieng nhu Live preview cu), trong khi TOC lai
+          la `fixed` (thoat hoan toan khoi luong flex/grid cua trang) nen
+          KHONG tu nhien "day" noi dung form tranh ra - 2 thu chi vo tinh
+          CHONG LEN nhau tai cung 1 vi tri toa do, khong lien quan gi cau
+          truc DOM. Them padding-phai THAT vao form (chi tu xl: - khop dung
+          breakpoint TOC bat dau hien, xem "xl:block" o EntryHeadingsToc.tsx)
+          de noi dung (bang/anh/flow-diagram... co the rong het co) LUON
+          dung lai truoc vung TOC, khong bao gio lan vao. */}
+      <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-5 xl:pr-72">
         <div>
           <label className={labelClass}>Category *</label>
           <SelectMenu
