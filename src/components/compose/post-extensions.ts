@@ -1339,33 +1339,52 @@ export const Grid = Node.create({
   },
 });
 
-// CardGrid - "grid các card" (icon vuông màu + chấm trạng thái + tiêu đề +
-// mô tả + link "→ nhãn") - yêu cầu người dùng kèm ảnh mẫu (7 card AWS
-// service: EC2/Lambda/ECS/EKS/Fargate/Batch/EMR). KHAC HAN Grid/GridCell o
-// tren (content THAT, block+): moi truong o day (icon/mo ta/link) la du
-// lieu CO CAU TRUC ro rang, KHONG can rich text tu do - nen dung lai dung
+// CardGrid - "grid các card" - GENERIC "knowledge/service card" (khong rieng
+// gi AWS), yeu cau nguoi dung (redesign toan dien lan 2): "The card must
+// work for any technical service, product, tool, technology, concept, or
+// learning resource, not specifically for AWS... Do not introduce
+// AWS-specific terminology, icons, pricing fields, or assumptions". Cau truc
+// MOI (5 vung): (1) Header - cham trang thai goc trai + icon tien ich goc
+// phai (2 THUAN VAN BAN/EMOJI tu do, KHONG phai 1 bo icon co dinh - giu dung
+// tinh than "icon" hien co, generic cho MOI linh vuc) + icon chinh vuong +
+// tieu de + phu de; (2) Metadata - hang tag pill tu do (`tags: string[]`);
+// (3) Description; (4) Key info - danh sach {label, value} tu do (vd "Key
+// benefit"/"Difficulty"/"Status"...), dung RepeaterField.tsx (series) de
+// soan - hoan toan KHONG gan cung 1 tap field nao; (5) Footer - CTA
+// (linkLabel/linkHref co san) + 1 ghi chu phu (footerNote).
+//
+// KHAC HAN Grid/GridCell o tren (content THAT, block+): moi truong o day la
+// du lieu CO CAU TRUC ro rang, KHONG can rich text tu do - nen dung lai dung
 // tinh than StatAccordion (1 node ATOM DUY NHAT, du lieu la SNAPSHOT attrs
-// JSON `items[]`), da CHUNG MINH long duoc trong Accordion an toan (yeu cau
-// nguoi dung: "đảm bảo nó hoạt động trong cả accordion nhé" - StatAccordion
-// SAN CO trong production da long trong Accordion nhieu noi, vd entry
-// "architecture-map" nguoi dung dang dung, xem min-h-16 da them cho
-// accordion-body trong accordion-view.tsx danh RIENG cho truong hop nay).
+// JSON `items[]` - CA object luu trong 1 attr `data-items` DUY NHAT, khong
+// phai tung field 1 data-* rieng nhu Accordion/Grid, nen THEM field moi vao
+// type KHONG can dong bo lai parseHTML/renderHTML tung field), da CHUNG MINH
+// long duoc trong Accordion an toan (yeu cau nguoi dung: "đảm bảo nó hoạt
+// động trong cả accordion nhé").
 export type CardGridStatus = "none" | "red" | "yellow" | "green" | "gray";
+export type CardGridKeyInfoItem = { label: string; value: string };
 
 export type CardGridItem = {
   icon: string;
   iconBg: string;
   title: string;
+  subtitle: string;
   status: CardGridStatus;
+  utilityIcon: string;
+  tags: string[];
   description: string;
+  keyInfo: CardGridKeyInfoItem[];
   linkLabel: string;
   linkHref: string;
+  footerNote: string;
 };
 
 // Mau cham trang thai - CUNG bo mau voi GRID_BADGE_COLORS o tren (dong nhat
 // 1 bang mau trang thai DUY NHAT trong toan bo cac tinh nang Grid/CardGrid),
 // them "none" (an han cham, giong STAT_ACCORDION_STATUSES) vi khong phai
-// card nao cung can bao hieu trang thai.
+// card nao cung can bao hieu trang thai. Mau nay CUNG dong vai tro "accent
+// color theo trạng thái" cho khoi trang tri goc phai tren (xem CSS
+// ".card-grid-item-glow" trong POST_PROSE_CLASS).
 export const CARD_GRID_STATUS_COLORS: { id: CardGridStatus; value: string | null; label: string }[] = [
   { id: "none", value: null, label: "Không hiện chấm" },
   { id: "red", value: "#ef4444", label: "Đỏ" },
@@ -1378,9 +1397,128 @@ export function cardGridStatusColor(status: CardGridStatus | undefined): string 
   return CARD_GRID_STATUS_COLORS.find((s) => s.id === (status ?? "none"))?.value ?? null;
 }
 
-const DEFAULT_CARD_GRID_ITEMS: CardGridItem[] = [
-  { icon: "★", iconBg: "#6366f1", title: "Tiêu đề", status: "none", description: "", linkLabel: "", linkHref: "" },
-];
+// Chuan hoa 1 item VE DU 12 field cua schema MOI - bat buoc phai co ham nay
+// (khong doc thang node.attrs.items as CardGridItem[]): du lieu CU da luu
+// TRUOC ban redesign nay (vd 3 the EC2/Lambda/ECS nguoi dung da tao) chi co
+// 7/12 field, thieu han subtitle/utilityIcon/tags/keyInfo/footerNote - doc
+// thang se `undefined`, lam MOI cho goi `.length`/`.map` tren cac field mang
+// (tags/keyInfo) NEM LOI ngay (TypeError, sap ca trang doc/soan Entry). Goi
+// ham nay o CA 3 noi doc `items` (node parseHTML, renderHTML, addStorage,
+// CardGridView) de dam bao item LUON du hinh dang, tu "chua lanh" du lieu cu
+// ngay lan render dau, khong can migrate DB.
+export function normalizeCardGridItem(raw: Partial<CardGridItem>): CardGridItem {
+  return {
+    icon: raw.icon ?? "★",
+    iconBg: raw.iconBg ?? "#6366f1",
+    title: raw.title ?? "",
+    subtitle: raw.subtitle ?? "",
+    status: raw.status ?? "none",
+    utilityIcon: raw.utilityIcon ?? "",
+    tags: raw.tags ?? [],
+    description: raw.description ?? "",
+    keyInfo: raw.keyInfo ?? [],
+    linkLabel: raw.linkLabel ?? "",
+    linkHref: raw.linkHref ?? "",
+    footerNote: raw.footerNote ?? "",
+  };
+}
+
+const DEFAULT_CARD_GRID_ITEMS: CardGridItem[] = [normalizeCardGridItem({ title: "Tiêu đề" })];
+
+// Xay 1 the - dung CHUNG logic/cau truc cho ca renderHTML (mang DOMOutputSpec)
+// LAN markdown serialize (chuoi HTML tho, xem cardGridItemHtml duoi) - CHI
+// khac dinh dang tra ve.
+function cardGridItemNode(item: CardGridItem): unknown[] {
+  const dotColor = cardGridStatusColor(item.status);
+  const topbarChildren = [
+    ...(dotColor ? [["span", { class: "card-grid-item-dot", style: `background-color:${dotColor}` }]] : []),
+    ...(item.utilityIcon ? [["span", { class: "card-grid-item-utility" }, item.utilityIcon]] : []),
+  ];
+  return [
+    item.linkHref ? "a" : "div",
+    { class: "card-grid-item", ...(item.linkHref ? { href: item.linkHref } : {}) },
+    ["div", { class: "card-grid-item-glow", "aria-hidden": "true" }],
+    ...(topbarChildren.length ? [["div", { class: "card-grid-item-topbar" }, ...topbarChildren]] : []),
+    [
+      "div",
+      { class: "card-grid-item-head" },
+      ["span", { class: "card-grid-item-icon", style: `background-color:${item.iconBg || "#6366f1"}` }, item.icon],
+      [
+        "div",
+        { class: "card-grid-item-headtext" },
+        ["span", { class: "card-grid-item-title" }, item.title],
+        ...(item.subtitle ? [["span", { class: "card-grid-item-subtitle" }, item.subtitle]] : []),
+      ],
+    ],
+    ...(item.tags.length
+      ? [["div", { class: "card-grid-item-tags" }, ...item.tags.map((t) => ["span", { class: "card-grid-item-tag" }, t])]]
+      : []),
+    ...(item.description ? [["p", { class: "card-grid-item-desc" }, item.description]] : []),
+    ...(item.keyInfo.length
+      ? [
+          ["div", { class: "card-grid-item-divider" }],
+          [
+            "div",
+            { class: "card-grid-item-keyinfo" },
+            ...item.keyInfo.map((k) => [
+              "div",
+              { class: "card-grid-item-keyinfo-row" },
+              ["span", { class: "card-grid-item-keyinfo-label" }, k.label],
+              ["span", { class: "card-grid-item-keyinfo-value" }, k.value],
+            ]),
+          ],
+        ]
+      : []),
+    ...(item.linkLabel || item.footerNote
+      ? [
+          [
+            "div",
+            { class: "card-grid-item-footer" },
+            ...(item.linkLabel ? [["span", { class: "card-grid-item-link" }, `${item.linkLabel} →`]] : []),
+            ...(item.footerNote ? [["span", { class: "card-grid-item-footnote" }, item.footerNote]] : []),
+          ],
+        ]
+      : []),
+  ];
+}
+
+function cardGridItemHtml(item: CardGridItem): string {
+  const esc = escapeHtmlAttr;
+  const dotColor = cardGridStatusColor(item.status);
+  const topbarHtml =
+    dotColor || item.utilityIcon
+      ? `<div class="card-grid-item-topbar">${dotColor ? `<span class="card-grid-item-dot" style="background-color:${dotColor}"></span>` : ""}${
+          item.utilityIcon ? `<span class="card-grid-item-utility">${esc(item.utilityIcon)}</span>` : ""
+        }</div>`
+      : "";
+  const subtitleHtml = item.subtitle ? `<span class="card-grid-item-subtitle">${esc(item.subtitle)}</span>` : "";
+  const headHtml =
+    `<div class="card-grid-item-head"><span class="card-grid-item-icon" style="background-color:${esc(item.iconBg || "#6366f1")}">${esc(item.icon)}</span>` +
+    `<div class="card-grid-item-headtext"><span class="card-grid-item-title">${esc(item.title)}</span>${subtitleHtml}</div></div>`;
+  const tagsHtml = item.tags.length
+    ? `<div class="card-grid-item-tags">${item.tags.map((t) => `<span class="card-grid-item-tag">${esc(t)}</span>`).join("")}</div>`
+    : "";
+  const descHtml = item.description ? `<p class="card-grid-item-desc">${esc(item.description)}</p>` : "";
+  const keyInfoHtml = item.keyInfo.length
+    ? `<div class="card-grid-item-divider"></div><div class="card-grid-item-keyinfo">${item.keyInfo
+        .map(
+          (k) =>
+            `<div class="card-grid-item-keyinfo-row"><span class="card-grid-item-keyinfo-label">${esc(k.label)}</span><span class="card-grid-item-keyinfo-value">${esc(k.value)}</span></div>`,
+        )
+        .join("")}</div>`
+    : "";
+  const footerHtml =
+    item.linkLabel || item.footerNote
+      ? `<div class="card-grid-item-footer">${item.linkLabel ? `<span class="card-grid-item-link">${esc(item.linkLabel)} →</span>` : ""}${
+          item.footerNote ? `<span class="card-grid-item-footnote">${esc(item.footerNote)}</span>` : ""
+        }</div>`
+      : "";
+  const tag = item.linkHref ? "a" : "div";
+  const hrefAttr = item.linkHref ? ` href="${esc(item.linkHref)}"` : "";
+  return (
+    `<${tag} class="card-grid-item"${hrefAttr}><div class="card-grid-item-glow"></div>${topbarHtml}${headHtml}${tagsHtml}${descHtml}${keyInfoHtml}${footerHtml}</${tag}>`
+  );
+}
 
 export const CardGrid = Node.create({
   name: "cardGrid",
@@ -1393,7 +1531,8 @@ export const CardGrid = Node.create({
         default: DEFAULT_CARD_GRID_ITEMS,
         parseHTML: (el) => {
           try {
-            return JSON.parse(el.getAttribute("data-items") ?? "[]") as CardGridItem[];
+            const raw = JSON.parse(el.getAttribute("data-items") ?? "[]") as Partial<CardGridItem>[];
+            return raw.map(normalizeCardGridItem);
           } catch {
             return DEFAULT_CARD_GRID_ITEMS;
           }
@@ -1406,27 +1545,8 @@ export const CardGrid = Node.create({
     return [{ tag: "div[data-card-grid]" }];
   },
   renderHTML({ HTMLAttributes, node }) {
-    const items = (node.attrs.items ?? []) as CardGridItem[];
-    return [
-      "div",
-      mergeAttributes(HTMLAttributes, { "data-card-grid": "" }),
-      ...items.map((item) => {
-        const dotColor = cardGridStatusColor(item.status);
-        return [
-          "a",
-          { class: "card-grid-item", href: item.linkHref || undefined },
-          [
-            "div",
-            { class: "card-grid-item-top" },
-            ["span", { class: "card-grid-item-icon", style: `background-color:${item.iconBg || "#6366f1"}` }, item.icon],
-            ["span", { class: "card-grid-item-title" }, item.title],
-            ...(dotColor ? [["span", { class: "card-grid-item-dot", style: `background-color:${dotColor}` }]] : []),
-          ],
-          ...(item.description ? [["p", { class: "card-grid-item-desc" }, item.description]] : []),
-          ...(item.linkLabel ? [["span", { class: "card-grid-item-link" }, `→ ${item.linkLabel}`]] : []),
-        ];
-      }),
-    ];
+    const items = ((node.attrs.items ?? []) as Partial<CardGridItem>[]).map(normalizeCardGridItem);
+    return ["div", mergeAttributes(HTMLAttributes, { "data-card-grid": "" }), ...items.map(cardGridItemNode)];
   },
   addNodeView() {
     return ReactNodeViewRenderer(CardGridView);
@@ -1438,30 +1558,8 @@ export const CardGrid = Node.create({
     return {
       markdown: {
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
-          const items = (node.attrs.items ?? []) as CardGridItem[];
-          const cardsHtml = items
-            .map((item) => {
-              const dotColor = cardGridStatusColor(item.status);
-              const dotHtml = dotColor
-                ? `<span class="card-grid-item-dot" style="background-color:${dotColor}"></span>`
-                : "";
-              const descHtml = item.description
-                ? `<p class="card-grid-item-desc">${escapeHtmlAttr(item.description)}</p>`
-                : "";
-              const linkHtml = item.linkLabel
-                ? `<span class="card-grid-item-link">→ ${escapeHtmlAttr(item.linkLabel)}</span>`
-                : "";
-              const tag = item.linkHref ? "a" : "div";
-              const hrefAttr = item.linkHref ? ` href="${escapeHtmlAttr(item.linkHref)}"` : "";
-              return (
-                `<${tag} class="card-grid-item"${hrefAttr}>` +
-                `<div class="card-grid-item-top">` +
-                `<span class="card-grid-item-icon" style="background-color:${escapeHtmlAttr(item.iconBg || "#6366f1")}">${escapeHtmlAttr(item.icon)}</span>` +
-                `<span class="card-grid-item-title">${escapeHtmlAttr(item.title)}</span>${dotHtml}` +
-                `</div>${descHtml}${linkHtml}</${tag}>`
-              );
-            })
-            .join("");
+          const items = ((node.attrs.items ?? []) as Partial<CardGridItem>[]).map(normalizeCardGridItem);
+          const cardsHtml = items.map(cardGridItemHtml).join("");
           state.ensureNewLine();
           state.write(`<div data-card-grid data-items="${escapeHtmlAttr(JSON.stringify(items))}">${cardsHtml}</div>`);
           state.ensureNewLine();
@@ -2007,15 +2105,59 @@ export const POST_PROSE_CLASS =
   // CARD_GRID_STYLE trong card-grid-view.tsx: CardGrid co the bi long BEN
   // TRONG 1 khong gian hep hon nhieu (vd 1 o cua Grid khac), sm:/lg: chi
   // biet be rong CUA SO trinh duyet nen van ep nhieu cot vao 1 vung qua hep.
-  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] " +
-  "[&_.card-grid-item]:relative [&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline " +
-  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
-  "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-3 " +
+  // [2026-09-20] Redesign lan 2 - THE KIEN THUC/DICH VU GENERIC (khong rieng
+  // AWS), yeu cau nguoi dung: "The card must work for any technical
+  // service, product, tool, technology, concept, or learning resource...
+  // Do not introduce AWS-specific terminology, icons, pricing fields, or
+  // assumptions". 5 vung: Header (trang thai trai-tren + icon tien ich
+  // phai-tren + icon chinh + tieu de/phu de) / Metadata (tags) / Description /
+  // Key info (danh sach {label,value} tu do, ngan cach 1 duong ke) / Footer
+  // (CTA + ghi chu phu). Radius CARD giu NGUYEN rounded-lg (KHONG tang len
+  // rounded-xl/2xl) - quy uoc rieng cua du an: "keep radii small, rounded-lg
+  // cards max, never rounded-2xl/3xl". grid-template-columns qua auto-fit/
+  // minmax (khong breakpoint sm:/lg: theo VIEWPORT) - CardGrid co the bi
+  // long BEN TRONG 1 khong gian hep hon nhieu (vd 1 o cua Grid khac), sm:/
+  // lg: chi biet be rong CUA SO trinh duyet nen van ep nhieu cot vao 1 vung
+  // qua hep (bug da tung xay ra, xem "Làm thì phải test chứ?").
+  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] " +
+  "[&_.card-grid-item]:relative [&_.card-grid-item]:flex [&_.card-grid-item]:flex-col [&_.card-grid-item]:overflow-hidden [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline [&_.card-grid-item]:shadow-xs " +
+  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-all [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong [&_a.card-grid-item:hover]:shadow-sm " +
+  // Khoi trang tri goc tren-phai ("Small soft gradient/geometric decorative
+  // element") - 1 vong tron mo suy tu --primary (KHONG gan cung 1 mau/linh
+  // vuc cu the), dat SAU noi dung (z-index am voi cac vung khac + pointer-
+  // events-none), rat nhe (opacity thap) - "avoid excessive gradients or
+  // visual noise".
+  "[&_.card-grid-item-glow]:pointer-events-none [&_.card-grid-item-glow]:absolute [&_.card-grid-item-glow]:-top-8 [&_.card-grid-item-glow]:-right-8 [&_.card-grid-item-glow]:size-32 [&_.card-grid-item-glow]:rounded-full [&_.card-grid-item-glow]:opacity-[0.06] [&_.card-grid-item-glow]:[background:radial-gradient(circle,var(--primary)_0%,transparent_70%)] " +
+  // Header - hang tren cung: trang thai (trai) + icon tien ich (phai).
+  "[&_.card-grid-item-topbar]:relative [&_.card-grid-item-topbar]:z-10 [&_.card-grid-item-topbar]:mb-2.5 [&_.card-grid-item-topbar]:flex [&_.card-grid-item-topbar]:items-center [&_.card-grid-item-topbar]:justify-between " +
+  "[&_.card-grid-item-dot]:size-2.5 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
+  "[&_.card-grid-item-utility]:ml-auto [&_.card-grid-item-utility]:text-[14px] [&_.card-grid-item-utility]:leading-none [&_.card-grid-item-utility]:text-ink-faint " +
+  // Icon chinh + tieu de/phu de.
+  "[&_.card-grid-item-head]:relative [&_.card-grid-item-head]:z-10 [&_.card-grid-item-head]:flex [&_.card-grid-item-head]:items-center [&_.card-grid-item-head]:gap-3 " +
   "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-13 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-lg [&_.card-grid-item-icon]:text-[22px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
-  "[&_.card-grid-item-title]:min-w-0 [&_.card-grid-item-title]:flex-1 [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:pr-4 [&_.card-grid-item-title]:text-[17px] [&_.card-grid-item-title]:font-bold [&_.card-grid-item-title]:text-ink " +
-  "[&_.card-grid-item-dot]:absolute [&_.card-grid-item-dot]:top-4 [&_.card-grid-item-dot]:right-4 [&_.card-grid-item-dot]:size-3.5 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
-  "[&_.card-grid-item-desc]:mt-3.5 [&_.card-grid-item-desc]:text-[13.5px] [&_.card-grid-item-desc]:leading-snug [&_.card-grid-item-desc]:text-ink-muted " +
-  "[&_.card-grid-item-link]:mt-3 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[13.5px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
+  "[&_.card-grid-item-headtext]:min-w-0 [&_.card-grid-item-headtext]:flex-1 " +
+  "[&_.card-grid-item-title]:block [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:text-[16px] [&_.card-grid-item-title]:font-bold [&_.card-grid-item-title]:leading-tight [&_.card-grid-item-title]:text-ink " +
+  "[&_.card-grid-item-subtitle]:mt-0.5 [&_.card-grid-item-subtitle]:block [&_.card-grid-item-subtitle]:truncate [&_.card-grid-item-subtitle]:text-[12px] [&_.card-grid-item-subtitle]:font-medium [&_.card-grid-item-subtitle]:text-ink-faint " +
+  // Metadata - hang tag pill (yeu cau: "Tags should be optional and should
+  // not dominate the card" - chu nho, nen mo, khong vien).
+  "[&_.card-grid-item-tags]:relative [&_.card-grid-item-tags]:z-10 [&_.card-grid-item-tags]:mt-3 [&_.card-grid-item-tags]:flex [&_.card-grid-item-tags]:flex-wrap [&_.card-grid-item-tags]:gap-1.5 " +
+  "[&_.card-grid-item-tag]:rounded-full [&_.card-grid-item-tag]:bg-surface-muted [&_.card-grid-item-tag]:px-2.5 [&_.card-grid-item-tag]:py-1 [&_.card-grid-item-tag]:text-[11px] [&_.card-grid-item-tag]:font-medium [&_.card-grid-item-tag]:text-ink-muted " +
+  // Description - "comfortable line-height", KHONG tao khoang trang lon.
+  "[&_.card-grid-item-desc]:relative [&_.card-grid-item-desc]:z-10 [&_.card-grid-item-desc]:mt-3 [&_.card-grid-item-desc]:text-[13.5px] [&_.card-grid-item-desc]:leading-relaxed [&_.card-grid-item-desc]:text-ink-muted " +
+  // Key info - duong ke mong + danh sach hang label/value gon gang.
+  "[&_.card-grid-item-divider]:relative [&_.card-grid-item-divider]:z-10 [&_.card-grid-item-divider]:mt-3 [&_.card-grid-item-divider]:border-t [&_.card-grid-item-divider]:border-border " +
+  "[&_.card-grid-item-keyinfo]:relative [&_.card-grid-item-keyinfo]:z-10 [&_.card-grid-item-keyinfo]:mt-3 [&_.card-grid-item-keyinfo]:flex [&_.card-grid-item-keyinfo]:flex-col [&_.card-grid-item-keyinfo]:gap-1.5 " +
+  "[&_.card-grid-item-keyinfo-row]:flex [&_.card-grid-item-keyinfo-row]:items-baseline [&_.card-grid-item-keyinfo-row]:justify-between [&_.card-grid-item-keyinfo-row]:gap-3 [&_.card-grid-item-keyinfo-row]:text-[12.5px] " +
+  "[&_.card-grid-item-keyinfo-label]:shrink-0 [&_.card-grid-item-keyinfo-label]:text-ink-faint " +
+  "[&_.card-grid-item-keyinfo-value]:min-w-0 [&_.card-grid-item-keyinfo-value]:truncate [&_.card-grid-item-keyinfo-value]:text-right [&_.card-grid-item-keyinfo-value]:font-medium [&_.card-grid-item-keyinfo-value]:text-ink " +
+  // Footer - CTA (trai) + ghi chu phu (phai), "subtle bottom action area".
+  // mt-auto (khong phai mt-3) - card la flex-col, cac the CUNG hang trong
+  // luoi tu keo dan CHIEU CAO bang nhau (mac dinh align-items:stretch cua
+  // grid) nen mt-auto day footer xuong DUNG DAY moi the, thang hang nhau du
+  // noi dung dai/ngan khac nhau.
+  "[&_.card-grid-item-footer]:relative [&_.card-grid-item-footer]:z-10 [&_.card-grid-item-footer]:mt-auto [&_.card-grid-item-footer]:flex [&_.card-grid-item-footer]:items-center [&_.card-grid-item-footer]:justify-between [&_.card-grid-item-footer]:gap-3 [&_.card-grid-item-footer]:border-t [&_.card-grid-item-footer]:border-border [&_.card-grid-item-footer]:pt-3 " +
+  "[&_.card-grid-item-link]:text-[13px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
+  "[&_.card-grid-item-footnote]:truncate [&_.card-grid-item-footnote]:text-[11.5px] [&_.card-grid-item-footnote]:text-ink-faint " +
   // SplitBlock (yeu cau nguoi dung: block chia doi, soan binh thuong o ca 2
   // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.
   "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +

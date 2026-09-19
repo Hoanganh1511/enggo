@@ -145,18 +145,31 @@ export const DOCS_PROSE_CLASS =
   "[&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[12px] [&_.grid-cell-step]:font-semibold [&_.grid-cell-step]:text-primary " +
   "[&_.grid-cell-body]:p-3 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
   // CardGrid + SplitBlock - xem comment chi tiet trong POST_PROSE_CLASS.
-  // Kich thuoc/khoang cach - xem comment chi tiet trong POST_PROSE_CLASS.
-  // grid-template-columns qua auto-fit/minmax - xem giai thich chi tiet
-  // trong POST_PROSE_CLASS / card-grid-view.tsx.
-  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] " +
-  "[&_.card-grid-item]:relative [&_.card-grid-item]:block [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline " +
-  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-colors [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong " +
-  "[&_.card-grid-item-top]:flex [&_.card-grid-item-top]:items-center [&_.card-grid-item-top]:gap-3 " +
+  // "The kien thuc/dich vu" generic (redesign lan 2) - xem comment chi tiet
+  // trong POST_PROSE_CLASS.
+  "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] " +
+  "[&_.card-grid-item]:relative [&_.card-grid-item]:flex [&_.card-grid-item]:flex-col [&_.card-grid-item]:overflow-hidden [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline [&_.card-grid-item]:shadow-xs " +
+  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-all [&_a.card-grid-item]:duration-150 [&_a.card-grid-item:hover]:border-border-strong [&_a.card-grid-item:hover]:shadow-sm " +
+  "[&_.card-grid-item-glow]:pointer-events-none [&_.card-grid-item-glow]:absolute [&_.card-grid-item-glow]:-top-8 [&_.card-grid-item-glow]:-right-8 [&_.card-grid-item-glow]:size-32 [&_.card-grid-item-glow]:rounded-full [&_.card-grid-item-glow]:opacity-[0.06] [&_.card-grid-item-glow]:[background:radial-gradient(circle,var(--primary)_0%,transparent_70%)] " +
+  "[&_.card-grid-item-topbar]:relative [&_.card-grid-item-topbar]:z-10 [&_.card-grid-item-topbar]:mb-2.5 [&_.card-grid-item-topbar]:flex [&_.card-grid-item-topbar]:items-center [&_.card-grid-item-topbar]:justify-between " +
+  "[&_.card-grid-item-dot]:size-2.5 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
+  "[&_.card-grid-item-utility]:ml-auto [&_.card-grid-item-utility]:text-[14px] [&_.card-grid-item-utility]:leading-none [&_.card-grid-item-utility]:text-ink-faint " +
+  "[&_.card-grid-item-head]:relative [&_.card-grid-item-head]:z-10 [&_.card-grid-item-head]:flex [&_.card-grid-item-head]:items-center [&_.card-grid-item-head]:gap-3 " +
   "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-13 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-lg [&_.card-grid-item-icon]:text-[22px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
-  "[&_.card-grid-item-title]:min-w-0 [&_.card-grid-item-title]:flex-1 [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:pr-4 [&_.card-grid-item-title]:text-[17px] [&_.card-grid-item-title]:font-bold [&_.card-grid-item-title]:text-ink " +
-  "[&_.card-grid-item-dot]:absolute [&_.card-grid-item-dot]:top-4 [&_.card-grid-item-dot]:right-4 [&_.card-grid-item-dot]:size-3.5 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
-  "[&_.card-grid-item-desc]:mt-3.5 [&_.card-grid-item-desc]:text-[13.5px] [&_.card-grid-item-desc]:leading-snug [&_.card-grid-item-desc]:text-ink-muted " +
-  "[&_.card-grid-item-link]:mt-3 [&_.card-grid-item-link]:block [&_.card-grid-item-link]:text-[13.5px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
+  "[&_.card-grid-item-headtext]:min-w-0 [&_.card-grid-item-headtext]:flex-1 " +
+  "[&_.card-grid-item-title]:block [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:text-[16px] [&_.card-grid-item-title]:font-bold [&_.card-grid-item-title]:leading-tight [&_.card-grid-item-title]:text-ink " +
+  "[&_.card-grid-item-subtitle]:mt-0.5 [&_.card-grid-item-subtitle]:block [&_.card-grid-item-subtitle]:truncate [&_.card-grid-item-subtitle]:text-[12px] [&_.card-grid-item-subtitle]:font-medium [&_.card-grid-item-subtitle]:text-ink-faint " +
+  "[&_.card-grid-item-tags]:relative [&_.card-grid-item-tags]:z-10 [&_.card-grid-item-tags]:mt-3 [&_.card-grid-item-tags]:flex [&_.card-grid-item-tags]:flex-wrap [&_.card-grid-item-tags]:gap-1.5 " +
+  "[&_.card-grid-item-tag]:rounded-full [&_.card-grid-item-tag]:bg-surface-muted [&_.card-grid-item-tag]:px-2.5 [&_.card-grid-item-tag]:py-1 [&_.card-grid-item-tag]:text-[11px] [&_.card-grid-item-tag]:font-medium [&_.card-grid-item-tag]:text-ink-muted " +
+  "[&_.card-grid-item-desc]:relative [&_.card-grid-item-desc]:z-10 [&_.card-grid-item-desc]:mt-3 [&_.card-grid-item-desc]:text-[13.5px] [&_.card-grid-item-desc]:leading-relaxed [&_.card-grid-item-desc]:text-ink-muted " +
+  "[&_.card-grid-item-divider]:relative [&_.card-grid-item-divider]:z-10 [&_.card-grid-item-divider]:mt-3 [&_.card-grid-item-divider]:border-t [&_.card-grid-item-divider]:border-border " +
+  "[&_.card-grid-item-keyinfo]:relative [&_.card-grid-item-keyinfo]:z-10 [&_.card-grid-item-keyinfo]:mt-3 [&_.card-grid-item-keyinfo]:flex [&_.card-grid-item-keyinfo]:flex-col [&_.card-grid-item-keyinfo]:gap-1.5 " +
+  "[&_.card-grid-item-keyinfo-row]:flex [&_.card-grid-item-keyinfo-row]:items-baseline [&_.card-grid-item-keyinfo-row]:justify-between [&_.card-grid-item-keyinfo-row]:gap-3 [&_.card-grid-item-keyinfo-row]:text-[12.5px] " +
+  "[&_.card-grid-item-keyinfo-label]:shrink-0 [&_.card-grid-item-keyinfo-label]:text-ink-faint " +
+  "[&_.card-grid-item-keyinfo-value]:min-w-0 [&_.card-grid-item-keyinfo-value]:truncate [&_.card-grid-item-keyinfo-value]:text-right [&_.card-grid-item-keyinfo-value]:font-medium [&_.card-grid-item-keyinfo-value]:text-ink " +
+  "[&_.card-grid-item-footer]:relative [&_.card-grid-item-footer]:z-10 [&_.card-grid-item-footer]:mt-auto [&_.card-grid-item-footer]:flex [&_.card-grid-item-footer]:items-center [&_.card-grid-item-footer]:justify-between [&_.card-grid-item-footer]:gap-3 [&_.card-grid-item-footer]:border-t [&_.card-grid-item-footer]:border-border [&_.card-grid-item-footer]:pt-3 " +
+  "[&_.card-grid-item-link]:text-[13px] [&_.card-grid-item-link]:font-semibold [&_.card-grid-item-link]:text-primary " +
+  "[&_.card-grid-item-footnote]:truncate [&_.card-grid-item-footnote]:text-[11.5px] [&_.card-grid-item-footnote]:text-ink-faint " +
   "[&_.split-block]:my-4 [&_.split-block]:flex [&_.split-block]:flex-col [&_.split-block]:gap-6 sm:[&_.split-block]:flex-row " +
   "[&_.split-column]:min-w-0 [&_.split-column]:flex-1 [&_.split-column_p:first-child]:mt-0 [&_.split-column_p:last-child]:mb-0 " +
   "[&_.split-column:first-child]:sm:flex-[0_0_32%] " +

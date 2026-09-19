@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
-import type { CalloutVariant, QuestionPickerItem } from "./post-extensions";
+import { normalizeCardGridItem, type CalloutVariant, type QuestionPickerItem } from "./post-extensions";
 
 function Btn({
   label,
@@ -353,7 +353,24 @@ export function PostEditorToolbar({
       attrs: { headColor: null, showStep: false },
       content: [{ type: "paragraph" }],
     }));
-    editor.chain().focus().insertContent({ type: "grid", attrs: { cols }, content: cells }).run();
+    // [2026-09-20 fix] Boc them 1 paragraph TRUOC + SAU khoi Grid - bug nguoi
+    // dung bao: "chèn một cái gì đó vào accordion rồi, xong giờ muốn viết
+    // lên phần phía trước nó... con trỏ click vào không thể trỏ vào được".
+    // Khi Grid la con DAU TIEN (hoac DUY NHAT) trong 1 khoi cha (vd
+    // accordion-body), KHONG CON gi ben tren no de bam vao dat con tro (chi
+    // co 1 dai padding rat mong, khong dang tin cay bang 1 paragraph THAT -
+    // xem ly do chi tiet o accordion-view.tsx ve gap-cursor/click resolution).
+    // Paragraph that + browser tu resolve click ngay ca voi dong RONG (dua
+    // theo line-height that, dang tin cay hon nhieu so voi padding CSS
+    // don thuan) - ap dung LUON tai thoi diem CHEN (khong phai 1 plugin
+    // auto-fix chay ngam, xem ly do tranh huong do trong comment "DA GO BO
+    // TrailingNode"), nen an toan du duoc chen o BAT KY ngu canh nao (dau
+    // tai lieu, trong accordion, trong split-column...).
+    editor
+      .chain()
+      .focus()
+      .insertContent([{ type: "paragraph" }, { type: "grid", attrs: { cols }, content: cells }, { type: "paragraph" }])
+      .run();
   };
 
   // Chen CardGrid - yeu cau nguoi dung kem anh mau (7 card AWS service:
@@ -362,17 +379,18 @@ export function PostEditorToolbar({
   // insertContent voi 1 item mac dinh de co san 1 card sua ngay, dung nut
   // "+" trong CardGridView.tsx de them tiep.
   const insertCardGrid = () => {
+    // Boc paragraph truoc/sau - xem giai thich chi tiet o insertGrid().
     editor
       .chain()
       .focus()
-      .insertContent({
-        type: "cardGrid",
-        attrs: {
-          items: [
-            { icon: "★", iconBg: "#6366f1", title: "Tiêu đề", status: "none", description: "", linkLabel: "", linkHref: "" },
-          ],
+      .insertContent([
+        { type: "paragraph" },
+        {
+          type: "cardGrid",
+          attrs: { items: [normalizeCardGridItem({ title: "Tiêu đề" })] },
         },
-      })
+        { type: "paragraph" },
+      ])
       .run();
   };
 
@@ -380,16 +398,21 @@ export function PostEditorToolbar({
   // cot phai nhieu doan van) - "Vẫn soạn được bình thường mọi thứ ở cả 2
   // bên" - moi cot can 1 paragraph rong san (giong Accordion/Grid).
   const insertSplitBlock = () => {
+    // Boc paragraph truoc/sau - xem giai thich chi tiet o insertGrid().
     editor
       .chain()
       .focus()
-      .insertContent({
-        type: "splitBlock",
-        content: [
-          { type: "splitColumn", content: [{ type: "paragraph" }] },
-          { type: "splitColumn", content: [{ type: "paragraph" }] },
-        ],
-      })
+      .insertContent([
+        { type: "paragraph" },
+        {
+          type: "splitBlock",
+          content: [
+            { type: "splitColumn", content: [{ type: "paragraph" }] },
+            { type: "splitColumn", content: [{ type: "paragraph" }] },
+          ],
+        },
+        { type: "paragraph" },
+      ])
       .run();
   };
 
@@ -399,14 +422,15 @@ export function PostEditorToolbar({
   // tên, sau đó phía dưới là nội dung"). 1 paragraph rong san trong body
   // (giong Accordion/Grid/SplitBlock).
   const insertProfileBlock = () => {
+    // Boc paragraph truoc/sau - xem giai thich chi tiet o insertGrid().
     editor
       .chain()
       .focus()
-      .insertContent({
-        type: "profileBlock",
-        attrs: { avatarUrl: null, name: "" },
-        content: [{ type: "paragraph" }],
-      })
+      .insertContent([
+        { type: "paragraph" },
+        { type: "profileBlock", attrs: { avatarUrl: null, name: "" }, content: [{ type: "paragraph" }] },
+        { type: "paragraph" },
+      ])
       .run();
   };
 
