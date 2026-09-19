@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { DOCS_PROSE_CLASS } from "@/lib/docs/docs-prose";
 import { slugifyHeading } from "@/lib/docs/docs-toc";
 
@@ -42,8 +43,17 @@ export function DocsMarkdown({ markdown }: { markdown: string }) {
           dung Series/docs CHI admin soan duoc (AdminGuard), khong phai input
           nguoi dung thuong - yeu cau nguoi dung: "Vẫn chưa thấy cái TOC dạng
           box... Tôi bảo 2 lần rồi" (truoc do QuestionPicker chi xuong cap
-          thanh text thuong o day, mat het giao dien box/collapse). */}
+          thanh text thuong o day, mat het giao dien box/collapse).
+          remarkGfm - CommonMark THUAN (react-markdown mac dinh) KHONG biet cu
+          phap bang pipe "| a | b |" - thieu plugin nay, tiptap-markdown van
+          xuat dung markdown bang (xem Table$1 trong node_modules/tiptap-markdown,
+          co state.ensureNewLine() giua tung hang dang hoang) nhung
+          react-markdown chi thay 1 chuoi dong lien tiep KHONG blank-line ngan
+          cach, gop het thanh 1 doan van thuong (xuong dong don trong 1
+          paragraph = soft-break, bi hien thi noi lien nhau) - dung y bug
+          nguoi dung bao "Phần table lỗi hiển thị ở ngoài bài viết". */}
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
           h2: ({ children }) => <h2 id={headingId(children)}>{children}</h2>,
