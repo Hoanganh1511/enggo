@@ -1,5 +1,6 @@
 "use client";
 
+import { useLayoutEffect, useRef } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { ArrowDown, Plus, Split, X } from "lucide-react";
 import type { FlowDiagramStep } from "./post-extensions";
@@ -60,18 +61,48 @@ function FlowNodeEditor({
 }) {
   const children = node.children ?? [];
 
+  // [2026-09-19] Giu nguyen vi tri con tro qua moi lan go - yeu cau nguoi
+  // dung: "cứ bị lỗi nhảy ra sau nút đóng ngoặc" (go giua chung, vd sau
+  // "(5G)", cu bi day/nhay ve 1 vi tri co dinh). Nguyen nhan: MOI ky tu go
+  // vao deu di qua 1 vong tron ProseMirror THAT (onUpdate -> updateAttributes
+  // -> transaction -> NodeView nay nhan `node` MOI) truoc khi quay lai render
+  // React - trong khi node ATOM nay nam LONG trong cay de quy (nhieu cap
+  // FlowNodeEditor long nhau qua children.map), 1 vai trinh duyet/React se
+  // TAO LAI (khong tai su dung y het) phan tu <textarea> DOM o cac cap sau
+  // moi lan cay React duoc dung lai tu goc NodeView, lam mat vi tri con tro
+  // dang go (mac dinh nhay ve 1 vi tri co dinh thay vi giu dung cho). Luu
+  // lai selectionStart NGAY LUC go (truoc khi update lan truyen qua
+  // ProseMirror) roi chu dong dat lai o useLayoutEffect (chay NGAY SAU khi
+  // DOM cap nhat xong, truoc khi trinh duyet ve len man hinh) - an toan du
+  // DOM co bi thay the hay khong.
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  const caretPos = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (caretPos.current === null || !titleRef.current) return;
+    titleRef.current.setSelectionRange(caretPos.current, caretPos.current);
+    caretPos.current = null;
+  });
+
   return (
     <div className="flex w-full flex-col items-center">
       <div className="group relative flex w-full max-w-sm items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2">
         {canEdit ? (
-          <input
+          <textarea
+            ref={titleRef}
             value={node.title}
-            onChange={(e) => onUpdate(path, { title: e.target.value })}
+            onChange={(e) => {
+              caretPos.current = e.target.selectionStart;
+              onUpdate(path, { title: e.target.value });
+            }}
             placeholder={isRoot ? "Bước đầu tiên..." : `Bước ${path[path.length - 1] + 1}...`}
-            className="min-w-0 flex-1 bg-transparent text-center text-[13.5px] font-semibold text-ink outline-none placeholder:text-ink-faint"
+            rows={Math.max(1, node.title.split("\n").length)}
+            className="min-w-0 flex-1 resize-none bg-transparent text-center text-[13.5px] font-semibold text-ink outline-none placeholder:text-ink-faint"
           />
         ) : (
-          <span className="min-w-0 flex-1 text-center text-[13.5px] font-semibold text-ink">{node.title}</span>
+          <span className="min-w-0 flex-1 text-center text-[13.5px] font-semibold whitespace-pre-line text-ink">
+            {node.title}
+          </span>
         )}
         {canEdit && !isRoot && (
           <button
@@ -157,12 +188,23 @@ function FlowNodeEditor({
         </>
       )}
 
-      {/* NHIEU nhanh - xep hang ngang, moi cot 1 nhanh doc lap (dung y AWS
-          Region -> AZ-A/AZ-B/AZ-C nguoi dung mo ta). */}
+      {/* NHIEU nhanh - LUON xep hang ngang (yeu cau nguoi dung: "Rẽ nhánh
+          nhưng không theo chiều ngang... nhánh 1 nhánh 2 phải hàng ngang") -
+          BUG that su truoc do: flex-wrap cho phep cac nhanh TU RONG XUONG
+          dong ke tiep khi cot form (SeriesEntryForm.tsx) khong du rong cho
+          ca 2 nhanh (moi nhanh min-w-40 = 160px + gap), nhin nhu bi xep DOC
+          thay vi ngang. flex-nowrap + overflow-x-auto: giu CHAC 1 hang
+          ngang duy nhat, cho cuon ngang khi khong du cho thay vi tu xuong
+          dong. shrink-0 tren tung nhanh (thay flex-1) - flex-1 truoc do se
+          TU CO LAI be rong khi flex-nowrap khien tong be rong vuot khung,
+          lam mat y nghia min-w-40 (nhanh bi bop qua hep, chu de xuong dong
+          lung tung) - shrink-0 giu DUNG be rong toi thieu, day trach nhiem
+          "khong du cho" sang thanh cuon ngang cua the cha thay vi bop noi
+          dung con. */}
       {children.length > 1 && (
-        <div className="mt-2 flex w-full flex-wrap items-start justify-center gap-4 border-t border-dashed border-border pt-3">
+        <div className="mt-2 flex w-full flex-nowrap items-start justify-center gap-4 overflow-x-auto border-t border-dashed border-border pt-3">
           {children.map((child, i) => (
-            <div key={i} className="flex min-w-40 flex-1 flex-col items-center">
+            <div key={i} className="flex min-w-40 shrink-0 flex-col items-center">
               <div className="mb-1.5 flex items-center gap-1 text-[10.5px] font-semibold tracking-wide text-ink-faint uppercase">
                 <Split size={10} strokeWidth={2} />
                 Nhánh {i + 1}

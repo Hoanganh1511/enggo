@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Monitor, Tablet, Smartphone, ExternalLink } from "lucide-react";
+import { Monitor, Tablet, Smartphone, ExternalLink, Eye } from "lucide-react";
 import { toast } from "@/lib/toast/toast-store";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ import { DictionarySectionsEditor } from "@/components/series/DictionarySections
 import { SelectMenu } from "@/components/ui/select-menu";
 import { LayoutSpinnerOverlay } from "@/components/ui/layout-spinner";
 import { UnsavedChangesModal } from "@/components/ui/unsaved-changes-modal";
+import { SimpleModal } from "@/components/ui/simple-modal";
 import type {
   ContentSeriesCategory,
   ContentSeriesEntryDetail,
@@ -97,6 +98,7 @@ export function SeriesEntryForm({
   );
   const [previewDevice, setPreviewDevice] =
     useState<(typeof PREVIEW_DEVICES)[number]["id"]>("desktop");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Bao ve du lieu chua luu - yeu cau nguoi dung: "Các trang cần thêm tính
   // năng bảo vệ dữ liệu khi có bất kỳ hành động nào rời khỏi trang hiện tại
@@ -196,12 +198,11 @@ export function SeriesEntryForm({
   }
 
   return (
-    <div className="relative flex gap-8">
+    <div className="relative">
       {/* Spinner layout - phu vung than trang soan Entry nay trong luc dang
-          luu (yeu cau nguoi dung). Dat o day (relative wrapper NGOAI CUNG)
-          thay vi chi boc form de che ca cot preview ben phai luon. Label kem
-          ten bai (in dam) - yeu cau nguoi dung: "Bổ sung thêm text ví dụ
-          như Đang khởi tạo Bài viết Entry "**tên bài**"". */}
+          luu (yeu cau nguoi dung). Label kem ten bai (in dam) - yeu cau
+          nguoi dung: "Bổ sung thêm text ví dụ như Đang khởi tạo Bài viết
+          Entry "**tên bài**"". */}
       <LayoutSpinnerOverlay
         active={saving}
         label={
@@ -211,7 +212,7 @@ export function SeriesEntryForm({
           </>
         }
       />
-      <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-col gap-5">
+      <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-5">
         <div>
           <label className={labelClass}>Category *</label>
           <SelectMenu
@@ -446,6 +447,14 @@ export function SeriesEntryForm({
             qua UnsavedChangesModal ben duoi, khong can tu viet lai logic
             confirm rieng o day. */}
         <div className="fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-full bg-surface p-1.5 shadow-lg">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold text-ink-muted transition hover:bg-hover-bg hover:text-ink"
+          >
+            <Eye size={14} strokeWidth={2} aria-hidden="true" />
+            Preview
+          </button>
           {isEdit && initial?.slug && (
             <Link
               href={`/series/${seriesSlug}/${initial.slug}`}
@@ -468,56 +477,59 @@ export function SeriesEntryForm({
         </div>
       </form>
 
-      {/* [2026-09-16] Rong gap doi (w-80 -> w-160) - yeu cau nguoi dung: "tăng
-          chiều rộng của phần LivePreview này thêm gấp đôi đi. Chứ như này
-          không đúng view". Them tabs gia lap device (Desktop/Tablet/Mobile) -
-          yeu cau "nếu có thể thì thêm hẳn tabs có các tab content là các
-          view device khác nhau". Luu y: day CHI la mo phong chieu RONG (doi
-          max-width khung chua) - cac class Tailwind "sm:" trong app phan hoi
-          theo chieu rong THAT cua CUA SO TRINH DUYET (media query), khong
-          phai theo container nay, nen 1-2 cho dung "sm:" (vd grid StatAccordion)
-          co the KHONG tu doi lai khi chon tab Mobile - van du de xem chu
-          xuong dong/khoang cach/kich thuoc anh thay doi ra sao o be rong hep
-          hon, dung nhu muc dich chinh cua 1 "live preview" nhanh (khac han 1
-          iframe device-emulator that su, ngoai pham vi 1 preview ben canh
-          form). */}
-      <div className="hidden w-160 shrink-0 lg:block">
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
-            Live preview
-          </p>
-          <div className="flex gap-0.5 rounded-md bg-surface-muted p-0.5">
-            {PREVIEW_DEVICES.map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setPreviewDevice(d.id)}
-                title={d.label}
-                className={cn(
-                  "flex size-6 cursor-pointer items-center justify-center rounded transition-colors duration-150 ease-out",
-                  previewDevice === d.id
-                    ? "bg-surface text-ink shadow-sm"
-                    : "text-ink-faint hover:text-ink-muted",
-                )}
-              >
-                <d.Icon size={13} strokeWidth={2} />
-              </button>
-            ))}
+      {/* [2026-09-19] Doi tu 1 COT rieng luon chiem cho ben phai sang 1
+          MODAL bam moi mo - yeu cau nguoi dung: "Bỏ cái phần preview bên
+          phải đi. Tốn diện tích. Bổ sung nút Preview vào box buttons góc
+          dưới bên phải, khi nào ấn thì bật modal preview bài viết lên." Giu
+          nguyen tabs gia lap device (Desktop/Tablet/Mobile, xem comment cu
+          da xoa ve y nghia/gioi han cua no) - chi doi CHO hien thi, khong
+          doi NOI DUNG preview. series-scope tren <div> body - modal render
+          qua Portal RA NGOAI cay DOM cua trang /series (xem quy uoc chung
+          trong toan bo thu muc components/series: bat ky popover/modal nao
+          dung o day deu phai tu gan lai class nay de ke thua dung font/token
+          rieng cua khu vuc Series, xem EntryDownloadButtons.tsx/
+          EntryContentBlocksEditor.tsx). */}
+      <SimpleModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        title="Xem trước bài viết"
+        maxWidthClassName="max-w-3xl"
+      >
+        <div className="series-scope">
+          <div className="mb-3 flex justify-end">
+            <div className="flex gap-0.5 rounded-md bg-surface-muted p-0.5">
+              {PREVIEW_DEVICES.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setPreviewDevice(d.id)}
+                  title={d.label}
+                  className={cn(
+                    "flex size-6 cursor-pointer items-center justify-center rounded transition-colors duration-150 ease-out",
+                    previewDevice === d.id
+                      ? "bg-surface text-ink shadow-sm"
+                      : "text-ink-faint hover:text-ink-muted",
+                  )}
+                >
+                  <d.Icon size={13} strokeWidth={2} />
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="rounded-xl border border-border bg-surface-muted/40 p-4">
-          <div
-            className="mx-auto overflow-hidden rounded-lg border border-border bg-surface p-4 transition-[max-width] duration-200 ease-out"
-            style={{ maxWidth: PREVIEW_DEVICE_WIDTH[previewDevice] }}
-          >
-            <h2 className="text-[18px] font-bold text-ink">{title || "(chưa có tiêu đề)"}</h2>
-            {subtitle && <p className="mt-1 text-[13px] text-ink-faint">{subtitle}</p>}
-            <div className="mt-3">
-              <DocsMarkdown markdown={contentMarkdown || "*chưa có nội dung*"} />
+          <div className="rounded-xl border border-border bg-surface-muted/40 p-4">
+            <div
+              className="mx-auto overflow-hidden rounded-lg border border-border bg-surface p-4 transition-[max-width] duration-200 ease-out"
+              style={{ maxWidth: PREVIEW_DEVICE_WIDTH[previewDevice] }}
+            >
+              <h2 className="text-[18px] font-bold text-ink">{title || "(chưa có tiêu đề)"}</h2>
+              {subtitle && <p className="mt-1 text-[13px] text-ink-faint">{subtitle}</p>}
+              <div className="mt-3">
+                <DocsMarkdown markdown={contentMarkdown || "*chưa có nội dung*"} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </SimpleModal>
       <UnsavedChangesModal open={pendingHref !== null} onConfirm={confirmLeave} onCancel={cancelLeave} />
     </div>
   );

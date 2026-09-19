@@ -896,6 +896,15 @@ function escapeHtmlAttr(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+// Xuong dong trong tieu de 1 buoc (yeu cau nguoi dung: "muốn xuống dòng viết
+// không được" - FlowNodeEditor.tsx truoc do dung <input> mot dong, khong go
+// Enter duoc) - tach thanh mang node text/["br"] xen ke de dua vao
+// renderFlowNode (DOMOutputSpec dang mang cua ProseMirror, KHONG the chen
+// chuoi "<br>" tho vao day, phai la 1 phan tu ["br"] rieng).
+function titleToBrNodes(title: string): unknown[] {
+  return title.split("\n").flatMap((line, i) => (i === 0 ? [line] : [["br"], line]));
+}
+
 // Du lieu CU (truoc khi co re nhanh) luu 1 mang phang "steps[]", moi step co
 // `note` mo ta CANH RA (toi step ke tiep). Chuyen thanh 1 cay CHUOI DON (moi
 // buoc dung 1 `children` duy nhat) de tuong thich nguoc voi cac FlowDiagram
@@ -921,7 +930,7 @@ function legacyStepsToTree(steps: { title: string; note?: string }[]): FlowDiagr
 //   ke cac buoc rong/hep khac nhau.
 function renderFlowNode(node: FlowDiagramStep): unknown[] {
   const children = node.children ?? [];
-  const stepEl = ["div", { class: "flow-diagram-step" }, node.title];
+  const stepEl = ["div", { class: "flow-diagram-step" }, ...titleToBrNodes(node.title)];
   if (children.length === 0) return [stepEl];
   if (children.length === 1) {
     const child = children[0];
@@ -954,7 +963,7 @@ function renderFlowNode(node: FlowDiagramStep): unknown[] {
 
 function flowNodeToHtml(node: FlowDiagramStep): string {
   const children = node.children ?? [];
-  const stepHtml = `<div class="flow-diagram-step">${escapeHtmlAttr(node.title)}</div>`;
+  const stepHtml = `<div class="flow-diagram-step">${escapeHtmlAttr(node.title).replace(/\n/g, "<br>")}</div>`;
   if (children.length === 0) return stepHtml;
   if (children.length === 1) {
     const child = children[0];
