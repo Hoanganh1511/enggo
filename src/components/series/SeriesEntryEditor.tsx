@@ -7,6 +7,7 @@ import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-e
 import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
 import { SelectionColorMenu } from "@/components/compose/SelectionColorMenu";
 import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
+import { EntryHeadingsToc } from "@/components/compose/EntryHeadingsToc";
 
 // Editor RICH cho Nội dung Entry - DUNG DUNG 1 bo extension/toolbar VOI
 // Composer.tsx (yeu cau nguoi dung: "đồng bộ tất cả giống compose" - lan
@@ -77,6 +78,11 @@ export function SeriesEntryEditor({
           xóa"). */}
       <TableControlsMenu editor={editor} />
       <EditorContent editor={editor} />
+      {/* Panel "Mục lục" (H2 > H3 > H4) - neo goc phai man hinh, chiem lai
+          khoang trong ben phai sau khi bo cot Live preview cu (xem
+          SeriesEntryForm.tsx) - yeu cau nguoi dung: "Chưa thêm 1 phần diện
+          tích bên phải để hiện cho TOC nữa". */}
+      <EntryHeadingsToc editor={editor} />
     </div>
   );
 }
