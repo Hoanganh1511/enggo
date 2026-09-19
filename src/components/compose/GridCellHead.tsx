@@ -74,11 +74,14 @@ export function GridCellHead({
 
   if (!editable) {
     return (
-      <div className="grid-cell-head flex h-9 items-center gap-1.5 px-2.5" style={color ? { backgroundColor: color } : undefined}>
-        {badgeColor && <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: badgeColor }} title={badgeLabel || undefined} />}
-        {showStep && (
-          <span className="font-mono text-[12px] font-semibold text-primary">{String(stepNumber).padStart(2, "0")}</span>
+      <div className="grid-cell-head flex h-11 items-center gap-2 px-3" style={color ? { backgroundColor: color } : undefined}>
+        {badgeColor && (
+          <span className="grid-cell-badge" title={badgeLabel || undefined}>
+            <span className="grid-cell-badge-dot" style={{ backgroundColor: badgeColor }} />
+            {badgeLabel && <span className="grid-cell-badge-label">{badgeLabel}</span>}
+          </span>
         )}
+        {showStep && <span className="grid-cell-step">{String(stepNumber).padStart(2, "0")}</span>}
       </div>
     );
   }
@@ -86,7 +89,7 @@ export function GridCellHead({
   return (
     <div
       contentEditable={false}
-      className="grid-cell-head flex h-9 items-center gap-2 px-2.5"
+      className="grid-cell-head flex h-11 items-center gap-2 px-3"
       style={color ? { backgroundColor: color } : undefined}
     >
       {/* Badge cham mau - yeu cau nguoi dung (lan 1): "gắn badge cho mỗi ô
@@ -112,11 +115,18 @@ export function GridCellHead({
             type="button"
             title={badgeLabel || "Chọn badge"}
             className={cn(
-              "flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface transition-transform duration-150 ease-out hover:scale-110",
-              !badgeColor && "border border-dashed border-ink-faint",
+              "flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border bg-surface px-2 transition-transform duration-150 ease-out hover:scale-[1.04]",
+              badgeColor ? "border-border" : "border-dashed border-ink-faint",
             )}
-            style={badgeColor ? { backgroundColor: badgeColor } : undefined}
-          />
+          >
+            <span
+              className={cn("size-2 shrink-0 rounded-full", !badgeColor && "border border-dashed border-ink-faint")}
+              style={badgeColor ? { backgroundColor: badgeColor } : undefined}
+            />
+            <span className="max-w-22 truncate text-[11px] font-medium text-ink">
+              {badgeLabel || (badgeColor ? "Badge" : "+ Badge")}
+            </span>
+          </button>
         </PopoverTrigger>
         <PopoverContent open={badgeOpen} align="start" sideOffset={6} className="z-50 w-56 rounded-lg border border-border bg-surface p-2.5 shadow-dropdown">
           <label className="mb-1 block text-[11px] font-medium text-ink-faint">Tên badge (không bắt buộc)</label>
@@ -180,29 +190,28 @@ export function GridCellHead({
         </PopoverContent>
       </PopoverRoot>
 
-      <span className="h-4 w-px shrink-0 bg-border" aria-hidden="true" />
-
-      {/* Checkbox "Hiện số bước" - yêu cầu người dùng: "checkbox hiển thị số
+      {/* So buoc "01, 02, 03..." - yêu cầu người dùng: "checkbox hiển thị số
           bước, ví dụ như trong ảnh đính kèm thì nó là các chỗ 01,02,03...".
-          [2026-09-20 redesign] Boc trong 1 "pill" rieng (border+rounded) de
-          tach nhom ro rang voi badge/mau nen ben canh, thay vi 3 dieu khien
-          chen sat nhau kho phan biet - yeu cau nguoi dung: "design lại cái
-          card của grid tùy chỉnh số hàng/cột ấy". */}
-      <label
+          [2026-09-20 redesign lan 2] Chuyen han tu checkbox+label sang 1 nut
+          tron duy nhat (bam de bat/tat): khi tat la vong tron net dut + icon
+          Hash (moi goi "them so buoc"), khi bat la 1 KHOI TRON MAU DAC voi so
+          thu tu thuc su ben trong - giong het the hien o CSS (.grid-cell-step)
+          va o ban khong the soan (nhanh !editable o tren), thay vi 1 pill mo
+          nhat kho nhan ra la da "redesign" - yeu cau nguoi dung (lan 2, kem
+          screenshot): "Vẫn y nguyên thiết kế cũ ?? đùa bố mày à". */}
+      <button
+        type="button"
+        title={showStep ? "Ẩn số bước" : "Hiện số bước"}
+        onClick={() => onShowStepChange(!showStep)}
         className={cn(
-          "flex cursor-pointer items-center gap-1 rounded-md border px-1.5 py-1 text-[11px] transition-colors duration-150 ease-out select-none",
-          showStep ? "border-primary/30 bg-primary-soft text-primary" : "border-border text-ink-faint hover:text-ink",
+          "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full font-mono text-[11px] font-bold transition-all duration-150 ease-out",
+          showStep
+            ? "bg-primary text-white shadow-sm hover:brightness-110"
+            : "border border-dashed border-ink-faint text-ink-faint hover:border-ink hover:text-ink",
         )}
       >
-        <input
-          type="checkbox"
-          checked={showStep}
-          onChange={(e) => onShowStepChange(e.target.checked)}
-          className="size-3 cursor-pointer accent-primary"
-        />
-        <Hash size={11} strokeWidth={2} aria-hidden="true" />
-        {showStep && <span className="font-mono text-[11px] font-semibold">{String(stepNumber).padStart(2, "0")}</span>}
-      </label>
+        {showStep ? String(stepNumber).padStart(2, "0") : <Hash size={12} strokeWidth={2} aria-hidden="true" />}
+      </button>
 
       {/* Màu nền head - yêu cầu người dùng: "Phần head có thể tùy chỉnh màu
           nền. Cho pick color hoặc nhập mã màu: hex, hoặc rgba, validate

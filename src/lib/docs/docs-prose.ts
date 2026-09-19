@@ -140,11 +140,13 @@ export const DOCS_PROSE_CLASS =
   // tai trong HTML tinh o day).
   "[&_.grid-cells]:my-4 [&_.grid-cells]:grid [&_.grid-cells]:gap-3 " +
   // [2026-09-20 redesign] xem comment chi tiet trong POST_PROSE_CLASS.
-  "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface [&_.grid-cell]:shadow-xs [&_.grid-cell]:transition-shadow [&_.grid-cell]:duration-150 [&_.grid-cell]:hover:shadow-sm " +
-  "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-9 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-2 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted [&_.grid-cell-head]:px-2.5 " +
-  "[&_.grid-cell-badge]:inline-block [&_.grid-cell-badge]:size-2 [&_.grid-cell-badge]:shrink-0 [&_.grid-cell-badge]:rounded-full " +
-  "[&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[12px] [&_.grid-cell-step]:font-semibold [&_.grid-cell-step]:text-primary " +
-  "[&_.grid-cell-body]:p-3.5 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body]:leading-relaxed [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
+  "[&_.grid-cell]:overflow-hidden [&_.grid-cell]:rounded-lg [&_.grid-cell]:border [&_.grid-cell]:border-border [&_.grid-cell]:bg-surface [&_.grid-cell]:shadow-sm [&_.grid-cell]:transition-all [&_.grid-cell]:duration-150 [&_.grid-cell]:hover:-translate-y-0.5 [&_.grid-cell]:hover:shadow-md " +
+  "[&_.grid-cell-head]:flex [&_.grid-cell-head]:h-11 [&_.grid-cell-head]:items-center [&_.grid-cell-head]:gap-2 [&_.grid-cell-head]:border-b [&_.grid-cell-head]:border-border [&_.grid-cell-head]:bg-surface-muted/60 [&_.grid-cell-head]:px-3 " +
+  "[&_.grid-cell-badge]:inline-flex [&_.grid-cell-badge]:items-center [&_.grid-cell-badge]:gap-1.5 [&_.grid-cell-badge]:rounded-full [&_.grid-cell-badge]:border [&_.grid-cell-badge]:border-border [&_.grid-cell-badge]:bg-surface [&_.grid-cell-badge]:px-2 [&_.grid-cell-badge]:py-1 " +
+  "[&_.grid-cell-badge-dot]:inline-block [&_.grid-cell-badge-dot]:size-2 [&_.grid-cell-badge-dot]:shrink-0 [&_.grid-cell-badge-dot]:rounded-full " +
+  "[&_.grid-cell-badge-label]:text-[11px] [&_.grid-cell-badge-label]:font-medium [&_.grid-cell-badge-label]:whitespace-nowrap [&_.grid-cell-badge-label]:text-ink " +
+  "[&_.grid-cell-step]:flex [&_.grid-cell-step]:size-7 [&_.grid-cell-step]:shrink-0 [&_.grid-cell-step]:items-center [&_.grid-cell-step]:justify-center [&_.grid-cell-step]:rounded-full [&_.grid-cell-step]:bg-primary [&_.grid-cell-step]:font-mono [&_.grid-cell-step]:text-[11px] [&_.grid-cell-step]:font-bold [&_.grid-cell-step]:text-white " +
+  "[&_.grid-cell-body]:p-4 [&_.grid-cell-body]:text-[14px] [&_.grid-cell-body]:leading-relaxed [&_.grid-cell-body_p]:my-1 [&_.grid-cell-body_p:first-child]:mt-0 [&_.grid-cell-body_p:last-child]:mb-0 " +
   // CardGrid + SplitBlock - xem comment chi tiet trong POST_PROSE_CLASS.
   // "The kien thuc/dich vu" generic (redesign lan 2) - xem comment chi tiet
   // trong POST_PROSE_CLASS.
