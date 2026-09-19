@@ -322,7 +322,7 @@ export function SeriesEntryForm({
               )}
             </span>
           </div>
-          <SeriesEntryEditor value={contentMarkdown} onChange={setContentMarkdown} />
+          <SeriesEntryEditor value={contentMarkdown} onChange={setContentMarkdown} saving={saving} />
         </div>
 
         <div className="rounded-xl border border-border p-4">

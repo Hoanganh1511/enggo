@@ -503,6 +503,52 @@ export const QuestionPicker = Node.create({
   },
 });
 
+// Xay noi dung <summary> - dung CHUNG cho ca renderHTML (tra ve mang
+// DOMOutputSpec) LAN markdown serialize (tra ve chuoi HTML tho, xem
+// accordionSummaryHtml duoi) - CHI khac o dinh dang tra ve, LOGIC/cau truc y
+// het nhau. Che do thuong: chi tra ve title (string) dung y HET hanh vi cu.
+function accordionSummaryContent(
+  title: string,
+  mediaHeader: boolean,
+  mediaImage: string | null,
+  mediaDescription: string,
+): unknown[] {
+  if (!mediaHeader) return [title];
+  return [
+    [
+      "div",
+      { class: "accordion-summary-media" },
+      mediaImage
+        ? ["img", { class: "accordion-summary-icon", src: mediaImage, alt: title }]
+        : ["div", { class: "accordion-summary-icon accordion-summary-icon-empty" }],
+      [
+        "div",
+        { class: "accordion-summary-text" },
+        ["span", { class: "accordion-summary-title" }, title],
+        ...(mediaDescription ? [["p", { class: "accordion-summary-desc" }, mediaDescription]] : []),
+      ],
+    ],
+  ];
+}
+
+function accordionSummaryHtml(
+  title: string,
+  mediaHeader: boolean,
+  mediaImage: string | null,
+  mediaDescription: string,
+  escapeHtml: (s: string) => string,
+): string {
+  if (!mediaHeader) return escapeHtml(title);
+  const iconHtml = mediaImage
+    ? `<img class="accordion-summary-icon" src="${escapeHtml(mediaImage)}" alt="${escapeHtml(title)}">`
+    : `<div class="accordion-summary-icon accordion-summary-icon-empty"></div>`;
+  const descHtml = mediaDescription ? `<p class="accordion-summary-desc">${escapeHtml(mediaDescription)}</p>` : "";
+  return (
+    `<div class="accordion-summary-media">${iconHtml}` +
+    `<div class="accordion-summary-text"><span class="accordion-summary-title">${escapeHtml(title)}</span>${descHtml}</div></div>`
+  );
+}
+
 // Accordion - hop "bam de mo/dong" (yeu cau nguoi dung: "Editor chưa có
 // accordion"), content la block+ THAT (khac Callout/GoDeeper deu KHONG cho
 // nguoi dung dat tieu de rieng) - tieu de la 1 attr string sua duoc qua o
@@ -533,13 +579,47 @@ export const Accordion = Node.create({
       // lỗi").
       title: {
         default: "Tiêu đề",
-        parseHTML: (el) => el.querySelector(":scope > summary")?.textContent?.trim() || "Tiêu đề",
+        // querySelector(".accordion-summary-title") TRUOC - o che do
+        // mediaHeader, <summary> long them anh+mo ta (xem accordionSummaryContent
+        // duoi), doc thang textContent cua CA summary se GOP LUON chu mo ta
+        // vao title. Van giu fallback ve toan bo summary cho che do THUONG
+        // (khong doi hanh vi cu).
+        parseHTML: (el) => {
+          const summary = el.querySelector(":scope > summary");
+          const titleEl = summary?.querySelector(".accordion-summary-title");
+          return (titleEl ?? summary)?.textContent?.trim() || "Tiêu đề";
+        },
         renderHTML: (attrs) => ({ "data-title": attrs.title as string }),
       },
       open: {
         default: true,
         parseHTML: (el) => el.hasAttribute("open"),
         renderHTML: (attrs) => ({ "data-open": attrs.open === false ? "false" : "true" }),
+      },
+      // [2026-09-20] "Accordion với header dạng layout" - yeu cau nguoi dung
+      // kem anh mau (icon vuong + tieu de + mo ta trong 1 hang, xem popover
+      // "Accordion" trong PostEditorToolbar.tsx): "cái tiếp theo là accordion
+      // với header có structure layout như trong ảnh: có ảnh vuông rồi tới
+      // title và mô tả". 3 attrs THUAN moi (khong phai ProseMirror children -
+      // giong tinh than head cua GridCell/ProfileBlock), doc/ghi qua data-*
+      // TRUC TIEP tren <details> (khong dua vao DOM content ben trong summary
+      // nhu title o tren, tranh lap lai chinh bug da tung xay ra - xem comment
+      // dau addAttributes() ve "F5 trang bị lỗi").
+      mediaHeader: {
+        default: false,
+        parseHTML: (el) => el.getAttribute("data-media-header") === "true",
+        renderHTML: (attrs) => ({ "data-media-header": attrs.mediaHeader ? "true" : "false" }),
+      },
+      mediaImage: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-media-image") || null,
+        renderHTML: (attrs) => (attrs.mediaImage ? { "data-media-image": attrs.mediaImage as string } : {}),
+      },
+      mediaDescription: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-media-description") || "",
+        renderHTML: (attrs) =>
+          attrs.mediaDescription ? { "data-media-description": attrs.mediaDescription as string } : {},
       },
     };
   },
@@ -549,10 +629,13 @@ export const Accordion = Node.create({
   renderHTML({ HTMLAttributes, node }) {
     const title = (node.attrs.title as string) || "Tiêu đề";
     const open = node.attrs.open !== false;
+    const mediaHeader = Boolean(node.attrs.mediaHeader);
+    const mediaImage = node.attrs.mediaImage as string | null;
+    const mediaDescription = (node.attrs.mediaDescription as string) || "";
     return [
       "details",
       mergeAttributes(HTMLAttributes, { "data-accordion": "", ...(open ? { open: "" } : {}) }),
-      ["summary", { class: "accordion-summary" }, title],
+      ["summary", { class: "accordion-summary" }, ...accordionSummaryContent(title, mediaHeader, mediaImage, mediaDescription)],
       ["div", { class: "accordion-body" }, 0],
     ];
   },
@@ -578,12 +661,19 @@ export const Accordion = Node.create({
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
           const title = (node.attrs.title as string) || "Tiêu đề";
           const open = node.attrs.open !== false;
+          const mediaHeader = Boolean(node.attrs.mediaHeader);
+          const mediaImage = node.attrs.mediaImage as string | null;
+          const mediaDescription = (node.attrs.mediaDescription as string) || "";
           const escapeHtml = (s: string) =>
             s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          const summaryHtml = accordionSummaryHtml(title, mediaHeader, mediaImage, mediaDescription, escapeHtml);
           state.ensureNewLine();
           state.write(
-            `<details class="accordion-block" data-accordion${open ? " open" : ""}>\n` +
-              `<summary class="accordion-summary">${escapeHtml(title)}</summary>\n` +
+            `<details class="accordion-block" data-accordion${open ? " open" : ""}` +
+              `${mediaHeader ? ' data-media-header="true"' : ""}` +
+              `${mediaImage ? ` data-media-image="${escapeHtml(mediaImage)}"` : ""}` +
+              `${mediaDescription ? ` data-media-description="${escapeHtml(mediaDescription)}"` : ""}>\n` +
+              `<summary class="accordion-summary">${summaryHtml}</summary>\n` +
               `<div class="accordion-body">\n\n`,
           );
           state.renderContent(node);
@@ -1776,6 +1866,17 @@ export const POST_PROSE_CLASS =
   "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
   "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
   "[&_.accordion-block:not([open])_.accordion-summary]:before:-rotate-90 " +
+  // "Accordion với header dạng layout" (icon vuong + tieu de + mo ta, xem
+  // comment chi tiet trong post-extensions.ts/accordion-view.tsx). Chi
+  // dinh lai font-weight/size cho ".accordion-summary-desc" - mac dinh no SE
+  // ke thua font-semibold/14.5px tu ".accordion-summary" (chu thuong, khong
+  // phai tieu de) neu khong ghi de rieng.
+  "[&_.accordion-summary-media]:flex [&_.accordion-summary-media]:min-w-0 [&_.accordion-summary-media]:flex-1 [&_.accordion-summary-media]:items-center [&_.accordion-summary-media]:gap-3 " +
+  "[&_.accordion-summary-icon]:size-10 [&_.accordion-summary-icon]:shrink-0 [&_.accordion-summary-icon]:rounded-lg [&_.accordion-summary-icon]:object-cover " +
+  "[&_.accordion-summary-icon-empty]:bg-surface-muted " +
+  "[&_.accordion-summary-text]:min-w-0 [&_.accordion-summary-text]:flex-1 " +
+  "[&_.accordion-summary-title]:block [&_.accordion-summary-title]:truncate " +
+  "[&_.accordion-summary-desc]:mt-0.5 [&_.accordion-summary-desc]:truncate [&_.accordion-summary-desc]:text-[13px] [&_.accordion-summary-desc]:font-normal [&_.accordion-summary-desc]:text-ink-muted " +
   "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
   // Accordion thong ke (StatAccordion) - cung <details>/<summary> THUAN nhu
   // Accordion o tren, nhung marker "+"/"-" thay vi tam giac (dung y mockup

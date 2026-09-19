@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { NodeViewWrapper, NodeViewContent, type ReactNodeViewProps } from "@tiptap/react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImagePickerModal } from "./ImagePickerModal";
 
 // NodeView cua Accordion. [2026-09-16] Bam chevron gio AN/HIEN noi dung
 // NGAY TRONG LUC SOAN (khac ban truoc - giu noi dung LUON hien, chi doi
@@ -19,7 +21,11 @@ import { cn } from "@/lib/utils";
 export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
   const open = node.attrs.open !== false;
+  const mediaHeader = Boolean(node.attrs.mediaHeader);
+  const mediaImage = (node.attrs.mediaImage as string | null) ?? null;
+  const mediaDescription = (node.attrs.mediaDescription as string) ?? "";
   const canEdit = editor.isEditable;
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <NodeViewWrapper className="accordion-block my-4 overflow-hidden rounded-xl border border-border">
@@ -36,7 +42,63 @@ export function AccordionView({ node, updateAttributes, editor }: ReactNodeViewP
             className={cn("transition-transform duration-150", !open && "-rotate-90")}
           />
         </button>
-        {canEdit ? (
+        {/* [2026-09-20] "Accordion với header dạng layout" - yeu cau nguoi
+            dung kem anh mau (icon vuong + tieu de + mo ta): "cái tiếp theo
+            là accordion với header có structure layout như trong ảnh: có
+            ảnh vuông rồi tới title và mô tả" - chon o luc CHEN qua popover 2
+            lua chon trong PostEditorToolbar.tsx (insertAccordion vs
+            insertMediaAccordion), luu lai qua attrs `mediaHeader`. */}
+        {mediaHeader ? (
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                title="Đổi ảnh"
+                className="accordion-summary-icon flex shrink-0 cursor-pointer items-center justify-center overflow-hidden bg-surface-muted text-ink-faint hover:text-ink"
+                style={
+                  mediaImage
+                    ? { backgroundImage: `url(${mediaImage})`, backgroundSize: "cover", backgroundPosition: "center" }
+                    : undefined
+                }
+              >
+                {!mediaImage && <ImagePlus size={16} strokeWidth={1.8} aria-hidden="true" />}
+              </button>
+            ) : mediaImage ? (
+              // eslint-disable-next-line @next/next/no-img-element -- URL tuy y nguoi dung dan
+              <img src={mediaImage} alt={title} className="accordion-summary-icon shrink-0" />
+            ) : (
+              <div className="accordion-summary-icon accordion-summary-icon-empty shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              {canEdit ? (
+                <input
+                  value={title}
+                  onChange={(e) => updateAttributes({ title: e.target.value })}
+                  placeholder="Tiêu đề..."
+                  className="accordion-summary-title block w-full bg-transparent outline-none placeholder:text-ink-faint placeholder:font-normal"
+                />
+              ) : (
+                <span className="accordion-summary-title block">{title}</span>
+              )}
+              {canEdit ? (
+                <input
+                  value={mediaDescription}
+                  onChange={(e) => updateAttributes({ mediaDescription: e.target.value })}
+                  placeholder="Mô tả..."
+                  className="accordion-summary-desc block w-full bg-transparent outline-none placeholder:text-ink-faint"
+                />
+              ) : (
+                mediaDescription && <p className="accordion-summary-desc">{mediaDescription}</p>
+              )}
+            </div>
+            <ImagePickerModal
+              open={pickerOpen}
+              onOpenChange={setPickerOpen}
+              onSelect={(url) => updateAttributes({ mediaImage: url })}
+            />
+          </div>
+        ) : canEdit ? (
           <input
             value={title}
             onChange={(e) => updateAttributes({ title: e.target.value })}

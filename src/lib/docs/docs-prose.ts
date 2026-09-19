@@ -76,6 +76,13 @@ export const DOCS_PROSE_CLASS =
   "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
   "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
   "[&_.accordion-block:not([open])_.accordion-summary]:before:-rotate-90 " +
+  // "Accordion với header dạng layout" - xem comment chi tiet trong POST_PROSE_CLASS.
+  "[&_.accordion-summary-media]:flex [&_.accordion-summary-media]:min-w-0 [&_.accordion-summary-media]:flex-1 [&_.accordion-summary-media]:items-center [&_.accordion-summary-media]:gap-3 " +
+  "[&_.accordion-summary-icon]:size-10 [&_.accordion-summary-icon]:shrink-0 [&_.accordion-summary-icon]:rounded-lg [&_.accordion-summary-icon]:object-cover " +
+  "[&_.accordion-summary-icon-empty]:bg-surface-muted " +
+  "[&_.accordion-summary-text]:min-w-0 [&_.accordion-summary-text]:flex-1 " +
+  "[&_.accordion-summary-title]:block [&_.accordion-summary-title]:truncate " +
+  "[&_.accordion-summary-desc]:mt-0.5 [&_.accordion-summary-desc]:truncate [&_.accordion-summary-desc]:text-[13px] [&_.accordion-summary-desc]:font-normal [&_.accordion-summary-desc]:text-ink-muted " +
   "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
   // Mau nen co dinh #F3F3F7, khong border (yeu cau nguoi dung: "accordion
   // geographic không cần border đâu, có màu nền là được rồi" - xem comment

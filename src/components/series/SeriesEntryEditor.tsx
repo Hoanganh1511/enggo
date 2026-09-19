@@ -25,9 +25,21 @@ import { EntryHeadingsToc } from "@/components/compose/EntryHeadingsToc";
 export function SeriesEntryEditor({
   value,
   onChange,
+  saving = false,
 }: {
   value: string;
   onChange: (markdown: string) => void;
+  // Panel "Mục lục" (EntryHeadingsToc) la `fixed` - NEO THANG vao man hinh,
+  // KHONG nam trong pham vi hop cua LayoutSpinnerOverlay (absolute inset-0
+  // bam theo to tien "relative" trong SeriesEntryForm.tsx, chi phu dung phan
+  // NOI DUNG THAT cua form, khong chac chan vuon toi het vung man hinh noi
+  // TOC dang neo) - yeu cau nguoi dung: "Lớp phủ loading tại sao không che
+  // hết?" (kem anh: TOC ben phai van net cang trong khi phan con lai da mo
+  // di luc luu). Thay vi co gang mo rong hinh hoc cua overlay dung toi dung
+  // vi tri TOC (de vo tinh anh huong CA cac trang khac dung chung
+  // LayoutSpinnerOverlay), truyen THANG trang thai `saving` xuong de TOC tu
+  // mo/khoa chinh no - doc lap voi hinh dang/z-index cua overlay.
+  saving?: boolean;
 }) {
   const editor = useEditor({
     extensions: [
@@ -82,7 +94,7 @@ export function SeriesEntryEditor({
           khoang trong ben phai sau khi bo cot Live preview cu (xem
           SeriesEntryForm.tsx) - yeu cau nguoi dung: "Chưa thêm 1 phần diện
           tích bên phải để hiện cho TOC nữa". */}
-      <EntryHeadingsToc editor={editor} />
+      <EntryHeadingsToc editor={editor} disabled={saving} />
     </div>
   );
 }

@@ -41,23 +41,31 @@ const LEVEL_INDENT: Record<HeadingLevel, string> = {
 // CA top LAN bottom (thay vi 1 max-height co dinh) de KHONG BAO GIO de len
 // box nut do, tu dieu chinh chieu cao cuon noi bo theo khong gian con lai
 // giua header va box nut.
-export function EntryHeadingsToc({ editor }: { editor: Editor }) {
+export function EntryHeadingsToc({ editor, disabled = false }: { editor: Editor; disabled?: boolean }) {
   const headings = collectHeadings(editor);
 
   return (
-    // z-30 (KHONG phai z-40) - bug nguoi dung bao "cả phần toc cũng lỗi
-    // kìa" (kem anh chup luc dang luu): LayoutSpinnerOverlay (SeriesEntryForm.tsx)
-    // cung dung z-40 de phu mo TOAN BO form trong luc luu - 2 phan tu z-index
-    // BANG NHAU thi phan tu nam SAU trong DOM thang the (panel nay nam SAU,
-    // long sau trong cay cua SeriesEntryEditor), khien no LUON hien RO NET,
-    // khong bi lop overlay mo dan len nhu phan con lai cua form - nhin lech
-    // hoan toan (1 goc net cang, phan con lai mo nhoe). Ha xuong z-30 (thap
-    // hon overlay) de overlay PHU DUNG len ca panel nay khi dang luu, dong
-    // bo voi toan bo phan con lai - van cao hon noi dung thuong (khong z-index,
-    // mac dinh) nen ngay luc KHONG luu van noi len tren binh thuong.
+    // [2026-09-20 fix #2] Lan truoc ha z-index (z-30, thap hon z-40 cua
+    // LayoutSpinnerOverlay) tuong la du - VAN sai, nguoi dung bao lai kem
+    // anh chup y het loi cu ("Lớp phủ loading tại sao không che hết?"): panel
+    // nay la `fixed` NEO THANG VAO MAN HINH, con LayoutSpinnerOverlay lai la
+    // `absolute inset-0` bam theo KICH THUOC HOP cua to tien "relative"
+    // (SeriesEntryForm.tsx) - hop do CHUA CHAC vuon toi dung vi tri man hinh
+    // noi panel nay dang neo (vd neu to tien do hep hon vung TOC dang chiem),
+    // nen DU z-index thap hon, 2 phan tu co the don gian KHONG HE CHONG NHAU
+    // tren man hinh de che duoc - day la van de HINH HOC (khong gian phu), khong
+    // phai thu tu ve (z-index). Sua DUNG GOC: nhan THANG trang thai `saving`
+    // tu SeriesEntryForm.tsx (qua SeriesEntryEditor.tsx) va TU lam mo/khoa
+    // chinh no khi dang luu - hoan toan doc lap voi hinh dang/vi tri cua
+    // LayoutSpinnerOverlay, khong con phu thuoc 2 phan tu co "gap nhau" tren
+    // man hinh hay khong.
     <nav
       aria-label="Mục lục bài viết"
-      className="fixed top-28 right-6 bottom-24 z-30 hidden w-56 overflow-y-auto xl:block"
+      aria-hidden={disabled}
+      className={cn(
+        "fixed top-28 right-6 bottom-24 z-30 hidden w-56 overflow-y-auto transition-opacity duration-150 ease-out xl:block",
+        disabled && "pointer-events-none opacity-40 blur-[1.5px]",
+      )}
     >
       <p className="mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Mục lục</p>
       {headings.length === 0 ? (

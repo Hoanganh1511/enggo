@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   Bold,
   Italic,
@@ -37,6 +39,7 @@ import {
   IdCard,
   Columns2,
   Contact,
+  LayoutPanelTop,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -74,6 +77,62 @@ function Btn({
     >
       <Icon size={16} strokeWidth={1.9} />
     </button>
+  );
+}
+
+// Nut popover 2 lua chon cho "Accordion" - yeu cau nguoi dung: "khi click để
+// nó insert vào, nó sẽ hiện ra 2 options để chọn". Trigger CUNG kieu voi Btn
+// (size-8, cung mau hover) de khong lech giao dien voi cac nut xung quanh.
+function AccordionPickerBtn({
+  onInsertPlain,
+  onInsertMedia,
+}: {
+  onInsertPlain: () => void;
+  onInsertMedia: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <PopoverRoot open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Accordion (bấm để mở/đóng)"
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+        >
+          <ListCollapse size={16} strokeWidth={1.9} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent open={open} align="start" sideOffset={6} className="z-50 w-60 rounded-lg border border-border bg-surface p-1 shadow-dropdown">
+        <button
+          type="button"
+          onClick={() => {
+            onInsertPlain();
+            setOpen(false);
+          }}
+          className="flex w-full cursor-pointer items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-hover-bg"
+        >
+          <ListCollapse size={16} strokeWidth={1.9} className="mt-0.5 shrink-0 text-ink-faint" />
+          <span>
+            <span className="block text-[13px] font-medium text-ink">Accordion thường</span>
+            <span className="block text-[11.5px] text-ink-faint">Chỉ có tiêu đề văn bản</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            onInsertMedia();
+            setOpen(false);
+          }}
+          className="flex w-full cursor-pointer items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-hover-bg"
+        >
+          <LayoutPanelTop size={16} strokeWidth={1.9} className="mt-0.5 shrink-0 text-ink-faint" />
+          <span>
+            <span className="block text-[13px] font-medium text-ink">Accordion (ảnh + tiêu đề + mô tả)</span>
+            <span className="block text-[11.5px] text-ink-faint">Header dạng icon vuông kèm mô tả</span>
+          </span>
+        </button>
+      </PopoverContent>
+    </PopoverRoot>
   );
 }
 
@@ -212,6 +271,11 @@ export function PostEditorToolbar({
   // Chen Accordion - luon chen MOI (khac Callout khong toggleWrap duoc vi
   // content ben trong can them 1 paragraph mac dinh de co cho go ngay, xem
   // AccordionView.tsx ve ly do NodeView giu content LUON hien du dong/mo).
+  // [2026-09-20] Tach lam 2 lua chon (popover, xem <AccordionPickerBtn>
+  // duoi) - yeu cau nguoi dung: "khi click để nó insert vào, nó sẽ hiện ra
+  // 2 options để chọn, cái đầu tiên sẽ là accordion bình thường, cái tiếp
+  // theo là accordion với header có structure layout... ảnh vuông rồi tới
+  // title và mô tả".
   const insertAccordion = () => {
     editor
       .chain()
@@ -219,6 +283,20 @@ export function PostEditorToolbar({
       .insertContent({
         type: "accordion",
         attrs: { title: "Tiêu đề", open: true },
+        content: [{ type: "paragraph", content: [{ type: "text", text: "Nội dung..." }] }],
+      })
+      .run();
+  };
+
+  // Accordion voi header dang layout (icon vuong + tieu de + mo ta, xem anh
+  // mau nguoi dung gui) - attrs `mediaHeader:true` (xem post-extensions.ts).
+  const insertMediaAccordion = () => {
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "accordion",
+        attrs: { title: "Tiêu đề", open: true, mediaHeader: true, mediaImage: null, mediaDescription: "" },
         content: [{ type: "paragraph", content: [{ type: "text", text: "Nội dung..." }] }],
       })
       .run();
@@ -386,7 +464,7 @@ export function PostEditorToolbar({
       <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />
       <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
       <Btn label="TOC dạng box (theo H2)" Icon={LayoutGrid} onClick={insertQuestionPicker} />
-      <Btn label="Accordion (bấm để mở/đóng)" Icon={ListCollapse} onClick={insertAccordion} />
+      <AccordionPickerBtn onInsertPlain={insertAccordion} onInsertMedia={insertMediaAccordion} />
       <Btn label="Accordion Geographical (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
       <Btn label="Sơ đồ luồng (các bước nối tiếp, có mô tả trên mũi tên)" Icon={Workflow} onClick={insertFlowDiagram} />
       <Btn label="Grid (tuỳ chỉnh số hàng/cột)" Icon={Grid3x3} onClick={insertGrid} />
