@@ -1515,7 +1515,7 @@ function cardGridItemNode(item: CardGridItem): unknown[] {
                     "span",
                     { class: "card-grid-item-link" },
                     ["span", { class: "card-grid-item-link-label" }, item.linkLabel],
-                    "→",
+                    ["span", { class: "card-grid-item-link-arrow" }, "→"],
                   ],
                 ]
               : []),
@@ -1553,7 +1553,7 @@ function cardGridItemHtml(item: CardGridItem): string {
     : "";
   const footerHtml =
     item.linkLabel || item.footerNote
-      ? `<div class="card-grid-item-footer">${item.linkLabel ? `<span class="card-grid-item-link"><span class="card-grid-item-link-label">${esc(item.linkLabel)}</span>→</span>` : ""}${
+      ? `<div class="card-grid-item-footer">${item.linkLabel ? `<span class="card-grid-item-link"><span class="card-grid-item-link-label">${esc(item.linkLabel)}</span><span class="card-grid-item-link-arrow">→</span></span>` : ""}${
           item.footerNote ? `<span class="card-grid-item-footnote">${esc(item.footerNote)}</span>` : ""
         }</div>`
       : "";
@@ -2227,13 +2227,13 @@ export const POST_PROSE_CLASS =
   "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] " +
   "[&_.card-grid-item]:relative [&_.card-grid-item]:flex [&_.card-grid-item]:flex-col [&_.card-grid-item]:overflow-hidden [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline [&_.card-grid-item]:shadow-xs " +
   // Hieu ung hover "glow" - yeu cau nguoi dung (kem 2 anh truoc/sau, tham
-  // khao card Series ngoai trang): the nang len nhe + 1 vien sang mau
-  // thuong hieu (khong phai xam trung tinh nhu truoc) bao quanh, cung luc
-  // nhan lien ket footer ("→") "no ra" thanh ca nhan day du ("Xem ngành →").
-  // border-transparent (khong con border-border-strong) - vien mau THAT
-  // (color-mix voi --primary) dam nhiem het vai tro "vien noi bat" luc hover,
-  // tranh 2 lop vien (border xam + box-shadow mau) chong nhau nhin roi.
-  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-all [&_a.card-grid-item]:duration-200 [&_a.card-grid-item:hover]:-translate-y-0.5 [&_a.card-grid-item:hover]:border-transparent [&_a.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)] " +
+  // khao card Series ngoai trang) - [2026-09-20 fix] LAN DAU co them
+  // -translate-y-0.5 (the nang len) - nguoi dung yeu cau BO di: "Đừng làm
+  // kiểu transform, thay đổi vị trí card đó, chỉ xuất hiện lớp shadow" - CHI
+  // con 1 lop box-shadow mau thuong hieu (color-mix voi --primary) XUAT HIEN
+  // luc hover, KHONG doi vi tri/border cua ca the (view lai bang shadow-xs
+  // mac dinh -> box-shadow mau + shadow-xs cong don, khong doi transform).
+  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-shadow [&_a.card-grid-item]:duration-200 [&_a.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)] " +
   // Khoi trang tri goc tren-phai ("Small soft gradient/geometric decorative
   // element") - 1 vong tron mo suy tu --primary (KHONG gan cung 1 mau/linh
   // vuc cu the), dat SAU noi dung (z-index am voi cac vung khac + pointer-
@@ -2274,8 +2274,20 @@ export const POST_PROSE_CLASS =
   // (anh mau): mac dinh chi thay "→" gon, hover moi hien du "Xem ngành →".
   // transition rieng cho max-width/margin (khong dung "transition-all" o
   // day de tranh giat/nhap nhay voi transition mau chu ke thua tu the ngoai).
-  "[&_.card-grid-item-link-label]:inline-block [&_.card-grid-item-link-label]:max-w-0 [&_.card-grid-item-link-label]:overflow-hidden [&_.card-grid-item-link-label]:whitespace-nowrap [&_.card-grid-item-link-label]:opacity-0 [&_.card-grid-item-link-label]:transition-all [&_.card-grid-item-link-label]:duration-200 [&_.card-grid-item-link-label]:ease-out " +
-  "[&_a.card-grid-item:hover_.card-grid-item-link-label]:mr-1 [&_a.card-grid-item:hover_.card-grid-item-link-label]:max-w-40 [&_a.card-grid-item:hover_.card-grid-item-link-label]:opacity-100 " +
+  // -translate-x-2 mac dinh (dich sang TRAI de "an" di, dung tinh than
+  // nguoi dung mo ta: "chữ bên trái... bị dịch vào trái cho ẩn đi") + max-w-0
+  // (khong chiem cho trong flex row luc dong) - hover: max-w-40 (mo cho) +
+  // translate-x-0 (truot ve dung vi tri) + opacity-100 - ca 2 hieu ung cong
+  // huong tao cam giac "truot vao" chu khong chi "hien ra" thuan opacity.
+  "[&_.card-grid-item-link-label]:inline-block [&_.card-grid-item-link-label]:max-w-0 [&_.card-grid-item-link-label]:-translate-x-2 [&_.card-grid-item-link-label]:overflow-hidden [&_.card-grid-item-link-label]:whitespace-nowrap [&_.card-grid-item-link-label]:opacity-0 [&_.card-grid-item-link-label]:transition-all [&_.card-grid-item-link-label]:duration-200 [&_.card-grid-item-link-label]:ease-out " +
+  "[&_a.card-grid-item:hover_.card-grid-item-link-label]:mr-1 [&_a.card-grid-item:hover_.card-grid-item-link-label]:max-w-40 [&_a.card-grid-item:hover_.card-grid-item-link-label]:translate-x-0 [&_a.card-grid-item:hover_.card-grid-item-link-label]:opacity-100 " +
+  // Mui ten "→" boc rieng 1 span de TU DICH SANG PHAI luc hover (yeu cau
+  // nguoi dung: "mũi tên di chuyển sang phải") - cong don voi hieu ung nhan
+  // "no ra" ben tren (label mo rong day mui ten ve phia phai theo flex row
+  // MOT CACH TU NHIEN), translate-x them 1 chut NUA cho ro rang hon la chi
+  // dua vao phan ung day cua flex.
+  "[&_.card-grid-item-link-arrow]:inline-block [&_.card-grid-item-link-arrow]:transition-transform [&_.card-grid-item-link-arrow]:duration-200 [&_.card-grid-item-link-arrow]:ease-out " +
+  "[&_a.card-grid-item:hover_.card-grid-item-link-arrow]:translate-x-0.5 " +
   "[&_.card-grid-item-footnote]:truncate [&_.card-grid-item-footnote]:text-[11.5px] [&_.card-grid-item-footnote]:text-ink-faint " +
   // SplitBlock (yeu cau nguoi dung: block chia doi, soan binh thuong o ca 2
   // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.

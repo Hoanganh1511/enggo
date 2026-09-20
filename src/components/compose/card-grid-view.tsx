@@ -239,7 +239,8 @@ function CardGridItemView({
           <div className="card-grid-item-footer">
             {item.linkLabel && (
               <span className="card-grid-item-link">
-                <span className="card-grid-item-link-label">{item.linkLabel}</span>→
+                <span className="card-grid-item-link-label">{item.linkLabel}</span>
+                <span className="card-grid-item-link-arrow">→</span>
               </span>
             )}
             {item.footerNote && <span className="card-grid-item-footnote">{item.footerNote}</span>}
