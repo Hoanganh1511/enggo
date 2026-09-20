@@ -238,17 +238,22 @@ function CardGridItemView({
             </div>
           </>
         )}
-        {(item.linkLabel || item.footerNote) && (
-          <div className="card-grid-item-footer">
-            {item.linkLabel && (
-              <span className="card-grid-item-link">
-                <span className="card-grid-item-link-label">{item.linkLabel}</span>
-                <span className="card-grid-item-link-arrow">→</span>
-              </span>
-            )}
-            {item.footerNote && <span className="card-grid-item-footnote">{item.footerNote}</span>}
-          </div>
-        )}
+        {/* [2026-09-20 fix] TRUOC DAY an luon ca hang footer khi linkLabel
+            rong (khop dung "spec" ban dau: CTA la optional) - nguoi dung
+            KHONG tu dien Nhãn CTA cho tung the (hau het the deu de trong),
+            dan toi KHONG THE nao thay duoc CTA/hover animation moi lam, du da
+            fix dung: "Đâu? Có đéo đâu?... Ảnh thì tao gửi rồi". Doi sang LUON
+            hien hang CTA (fallback "Tìm hiểu thêm" khi chua tu dat ten) -
+            nguoi dung van sua/doi lai duoc Nhãn CTA binh thuong qua o nhap o
+            duoi (luc editable), chi khac la KHONG CON the "an trang" mac
+            dinh nua. */}
+        <div className="card-grid-item-footer">
+          <span className="card-grid-item-link">
+            <span className="card-grid-item-link-label">{item.linkLabel || "Tìm hiểu thêm"}</span>
+            <span className="card-grid-item-link-arrow">→</span>
+          </span>
+          {item.footerNote && <span className="card-grid-item-footnote">{item.footerNote}</span>}
+        </div>
       </Wrapper>
     );
   }

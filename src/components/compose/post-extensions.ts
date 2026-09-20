@@ -1512,25 +1512,21 @@ function cardGridItemNode(item: CardGridItem): unknown[] {
           ],
         ]
       : []),
-    ...(item.linkLabel || item.footerNote
-      ? [
-          [
-            "div",
-            { class: "card-grid-item-footer" },
-            ...(item.linkLabel
-              ? [
-                  [
-                    "span",
-                    { class: "card-grid-item-link" },
-                    ["span", { class: "card-grid-item-link-label" }, item.linkLabel],
-                    ["span", { class: "card-grid-item-link-arrow" }, "→"],
-                  ],
-                ]
-              : []),
-            ...(item.footerNote ? [["span", { class: "card-grid-item-footnote" }, item.footerNote]] : []),
-          ],
-        ]
-      : []),
+    // Footer CTA LUON hien (fallback "Tìm hiểu thêm" khi chua tu dat Nhãn) -
+    // xem comment day du o CardGridItemView (card-grid-view.tsx): truoc day
+    // an ca hang khi linkLabel rong khien nguoi dung KHONG BAO GIO thay duoc
+    // CTA/hover animation (hau het the deu de trong truong nay).
+    [
+      "div",
+      { class: "card-grid-item-footer" },
+      [
+        "span",
+        { class: "card-grid-item-link" },
+        ["span", { class: "card-grid-item-link-label" }, item.linkLabel || "Tìm hiểu thêm"],
+        ["span", { class: "card-grid-item-link-arrow" }, "→"],
+      ],
+      ...(item.footerNote ? [["span", { class: "card-grid-item-footnote" }, item.footerNote]] : []),
+    ],
   ];
 }
 
@@ -1559,12 +1555,11 @@ function cardGridItemHtml(item: CardGridItem): string {
         )
         .join("")}</div>`
     : "";
-  const footerHtml =
-    item.linkLabel || item.footerNote
-      ? `<div class="card-grid-item-footer">${item.linkLabel ? `<span class="card-grid-item-link"><span class="card-grid-item-link-label">${esc(item.linkLabel)}</span><span class="card-grid-item-link-arrow">→</span></span>` : ""}${
-          item.footerNote ? `<span class="card-grid-item-footnote">${esc(item.footerNote)}</span>` : ""
-        }</div>`
-      : "";
+  const footerHtml = `<div class="card-grid-item-footer"><span class="card-grid-item-link"><span class="card-grid-item-link-label">${esc(
+    item.linkLabel || "Tìm hiểu thêm",
+  )}</span><span class="card-grid-item-link-arrow">→</span></span>${
+    item.footerNote ? `<span class="card-grid-item-footnote">${esc(item.footerNote)}</span>` : ""
+  }</div>`;
   const tag = item.linkHref ? "a" : "div";
   const hrefAttr = item.linkHref ? ` href="${esc(item.linkHref)}"` : "";
   return (
