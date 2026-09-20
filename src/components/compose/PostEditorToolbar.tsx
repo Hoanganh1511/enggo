@@ -415,7 +415,7 @@ export function PostEditorToolbar({
   const insertCardGrid = () => {
     insertBlockWithSpacing(editor, {
       type: "cardGrid",
-      attrs: { items: [normalizeCardGridItem({ title: "Tiêu đề" })] },
+      attrs: { items: [normalizeCardGridItem({ title: "Tiêu đề", linkLabel: "Tìm hiểu thêm" })] },
     });
   };
 

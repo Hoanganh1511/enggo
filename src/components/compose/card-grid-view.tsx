@@ -16,7 +16,10 @@ import {
   type CardGridStatus,
 } from "./post-extensions";
 
-const EMPTY_ITEM: CardGridItem = normalizeCardGridItem({});
+// linkLabel mac dinh "Tìm hiểu thêm" - xem comment day du o DEFAULT_CARD_GRID_ITEMS
+// (post-extensions.ts): chi dat mac dinh o CHO TAO MOI (day va insertCardGrid),
+// khong dat trong normalizeCardGridItem() vi ham do con dung "vá" du lieu CU.
+const EMPTY_ITEM: CardGridItem = normalizeCardGridItem({ linkLabel: "Tìm hiểu thêm" });
 
 // Popover chon icon (van ban ngan, toi da ~2 ky tu - khong gioi han vao 1 bo
 // icon Lucide co san, dung y "biến tấu theo nhiều mục đích" - nguoi dung co

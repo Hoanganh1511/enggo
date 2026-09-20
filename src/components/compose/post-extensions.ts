@@ -1458,7 +1458,15 @@ export function normalizeCardGridItem(raw: Partial<CardGridItem>): CardGridItem 
   };
 }
 
-const DEFAULT_CARD_GRID_ITEMS: CardGridItem[] = [normalizeCardGridItem({ title: "Tiêu đề" })];
+// linkLabel mac dinh "Tìm hiểu thêm" (chi o day/insertCardGrid - KHONG dat
+// trong normalizeCardGridItem() o tren, vi ham do con dung de "vá" du lieu
+// CU da luu, dat mac dinh o do se tu y gan CTA vao NHUNG the cu nguoi dung da
+// CHU DICH de trong) - yeu cau nguoi dung (kem anh chup 6 the KHONG the nao
+// co CTA): "nút View Service đâu ?" - the CTA la optional/co the xoa trong
+// khi soan (RepeaterField o CardGridView.tsx), nhung mac dinh LUC MOI TAO can
+// co san 1 gia tri de nguoi dung THAY duoc hang CTA/hover animation ngay,
+// thay vi phai tu go "tìm ra" 1 truong an neu khong biet no ton tai.
+const DEFAULT_CARD_GRID_ITEMS: CardGridItem[] = [normalizeCardGridItem({ title: "Tiêu đề", linkLabel: "Tìm hiểu thêm" })];
 
 // Xay 1 the - dung CHUNG logic/cau truc cho ca renderHTML (mang DOMOutputSpec)
 // LAN markdown serialize (chuoi HTML tho, xem cardGridItemHtml duoi) - CHI
@@ -2233,7 +2241,16 @@ export const POST_PROSE_CLASS =
   // con 1 lop box-shadow mau thuong hieu (color-mix voi --primary) XUAT HIEN
   // luc hover, KHONG doi vi tri/border cua ca the (view lai bang shadow-xs
   // mac dinh -> box-shadow mau + shadow-xs cong don, khong doi transform).
-  "[&_a.card-grid-item]:cursor-pointer [&_a.card-grid-item]:transition-shadow [&_a.card-grid-item]:duration-200 [&_a.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)] " +
+  // [2026-09-20 fix #2] Selector TRUOC chi ap dung cho THE "a.card-grid-item"
+  // (chi khi co linkHref, luc DOC bai) - nguoi dung test NGAY TRONG LUC SOAN
+  // (CardGridView.tsx luon dung tag <div>, KHONG BAO GIO la <a> khi editable,
+  // xem Wrapper trong card-grid-view.tsx) nen KHONG BAO GIO thay hover chay,
+  // tuong nham la bug: "animation hover đâu ? Sao vẫn translate vậy ?". Bo
+  // dieu kien "a." (dung THANG ".card-grid-item:hover", ap dung ca <div> LAN
+  // <a>) - hover preview gio chay dung y het luc dang soan VA luc da xuat
+  // ban, khong con phu thuoc co linkHref hay khong; rieng cursor-pointer van
+  // GIU RIENG cho <a> (chi the THAT SU bam duoc moi hien con tro tay).
+  "[&_a.card-grid-item]:cursor-pointer [&_.card-grid-item]:transition-shadow [&_.card-grid-item]:duration-200 [&_.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)] " +
   // Khoi trang tri goc tren-phai ("Small soft gradient/geometric decorative
   // element") - 1 vong tron mo suy tu --primary (KHONG gan cung 1 mau/linh
   // vuc cu the), dat SAU noi dung (z-index am voi cac vung khac + pointer-
@@ -2280,14 +2297,14 @@ export const POST_PROSE_CLASS =
   // translate-x-0 (truot ve dung vi tri) + opacity-100 - ca 2 hieu ung cong
   // huong tao cam giac "truot vao" chu khong chi "hien ra" thuan opacity.
   "[&_.card-grid-item-link-label]:inline-block [&_.card-grid-item-link-label]:max-w-0 [&_.card-grid-item-link-label]:-translate-x-2 [&_.card-grid-item-link-label]:overflow-hidden [&_.card-grid-item-link-label]:whitespace-nowrap [&_.card-grid-item-link-label]:opacity-0 [&_.card-grid-item-link-label]:transition-all [&_.card-grid-item-link-label]:duration-200 [&_.card-grid-item-link-label]:ease-out " +
-  "[&_a.card-grid-item:hover_.card-grid-item-link-label]:mr-1 [&_a.card-grid-item:hover_.card-grid-item-link-label]:max-w-40 [&_a.card-grid-item:hover_.card-grid-item-link-label]:translate-x-0 [&_a.card-grid-item:hover_.card-grid-item-link-label]:opacity-100 " +
+  "[&_.card-grid-item:hover_.card-grid-item-link-label]:mr-1 [&_.card-grid-item:hover_.card-grid-item-link-label]:max-w-40 [&_.card-grid-item:hover_.card-grid-item-link-label]:translate-x-0 [&_.card-grid-item:hover_.card-grid-item-link-label]:opacity-100 " +
   // Mui ten "→" boc rieng 1 span de TU DICH SANG PHAI luc hover (yeu cau
   // nguoi dung: "mũi tên di chuyển sang phải") - cong don voi hieu ung nhan
   // "no ra" ben tren (label mo rong day mui ten ve phia phai theo flex row
   // MOT CACH TU NHIEN), translate-x them 1 chut NUA cho ro rang hon la chi
   // dua vao phan ung day cua flex.
   "[&_.card-grid-item-link-arrow]:inline-block [&_.card-grid-item-link-arrow]:transition-transform [&_.card-grid-item-link-arrow]:duration-200 [&_.card-grid-item-link-arrow]:ease-out " +
-  "[&_a.card-grid-item:hover_.card-grid-item-link-arrow]:translate-x-0.5 " +
+  "[&_.card-grid-item:hover_.card-grid-item-link-arrow]:translate-x-0.5 " +
   "[&_.card-grid-item-footnote]:truncate [&_.card-grid-item-footnote]:text-[11.5px] [&_.card-grid-item-footnote]:text-ink-faint " +
   // SplitBlock (yeu cau nguoi dung: block chia doi, soan binh thuong o ca 2
   // ben) - xep DOC tren man hinh hep, ngang tu `sm:` tro len.
