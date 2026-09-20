@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { Link2, Plus, X } from "lucide-react";
+import { Link2, Plus, Search, X } from "lucide-react";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { BlockActionsMenu } from "./BlockActionsMenu";
+import { PostLinkPickerModal } from "./PostLinkPickerModal";
 import {
   CARD_GRID_STATUS_COLORS,
   cardGridStatusColor,
@@ -193,6 +194,7 @@ function CardGridItemView({
   canRemove: boolean;
 }) {
   const [statusOpen, setStatusOpen] = useState(false);
+  const [linkPickerOpen, setLinkPickerOpen] = useState(false);
   const dotColor = cardGridStatusColor(item.status);
   const Wrapper = editable ? "div" : item.linkHref ? "a" : "div";
 
@@ -384,7 +386,26 @@ function CardGridItemView({
           placeholder="URL đích khi bấm vào thẻ (vd: https://...)"
           className="min-w-0 flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-faint"
         />
+        {/* "Tìm bài viết" - yeu cau nguoi dung: "Có làm thêm được cái search
+            bài viết, đỡ phải nhập URL không ?" - thay vi tu go/dan URL, tim
+            va chon 1 bai THAT trong he thong, tu dien URL dung dang "/p/<id>"
+            (xem PostLinkPickerModal.tsx). Van giu duoc o nhap URL thuong ben
+            canh cho truong hop can link ngoai (khong phai bai trong he thong). */}
+        <button
+          type="button"
+          onClick={() => setLinkPickerOpen(true)}
+          title="Tìm bài viết để liên kết"
+          className="flex shrink-0 cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-ink-faint hover:bg-hover-bg hover:text-ink"
+        >
+          <Search size={11} strokeWidth={2} aria-hidden="true" />
+          Tìm bài
+        </button>
       </div>
+      <PostLinkPickerModal
+        open={linkPickerOpen}
+        onOpenChange={setLinkPickerOpen}
+        onSelect={(url) => onChange({ linkHref: url })}
+      />
     </div>
   );
 }
