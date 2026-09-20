@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { Plus, X } from "lucide-react";
+import { Link2, Plus, X } from "lucide-react";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { BlockActionsMenu } from "./BlockActionsMenu";
@@ -371,12 +371,20 @@ function CardGridItemView({
           className={inputClass + " text-[11.5px] text-ink-faint"}
         />
       </div>
-      <input
-        value={item.linkHref}
-        onChange={(e) => onChange({ linkHref: e.target.value })}
-        placeholder="URL đích cho CTA (không bắt buộc)"
-        className="mt-1 w-full rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[11.5px] text-ink-faint outline-none placeholder:text-ink-faint hover:border-border focus:border-primary"
-      />
+      {/* URL dich cho CTA - yeu cau nguoi dung: "muốn set link nó đến thì
+          làm như nào ?". O nay VON DA CO TU truoc, nhung qua "chim" (border
+          trong suot, chu mau nhat) nen de bi bo qua khong nhan ra - them icon
+          Link2 + border luon hien (giong cac o khac trong the) cho de thay
+          hon, khong doi hanh vi (van chi la 1 URL text thuong, khong validate). */}
+      <div className="mt-1 flex items-center gap-1.5 rounded-md border border-border px-1.5 py-1">
+        <Link2 size={12} strokeWidth={2} className="shrink-0 text-ink-faint" aria-hidden="true" />
+        <input
+          value={item.linkHref}
+          onChange={(e) => onChange({ linkHref: e.target.value })}
+          placeholder="URL đích khi bấm vào thẻ (vd: https://...)"
+          className="min-w-0 flex-1 bg-transparent text-[11.5px] text-ink outline-none placeholder:text-ink-faint"
+        />
+      </div>
     </div>
   );
 }
