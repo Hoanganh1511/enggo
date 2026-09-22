@@ -185,4 +185,10 @@ export const DOCS_PROSE_CLASS =
   "[&_.profile-block-avatar]:size-13 [&_.profile-block-avatar]:shrink-0 [&_.profile-block-avatar]:rounded-lg [&_.profile-block-avatar]:border [&_.profile-block-avatar]:border-border [&_.profile-block-avatar]:object-cover " +
   "[&_.profile-block-avatar-empty]:bg-surface-muted " +
   "[&_.profile-block-name]:text-[17px] [&_.profile-block-name]:font-bold [&_.profile-block-name]:text-ink " +
-  "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0";
+  "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0 " +
+  // StatsBar - xem comment chi tiet trong POST_PROSE_CLASS.
+  "[&_.stats-bar]:mt-9 [&_.stats-bar]:mb-10 [&_.stats-bar]:flex [&_.stats-bar]:flex-wrap [&_.stats-bar]:border-y [&_.stats-bar]:border-[#2b333e] [&_.stats-bar]:bg-[#141920] " +
+  "[&_.stats-bar-item]:flex [&_.stats-bar-item]:min-w-[110px] [&_.stats-bar-item]:flex-1 [&_.stats-bar-item]:basis-[30%] [&_.stats-bar-item]:flex-col [&_.stats-bar-item]:px-5 [&_.stats-bar-item]:py-5 " +
+  "[&_.stats-bar-item:not(:first-child)]:border-l [&_.stats-bar-item:not(:first-child)]:border-[#2b333e] " +
+  "[&_.stats-bar-value]:font-serif [&_.stats-bar-value]:text-[26px] [&_.stats-bar-value]:leading-none " +
+  "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1]";

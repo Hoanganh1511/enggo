@@ -15,6 +15,7 @@ import { QuestionPickerView } from "./question-picker-view";
 import { AccordionView } from "./accordion-view";
 import { StatAccordionView } from "./stat-accordion-view";
 import { FlowDiagramView } from "./flow-diagram-view";
+import { StatsBarView } from "./stats-bar-view";
 import { GridView } from "./grid-view";
 import { GridCellView } from "./grid-cell-view";
 import { CardGridView } from "./card-grid-view";
@@ -1157,6 +1158,100 @@ export const FlowDiagram = Node.create({
   },
 });
 
+// StatsBar - "thanh thống kê" ngang 5 ô (hoặc bao nhiêu tuỳ chỉnh), mỗi ô 1
+// con số lớn (font serif) + 1 nhãn nhỏ (font sans, màu mờ) - yêu cầu người
+// dùng kèm ảnh mẫu ("120 services in scope · 16 categories · 14 deep study ·
+// 36 solid understanding · 70 recognition"), style "bảng dữ liệu biên tập"
+// (nền/viền LUÔN tối #141920/#2B333E cố định, KHÔNG đổi theo theme sáng/tối
+// của app - day la 1 khoi trang tri co CHU DICH rieng, giong tinh than
+// StatAccordion/FlowDiagram). Node la ATOM (snapshot attrs JSON, khong phai
+// ProseMirror children that) vi day la danh sach CO CAU TRUC dang so lieu,
+// khong can rich text. "Các con số KHÔNG được hardcode" (yêu cầu người dùng)
+// - value/label/color deu la O NHAP that trong stats-bar-view.tsx, khong co
+// gia tri co dinh nao ngoai 5 muc MAC DINH luc chen moi (nguoi dung sua duoc
+// ngay, xoa/them o tuy y).
+export type StatsBarItem = { value: string; label: string; color: string };
+
+export const STATS_BAR_DEFAULT_ITEMS: StatsBarItem[] = [
+  { value: "120", label: "services in scope", color: "#ffffff" },
+  { value: "16", label: "categories", color: "#ffffff" },
+  { value: "14", label: "deep study", color: "#C1654A" },
+  { value: "36", label: "solid understanding", color: "#CB9A3E" },
+  { value: "70", label: "recognition", color: "#6F9A78" },
+];
+
+function renderStatsBarItem(item: StatsBarItem): unknown[] {
+  return [
+    "div",
+    { class: "stats-bar-item" },
+    ["div", { class: "stats-bar-value", style: `color:${item.color || "#fff"}` }, item.value],
+    ["div", { class: "stats-bar-label" }, item.label],
+  ];
+}
+
+function statsBarItemToHtml(item: StatsBarItem): string {
+  return (
+    `<div class="stats-bar-item">` +
+    `<div class="stats-bar-value" style="color:${escapeHtmlAttr(item.color || "#fff")}">${escapeHtmlAttr(item.value)}</div>` +
+    `<div class="stats-bar-label">${escapeHtmlAttr(item.label)}</div></div>`
+  );
+}
+
+export const StatsBar = Node.create({
+  name: "statsBar",
+  group: "block",
+  atom: true,
+  selectable: true,
+  addAttributes() {
+    return {
+      items: {
+        default: STATS_BAR_DEFAULT_ITEMS,
+        parseHTML: (el) => {
+          try {
+            return JSON.parse(el.getAttribute("data-items") ?? "[]") as StatsBarItem[];
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-stats-bar]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const items = (node.attrs.items ?? []) as StatsBarItem[];
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "stats-bar", "data-stats-bar": "" }),
+      ...items.map(renderStatsBarItem),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(StatsBarView);
+  },
+  // Markdown fallback - giong het FlowDiagram/QuestionPicker: data-items la
+  // NGUON THAT SU parseHTML doc lai, phan HTML con lai chi la BAN HIEN THI.
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const items = (node.attrs.items ?? []) as StatsBarItem[];
+          const bodyHtml = items.map(statsBarItemToHtml).join("");
+          const html = `<div class="stats-bar" data-stats-bar data-items="${escapeHtmlAttr(
+            JSON.stringify(items),
+          )}">${bodyHtml}</div>`;
+          state.ensureNewLine();
+          state.write(html);
+          state.ensureNewLine();
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // Grid + GridCell - "grid tuỳ chỉnh số hàng/cột, mỗi ô có phần HEAD (màu
 // nền tuỳ chỉnh + số bước tự động 01/02/03... + badge chấm màu) và phần
 // BODY (rich text thật: đậm/nghiêng/list/căn lề)" - yêu cầu người dùng (kèm
@@ -1919,6 +2014,7 @@ export function getPostExtensions(): Extensions {
     Accordion,
     StatAccordion,
     FlowDiagram,
+    StatsBar,
     GridCell,
     Grid,
     CardGrid,
@@ -2312,4 +2408,20 @@ export const POST_PROSE_CLASS =
   "[&_.profile-block-avatar]:size-13 [&_.profile-block-avatar]:shrink-0 [&_.profile-block-avatar]:rounded-lg [&_.profile-block-avatar]:border [&_.profile-block-avatar]:border-border [&_.profile-block-avatar]:object-cover " +
   "[&_.profile-block-avatar-empty]:bg-surface-muted " +
   "[&_.profile-block-name]:text-[17px] [&_.profile-block-name]:font-bold [&_.profile-block-name]:text-ink " +
-  "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0";
+  "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0 " +
+  // StatsBar ("thanh thống kê") - yeu cau nguoi dung kem anh mau: hang ngang
+  // 5 o so lieu, style "bảng dữ liệu biên tập" (editorial data table) - nen/
+  // vien LUON CO DINH mau toi (#141920/#2b333e), KHONG doi theo theme sang/
+  // toi cua app (khoi trang tri co chu dich rieng, khac voi Card
+  // Grid/ProfileBlock dung theo token --surface/--border binh thuong).
+  // flex-wrap + basis-[30%] - yeu cau "wrap xuống 2-3 cột" tren man hinh hep
+  // thay vi ep 5 cot chat cung nhau.
+  "[&_.stats-bar]:mt-9 [&_.stats-bar]:mb-10 [&_.stats-bar]:flex [&_.stats-bar]:flex-wrap [&_.stats-bar]:border-y [&_.stats-bar]:border-[#2b333e] [&_.stats-bar]:bg-[#141920] " +
+  "[&_.stats-bar-item]:flex [&_.stats-bar-item]:min-w-[110px] [&_.stats-bar-item]:flex-1 [&_.stats-bar-item]:basis-[30%] [&_.stats-bar-item]:flex-col [&_.stats-bar-item]:px-5 [&_.stats-bar-item]:py-5 " +
+  "[&_.stats-bar-item:not(:first-child)]:border-l [&_.stats-bar-item:not(:first-child)]:border-[#2b333e] " +
+  // font-serif (Tailwind mac dinh: ui-serif/Georgia/Cambria/Times...) - dung
+  // y "Source Serif 4 hoặc Georgia fallback" nguoi dung neu, khong nap them
+  // Google Font rieng chi cho 1 khoi nay (giu nguyen quy uoc 2 font chinh
+  // cua app, xem CLAUDE.md).
+  "[&_.stats-bar-value]:font-serif [&_.stats-bar-value]:text-[26px] [&_.stats-bar-value]:leading-none " +
+  "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1]";

@@ -40,6 +40,7 @@ import {
   IdCard,
   Columns2,
   Contact,
+  BarChart3,
   LayoutPanelTop,
   AlignLeft,
   AlignCenter,
@@ -48,7 +49,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/toast/toast-store";
-import { normalizeCardGridItem, type CalloutVariant, type QuestionPickerItem } from "./post-extensions";
+import {
+  normalizeCardGridItem,
+  STATS_BAR_DEFAULT_ITEMS,
+  type CalloutVariant,
+  type QuestionPickerItem,
+} from "./post-extensions";
 
 function Btn({
   label,
@@ -445,6 +451,15 @@ export function PostEditorToolbar({
     });
   };
 
+  // Chen "Thanh thống kê" (StatsBar) - yeu cau nguoi dung kem anh mau (hang
+  // ngang 5 o so lieu "120 services in scope / 16 categories / 14 deep
+  // study / 36 solid understanding / 70 recognition"). La atom (xem StatsBar
+  // trong post-extensions.ts) - chen san 5 muc MAC DINH (STATS_BAR_DEFAULT_ITEMS,
+  // dung khop mau nguoi dung gui) de sua ngay, khong phai go tu dau.
+  const insertStatsBar = () => {
+    insertBlockWithSpacing(editor, { type: "statsBar", attrs: { items: STATS_BAR_DEFAULT_ITEMS } });
+  };
+
   return (
     <div
       className={cn(
@@ -506,6 +521,7 @@ export function PostEditorToolbar({
       <Btn label="Grid card (icon + trạng thái + mô tả + link)" Icon={IdCard} onClick={insertCardGrid} />
       <Btn label="Chia đôi (soạn được cả 2 bên)" Icon={Columns2} onClick={insertSplitBlock} />
       <Btn label="Block Hồ sơ (ảnh vuông + tên + nội dung)" Icon={Contact} onClick={insertProfileBlock} />
+      <Btn label="Thanh thống kê (5 ô số liệu ngang)" Icon={BarChart3} onClick={insertStatsBar} />
       <Divider />
       <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
       <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />
