@@ -30,14 +30,14 @@ function buildCategoryTree(categories: ContentSeriesCategory[]) {
 
 function EntryLink({
   entry,
-  seriesSlug,
+  basePath,
   pathname,
   depth,
   emphasized,
   onNavigate,
 }: {
   entry: ContentSeriesEntrySummary;
-  seriesSlug: string;
+  basePath: string;
   pathname: string;
   depth: number;
   // true khi entry nay nam trong nhanh category GOC ten "Explore" - yeu cau
@@ -47,7 +47,7 @@ function EntryLink({
   emphasized?: boolean;
   onNavigate?: () => void;
 }) {
-  const href = `/series/${seriesSlug}/${entry.slug}`;
+  const href = `${basePath}/${entry.slug}`;
   const active = pathname === href;
   // Entry THANG duoi category goc (depth 0) = "--sidebar-item" (14px, anchor
   // cua he token). Entry long trong 1 nhom con/accordion (depth 1) =
@@ -129,7 +129,7 @@ function CategoryNode({
   depth,
   byParent,
   entriesByCategory,
-  seriesSlug,
+  basePath,
   pathname,
   onNavigate,
   openIds,
@@ -140,7 +140,7 @@ function CategoryNode({
   depth: number;
   byParent: Map<string | null, ContentSeriesCategory[]>;
   entriesByCategory: Map<string, ContentSeriesEntrySummary[]>;
-  seriesSlug: string;
+  basePath: string;
   pathname: string;
   onNavigate?: () => void;
   openIds: Set<string>;
@@ -177,7 +177,7 @@ function CategoryNode({
   // "font-semibold" that su dang ap dung). Sua dung y comment: CHI doi MAU
   // (den hon), KHONG doi weight - "chỉ cần đổi text đen là được. Đừng bold".
   const hasActiveEntry = entries.some(
-    (e) => `/series/${seriesSlug}/${e.slug}` === pathname,
+    (e) => `${basePath}/${e.slug}` === pathname,
   );
 
   const header = isAccordion ? (
@@ -262,7 +262,7 @@ function CategoryNode({
             <EntryLink
               key={entry.id}
               entry={entry}
-              seriesSlug={seriesSlug}
+              basePath={basePath}
               pathname={pathname}
               depth={depth}
               emphasized={emphasized}
@@ -283,7 +283,7 @@ function CategoryNode({
                   depth={depth + 1}
                   byParent={byParent}
                   entriesByCategory={entriesByCategory}
-                  seriesSlug={seriesSlug}
+                  basePath={basePath}
                   pathname={pathname}
                   onNavigate={onNavigate}
                   openIds={openIds}
@@ -300,12 +300,12 @@ function CategoryNode({
 }
 
 export function SeriesSidebar({
-  seriesSlug,
+  basePath,
   categories,
   entries,
   onNavigate,
 }: {
-  seriesSlug: string;
+  basePath: string;
   categories: ContentSeriesCategory[];
   entries: ContentSeriesEntrySummary[];
   onNavigate?: () => void;
@@ -328,7 +328,7 @@ export function SeriesSidebar({
   // mo, con lai thu gon). Category GOC (depth 0) KHONG can trong danh sach
   // nay nua vi luon hien san (khong con la accordion).
   const activeCategoryId =
-    entries.find((e) => `/series/${seriesSlug}/${e.slug}` === pathname)
+    entries.find((e) => `${basePath}/${e.slug}` === pathname)
       ?.categoryId ?? null;
 
   const [openIds, setOpenIds] = useState<Set<string>>(
@@ -370,7 +370,7 @@ export function SeriesSidebar({
           depth={0}
           byParent={byParent}
           entriesByCategory={entriesByCategory}
-          seriesSlug={seriesSlug}
+          basePath={basePath}
           pathname={pathname}
           onNavigate={onNavigate}
           openIds={openIds}

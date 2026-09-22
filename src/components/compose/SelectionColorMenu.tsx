@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/react";
+import { Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Bang mau CO SAN cho ca 2 hang (chu/nen) - "Mặc định"/"Không nền" (value
@@ -135,6 +137,30 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
     // bo qua, giu mac dinh null
   }
 
+  // [2026-09-22] Mac dinh CHI hien 1 icon nho ("Palette") thay vi bung het
+  // toan bo bang mau NGAY khi bôi đen - yeu cau nguoi dung: "đừng cho hiện
+  // luôn... cho hiện 1 icon setting trước đã, ấn vào setting thì mới cho
+  // bật ra, không nó chê hết các phần khác" (bang mau full 2 hang qua to,
+  // che mat noi dung/toolbar ben duoi ngay ca khi chi muon lam viec khac voi
+  // vung dang chon). Bam icon moi "no ra" bang mau day du.
+  //
+  // `panelOpen` phai TU DONG DONG LAI moi khi chuyen sang 1 vung chon MOI
+  // (khong giu trang thai "dang mo" tu lan chon truoc) - neu khong, do
+  // <BubbleMenu> chi AN/HIEN qua CSS (khong unmount React children, xem
+  // BubbleMenu.tsx trong @tiptap/react), state cu se "rò rỉ" sang lan bôi
+  // đen tiep theo (mo san dù chua bam gi). So sanh selection.from/to voi lan
+  // render TRUOC (luu qua useState, mau "Adjusting state during render" cua
+  // React - xem RegionGlobeModal.tsx dung CHUNG pattern nay) de phat hien
+  // "vua doi sang vung chon khac" va tu dong dong lai panel.
+  const { from, to } = editor.state.selection;
+  const selectionKey = `${from}:${to}`;
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [lastSelectionKey, setLastSelectionKey] = useState(selectionKey);
+  if (selectionKey !== lastSelectionKey) {
+    setLastSelectionKey(selectionKey);
+    setPanelOpen(false);
+  }
+
   return (
     // appendTo: document.body - BUG THAT SU nguoi dung bao "sao không thấy":
     // mac dinh (khong khai bao gi) BubbleMenuPlugin gan phan tu noi cua no
@@ -170,43 +196,63 @@ export function SelectionColorMenu({ editor }: { editor: Editor }) {
       // hon "bôi đen văn bản" nguoi dung mo ta).
       shouldShow={shouldShowTextSelectionOnly}
     >
-      {/* [2026-09-19] Xep 2 hang DOC (nhan tren, swatch duoi) thay vi 1 hang
-          NGANG duy nhat voi vach doc o giua - yeu cau nguoi dung: "Bố cục
-          lại phần chọn màu này UI/UX cho chuẩn" (ban cu: "Chữ" + 7 cham +
-          vach + "Nền" + 7 cham don het vao 1 dong, kho phan biet nhom nao
-          voi nhom nao khi luot nhanh qua). Nhan dat NGAY TREN swatch cua
-          chinh no (khong con canh nhau tren cung 1 dong) - ro rang hon ve
-          PHAN CAP thi giac: 1 nhan luon di kem 1 hang swatch BEN DUOI no,
-          vach ngang mong (thay vach doc) tach 2 nhom mot cach tu nhien
-          giong 2 "muc" doc lap trong 1 danh sach, khong phai 2 cot chen
-          chung 1 hang chat choi. */}
-      <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-2.5 shadow-dropdown">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Màu chữ</span>
-          <ColorSwatchRow
-            colors={TEXT_COLORS}
-            activeValue={currentColor}
-            onPick={(value) => {
-              const chain = editor.chain().focus();
-              if (value) chain.setColor(value).run();
-              else chain.unsetColor().run();
-            }}
-          />
+      {panelOpen ? (
+        /* [2026-09-19] Xep 2 hang DOC (nhan tren, swatch duoi) thay vi 1
+            hang NGANG duy nhat voi vach doc o giua - yeu cau nguoi dung: "Bố
+            cục lại phần chọn màu này UI/UX cho chuẩn" (ban cu: "Chữ" + 7
+            cham + vach + "Nền" + 7 cham don het vao 1 dong, kho phan biet
+            nhom nao voi nhom nao khi luot nhanh qua). Nhan dat NGAY TREN
+            swatch cua chinh no (khong con canh nhau tren cung 1 dong) - ro
+            rang hon ve PHAN CAP thi giac: 1 nhan luon di kem 1 hang swatch
+            BEN DUOI no, vach ngang mong (thay vach doc) tach 2 nhom mot
+            cach tu nhien giong 2 "muc" doc lap trong 1 danh sach, khong
+            phai 2 cot chen chung 1 hang chat choi. */
+        <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-2.5 shadow-dropdown">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Màu chữ</span>
+            <ColorSwatchRow
+              colors={TEXT_COLORS}
+              activeValue={currentColor}
+              onPick={(value) => {
+                const chain = editor.chain().focus();
+                if (value) chain.setColor(value).run();
+                else chain.unsetColor().run();
+              }}
+            />
+          </div>
+          <div className="h-px w-full bg-border" aria-hidden="true" />
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Màu nền</span>
+            <ColorSwatchRow
+              colors={BG_COLORS}
+              activeValue={currentBg}
+              onPick={(value) => {
+                const chain = editor.chain().focus();
+                if (value) chain.setBackgroundColor(value).run();
+                else chain.unsetBackgroundColor().run();
+              }}
+            />
+          </div>
         </div>
-        <div className="h-px w-full bg-border" aria-hidden="true" />
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Màu nền</span>
-          <ColorSwatchRow
-            colors={BG_COLORS}
-            activeValue={currentBg}
-            onPick={(value) => {
-              const chain = editor.chain().focus();
-              if (value) chain.setBackgroundColor(value).run();
-              else chain.unsetBackgroundColor().run();
-            }}
-          />
-        </div>
-      </div>
+      ) : (
+        // Chi 1 icon nho - bam moi "no ra" bang mau day du o tren (xem
+        // comment `panelOpen` trong than component). `onMouseDown` +
+        // preventDefault (thay vi onClick thuong) - giu nguyen SELECTION
+        // dang bôi đen (click vao 1 phan tu ngoai editor binh thuong se lam
+        // mat selection/blur editor TRUOC KHI onClick kip chay, khien
+        // BubbleMenu tu an mat ngay khi vua bam icon).
+        <button
+          type="button"
+          title="Chọn màu chữ/nền cho đoạn đang chọn"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setPanelOpen(true);
+          }}
+          className="flex size-8 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-ink-muted shadow-dropdown hover:text-ink"
+        >
+          <Palette size={15} strokeWidth={1.9} />
+        </button>
+      )}
     </BubbleMenu>
   );
 }

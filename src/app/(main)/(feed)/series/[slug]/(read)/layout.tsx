@@ -108,7 +108,7 @@ export default async function SeriesLayout({
                 <SeriesSidebarCollapseButton />
               </div>
               <SeriesSidebar
-                seriesSlug={slug}
+                basePath={`/series/${slug}`}
                 categories={series.categories}
                 entries={series.entries}
               />

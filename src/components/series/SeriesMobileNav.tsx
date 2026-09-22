@@ -101,7 +101,7 @@ export function SeriesSidebarDrawer({ slug, seriesTitle, categories, entries }: 
             {/* Link "Quản lý series" - DA BO (cung ly do voi SeriesMobileTopBar
                 o tren). */}
             <SeriesSidebar
-              seriesSlug={slug}
+              basePath={`/series/${slug}`}
               categories={categories}
               entries={entries}
               onNavigate={() => setOpen(false)}
