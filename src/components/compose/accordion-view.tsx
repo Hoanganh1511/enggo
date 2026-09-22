@@ -19,6 +19,20 @@ import { BlockActionsMenu } from "./BlockActionsMenu";
 // khac voi that su unmount se lam mat theo doi noi dung do. Muon sua noi
 // dung ben trong: bam chevron mo ra truoc (dung tinh than "mo accordion that
 // de sua, dong lai khi xong" - khop voi cach nguoi doc trai nghiem).
+//
+// [2026-09-22] REDESIGN "Accordion Catalog" (yeu cau nguoi dung, port tu 1
+// file HTML/CSS/JS tham khao ho gui - numbered index + serif title + mau co
+// dinh toi). Dung CHUNG dung 1 bo class semantic voi ban doc TINH
+// (accordion-block/accordion-summary/accordion-index-num/accordion-summary-
+// title...) thay vi tu viet rieng Tailwind utility - CSS o POST_PROSE_CLASS
+// (ap dung len CA vung soan qua editorProps.attributes.class cua
+// SeriesEntryEditor.tsx) tu dong style dung, dam bao WYSIWYG khong can trung
+// lap logic mau sac o 2 noi. So thu tu (01/02/03) la CSS COUNTER THUAN
+// (::before content: counter(...)) - span "accordion-index-num" o day de
+// RONG, khong ghi so nao truc tiep. `open` duoc "spread" thanh 1 THUOC TINH
+// HTML that (`open=""`) len chinh NodeViewWrapper (dù no la <div>, khong
+// phai <details>) de khop dung selector CSS ".accordion-block:not([open])"
+// dung chung voi ban doc that (<details> that).
 export function AccordionView({ node, updateAttributes, editor, getPos }: ReactNodeViewProps) {
   const title = (node.attrs.title as string) ?? "";
   const open = node.attrs.open !== false;
@@ -29,20 +43,9 @@ export function AccordionView({ node, updateAttributes, editor, getPos }: ReactN
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
-    <NodeViewWrapper className="accordion-block group relative my-4 overflow-hidden rounded-xl border border-border">
-      <div className="flex items-center gap-2 px-3.5 py-2.5" contentEditable={false}>
-        <button
-          type="button"
-          onClick={() => updateAttributes({ open: !open })}
-          title={open ? "Mặc định: đang mở khi đọc" : "Mặc định: đang đóng khi đọc"}
-          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg hover:text-ink"
-        >
-          <ChevronDown
-            size={14}
-            strokeWidth={2}
-            className={cn("transition-transform duration-150", !open && "-rotate-90")}
-          />
-        </button>
+    <NodeViewWrapper className="accordion-block group relative" {...(open ? { open: true } : {})}>
+      <div className="accordion-summary" contentEditable={false}>
+        <span className="accordion-index-num" aria-hidden="true" />
         {/* [2026-09-20] "Accordion với header dạng layout" - yeu cau nguoi
             dung kem anh mau (icon vuong + tieu de + mo ta): "cái tiếp theo
             là accordion với header có structure layout như trong ảnh: có
@@ -50,13 +53,13 @@ export function AccordionView({ node, updateAttributes, editor, getPos }: ReactN
             lua chon trong PostEditorToolbar.tsx (insertAccordion vs
             insertMediaAccordion), luu lai qua attrs `mediaHeader`. */}
         {mediaHeader ? (
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="accordion-summary-media">
             {canEdit ? (
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
                 title="Đổi ảnh"
-                className="accordion-summary-icon flex shrink-0 cursor-pointer items-center justify-center overflow-hidden bg-surface-muted text-ink-faint hover:text-ink"
+                className="accordion-summary-icon flex shrink-0 cursor-pointer items-center justify-center overflow-hidden text-[#8b93a1] hover:text-white"
                 style={
                   mediaImage
                     ? { backgroundImage: `url(${mediaImage})`, backgroundSize: "cover", backgroundPosition: "center" }
@@ -71,13 +74,13 @@ export function AccordionView({ node, updateAttributes, editor, getPos }: ReactN
             ) : (
               <div className="accordion-summary-icon accordion-summary-icon-empty shrink-0" />
             )}
-            <div className="min-w-0 flex-1">
+            <div className="accordion-summary-text">
               {canEdit ? (
                 <input
                   value={title}
                   onChange={(e) => updateAttributes({ title: e.target.value })}
                   placeholder="Tiêu đề..."
-                  className="accordion-summary-title block w-full bg-transparent outline-none placeholder:text-ink-faint placeholder:font-normal"
+                  className="accordion-summary-title block w-full bg-transparent outline-none placeholder:text-white/25"
                 />
               ) : (
                 <span className="accordion-summary-title block">{title}</span>
@@ -87,7 +90,7 @@ export function AccordionView({ node, updateAttributes, editor, getPos }: ReactN
                   value={mediaDescription}
                   onChange={(e) => updateAttributes({ mediaDescription: e.target.value })}
                   placeholder="Mô tả..."
-                  className="accordion-summary-desc block w-full bg-transparent outline-none placeholder:text-ink-faint"
+                  className="accordion-summary-desc block w-full bg-transparent outline-none placeholder:text-[#8b93a1]/50"
                 />
               ) : (
                 mediaDescription && <p className="accordion-summary-desc">{mediaDescription}</p>
@@ -104,30 +107,40 @@ export function AccordionView({ node, updateAttributes, editor, getPos }: ReactN
             value={title}
             onChange={(e) => updateAttributes({ title: e.target.value })}
             placeholder="Tiêu đề accordion..."
-            className="min-w-0 flex-1 bg-transparent text-[14.5px] font-semibold text-ink outline-none placeholder:text-ink-faint"
+            className="accordion-summary-title min-w-0 flex-1 bg-transparent outline-none placeholder:text-white/25"
           />
         ) : (
-          <span className="min-w-0 flex-1 text-[14.5px] font-semibold text-ink">{title}</span>
+          <span className="accordion-summary-title min-w-0 flex-1">{title}</span>
         )}
+        <button
+          type="button"
+          onClick={() => updateAttributes({ open: !open })}
+          title={open ? "Mặc định: đang mở khi đọc" : "Mặc định: đang đóng khi đọc"}
+          className="flex size-6 shrink-0 cursor-pointer items-center justify-center text-[#8b93a1] hover:text-white"
+        >
+          <ChevronDown
+            size={14}
+            strokeWidth={2}
+            className={cn("transition-transform duration-150", !open && "-rotate-90")}
+          />
+        </button>
         {canEdit && <BlockActionsMenu editor={editor} getPos={getPos} node={node} />}
       </div>
-      <div className={cn("border-t border-border", !open && "hidden")}>
-        {/* min-h-16 - bug nguoi dung bao "click ra xung quanh phía ngoài nó
-            mà không thể soạn tiếp bên trong accordion ngoài" (accordion
-            THUONG long 1 Accordion Geographical/StatAccordion ben trong -
-            node ATOM, contentEditable=false, chiem SAT het be rong/cao cua
-            accordion-body vi khong co min-height rieng). Khi atom la con
-            DUY NHAT va khong con khoang trong nao de bam vao, khong co vi
-            tri hop le nao trong VUNG THAT CO THE SOAN (accordion-body) cho
-            trinh duyet/ProseMirror dat con tro - nguoi dung "bấm ra xung
-            quanh" thuc chat la bam TRUNG chinh atom (chon nguyen no) hoac ra
-            NGOAI accordion-body luon. Them min-height tao 1 khoang trong
-            THAT LUON con lai duoi atom (thuoc accordion-body that, van la
-            vung contentEditable that) de co the bam vao do va tiep tuc go -
-            khong can logic rieng, day la hanh vi mac dinh cua ProseMirror
-            khi co du khong gian de nhan click. */}
-        <NodeViewContent className="accordion-body min-h-16 px-3.5 py-3" />
-      </div>
+      {/* min-h-16 - bug nguoi dung bao "click ra xung quanh phía ngoài nó mà
+          không thể soạn tiếp bên trong accordion ngoài" (accordion THUONG
+          long 1 Accordion Geographical/StatAccordion ben trong - node ATOM,
+          contentEditable=false, chiem SAT het be rong/cao cua accordion-body
+          vi khong co min-height rieng). Khi atom la con DUY NHAT va khong
+          con khoang trong nao de bam vao, khong co vi tri hop le nao trong
+          VUNG THAT CO THE SOAN (accordion-body) cho trinh duyet/ProseMirror
+          dat con tro - nguoi dung "bấm ra xung quanh" thuc chat la bam
+          TRUNG chinh atom (chon nguyen no) hoac ra NGOAI accordion-body
+          luon. Them min-height tao 1 khoang trong THAT LUON con lai duoi
+          atom (thuoc accordion-body that, van la vung contentEditable that)
+          de co the bam vao do va tiep tuc go - khong can logic rieng, day la
+          hanh vi mac dinh cua ProseMirror khi co du khong gian de nhan
+          click. */}
+      <NodeViewContent className={cn("accordion-body min-h-16", !open && "hidden")} />
     </NodeViewWrapper>
   );
 }

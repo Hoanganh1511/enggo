@@ -70,20 +70,28 @@ export const DOCS_PROSE_CLASS =
   // thieu khien ca 2 loai accordion hien FLAT, khong khung/khong dam mau,
   // khong phan biet duoc cap long nhau (nguoi dung bao "vẫn thô kệch một
   // loạt thẳng hàng"). Giu 2 file dong bo THU CONG moi khi sua 1 trong 2.
-  "[&_.accordion-block]:my-4 [&_.accordion-block]:overflow-hidden [&_.accordion-block]:rounded-xl [&_.accordion-block]:border [&_.accordion-block]:border-border [&_.accordion-block]:bg-surface " +
-  "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:bg-surface-muted " +
-  "[&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-2 [&_.accordion-summary]:px-3.5 [&_.accordion-summary]:py-2.5 [&_.accordion-summary]:text-[14.5px] [&_.accordion-summary]:font-semibold [&_.accordion-summary]:text-ink [&_.accordion-summary]:select-none " +
+  // [2026-09-22] REDESIGN "Accordion Catalog" - xem comment chi tiet trong
+  // POST_PROSE_CLASS (post-extensions.ts).
+  "[counter-reset:accordion-index] " +
+  "[&_.accordion-block]:my-0 [&_.accordion-block]:border-b [&_.accordion-block]:border-[#2b333e] [&_.accordion-block]:bg-[#141920] " +
+  "[&_.accordion-block+.accordion-block]:-mt-px [&_.accordion-block:first-of-type]:border-t " +
+  "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:border [&_.accordion-body_.accordion-block]:border-border [&_.accordion-body_.accordion-block]:bg-surface-muted " +
+  "[&_.accordion-summary]:relative [&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-4 [&_.accordion-summary]:px-1 [&_.accordion-summary]:py-4.5 [&_.accordion-summary]:select-none [&_.accordion-summary]:[counter-increment:accordion-index] " +
   "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
-  "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
+  "[&_.accordion-summary]:before:order-last [&_.accordion-summary]:before:shrink-0 [&_.accordion-summary]:before:text-[13px] [&_.accordion-summary]:before:text-[#8b93a1] [&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
   "[&_.accordion-block:not([open])_.accordion-summary]:before:-rotate-90 " +
+  "[&_.accordion-index-num]:w-6 [&_.accordion-index-num]:shrink-0 [&_.accordion-index-num]:font-serif [&_.accordion-index-num]:text-[14px] [&_.accordion-index-num]:text-[#8b93a1] " +
+  "[&_.accordion-index-num]:before:content-[counter(accordion-index,decimal-leading-zero)] " +
+  "[&_.accordion-summary-title]:font-serif [&_.accordion-summary-title]:text-[19px] [&_.accordion-summary-title]:font-normal [&_.accordion-summary-title]:text-[#eae7dd] [&_.accordion-summary-title]:transition-colors [&_.accordion-summary-title]:duration-150 " +
+  "[&_.accordion-summary:hover_.accordion-summary-title]:text-white " +
   // "Accordion với header dạng layout" - xem comment chi tiet trong POST_PROSE_CLASS.
   "[&_.accordion-summary-media]:flex [&_.accordion-summary-media]:min-w-0 [&_.accordion-summary-media]:flex-1 [&_.accordion-summary-media]:items-center [&_.accordion-summary-media]:gap-3 " +
   "[&_.accordion-summary-icon]:size-10 [&_.accordion-summary-icon]:shrink-0 [&_.accordion-summary-icon]:rounded-lg [&_.accordion-summary-icon]:object-cover " +
-  "[&_.accordion-summary-icon-empty]:bg-surface-muted " +
+  "[&_.accordion-summary-icon-empty]:bg-white/10 " +
   "[&_.accordion-summary-text]:min-w-0 [&_.accordion-summary-text]:flex-1 " +
   "[&_.accordion-summary-title]:block [&_.accordion-summary-title]:truncate " +
-  "[&_.accordion-summary-desc]:mt-0.5 [&_.accordion-summary-desc]:truncate [&_.accordion-summary-desc]:text-[13px] [&_.accordion-summary-desc]:font-normal [&_.accordion-summary-desc]:text-ink-muted " +
-  "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
+  "[&_.accordion-summary-desc]:mt-0.5 [&_.accordion-summary-desc]:truncate [&_.accordion-summary-desc]:font-sans [&_.accordion-summary-desc]:text-[13px] [&_.accordion-summary-desc]:font-normal [&_.accordion-summary-desc]:text-[#8b93a1] " +
+  "[&_.accordion-body]:pl-10 [&_.accordion-body]:pr-1 [&_.accordion-body]:pb-7 [&_.accordion-body_p]:my-1 " +
   // Mau nen co dinh #F3F3F7, khong border (yeu cau nguoi dung: "accordion
   // geographic không cần border đâu, có màu nền là được rồi" - xem comment
   // chi tiet trong POST_PROSE_CLASS).

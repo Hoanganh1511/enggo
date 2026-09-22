@@ -508,15 +508,23 @@ export const QuestionPicker = Node.create({
 // Xay noi dung <summary> - dung CHUNG cho ca renderHTML (tra ve mang
 // DOMOutputSpec) LAN markdown serialize (tra ve chuoi HTML tho, xem
 // accordionSummaryHtml duoi) - CHI khac o dinh dang tra ve, LOGIC/cau truc y
-// het nhau. Che do thuong: chi tra ve title (string) dung y HET hanh vi cu.
+// het nhau.
+// [2026-09-22] Them "accordion-index-num" (span RONG, noi dung 100% tu CSS
+// counter - xem POST_PROSE_CLASS) + LUON boc title trong
+// "accordion-summary-title" (truoc day CHI che do mediaHeader moi boc, che
+// do thuong tra thang ve title dang text node - khong co class nao de CSS
+// nhan mau/font serif rieng) - port tu tham khao HTML/CSS/JS nguoi dung gui
+// (numbered index catalog style), yeu cau "Đổi hẳn Accordion hiện có".
 function accordionSummaryContent(
   title: string,
   mediaHeader: boolean,
   mediaImage: string | null,
   mediaDescription: string,
 ): unknown[] {
-  if (!mediaHeader) return [title];
+  const indexNum = ["span", { class: "accordion-index-num" }];
+  if (!mediaHeader) return [indexNum, ["span", { class: "accordion-summary-title" }, title]];
   return [
+    indexNum,
     [
       "div",
       { class: "accordion-summary-media" },
@@ -540,13 +548,14 @@ function accordionSummaryHtml(
   mediaDescription: string,
   escapeHtml: (s: string) => string,
 ): string {
-  if (!mediaHeader) return escapeHtml(title);
+  const indexNumHtml = `<span class="accordion-index-num"></span>`;
+  if (!mediaHeader) return `${indexNumHtml}<span class="accordion-summary-title">${escapeHtml(title)}</span>`;
   const iconHtml = mediaImage
     ? `<img class="accordion-summary-icon" src="${escapeHtml(mediaImage)}" alt="${escapeHtml(title)}">`
     : `<div class="accordion-summary-icon accordion-summary-icon-empty"></div>`;
   const descHtml = mediaDescription ? `<p class="accordion-summary-desc">${escapeHtml(mediaDescription)}</p>` : "";
   return (
-    `<div class="accordion-summary-media">${iconHtml}` +
+    `${indexNumHtml}<div class="accordion-summary-media">${iconHtml}` +
     `<div class="accordion-summary-text"><span class="accordion-summary-title">${escapeHtml(title)}</span>${descHtml}</div></div>`
   );
 }
@@ -2156,24 +2165,48 @@ export const POST_PROSE_CLASS =
   // .stat-accordion") - nen MO hon (bg-surface-muted) + margin nho hon de
   // TUONG PHAN ro voi khung ngoai, giup phan biet cap do long thay vi ca 2
   // cap trong y HET nhau.
-  "[&_.accordion-block]:my-4 [&_.accordion-block]:overflow-hidden [&_.accordion-block]:rounded-xl [&_.accordion-block]:border [&_.accordion-block]:border-border [&_.accordion-block]:bg-surface " +
-  "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:bg-surface-muted " +
-  "[&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-2 [&_.accordion-summary]:px-3.5 [&_.accordion-summary]:py-2.5 [&_.accordion-summary]:text-[14.5px] [&_.accordion-summary]:font-semibold [&_.accordion-summary]:text-ink [&_.accordion-summary]:select-none " +
+  // [2026-09-22] REDESIGN "Accordion Catalog" - yeu cau nguoi dung: gui 1
+  // file HTML/CSS/JS mau (numbered index + serif title + chevron xoay + mau
+  // co dinh toi #141920/#2B333E/#EAE7DD) va bao "Đổi hẳn Accordion hiện có"
+  // (khong tach thanh block rieng). CHI doi phan HEADER/KHUNG (summary + vien
+  // ngoai) sang mau CO DINH toi (giong StatsBar - khoi trang tri co chu dich
+  // rieng, KHONG doi theo theme sang/toi cua app) - CO Y GIU NGUYEN phan
+  // BODY (.accordion-body) dung token --ink/--border theo THEME (KHONG ep
+  // toi luon): body chua RICH TEXT TUY Y (paragraph/list/anh/bang...) do
+  // nguoi dung tu soan, cac the do (h1-h4/p/li...) dang dung --ink (o che do
+  // sang la mau GAN DEN #171717) - neu ep ca body nen toi theo #141920 thi
+  // chu se GAN NHU VO HINH (den tren den) o theme sang. Danh doi nay giu
+  // tinh nang "chua duoc bat ky noi dung nao" cua Accordion khong bi vo,
+  // trong khi van the hien dung tinh than "danh muc so thu tu" cua tham
+  // khao o phan HEADER (thu duy nhat co van ban CO DINH, tu minh to mau).
+  //
+  // So thu tu (01/02/03...) bang CSS counter THUAN (khong JS) - [counter-
+  // reset] dat tren CHINH goc "&" (vung prose bao ngoai cung) de dam bao
+  // hoat dong o CA ban doc cong khai (markdown tinh, khong co React) LAN
+  // luc soan (AccordionView.tsx dung chung 1 lop class nay).
+  "[counter-reset:accordion-index] " +
+  "[&_.accordion-block]:my-0 [&_.accordion-block]:border-b [&_.accordion-block]:border-[#2b333e] [&_.accordion-block]:bg-[#141920] " +
+  "[&_.accordion-block+.accordion-block]:-mt-px [&_.accordion-block:first-of-type]:border-t " +
+  "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:border [&_.accordion-body_.accordion-block]:border-border [&_.accordion-body_.accordion-block]:bg-surface-muted " +
+  "[&_.accordion-summary]:relative [&_.accordion-summary]:flex [&_.accordion-summary]:cursor-pointer [&_.accordion-summary]:list-none [&_.accordion-summary]:items-center [&_.accordion-summary]:gap-4 [&_.accordion-summary]:px-1 [&_.accordion-summary]:py-4.5 [&_.accordion-summary]:select-none [&_.accordion-summary]:[counter-increment:accordion-index] " +
   "[&_.accordion-summary::-webkit-details-marker]:hidden [&_.accordion-summary::marker]:content-none " +
-  "[&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:text-ink-faint [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
+  "[&_.accordion-summary]:before:order-last [&_.accordion-summary]:before:shrink-0 [&_.accordion-summary]:before:text-[13px] [&_.accordion-summary]:before:text-[#8b93a1] [&_.accordion-summary]:before:content-['▾'] [&_.accordion-summary]:before:inline-block [&_.accordion-summary]:before:transition-transform [&_.accordion-summary]:before:duration-150 " +
   "[&_.accordion-block:not([open])_.accordion-summary]:before:-rotate-90 " +
+  // So thu tu - span RONG, noi dung 100% tu CSS counter (khong ghi gia tri
+  // nao trong HTML, xem accordionSummaryContent/accordionSummaryHtml).
+  "[&_.accordion-index-num]:w-6 [&_.accordion-index-num]:shrink-0 [&_.accordion-index-num]:font-serif [&_.accordion-index-num]:text-[14px] [&_.accordion-index-num]:text-[#8b93a1] " +
+  "[&_.accordion-index-num]:before:content-[counter(accordion-index,decimal-leading-zero)] " +
+  "[&_.accordion-summary-title]:font-serif [&_.accordion-summary-title]:text-[19px] [&_.accordion-summary-title]:font-normal [&_.accordion-summary-title]:text-[#eae7dd] [&_.accordion-summary-title]:transition-colors [&_.accordion-summary-title]:duration-150 " +
+  "[&_.accordion-summary:hover_.accordion-summary-title]:text-white " +
   // "Accordion với header dạng layout" (icon vuong + tieu de + mo ta, xem
-  // comment chi tiet trong post-extensions.ts/accordion-view.tsx). Chi
-  // dinh lai font-weight/size cho ".accordion-summary-desc" - mac dinh no SE
-  // ke thua font-semibold/14.5px tu ".accordion-summary" (chu thuong, khong
-  // phai tieu de) neu khong ghi de rieng.
+  // comment chi tiet trong post-extensions.ts/accordion-view.tsx).
   "[&_.accordion-summary-media]:flex [&_.accordion-summary-media]:min-w-0 [&_.accordion-summary-media]:flex-1 [&_.accordion-summary-media]:items-center [&_.accordion-summary-media]:gap-3 " +
   "[&_.accordion-summary-icon]:size-10 [&_.accordion-summary-icon]:shrink-0 [&_.accordion-summary-icon]:rounded-lg [&_.accordion-summary-icon]:object-cover " +
-  "[&_.accordion-summary-icon-empty]:bg-surface-muted " +
+  "[&_.accordion-summary-icon-empty]:bg-white/10 " +
   "[&_.accordion-summary-text]:min-w-0 [&_.accordion-summary-text]:flex-1 " +
   "[&_.accordion-summary-title]:block [&_.accordion-summary-title]:truncate " +
-  "[&_.accordion-summary-desc]:mt-0.5 [&_.accordion-summary-desc]:truncate [&_.accordion-summary-desc]:text-[13px] [&_.accordion-summary-desc]:font-normal [&_.accordion-summary-desc]:text-ink-muted " +
-  "[&_.accordion-body]:border-t [&_.accordion-body]:border-border [&_.accordion-body]:px-3.5 [&_.accordion-body]:py-3 [&_.accordion-body_p]:my-1 " +
+  "[&_.accordion-summary-desc]:mt-0.5 [&_.accordion-summary-desc]:truncate [&_.accordion-summary-desc]:font-sans [&_.accordion-summary-desc]:text-[13px] [&_.accordion-summary-desc]:font-normal [&_.accordion-summary-desc]:text-[#8b93a1] " +
+  "[&_.accordion-body]:pl-10 [&_.accordion-body]:pr-1 [&_.accordion-body]:pb-7 [&_.accordion-body_p]:my-1 " +
   // Accordion thong ke (StatAccordion) - cung <details>/<summary> THUAN nhu
   // Accordion o tren, nhung marker "+"/"-" thay vi tam giac (dung y mockup
   // AWS Global Infrastructure nguoi dung gui) + 1 badge so luong canh tieu
