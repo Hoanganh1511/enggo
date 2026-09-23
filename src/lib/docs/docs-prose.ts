@@ -72,7 +72,7 @@ export const DOCS_PROSE_CLASS =
   // loạt thẳng hàng"). Giu 2 file dong bo THU CONG moi khi sua 1 trong 2.
   // [2026-09-22] REDESIGN "Accordion Catalog" - xem comment chi tiet trong
   // POST_PROSE_CLASS (post-extensions.ts).
-  "[counter-reset:accordion-index] " +
+  "[counter-reset:accordion-index_footnote-counter] " +
   "[&_.accordion-block]:my-0 [&_.accordion-block]:border-b [&_.accordion-block]:border-[#2b333e] [&_.accordion-block]:bg-[#141920] " +
   "[&_.accordion-block+.accordion-block]:-mt-px [&_.accordion-block:first-of-type]:border-t " +
   "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:border [&_.accordion-body_.accordion-block]:border-border [&_.accordion-body_.accordion-block]:bg-surface-muted " +
@@ -199,4 +199,7 @@ export const DOCS_PROSE_CLASS =
   "[&_.stats-bar-item]:flex [&_.stats-bar-item]:min-w-[110px] [&_.stats-bar-item]:flex-1 [&_.stats-bar-item]:basis-[30%] [&_.stats-bar-item]:flex-col [&_.stats-bar-item]:px-5 [&_.stats-bar-item]:py-5 " +
   "[&_.stats-bar-item:not(:first-child)]:border-l [&_.stats-bar-item:not(:first-child)]:border-[#2b333e] " +
   "[&_.stats-bar-value]:font-serif [&_.stats-bar-value]:text-[26px] [&_.stats-bar-value]:leading-none " +
-  "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1]";
+  "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1] " +
+  // Footnote - xem comment chi tiet trong POST_PROSE_CLASS.
+  "[&_.footnote-ref]:relative [&_.footnote-ref]:mx-0.5 [&_.footnote-ref]:inline [&_.footnote-ref]:align-super [&_.footnote-ref]:text-[11px] [&_.footnote-ref]:leading-none [&_.footnote-ref]:font-semibold [&_.footnote-ref]:text-primary [&_.footnote-ref]:no-underline [&_.footnote-ref]:[counter-increment:footnote-counter] " +
+  "[&_.footnote-ref]:before:content-[counter(footnote-counter)]";

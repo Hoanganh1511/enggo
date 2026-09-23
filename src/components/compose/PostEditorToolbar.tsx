@@ -45,6 +45,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Superscript,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -210,20 +211,36 @@ export function PostEditorToolbar({
   editor: Editor;
   bare?: boolean;
 }) {
+  // [2026-09-23] Them prompt "title" (tooltip) - yeu cau nguoi dung dua
+  // theo dung cu phap Markdown `[text](url "tooltip")`: schema cua Link
+  // (@tiptap/extension-link) da CO SAN attr `title` mac dinh (chua tung
+  // duoc dung o day) - chi thieu 1 buoc hoi them, khong can sua schema.
+  // Prompt RIENG (khong gop 1 lan hoi) de nguoi dung bam Cancel o title ma
+  // KHONG mat luon URL da nhap - window.prompt tra ve null khi bam Cancel,
+  // phai phan biet ro voi "" (co gui nhung de trong = xoa title cu).
   const setLink = () => {
-    const prev = editor.getAttributes("link").href as string | undefined;
-    const url = window.prompt("Nhập URL liên kết", prev ?? "");
+    const prevAttrs = editor.getAttributes("link") as { href?: string; title?: string };
+    const url = window.prompt("Nhập URL liên kết", prevAttrs.href ?? "");
     if (url === null) return;
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    const title = window.prompt("Tooltip khi hover vào link (không bắt buộc)", prevAttrs.title ?? "");
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: url, title: title || null })
+      .run();
   };
 
   const addImage = () => {
     const url = window.prompt("Dán URL ảnh (https://...)");
-    if (url) editor.chain().focus().setImage({ src: url }).run();
+    if (!url) return;
+    const alt = window.prompt("Alt text mô tả ảnh (không bắt buộc)") || undefined;
+    const title = window.prompt("Caption/tooltip khi hover vào ảnh (không bắt buộc)") || undefined;
+    editor.chain().focus().setImage({ src: url, alt, title }).run();
   };
 
   // Chen 1 icon "?" NGAY SAU cum tu dang chon (khong boc quanh cum tu - xem
@@ -237,6 +254,14 @@ export function PostEditorToolbar({
       .focus()
       .insertContentAt(to, { type: "glossaryHint", attrs: { explanation: "" } })
       .run();
+  };
+
+  // Chen "Chú thích cuối trang" (footnote, `[^1]` trong tai lieu Markdown
+  // tham khao nguoi dung gui) NGAY TAI VI TRI CON TRO - khac GlossaryHint
+  // (can 1 vung CHON), footnote thuong dat ngay SAU 1 tu/dau cau, khong bat
+  // buoc phai bôi đen gi ca truoc do.
+  const addFootnote = () => {
+    editor.chain().focus().insertContent({ type: "footnote", attrs: { content: "" } }).run();
   };
 
   // 3 chu de callout (Warning/Danger/Good tips - xem CALLOUT_LABELS trong
@@ -502,6 +527,7 @@ export function PostEditorToolbar({
         disabled={editor.state.selection.empty}
         onClick={addGlossaryHint}
       />
+      <Btn label="Chú thích cuối trang (footnote)" Icon={Superscript} onClick={addFootnote} />
       {/* Chen/xoa hang-cot sau khi da co bang: xem TableControlsMenu.tsx -
           mot bubble menu rieng hien NGAY CANH bang dang sua (yeu cau nguoi
           dung: "Table trong này chưa có các button bố trí hợp lý để tăng

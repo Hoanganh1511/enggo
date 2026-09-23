@@ -6,10 +6,12 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
-import { TableKit } from "@tiptap/extension-table";
+import { TableKit, Table } from "@tiptap/extension-table";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
 import { GlossaryHint } from "./glossary-hint-extension";
+import { Footnote } from "./footnote-extension";
+import { SearchReplace } from "./search-replace-extension";
 import { CuratedListView } from "./curated-list-view";
 import { QuestionPickerView } from "./question-picker-view";
 import { AccordionView } from "./accordion-view";
@@ -1907,28 +1909,21 @@ export const ProfileBlock = Node.create({
 // (link:false, underline:false) de CHI CON 1 ban duy nhat (ban .configure()
 // rieng ben duoi, giu dung { openOnClick: false }) - dung y het cach
 // getOverviewExtensions() ben duoi da lam voi heading/blockquote/codeBlock...
-// Tab/Shift-Tab trong danh sach so/cham - yeu cau nguoi dung (kem anh chup
-// "1. Phân loại theo category" roi 1 dong trong, roi lai "1. dsandsa" thay
-// vi "2."): "khi xuống dòng ở 1., tôi tab vào thì nó sẽ là nội dung của 1.
-// chứ đừng làm mất liên kết của 1. 2.". Mac dinh StarterKit KHONG gan phim
-// tat nao cho Tab/Shift-Tab ca (xac nhan qua node_modules) - Tab trong
-// contentEditable roi vao hanh vi goc cua trinh duyet (chuyen focus RA
-// KHOI vung soan), dung luc do nguoi dung tuong nhu bi "mất liên kết" (con
-// tro thoat khoi list, go tiep se khong con nam trong list nua, so voi ProseMirror
-// hieu la bat dau lai tu "1." o VI TRI MOI). sinkListItem/liftListItem la
-// lenh CO SAN cua chinh ListItem (dang ky boi StarterKit qua "listItem"),
-// chi thieu phim tat goi toi - tra ve false khi khong ap dung duoc (khong o
-// trong list, hoac list item DAU TIEN khong the sink) de Tab/Shift-Tab roi
-// lai hanh vi mac dinh o noi khac (vd trong bang, TableKit tu xu ly rieng).
-const ListTabKeymap = Extension.create({
-  name: "listTabKeymap",
-  addKeyboardShortcuts() {
-    return {
-      Tab: () => this.editor.commands.sinkListItem("listItem"),
-      "Shift-Tab": () => this.editor.commands.liftListItem("listItem"),
-    };
-  },
-});
+// [2026-09-23] DA GO "ListTabKeymap" (tung o day) - tung them de fix bug
+// Tab/Shift-Tab khong hoat dong trong danh sach so/cham ("khi xuống dòng ở
+// 1., tôi tab vào thì nó... mất liên kết của 1. 2."), luc do StarterKit
+// (ban cu) CHUA co san phim tat nao cho Tab/Shift-Tab. Kiem tra lai truc
+// tiep trong node_modules (@tiptap/extension-list@3.28, ban StarterKit hien
+// tai dang dung) xac nhan ListItem.addKeyboardShortcuts() nay DA co san
+// Tab/Shift-Tab (sinkListItem/liftListItem) + ListKeymap (bundled cung
+// StarterKit) da xu ly Backspace de "thoat danh sach" (nang doan trong len
+// thanh van ban thuong) - ca 4 hanh vi ban phim cho danh sach nguoi dung mo
+// ta (soft break qua Shift-Enter/HardBreak, hard break qua Enter/
+// splitListItem, thoat danh sach qua Enter x2 hoac Backspace, thut le qua
+// Tab/Shift-Tab) DEU DA duoc StarterKit xu ly dung san, khong can code rieng
+// nua - extension nay chi con la BAN SAO trung lap (hardcode ten node
+// "listItem" nen KHONG ap dung duoc cho checklist/taskItem), go bo cho gon,
+// tranh nham lan thu tu uu tien phim tat voi ban goc cua thu vien.
 
 // [2026-09-20] Backspace XOA doan van RONG khi mac ket - yeu cau nguoi dung:
 // "Sao không xóa được dòng trống?" (kem anh: 1 doan van rong nam TRUOC 1
@@ -1972,17 +1967,149 @@ const EmptyParagraphBackspaceKeymap = Extension.create({
   },
 });
 
+// Kieu toi thieu rieng cho serializer bang (khac TiptapNode chung o dau file -
+// can them .type.name/.childCount/.firstChild/.forEach de duyet hang/o, cac
+// serializer khac trong file nay khong can toi cac truong nay).
+type TableNode = {
+  attrs: Record<string, unknown>;
+  textContent: string;
+  type: { name: string };
+  childCount: number;
+  firstChild: TableNode | null;
+  forEach: (fn: (node: TableNode, offset: number, index: number) => void) => void;
+};
+
+function tableRowsOf(node: TableNode): TableNode[] {
+  const rows: TableNode[] = [];
+  node.forEach((row) => rows.push(row));
+  return rows;
+}
+
+function tableCellsOf(row: TableNode): TableNode[] {
+  const cells: TableNode[] = [];
+  row.forEach((cell) => cells.push(cell));
+  return cells;
+}
+
+function hasSpan(cell: TableNode): boolean {
+  return (Number(cell.attrs.colspan) || 1) > 1 || (Number(cell.attrs.rowspan) || 1) > 1;
+}
+
+// Bang "don gian" (khong merge o, moi o dung 1 doan van) moi ep vua duoc vao
+// cu phap pipe `| a | b |` cua Markdown - giong het dieu kien
+// isMarkdownSerializable() cua tiptap-markdown (xem node_modules/tiptap-markdown/
+// src/extensions/nodes/table.js), copy lai o day vi package khong export ham
+// nay ra ngoai de tai su dung.
+function isSimpleTable(node: TableNode): boolean {
+  const rows = tableRowsOf(node);
+  const firstRow = rows[0];
+  if (!firstRow) return true;
+  if (tableCellsOf(firstRow).some((c) => c.type.name !== "tableHeader" || hasSpan(c) || c.childCount > 1)) {
+    return false;
+  }
+  return !rows
+    .slice(1)
+    .some((row) => tableCellsOf(row).some((c) => c.type.name === "tableHeader" || hasSpan(c) || c.childCount > 1));
+}
+
+function tableAlignDelimiter(align: unknown): string {
+  if (align === "center") return ":---:";
+  if (align === "right") return "---:";
+  if (align === "left") return ":---";
+  return "---";
+}
+
+// [2026-09-23] Ghi de rieng serializer cua node "table" (mac dinh tu
+// tiptap-markdown) - yeu cau nguoi dung: ho tro can le cot bang Markdown
+// (`:---`/`:---:`/`---:`). Ban goc cua tiptap-markdown LUON ghi dong gach
+// ngang la "---" CO DINH cho MOI cot (xem node_modules/tiptap-markdown/src/
+// extensions/nodes/table.js dong 36), khong doc bat ky attrs can le nao ca -
+// du co bat TextAlign cho tableCell/tableHeader (xem getPostExtensions() ben
+// duoi) thi luc LUU van bi ROI MAT can le vi ban goc khong biet toi no.
+//
+// QUAN TRONG: dung `.extend()` tren CHINH node "table" that (import tu
+// @tiptap/extension-table), KHONG tao moi bang Node.create({name:"table"}) -
+// tao moi se sinh ra 1 SCHEMA RIENG trung ten voi node "table" THAT cua
+// TableKit (thieu het content/group/parseHTML/renderHTML that), gay xung
+// dot schema/canh bao "Duplicate extension names" giong dung loai bug tung
+// gap voi StarterKit+Link/Underline truoc day (xem comment o StarterKit.configure).
+// `.extend()` ke thua NGUYEN VEN schema goc, CHI THEM/GHI DE addStorage() -
+// dang ky extension nay THAY THE cho Table cua TableKit (xem
+// `table: false` trong TableKit.configure() o getPostExtensions() duoi,
+// TableKit van cung cap tableRow/tableCell/tableHeader nhu cu, chi rieng
+// "table" la ban MO RONG nay).
+//
+// GIU NGUYEN y het logic ghi hang/o cua ban goc tiptap-markdown, CHI khac o
+// dong gach ngang: doc attrs.textAlign cua TUNG O header de chon dung dau
+// `:---`/`:---:`/`---:`/`---`. Bang PHUC TAP (co merge o) van xuong cap ve
+// <table> HTML tho y het huong tiep can cua ban goc, dam bao khong mat du lieu.
+const TableWithAlignMarkdown = Table.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: MarkdownSerializerState, node: TableNode) {
+          if (!isSimpleTable(node)) {
+            state.ensureNewLine();
+            state.write("<table>\n");
+            for (const row of tableRowsOf(node)) {
+              state.write("<tr>");
+              for (const cell of tableCellsOf(row)) {
+                const tag = cell.type.name === "tableHeader" ? "th" : "td";
+                const colspan = Number(cell.attrs.colspan) || 1;
+                const rowspan = Number(cell.attrs.rowspan) || 1;
+                const attrs =
+                  (colspan > 1 ? ` colspan="${colspan}"` : "") + (rowspan > 1 ? ` rowspan="${rowspan}"` : "");
+                state.write(`<${tag}${attrs}>`);
+                state.renderContent(cell);
+                state.write(`</${tag}>`);
+              }
+              state.write("</tr>\n");
+            }
+            state.write("</table>");
+            state.closeBlock(node);
+            return;
+          }
+          const rows = tableRowsOf(node);
+          rows.forEach((row, i) => {
+            const cells = tableCellsOf(row);
+            state.write("| ");
+            cells.forEach((cell, j) => {
+              if (j) state.write(" | ");
+              const cellContent = cell.firstChild;
+              if (cellContent && cellContent.textContent.trim()) {
+                state.renderInline(cellContent);
+              }
+            });
+            state.write(" |");
+            state.ensureNewLine();
+            if (i === 0) {
+              const delimiterRow = cells.map((cell) => tableAlignDelimiter(cell.attrs.textAlign)).join(" | ");
+              state.write(`| ${delimiterRow} |`);
+              state.ensureNewLine();
+            }
+          });
+          state.closeBlock(node);
+        },
+        parse: {},
+      },
+    };
+  },
+});
+
 export function getPostExtensions(): Extensions {
   return [
     StarterKit.configure({ link: false, underline: false }),
-    ListTabKeymap,
     EmptyParagraphBackspaceKeymap,
     Underline,
     TaskList,
     TaskItem.configure({ nested: true }),
     Link.configure({ openOnClick: false }),
     Image.configure({ inline: false, allowBase64: false }),
-    TableKit.configure({ table: { resizable: true } }),
+    // table: false - TableKit KHONG con tu dang ky "table" nua (thay bang
+    // TableWithAlignMarkdown ben duoi, xem comment chi tiet o dinh nghia no)
+    // - van giu nguyen tableRow/tableCell/tableHeader mac dinh cua TableKit.
+    TableKit.configure({ table: false }),
+    TableWithAlignMarkdown.configure({ resizable: true }),
     // TextStyle la mark NEN bat buoc de Color/BackgroundColor gan attrs len
     // (ca 2 deu luu vao style cua chinh mark "textStyle", khong phai mark
     // rieng) - yeu cau nguoi dung: "khi một vùng text được focus (con trỏ
@@ -2013,9 +2140,16 @@ export function getPostExtensions(): Extensions {
     // trai khi luu (CommonMark khong co cu phap can le) - danh doi CHAP NHAN
     // DUOC, giong triet ly "xuong cap don gian hon" cua cac node khac trong
     // file nay khi ra khoi ngu canh HTML tho.
-    TextAlign.configure({ types: ["paragraph"] }),
+    // [2026-09-23] Them "tableCell"/"tableHeader" - yeu cau nguoi dung: ho
+    // tro can le cot trong bang (`:---`/`:---:`/`---:` cua Markdown). Rieng
+    // BANG (khac paragraph/Grid) co serializer RIENG (xem CustomTableMarkdown
+    // duoi) doc dung attrs `textAlign` nay de ghi lai dung dau `:` tren dong
+    // gach ngang khi luu markdown - KHONG bi xuong cap ve trai nhu paragraph.
+    TextAlign.configure({ types: ["paragraph", "tableCell", "tableHeader"] }),
     Callout,
     GlossaryHint,
+    Footnote,
+    SearchReplace,
     GoDeeper,
     TocBlock,
     CuratedList,
@@ -2184,7 +2318,10 @@ export const POST_PROSE_CLASS =
   // reset] dat tren CHINH goc "&" (vung prose bao ngoai cung) de dam bao
   // hoat dong o CA ban doc cong khai (markdown tinh, khong co React) LAN
   // luc soan (AccordionView.tsx dung chung 1 lop class nay).
-  "[counter-reset:accordion-index] " +
+  // Them "footnote-counter" chung 1 khai bao counter-reset voi accordion-index
+  // (2 counter doc lap tren CUNG 1 pham vi goc "&") - xem class ".footnote-ref"
+  // ben duoi (chu thich cuoi trang, footnote-extension.tsx).
+  "[counter-reset:accordion-index_footnote-counter] " +
   "[&_.accordion-block]:my-0 [&_.accordion-block]:border-b [&_.accordion-block]:border-[#2b333e] [&_.accordion-block]:bg-[#141920] " +
   "[&_.accordion-block+.accordion-block]:-mt-px [&_.accordion-block:first-of-type]:border-t " +
   "[&_.accordion-body_.accordion-block]:my-3 [&_.accordion-body_.accordion-block]:rounded-lg [&_.accordion-body_.accordion-block]:border [&_.accordion-body_.accordion-block]:border-border [&_.accordion-body_.accordion-block]:bg-surface-muted " +
@@ -2457,4 +2594,20 @@ export const POST_PROSE_CLASS =
   // Google Font rieng chi cho 1 khoi nay (giu nguyen quy uoc 2 font chinh
   // cua app, xem CLAUDE.md).
   "[&_.stats-bar-value]:font-serif [&_.stats-bar-value]:text-[26px] [&_.stats-bar-value]:leading-none " +
-  "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1]";
+  "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1] " +
+  // Footnote ("chú thích cuối trang", xem footnote-extension.tsx) - so thu tu
+  // ("1", "2"...) la CSS COUNTER thuan tren `counter-increment` cua CHINH no,
+  // hien qua ::before - hoat dong dong nhat luc soan (button rong trong
+  // FootnoteView) LAN o ban doc tinh (<sup> rong trong renderHTML/markdown
+  // serialize) vi ca 2 deu dung chung 1 class "footnote-ref" nay. Noi dung
+  // that su nam trong thuoc tinh HTML "title" (khong phai o day) - trinh
+  // duyet TU hien tooltip khi hover, khong can JS.
+  "[&_.footnote-ref]:relative [&_.footnote-ref]:mx-0.5 [&_.footnote-ref]:inline [&_.footnote-ref]:align-super [&_.footnote-ref]:text-[11px] [&_.footnote-ref]:leading-none [&_.footnote-ref]:font-semibold [&_.footnote-ref]:text-primary [&_.footnote-ref]:no-underline [&_.footnote-ref]:[counter-increment:footnote-counter] " +
+  "[&_.footnote-ref]:before:content-[counter(footnote-counter)] " +
+  // Find & Replace (Ctrl+F/Ctrl+H, xem search-replace-extension.tsx) - to
+  // sang cac ket qua tim thay bang Decoration (span that trong ProseMirror,
+  // KHONG phai attrs luu vao tai lieu) - CHI co y nghia trong ban SOAN (khong
+  // sync sang docs-prose.ts vi trang doc TINH khong co decoration/editor
+  // song nao ca, class nay se khong bao gio xuat hien o do).
+  "[&_.search-match]:rounded-[2px] [&_.search-match]:bg-warning/35 " +
+  "[&_.search-match-current]:bg-warning/70";

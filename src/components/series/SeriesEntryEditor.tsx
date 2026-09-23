@@ -8,6 +8,7 @@ import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
 import { SelectionColorMenu } from "@/components/compose/SelectionColorMenu";
 import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
 import { EntryHeadingsToc } from "@/components/compose/EntryHeadingsToc";
+import { FindReplacePanel } from "@/components/compose/FindReplacePanel";
 
 // Editor RICH cho Nội dung Entry - DUNG DUNG 1 bo extension/toolbar VOI
 // Composer.tsx (yeu cau nguoi dung: "đồng bộ tất cả giống compose" - lan
@@ -79,6 +80,9 @@ export function SeriesEntryEditor({
     // doi chap nhan duoc de sticky hoat dong dung.
     <div className="rounded-lg border border-border bg-surface">
       <PostEditorToolbar editor={editor} />
+      {/* "Tìm kiếm"/"Tìm & Thay thế" (Ctrl+F/Ctrl+H) - xem
+          search-replace-extension.tsx. */}
+      <FindReplacePanel editor={editor} />
       {/* Bubble menu chon mau chu/nen - hien noi khi CO vung van ban dang
           duoc bôi đen (yeu cau nguoi dung: "khi một vùng text được focus
           (con trỏ giữ bôi tô) thì nút đó sẽ hiện lên, chọn màu nền, màu
