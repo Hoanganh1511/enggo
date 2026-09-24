@@ -220,6 +220,7 @@ function BotHelpBlock({
 }: {
   block: Extract<EntryContentBlock, { type: "botHelp" }>;
 }) {
+  //
   return (
     // p-8 (32px 4 huong) - yeu cau nguoi dung: "padding của cả block đấy
     // cho thành 32px 4 hướng hết nhé".
