@@ -2213,7 +2213,13 @@ export const POST_PROSE_CLASS =
   "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 " +
   "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-community-accent/40 [&_blockquote]:pl-4 " +
   "[&_hr]:my-8 [&_hr]:border-border " +
-  "[&_code]:rounded [&_code]:bg-surface-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] " +
+  // [2026-09-24] Mau xanh lam-tim nhat (chip) thay cho nen xam trung tinh -
+  // yeu cau nguoi dung kem anh mau ("s3:GetObject" dang pill nen xanh nhat,
+  // chu xanh lam). Mau CO DINH (khong dung token --primary): --primary doi
+  // gia tri theo tung "scope" trong app (globals.css co 2 khai bao khac
+  // nhau tuy vung), trong khi mau chip code nay la 1 lua chon THIET KE rieng
+  // cho khoi inline code, khong lien quan mau accent chinh cua tung khu vuc.
+  "[&_code]:rounded-md [&_code]:bg-[#eef1ff] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] [&_code]:text-[#3b5bdb] " +
   // Code block: mau toi CO DINH (#0d1117 kieu GitHub) cho ca light & dark -
   // KHONG dung bg-ink vi --ink dao thanh mau sang o dark mode se lam nen sang
   // + chu sang = mat chu.
