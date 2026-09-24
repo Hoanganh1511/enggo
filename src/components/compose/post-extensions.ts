@@ -12,6 +12,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { Footnote } from "./footnote-extension";
 import { SearchReplace } from "./search-replace-extension";
+import { SlashCommand } from "./slash-command-extension";
 import { CuratedListView } from "./curated-list-view";
 import { QuestionPickerView } from "./question-picker-view";
 import { AccordionView } from "./accordion-view";
@@ -2150,6 +2151,7 @@ export function getPostExtensions(): Extensions {
     GlossaryHint,
     Footnote,
     SearchReplace,
+    SlashCommand,
     GoDeeper,
     TocBlock,
     CuratedList,
