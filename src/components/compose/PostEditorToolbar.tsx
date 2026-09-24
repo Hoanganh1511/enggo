@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Editor } from "@tiptap/react";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { ImagePickerModal } from "./ImagePickerModal";
 import {
   Bold,
   Italic,
@@ -186,9 +187,16 @@ export function PostEditorToolbar({
       .run();
   };
 
-  const addImage = () => {
-    const url = window.prompt("Dán URL ảnh (https://...)");
-    if (!url) return;
+  // [2026-09-24] Bat modal "Tải lên/Dán URL" (ImagePickerModal.tsx - CUNG
+  // component da dung cho AccordionView/ProfileBlockView) thay vi CHI
+  // window.prompt() xin URL nhu truoc - yeu cau nguoi dung: "Image insert
+  // trong editor giờ vẫn để mỗi nhập URL, cho modal upload lên". Giu lai 2
+  // prompt alt/title SAU KHI da co URL (ca 2 nhanh Tai len LAN Dan URL deu
+  // di qua chung `onSelect`) - modal dung chung nay chi tra ve 1 URL, khong
+  // tu hoi alt/title rieng (con dung cho ca avatar/icon vuong o noi khac
+  // khong can 2 truong nay).
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
+  const handleImageSelected = (url: string) => {
     const alt = window.prompt("Alt text mô tả ảnh (không bắt buộc)") || undefined;
     const title = window.prompt("Caption/tooltip khi hover vào ảnh (không bắt buộc)") || undefined;
     editor.chain().focus().setImage({ src: url, alt, title }).run();
@@ -437,6 +445,7 @@ export function PostEditorToolbar({
   };
 
   return (
+    <>
     <div
       className={cn(
         "flex flex-wrap items-center gap-0.5",
@@ -471,7 +480,7 @@ export function PostEditorToolbar({
       <Btn label="Đường kẻ" Icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} />
       <Divider />
       <Btn label="Liên kết" Icon={Link2} active={editor.isActive("link")} onClick={setLink} />
-      <Btn label="Ảnh (URL)" Icon={ImageIcon} onClick={addImage} />
+      <Btn label="Ảnh (tải lên hoặc dán URL)" Icon={ImageIcon} onClick={() => setImagePickerOpen(true)} />
       <Btn
         label="Thêm chú thích cho cụm từ đang chọn"
         Icon={CircleHelp}
@@ -507,5 +516,7 @@ export function PostEditorToolbar({
       <Btn label="Hoàn tác" Icon={Undo2} disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} />
       <Btn label="Làm lại" Icon={Redo2} disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} />
     </div>
+    <ImagePickerModal open={imagePickerOpen} onOpenChange={setImagePickerOpen} onSelect={handleImageSelected} />
+    </>
   );
 }
