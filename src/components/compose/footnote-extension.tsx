@@ -62,7 +62,14 @@ export const Footnote = Node.create({
       markdown: {
         serialize: (state: { write: (s?: string) => void }, node: { attrs: Record<string, unknown> }) => {
           const content = (node.attrs.content as string) ?? "";
-          state.write(`<sup class="footnote-ref" data-footnote title="${escapeHtmlAttr(content)}"></sup>`);
+          // Doi \n/\r thanh khoang trang TRUOC khi escape - FootnoteView.tsx
+          // dung <textarea> (cho phep go nhieu dong that su), nhung the nay
+          // duoc nhung INLINE tren CUNG 1 dong markdown - 1 ky tu xuong dong
+          // THAT lot vao giua thuoc tinh title se cat doi dong markdown, co
+          // the khien rehype-raw khong con nhan dung day la 1 the HTML lien
+          // tuc nua (xem comment tuong tu trong glossary-hint-extension.tsx).
+          const singleLine = content.replace(/[\r\n]+/g, " ");
+          state.write(`<sup class="footnote-ref" data-footnote title="${escapeHtmlAttr(singleLine)}"></sup>`);
         },
       },
     };

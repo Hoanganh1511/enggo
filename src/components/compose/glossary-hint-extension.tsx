@@ -78,7 +78,14 @@ export const GlossaryHint = Node.create({
       markdown: {
         serialize: (state: { write: (s?: string) => void }, node: { attrs: Record<string, unknown> }) => {
           const explanation = ((node.attrs.explanation as string) ?? "").trim();
-          const escaped = explanation
+          // Doi \n/\r thanh khoang trang TRUOC khi escape - GlossaryHintView.tsx
+          // dung <textarea> (cho phep go nhieu dong that su). Span nay duoc
+          // nhung INLINE, tren CUNG 1 dong markdown - 1 ky tu xuong dong THAT
+          // lot vao giua thuoc tinh title se cat doi dong markdown dang do,
+          // co the khien rehype-raw khong con nhan dung day la 1 the HTML
+          // lien tuc nua (bug tiem an, chua tung xay ra nhung can chan truoc).
+          const singleLine = explanation.replace(/[\r\n]+/g, " ");
+          const escaped = singleLine
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
