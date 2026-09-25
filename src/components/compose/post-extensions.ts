@@ -1968,22 +1968,30 @@ const EmptyParagraphBackspaceKeymap = Extension.create({
   },
 });
 
-// [2026-09-25] "--" + Space -> em dash "—" - yeu cau nguoi dung dua dung
-// hanh vi cua Notion: "gõ hai dấu gạch nối liên tiếp (--) rồi nhấn phím
-// Space". CHI 1 input rule DUY NHAT (khong dung ca goi @tiptap/extension-
-// typography - goi do kem theo RAT NHIEU rule khac nguoi dung KHONG yeu cau:
-// dau nhay kep cong, dau "...", mui ten "->", ky hieu ban quyen "(c)"... -
-// cai them ca goi co the gay sai y ngoai du dinh khi go van ban binh thuong).
-// `find: /--\s$/` - CHI khop khi da go XONG dau cach NGAY SAU "--" (dung y
-// "rồi nhấn phím Space" nguoi dung mo ta, khong kich hoat ngay luc go "--"
-// nhu mac dinh cua chinh Tiptap Typography).
-const EmDashInputRule = Extension.create({
-  name: "emDashInputRule",
+// [2026-09-25] Vai input rule "go tat" don gian (em dash, mui ten) - yeu cau
+// nguoi dung. CHI vai rule CU THE duoc yeu cau (khong dung ca goi @tiptap/
+// extension-typography - goi do kem theo RAT NHIEU rule khac KHONG duoc yeu
+// cau: dau nhay kep cong, dau "...", ky hieu ban quyen "(c)"... - cai them ca
+// goi co the gay sai y ngoai du dinh khi go van ban binh thuong).
+const TypographyInputRules = Extension.create({
+  name: "typographyInputRules",
   addInputRules() {
     return [
+      // "--" + Space -> em dash "—" - dung hanh vi cua Notion: "gõ hai dấu
+      // gạch nối liên tiếp (--) rồi nhấn phím Space". `find: /--\s$/` - CHI
+      // khop khi da go XONG dau cach NGAY SAU "--" (khong kich hoat ngay luc
+      // go "--" nhu mac dinh cua chinh Tiptap Typography).
       textInputRule({
         find: /--\s$/,
         replace: "— ",
+      }),
+      // "->" -> mui ten "→" - kich hoat NGAY khi go xong ky tu ">" (khong
+      // can dau cach nhu em dash o tren): khac "--" (dau "-" thu 3 van co the
+      // la y dinh go tiep 1 tu khac), "->" hiem khi la 1 chuoi ky tu nguoi
+      // dung THAT SU muon giu nguyen trong van ban thuong.
+      textInputRule({
+        find: /->$/,
+        replace: "→",
       }),
     ];
   },
@@ -2122,7 +2130,7 @@ export function getPostExtensions(): Extensions {
   return [
     StarterKit.configure({ link: false, underline: false }),
     EmptyParagraphBackspaceKeymap,
-    EmDashInputRule,
+    TypographyInputRules,
     Underline,
     TaskList,
     TaskItem.configure({ nested: true }),
