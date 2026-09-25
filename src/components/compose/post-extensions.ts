@@ -37,6 +37,7 @@ type MarkdownSerializerState = {
   renderContent: (node: TiptapNode) => void;
   renderInline: (node: TiptapNode) => void;
   wrapBlock: (delim: string, firstDelim: string | null, node: TiptapNode, f: () => void) => void;
+  esc: (str: string, startOfLine?: boolean) => string;
 };
 
 export type CalloutVariant = "info" | "warn" | "danger" | "success";
@@ -2049,6 +2050,45 @@ function tableAlignDelimiter(align: unknown): string {
   return "---";
 }
 
+// [2026-09-25] Ghi de serializer markdown cua node "image" - bug nguoi dung
+// bao: dat 1 duong ke ngang (---) NGAY SAU 1 anh, luc doc lai hien THANH
+// CHU "---" (khong thanh <hr> nhu binh thuong o cac vi tri khac trong bai).
+// Nguyen nhan xac dinh qua doc THANG node_modules/prosemirror-markdown/src/
+// to_markdown.ts: serializer image() MAC DINH cua tiptap-markdown CHI goi
+// state.write(...), KHONG BAO GIO goi state.closeBlock(node) - hop ly cho
+// dung THIET KE GOC cua no (anh la 1 NODE INLINE nam LONG trong 1
+// "paragraph", chinh node "paragraph" moi la noi chiu trach nhiem
+// closeBlock() + chen dong trong phia sau, xem paragraph() ngay phia tren
+// image() trong file do). Nhung Image.configure({ inline: false }) trong
+// getPostExtensions() duoi dat ANH la 1 BLOCK doc lap (nam truc tiep o cap
+// doc, KHONG nam trong paragraph nao) - dung serializer thiet ke cho ngu
+// canh INLINE cho 1 node dang dung o cap BLOCK khien KHONG co dong trong
+// nao duoc chen SAU anh, lam dong "---" cua khoi ke tiep dinh SAT vao dong
+// anh - vi pham yeu cau CommonMark "phai co 1 dong trong truoc 1 thematic
+// break", khien no bi hieu nham thanh VAN BAN THUONG thay vi <hr>.
+//
+// Fix: dung `.extend()` tren CHINH node "image" that (cung ly do/ky thuat
+// da dung cho "table" ngay tren) - GIU NGUYEN het cu phap markdown chuan cua
+// anh (dua tren defaultMarkdownSerializer.nodes.image cua prosemirror-markdown),
+// CHI THEM state.closeBlock(node) sau khi ghi xong - dung y het cach
+// "paragraph" lam voi cac node con inline cua no.
+const ImageWithBlockMarkdown = Image.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const alt = state.esc((node.attrs.alt as string) || "");
+          const src = ((node.attrs.src as string) || "").replace(/[()]/g, "\\$&");
+          const titleAttr = node.attrs.title as string | undefined;
+          const title = titleAttr ? ` "${titleAttr.replace(/"/g, '\\"')}"` : "";
+          state.write(`![${alt}](${src}${title})`);
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // [2026-09-23] Ghi de rieng serializer cua node "table" (mac dinh tu
 // tiptap-markdown) - yeu cau nguoi dung: ho tro can le cot bang Markdown
 // (`:---`/`:---:`/`---:`). Ban goc cua tiptap-markdown LUON ghi dong gach
@@ -2135,7 +2175,7 @@ export function getPostExtensions(): Extensions {
     TaskList,
     TaskItem.configure({ nested: true }),
     Link.configure({ openOnClick: false }),
-    Image.configure({ inline: false, allowBase64: false }),
+    ImageWithBlockMarkdown.configure({ inline: false, allowBase64: false }),
     // table: false - TableKit KHONG con tu dang ky "table" nua (thay bang
     // TableWithAlignMarkdown ben duoi, xem comment chi tiet o dinh nghia no)
     // - van giu nguyen tableRow/tableCell/tableHeader mac dinh cua TableKit.
