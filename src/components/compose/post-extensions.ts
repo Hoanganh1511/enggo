@@ -1,4 +1,4 @@
-import { Node, Extension, mergeAttributes, textInputRule, type Extensions } from "@tiptap/core";
+import { Node, Extension, mergeAttributes, textInputRule, getHTMLFromFragment, type Extensions } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -2004,10 +2004,14 @@ const TypographyInputRules = Extension.create({
 type TableNode = {
   attrs: Record<string, unknown>;
   textContent: string;
-  type: { name: string };
+  type: { name: string; schema: unknown };
   childCount: number;
   firstChild: TableNode | null;
   forEach: (fn: (node: TableNode, offset: number, index: number) => void) => void;
+  // Can cho nhanh "bang phuc tap" (xem getHTMLFromFragment ben duoi) - Fragment
+  // that cua @tiptap/pm/model, ep kieu long leo o cho GOI thay vi khai bao
+  // day du o day (chi 1 cho dung toi, giu shim nay don gian).
+  content: unknown;
 };
 
 function tableRowsOf(node: TableNode): TableNode[] {
@@ -2130,7 +2134,26 @@ const TableWithAlignMarkdown = Table.extend({
                 const attrs =
                   (colspan > 1 ? ` colspan="${colspan}"` : "") + (rowspan > 1 ? ` rowspan="${rowspan}"` : "");
                 state.write(`<${tag}${attrs}>`);
-                state.renderContent(cell);
+                // [2026-09-25] getHTMLFromFragment (KHONG phai state.renderContent)
+                // - bug nguoi dung bao: "không bold được text trong table, bị
+                // chuyển thành 2 dấu *". Nguyen nhan: nhanh nay ("bang phuc
+                // tap" - khong co header, co merge o, hoac 1 o co >1 doan van)
+                // nhung THANG raw HTML <table> vao markdown - noi dung BEN
+                // TRONG 1 khoi HTML tho nhu vay KHONG duoc cac trinh doc
+                // markdown (ca remark-gfm luc doc LAN markdown-it luc soan
+                // lai) chay lai qua bo phan tich cu phap markdown INLINE nua
+                // (dung dac ta CommonMark: noi dung trong 1 khoi HTML tho la
+                // VAN BAN THUONG, khong con hieu "**"/"*" la in đậm/in
+                // nghiêng). `state.renderContent(cell)` (ban cu) lai ghi
+                // MARKDOWN SYNTAX ("**bold**") vao day - hien nguyen van 2
+                // dau "*" thay vi <strong>, dung y HET bug nguoi dung mo ta.
+                // getHTMLFromFragment (tien ich CHINH THUC cua @tiptap/core,
+                // dung boi tiptap-markdown cho CHINH truong hop nay - xem
+                // node_modules/tiptap-markdown/src/extensions/nodes/html.js)
+                // chuyen doi mark/node THANG thanh THE HTML that (**bold** ->
+                // <strong>bold</strong>) dung voi ngu canh dang o TRONG 1
+                // khoi HTML tho.
+                state.write(getHTMLFromFragment(cell.content as never, cell.type.schema as never));
                 state.write(`</${tag}>`);
               }
               state.write("</tr>\n");
