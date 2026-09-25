@@ -37,6 +37,24 @@ export const SlashCommand = Extension.create({
         render: () => {
           let component: ReactRenderer<SlashCommandMenuHandle> | null = null;
           let unmount: (() => void) | null = null;
+          let closeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+          // Dong CO HIEU UNG (fade+scale, xem SlashCommandMenu.tsx) thay vi
+          // go DOT NGOT khoi DOM - `hide()` chi doi trang thai noi bo (kich
+          // hoat AnimatePresence's exit), doi het 160ms (~ dai hon 150ms
+          // transition duration 1 chut cho chac) roi moi THAT SU go phan tu
+          // noi (unmount()) + huy component (destroy()).
+          function closeWithAnimation() {
+            if (closeTimeout) return;
+            component?.ref?.hide();
+            closeTimeout = setTimeout(() => {
+              unmount?.();
+              unmount = null;
+              component?.destroy();
+              component = null;
+              closeTimeout = null;
+            }, 160);
+          }
 
           return {
             onStart: (props) => {
@@ -57,17 +75,13 @@ export const SlashCommand = Extension.create({
             },
             onKeyDown: (props) => {
               if (props.event.key === "Escape") {
-                unmount?.();
-                unmount = null;
+                closeWithAnimation();
                 return true;
               }
               return component?.ref?.onKeyDown(props) ?? false;
             },
             onExit: () => {
-              unmount?.();
-              unmount = null;
-              component?.destroy();
-              component = null;
+              closeWithAnimation();
             },
           };
         },
