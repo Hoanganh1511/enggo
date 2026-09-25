@@ -9,6 +9,10 @@ import { SelectionColorMenu } from "@/components/compose/SelectionColorMenu";
 import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
 import { EntryHeadingsToc } from "@/components/compose/EntryHeadingsToc";
 import { FindReplacePanel } from "@/components/compose/FindReplacePanel";
+import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
+import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
+import { getApiErrorMessage } from "@/lib/api/client";
+import { toast } from "@/lib/toast/toast-store";
 
 // Editor RICH cho Nội dung Entry - DUNG DUNG 1 bo extension/toolbar VOI
 // Composer.tsx (yeu cau nguoi dung: "đồng bộ tất cả giống compose" - lan
@@ -53,6 +57,36 @@ export function SeriesEntryEditor({
     shouldRerenderOnTransaction: true,
     editorProps: {
       attributes: { class: POST_PROSE_CLASS + " min-h-64 px-3 py-2.5" },
+      // [2026-09-25] Dan (Ctrl+V) 1 anh THAT (vd screenshot copy tu ngoai) -
+      // yeu cau nguoi dung: "Copy ảnh paste trực tiếp vào thì không hiện".
+      // Nguyen nhan: KHONG co handlePaste rieng o day (khac Composer.tsx da
+      // co san CHINH tinh nang nay tu truoc) - Tiptap/trinh duyet MAC DINH
+      // se thu chen anh dan duoc thanh 1 the <img src="data:..."> (base64)
+      // ngay tren clipboard, nhung Image.configure({ allowBase64: false })
+      // (post-extensions.ts) TU CHOI hoan toan cac src dang base64 - ket qua
+      // la 1 the <img> KHONG CO src hop le, hien ra icon "ảnh hỏng" (dung y
+      // het anh chup nguoi dung gui). Fix: chan hanh vi mac dinh, tu UPLOAD
+      // that (dung CHUNG duong upload voi ImagePickerModal.tsx/Composer.tsx)
+      // roi chen bang URL that da luu tren server, khong bao gio dung base64.
+      handlePaste: (_view, event) => {
+        const files = Array.from(event.clipboardData?.files ?? []);
+        const imageFile = files.find((f) => f.type.startsWith("image/"));
+        if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly paste binh thuong (text/HTML)
+        event.preventDefault();
+        void (async () => {
+          try {
+            const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
+            const formData = new FormData();
+            formData.append("file", uploadFile);
+            formData.append("kind", "image");
+            const uploaded = await uploadPostImageAction(formData);
+            editor?.chain().focus().setImage({ src: uploaded.url }).run();
+          } catch (err) {
+            toast.danger(getApiErrorMessage(err, "Dán ảnh thất bại, thử lại sau."));
+          }
+        })();
+        return true; // da tu xu ly - chan Tiptap chen them noi dung thua tu clipboard.
+      },
     },
     onUpdate: ({ editor }) => {
       // tiptap-markdown khong ship type khai bao (.d.ts) rieng - "markdown" o

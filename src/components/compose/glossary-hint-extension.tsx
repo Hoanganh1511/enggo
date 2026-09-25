@@ -35,12 +35,25 @@ export const GlossaryHint = Node.create({
   atom: true,
   selectable: true,
 
+  // [2026-09-25] Luu explanation vao CHINH thuoc tinh HTML "title" (khong
+  // phai "data-explanation" nhu truoc) - yeu cau nguoi dung: "khi ra bài
+  // viết nó cũng phải hiện dấu hỏi, khi người dùng hover vào sẽ hiện dạng
+  // tooltip/popover... không phải lỗi như hiện tại: show hết lời giải thích
+  // dài ngoằng ra". Cung ly do/ky thuat da dung cho Footnote (xem
+  // footnote-extension.tsx): trang doc cong khai cua Series Entry render qua
+  // DocsMarkdown.tsx (markdown + rehype-raw ra HTML TINH, KHONG co JS chay o
+  // do) - "title" la thuoc tinh CO SAN, trinh duyet TU hien tooltip khi
+  // hover, khong can 1 dong JS nao. Truoc day addStorage() ben duoi XUONG
+  // CAP explanation thanh text in nghieng trong ngoac MOI LAN LUU (vi popover
+  // bam-de-mo cua chinh no se KHONG lam gi ca trong ngu canh tinh) - day
+  // CHINH LA bug nguoi dung bao (thay het chu giai thich ngay trong bai,
+  // khong an sau dau "?" nao ca).
   addAttributes() {
     return {
       explanation: {
         default: "",
-        parseHTML: (el) => el.getAttribute("data-explanation") ?? "",
-        renderHTML: (attrs) => ({ "data-explanation": (attrs.explanation as string) ?? "" }),
+        parseHTML: (el) => el.getAttribute("title") ?? "",
+        renderHTML: (attrs) => ({ title: (attrs.explanation as string) ?? "" }),
       },
     };
   },
@@ -50,21 +63,27 @@ export const GlossaryHint = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["span", mergeAttributes(HTMLAttributes, { "data-glossary-hint": "" }), "?"];
+    return ["span", mergeAttributes(HTMLAttributes, { class: "glossary-hint", "data-glossary-hint": "" }), "?"];
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(GlossaryHintView);
   },
-  // Markdown fallback (dung khi SeriesEntryEditor.tsx luu ra markdown qua
-  // tiptap-markdown - xem comment tuong tu o Callout trong post-extensions.ts)
-  // - xuong cap thanh (giai thich) trong ngoac, mat icon "?" trang tri.
+  // Markdown fallback - GIU LAI atom (khong con xuong cap nhu truoc): embed
+  // THANG raw HTML (title = CHINH thuoc tinh o addAttributes) de doc dung
+  // khi mo lai Entry sau nay, giu nguyen kha nang bam sua tiep (giong tinh
+  // than StatAccordion/FlowDiagram/Footnote).
   addStorage() {
     return {
       markdown: {
         serialize: (state: { write: (s?: string) => void }, node: { attrs: Record<string, unknown> }) => {
           const explanation = ((node.attrs.explanation as string) ?? "").trim();
-          if (explanation) state.write(` _(${explanation})_`);
+          const escaped = explanation
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+          state.write(`<span class="glossary-hint" data-glossary-hint title="${escaped}">?</span>`);
         },
       },
     };

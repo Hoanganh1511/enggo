@@ -1,4 +1,4 @@
-import { Node, Extension, mergeAttributes, type Extensions } from "@tiptap/core";
+import { Node, Extension, mergeAttributes, textInputRule, type Extensions } from "@tiptap/core";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -1968,6 +1968,27 @@ const EmptyParagraphBackspaceKeymap = Extension.create({
   },
 });
 
+// [2026-09-25] "--" + Space -> em dash "—" - yeu cau nguoi dung dua dung
+// hanh vi cua Notion: "gõ hai dấu gạch nối liên tiếp (--) rồi nhấn phím
+// Space". CHI 1 input rule DUY NHAT (khong dung ca goi @tiptap/extension-
+// typography - goi do kem theo RAT NHIEU rule khac nguoi dung KHONG yeu cau:
+// dau nhay kep cong, dau "...", mui ten "->", ky hieu ban quyen "(c)"... -
+// cai them ca goi co the gay sai y ngoai du dinh khi go van ban binh thuong).
+// `find: /--\s$/` - CHI khop khi da go XONG dau cach NGAY SAU "--" (dung y
+// "rồi nhấn phím Space" nguoi dung mo ta, khong kich hoat ngay luc go "--"
+// nhu mac dinh cua chinh Tiptap Typography).
+const EmDashInputRule = Extension.create({
+  name: "emDashInputRule",
+  addInputRules() {
+    return [
+      textInputRule({
+        find: /--\s$/,
+        replace: "— ",
+      }),
+    ];
+  },
+});
+
 // Kieu toi thieu rieng cho serializer bang (khac TiptapNode chung o dau file -
 // can them .type.name/.childCount/.firstChild/.forEach de duyet hang/o, cac
 // serializer khac trong file nay khong can toi cac truong nay).
@@ -2101,6 +2122,7 @@ export function getPostExtensions(): Extensions {
   return [
     StarterKit.configure({ link: false, underline: false }),
     EmptyParagraphBackspaceKeymap,
+    EmDashInputRule,
     Underline,
     TaskList,
     TaskItem.configure({ nested: true }),
@@ -2612,6 +2634,14 @@ export const POST_PROSE_CLASS =
   // duyet TU hien tooltip khi hover, khong can JS.
   "[&_.footnote-ref]:relative [&_.footnote-ref]:mx-0.5 [&_.footnote-ref]:inline [&_.footnote-ref]:align-super [&_.footnote-ref]:text-[11px] [&_.footnote-ref]:leading-none [&_.footnote-ref]:font-semibold [&_.footnote-ref]:text-primary [&_.footnote-ref]:no-underline [&_.footnote-ref]:[counter-increment:footnote-counter] " +
   "[&_.footnote-ref]:before:content-[counter(footnote-counter)] " +
+  // GlossaryHint ("chú thích cụm từ", xem glossary-hint-extension.tsx) - CHI
+  // can CSS o day cho ban doc TINH (luc soan dung React NodeView rieng, tu
+  // co style/popover cua chinh no, khong doc class nay). Khop VISUAL voi
+  // NodeView (circle nho + dau "?" + mau primary) - noi dung giai thich nam
+  // trong thuoc tinh HTML "title", trinh duyet tu hien tooltip khi hover,
+  // "cursor-help" (dau hoi ben canh con tro) bao hieu ro co the hover de xem
+  // them.
+  "[&_.glossary-hint]:mx-0.5 [&_.glossary-hint]:inline-flex [&_.glossary-hint]:size-[15px] [&_.glossary-hint]:shrink-0 [&_.glossary-hint]:-translate-y-px [&_.glossary-hint]:cursor-help [&_.glossary-hint]:items-center [&_.glossary-hint]:justify-center [&_.glossary-hint]:rounded-full [&_.glossary-hint]:bg-primary/15 [&_.glossary-hint]:align-middle [&_.glossary-hint]:text-[10px] [&_.glossary-hint]:leading-none [&_.glossary-hint]:font-bold [&_.glossary-hint]:text-primary [&_.glossary-hint]:no-underline " +
   // Find & Replace (Ctrl+F/Ctrl+H, xem search-replace-extension.tsx) - to
   // sang cac ket qua tim thay bang Decoration (span that trong ProseMirror,
   // KHONG phai attrs luu vao tai lieu) - CHI co y nghia trong ban SOAN (khong

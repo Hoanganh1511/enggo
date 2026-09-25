@@ -203,4 +203,6 @@ export const DOCS_PROSE_CLASS =
   "[&_.stats-bar-label]:mt-1.5 [&_.stats-bar-label]:font-sans [&_.stats-bar-label]:text-[11.5px] [&_.stats-bar-label]:text-[#8b93a1] " +
   // Footnote - xem comment chi tiet trong POST_PROSE_CLASS.
   "[&_.footnote-ref]:relative [&_.footnote-ref]:mx-0.5 [&_.footnote-ref]:inline [&_.footnote-ref]:align-super [&_.footnote-ref]:text-[11px] [&_.footnote-ref]:leading-none [&_.footnote-ref]:font-semibold [&_.footnote-ref]:text-primary [&_.footnote-ref]:no-underline [&_.footnote-ref]:[counter-increment:footnote-counter] " +
-  "[&_.footnote-ref]:before:content-[counter(footnote-counter)]";
+  "[&_.footnote-ref]:before:content-[counter(footnote-counter)] " +
+  // GlossaryHint - xem comment chi tiet trong POST_PROSE_CLASS.
+  "[&_.glossary-hint]:mx-0.5 [&_.glossary-hint]:inline-flex [&_.glossary-hint]:size-[15px] [&_.glossary-hint]:shrink-0 [&_.glossary-hint]:-translate-y-px [&_.glossary-hint]:cursor-help [&_.glossary-hint]:items-center [&_.glossary-hint]:justify-center [&_.glossary-hint]:rounded-full [&_.glossary-hint]:bg-primary/15 [&_.glossary-hint]:align-middle [&_.glossary-hint]:text-[10px] [&_.glossary-hint]:leading-none [&_.glossary-hint]:font-bold [&_.glossary-hint]:text-primary [&_.glossary-hint]:no-underline";
