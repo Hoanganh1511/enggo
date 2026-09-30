@@ -65,6 +65,19 @@ export const SlashCommand = Extension.create({
                 },
                 editor: props.editor,
               });
+              // [2026-09-30] z-index THANG len chinh element noi cua
+              // ReactRenderer - bug nguoi dung bao: "hiện lên nhưng bị chìm
+              // xuống dưới các element khác". Nguyen nhan: className "z-50"
+              // truoc do dat tren <motion.div> BEN TRONG cay React
+              // (SlashCommandMenu.tsx) - z-index CHI co tac dung tren phan tu
+              // DA DUOC DINH VI (position khac static), nhung <motion.div> do
+              // van la position:static mac dinh (khong he duoc floating-ui
+              // dinh vi truc tiep) nen z-index bi TRINH DUYET BO QUA HOAN
+              // TOAN, vo nghia. Phan tu THAT SU duoc floating-ui gan
+              // position:absolute/fixed la `component.element` nay (container
+              // goc do ReactRenderer tao ra, truyen vao props.mount() ben
+              // duoi) - phai gan z-index THANG len day moi co hieu luc.
+              component.element.style.zIndex = "9999";
               unmount = props.mount(component.element);
             },
             onUpdate: (props) => {

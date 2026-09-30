@@ -5,8 +5,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
 import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-extensions";
 import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
-import { SelectionColorMenu } from "@/components/compose/SelectionColorMenu";
-import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
+import { SelectionFloatingMenu } from "@/components/compose/SelectionFloatingMenu";
 import { EntryHeadingsToc } from "@/components/compose/EntryHeadingsToc";
 import { FindReplacePanel } from "@/components/compose/FindReplacePanel";
 import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
@@ -117,16 +116,13 @@ export function SeriesEntryEditor({
       {/* "Tìm kiếm"/"Tìm & Thay thế" (Ctrl+F/Ctrl+H) - xem
           search-replace-extension.tsx. */}
       <FindReplacePanel editor={editor} />
-      {/* Bubble menu chon mau chu/nen - hien noi khi CO vung van ban dang
-          duoc bôi đen (yeu cau nguoi dung: "khi một vùng text được focus
-          (con trỏ giữ bôi tô) thì nút đó sẽ hiện lên, chọn màu nền, màu
-          chữ"). */}
-      <SelectionColorMenu editor={editor} />
-      {/* Thanh dieu khien bang (hang/cot: chen/xoa) - hien noi khi con tro
-          dang o trong 1 bang (yeu cau nguoi dung: "Table trong này chưa có
-          các button bố trí hợp lý để tăng giảm số lượng cột, hàng, chèn,
-          xóa"). */}
-      <TableControlsMenu editor={editor} />
+      {/* Menu noi THONG NHAT (mau chu/nen + thao tac bang) - GOP 2 BubbleMenu
+          doc lap truoc day (SelectionColorMenu/TableControlsMenu) thanh 1 -
+          bug nguoi dung bao: "có nhiều loại group buttons... chúng đè ẩn
+          nhau hết rồi" (2 popup rieng tinh CUNG toa do quanh CUNG vung chon
+          luc bôi đen văn bản NGAY TRONG 1 o bang, de len nhau). Xem
+          SelectionFloatingMenu.tsx ve logic xac dinh phan nao hien + thu tu. */}
+      <SelectionFloatingMenu editor={editor} />
       <EditorContent editor={editor} />
       {/* Panel "Mục lục" (H2 > H3 > H4) - neo goc phai man hinh, chiem lai
           khoang trong ben phai sau khi bo cot Live preview cu (xem

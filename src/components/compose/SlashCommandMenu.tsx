@@ -71,7 +71,11 @@ export const SlashCommandMenu = forwardRef<
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="z-50"
+          // [2026-09-30] KHONG con dat z-50 o day nua - z-index tren phan tu
+          // position:static (mac dinh cua the nay) HOAN TOAN vo tac dung.
+          // z-index THAT su duoc gan truc tiep len container goc cua
+          // ReactRenderer (element DUOC floating-ui dinh vi that), xem
+          // slash-command-extension.tsx.
           initial={{ opacity: 0, scale: 0.95, y: -4 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -4 }}
