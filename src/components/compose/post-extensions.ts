@@ -2366,39 +2366,21 @@ export const InstallBlock = Node.create({
 // PrereqBlock - "cần biết trước khi đọc tiếp" (yeu cau nguoi dung: "1 tính
 // năng insert một vùng chủ yếu để giải thích những khái niệm cần biết, cần
 // nắm qua trước khi đọc cái nội dung tiếp theo... minimalism nhưng rõ ý").
-// KHAC voi GlossaryHint (icon "?" gan lien 1 CUM TU dang chon, giai thich
-// LUOT QUA khi hover) - day la 1 KHOI RIENG dung TRUOC 1 doan noi dung, liet
-// ke NHIEU khai niem/thuat ngu can nam TRUOC (dinh dang thuat ngu + dinh
-// nghia ngan, giong 1 "mini glossary" mo dau). Atom, 2 attr: `title` (nhan
-// dau khoi, co the doi) + `items` (JSON blob {term, definition}[], dung
-// CHUNG 1 kieu du lieu/RepeaterField pattern voi CardGrid keyInfo o tren).
-export type PrereqItem = { id: string; term: string; definition: string };
-
-export function normalizePrereqItem(raw: Partial<PrereqItem>): PrereqItem {
-  return {
-    id: raw.id ?? Math.random().toString(36).slice(2),
-    term: raw.term ?? "",
-    definition: raw.definition ?? "",
-  };
-}
-
-function prereqItemsHtml(items: PrereqItem[]): string {
-  const esc = escapeHtmlAttr;
-  return items
-    .map(
-      (item) =>
-        `<li class="prereq-item"><span class="prereq-item-dot"></span><span class="prereq-item-body">` +
-        `<span class="prereq-term">${esc(item.term)}</span>` +
-        `<span class="prereq-def">${esc(item.definition)}</span>` +
-        `</span></li>`,
-    )
-    .join("");
-}
-
+// [2026-10-01 redesign] BAN DAU la 1 atom voi `items` co cau truc CO DINH
+// (term/definition tung dong, sua qua RepeaterField) - nguoi dung xem xong
+// yeu cau doi han: "Không làm dạng area như này. Tôi muốn biên soạn bình
+// thường. Chỉ cần phần gói ngoài là được rồi. Không cần phải fix cứng tên
+// khái niệm, mô tả như thế". Doi sang content THAT "block+" (dung tinh than
+// Accordion/ProfileBlock/GridCell o tren) - CHI con 1 "khung goi ngoai" (icon
+// + nhan header + nen mo) bao quanh 1 vung soan RICH TEXT TU DO (dam/nghieng/
+// list/heading...), khong con ep khuon term/definition rieng biet nua.
 export const PrereqBlock = Node.create({
   name: "prereqBlock",
   group: "block",
-  atom: true,
+  content: "block+",
+  defining: true,
+  isolating: true,
+  // selectable:false - xem comment day du o GridCell.
   selectable: false,
   addAttributes() {
     return {
@@ -2407,64 +2389,45 @@ export const PrereqBlock = Node.create({
         parseHTML: (el) => el.getAttribute("data-title") || "Cần biết trước khi đọc tiếp",
         renderHTML: (attrs) => ({ "data-title": attrs.title as string }),
       },
-      items: {
-        default: [{ id: "1", term: "", definition: "" }] as PrereqItem[],
-        parseHTML: (el) => {
-          try {
-            const raw = JSON.parse(el.getAttribute("data-items") ?? "[]") as Partial<PrereqItem>[];
-            return raw.map(normalizePrereqItem);
-          } catch {
-            return [];
-          }
-        },
-        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
-      },
     };
   },
   parseHTML() {
-    return [{ tag: "div[data-prereq-block]" }];
+    return [{ tag: "div[data-prereq-block]", contentElement: ":scope > div.prereq-body" }];
   },
   renderHTML({ HTMLAttributes, node }) {
     const title = (node.attrs.title as string) || "";
-    const items = ((node.attrs.items ?? []) as Partial<PrereqItem>[]).map(normalizePrereqItem);
     return [
       "div",
       mergeAttributes(HTMLAttributes, { class: "prereq-block", "data-prereq-block": "" }),
-      ["div", { class: "prereq-header" }, ["span", { class: "prereq-header-label" }, title]],
       [
-        "ul",
-        { class: "prereq-items" },
-        ...items.map((item) => [
-          "li",
-          { class: "prereq-item" },
-          ["span", { class: "prereq-item-dot" }],
-          [
-            "span",
-            { class: "prereq-item-body" },
-            ["span", { class: "prereq-term" }, item.term],
-            ["span", { class: "prereq-def" }, item.definition],
-          ],
-        ]),
+        "div",
+        { class: "prereq-header", contenteditable: "false" },
+        ["span", { class: "prereq-header-label" }, title],
       ],
+      ["div", { class: "prereq-body" }, 0],
     ];
   },
   addNodeView() {
     return ReactNodeViewRenderer(PrereqBlockView);
   },
+  // Markdown fallback - giong tinh than ProfileBlock o tren (dong trong TRUOC/
+  // SAU doan long trong bat buoc) - NOI DUNG THAT trong body van la markdown
+  // that qua state.renderContent(node), KHONG xuong cap thanh text/JSON.
   addStorage() {
     return {
       markdown: {
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
           const esc = escapeHtmlAttr;
           const title = (node.attrs.title as string) || "";
-          const items = ((node.attrs.items ?? []) as Partial<PrereqItem>[]).map(normalizePrereqItem);
           state.ensureNewLine();
           state.write(
-            `<div class="prereq-block" data-prereq-block data-title="${esc(title)}" data-items="${esc(JSON.stringify(items))}">` +
-              `<div class="prereq-header"><span class="prereq-header-label">${esc(title)}</span></div>` +
-              `<ul class="prereq-items">${prereqItemsHtml(items)}</ul>` +
-              `</div>`,
+            `<div data-prereq-block${title ? ` data-title="${esc(title)}"` : ""}>` +
+              `<div class="prereq-header">${title ? `<span class="prereq-header-label">${esc(title)}</span>` : ""}</div>` +
+              `<div class="prereq-body">\n\n`,
           );
+          state.renderContent(node);
+          state.ensureNewLine();
+          state.write("\n</div></div>");
           state.closeBlock(node);
         },
       },
@@ -3318,20 +3281,18 @@ export const POST_PROSE_CLASS =
   "[&_.install-block-footer]:flex [&_.install-block-footer]:flex-wrap [&_.install-block-footer]:items-center [&_.install-block-footer]:justify-between [&_.install-block-footer]:gap-3 [&_.install-block-footer]:px-4 [&_.install-block-footer]:py-3 " +
   "[&_.install-block-desc]:text-[13px] [&_.install-block-desc]:text-ink-faint " +
   "[&_.install-block-buttons]:flex [&_.install-block-buttons]:flex-wrap [&_.install-block-buttons]:items-center [&_.install-block-buttons]:gap-2 " +
-  // PrereqBlock ("cần biết trước khi đọc tiếp") - minimalism: khong vien dam/
-  // mau sac ruom ra, chi 1 nen mo nhat + cham tron nho lam bullet, phan cap
-  // hoan toan dua vao ty le/mau chu (nhan header nho+xam, thuat ngu dam, dinh
-  // nghia mo nhat) - xem comment day du o dinh nghia node trong post-extensions.ts.
+  // PrereqBlock ("cần biết trước khi đọc tiếp") - [2026-10-01 redesign] chi
+  // con la 1 "khung goi ngoai" (nen mo + nhan header) bao quanh RICH TEXT tu
+  // do (khong con danh sach term/definition co cau truc) - yeu cau nguoi
+  // dung: "Không làm dạng area như này. Tôi muốn biên soạn bình thường. Chỉ
+  // cần phần gói ngoài là được rồi". prereq-body_p:first-child/last-child mt/
+  // mb-0 - dung y het quy uoc cac node content-that khac (ProfileBlock/
+  // Accordion) tranh khoang trong thua o mep tren/duoi khung.
   "[&_.prereq-block]:my-4 [&_.prereq-block]:rounded-lg [&_.prereq-block]:bg-surface-muted/50 [&_.prereq-block]:p-5 " +
   "[&_.prereq-header]:mb-3 [&_.prereq-header]:flex [&_.prereq-header]:items-center [&_.prereq-header]:gap-1.5 " +
   "[&_.prereq-header-icon]:text-ink-faint " +
   "[&_.prereq-header-label]:text-[11px] [&_.prereq-header-label]:font-semibold [&_.prereq-header-label]:tracking-wide [&_.prereq-header-label]:text-ink-faint [&_.prereq-header-label]:uppercase " +
-  "[&_.prereq-items]:m-0 [&_.prereq-items]:flex [&_.prereq-items]:list-none [&_.prereq-items]:flex-col [&_.prereq-items]:gap-3 [&_.prereq-items]:p-0 " +
-  "[&_.prereq-item]:flex [&_.prereq-item]:items-start [&_.prereq-item]:gap-2.5 " +
-  "[&_.prereq-item-dot]:mt-2 [&_.prereq-item-dot]:size-1.5 [&_.prereq-item-dot]:shrink-0 [&_.prereq-item-dot]:rounded-full [&_.prereq-item-dot]:bg-ink-faint " +
-  "[&_.prereq-item-body]:flex [&_.prereq-item-body]:min-w-0 [&_.prereq-item-body]:flex-1 [&_.prereq-item-body]:flex-col [&_.prereq-item-body]:gap-0.5 " +
-  "[&_.prereq-term]:text-[13.5px] [&_.prereq-term]:font-semibold [&_.prereq-term]:text-ink " +
-  "[&_.prereq-def]:text-[13px] [&_.prereq-def]:leading-relaxed [&_.prereq-def]:text-ink-muted " +
+  "[&_.prereq-body_p:first-child]:mt-0 [&_.prereq-body_p:last-child]:mb-0 " +
   // StatsBar ("thanh thống kê") - yeu cau nguoi dung kem anh mau: hang ngang
   // 5 o so lieu, style "bảng dữ liệu biên tập" (editorial data table) - nen/
   // vien LUON CO DINH mau toi (#141920/#2b333e), KHONG doi theo theme sang/

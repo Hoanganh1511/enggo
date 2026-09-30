@@ -244,12 +244,7 @@ export const DOCS_PROSE_CLASS =
   "[&_.prereq-header]:mb-3 [&_.prereq-header]:flex [&_.prereq-header]:items-center [&_.prereq-header]:gap-1.5 " +
   "[&_.prereq-header-icon]:text-ink-faint " +
   "[&_.prereq-header-label]:text-[11px] [&_.prereq-header-label]:font-semibold [&_.prereq-header-label]:tracking-wide [&_.prereq-header-label]:text-ink-faint [&_.prereq-header-label]:uppercase " +
-  "[&_.prereq-items]:m-0 [&_.prereq-items]:flex [&_.prereq-items]:list-none [&_.prereq-items]:flex-col [&_.prereq-items]:gap-3 [&_.prereq-items]:p-0 " +
-  "[&_.prereq-item]:flex [&_.prereq-item]:items-start [&_.prereq-item]:gap-2.5 " +
-  "[&_.prereq-item-dot]:mt-2 [&_.prereq-item-dot]:size-1.5 [&_.prereq-item-dot]:shrink-0 [&_.prereq-item-dot]:rounded-full [&_.prereq-item-dot]:bg-ink-faint " +
-  "[&_.prereq-item-body]:flex [&_.prereq-item-body]:min-w-0 [&_.prereq-item-body]:flex-1 [&_.prereq-item-body]:flex-col [&_.prereq-item-body]:gap-0.5 " +
-  "[&_.prereq-term]:text-[13.5px] [&_.prereq-term]:font-semibold [&_.prereq-term]:text-ink " +
-  "[&_.prereq-def]:text-[13px] [&_.prereq-def]:leading-relaxed [&_.prereq-def]:text-ink-muted " +
+  "[&_.prereq-body_p:first-child]:mt-0 [&_.prereq-body_p:last-child]:mb-0 " +
   // StatsBar - xem comment chi tiet trong POST_PROSE_CLASS.
   "[&_.stats-bar]:mt-9 [&_.stats-bar]:mb-10 [&_.stats-bar]:flex [&_.stats-bar]:flex-wrap [&_.stats-bar]:border-y [&_.stats-bar]:border-[#2b333e] [&_.stats-bar]:bg-[#141920] " +
   "[&_.stats-bar-item]:flex [&_.stats-bar-item]:min-w-[110px] [&_.stats-bar-item]:flex-1 [&_.stats-bar-item]:basis-[30%] [&_.stats-bar-item]:flex-col [&_.stats-bar-item]:px-5 [&_.stats-bar-item]:py-5 " +
