@@ -18,6 +18,7 @@ import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
 import { SeriesEntryContentBlocks } from "@/components/series/SeriesEntryContentBlocks";
 import { SeriesDictionaryView } from "@/components/series/SeriesDictionaryView";
+import { EntryAutoFocusMode } from "@/components/series/EntryAutoFocusMode";
 import { EntryPageActionsRow } from "@/components/series/EntryPageActionsRow";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
@@ -441,11 +442,17 @@ export default async function SeriesEntryPage({
   // khac ben duoi) vi CAN biet ngay du lieu that de quyet dinh nhanh nao.
   const data = await dataPromise;
   if (data?.entry.dictionarySections?.length) {
-    return <SeriesDictionaryView sections={data.entry.dictionarySections} />;
+    return (
+      <>
+        <EntryAutoFocusMode />
+        <SeriesDictionaryView sections={data.entry.dictionarySections} />
+      </>
+    );
   }
 
   return (
     <div className="pb-20">
+      <EntryAutoFocusMode />
       {/* pb-6 o day (thay vi my-6 tren chinh <hr> ben duoi) - yeu cau nguoi
           dung: "không muốn nó margin y 6... điều chỉnh padding của các phần
           tiếp giáp với nó để bù không gian" - khoang cach TRUOC hr gio la
