@@ -2420,6 +2420,7 @@ export const PrereqBlock = Node.create({
       [
         "div",
         { class: "prereq-header", contenteditable: "false" },
+        ["span", { class: "prereq-header-icon" }, "📖"],
         ["span", { class: "prereq-header-label" }, title],
       ],
       ["div", { class: "prereq-body" }, 0],
@@ -2439,8 +2440,8 @@ export const PrereqBlock = Node.create({
           const title = (node.attrs.title as string) || "";
           state.ensureNewLine();
           state.write(
-            `<div data-prereq-block${title ? ` data-title="${esc(title)}"` : ""}>` +
-              `<div class="prereq-header">${title ? `<span class="prereq-header-label">${esc(title)}</span>` : ""}</div>` +
+            `<div class="prereq-block" data-prereq-block${title ? ` data-title="${esc(title)}"` : ""}>` +
+              `<div class="prereq-header"><span class="prereq-header-icon">📖</span>${title ? `<span class="prereq-header-label">${esc(title)}</span>` : ""}</div>` +
               `<div class="prereq-body">\n\n`,
           );
           state.renderContent(node);
@@ -2890,7 +2891,13 @@ export const POST_PROSE_CLASS =
   // gia tri theo tung "scope" trong app (globals.css co 2 khai bao khac
   // nhau tuy vung), trong khi mau chip code nay la 1 lua chon THIET KE rieng
   // cho khoi inline code, khong lien quan mau accent chinh cua tung khu vuc.
-  "[&_code]:rounded-md [&_code]:bg-[#eef1ff] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] [&_code]:text-[#3b5bdb] " +
+  // border them vao - yeu cau nguoi dung: "UI của syntax `.........` tôi
+  // muốn có thêm 1 lớp viền bên ngoài đậm màu hơn màu nền của nó 15%" - dung
+  // color-mix(in srgb, <nen>, black 15%) (dung tinh than cac bien --active-bg-strong
+  // v.v. trong globals.css) de tinh THANG tu MAU NEN hien co (#eef1ff), khong
+  // phai 1 mau co dinh chon tay - luon dung ty le "dam hon 15%" du sau nay co
+  // doi lai mau nen.
+  "[&_code]:rounded-md [&_code]:border [&_code]:border-[color-mix(in_srgb,#eef1ff,black_15%)] [&_code]:bg-[#eef1ff] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] [&_code]:text-[#3b5bdb] " +
   // Code block: mau toi CO DINH (#0d1117 kieu GitHub) cho ca light & dark -
   // KHONG dung bg-ink vi --ink dao thanh mau sang o dark mode se lam nen sang
   // + chu sang = mat chu.
@@ -3306,9 +3313,19 @@ export const POST_PROSE_CLASS =
   // cần phần gói ngoài là được rồi". prereq-body_p:first-child/last-child mt/
   // mb-0 - dung y het quy uoc cac node content-that khac (ProfileBlock/
   // Accordion) tranh khoang trong thua o mep tren/duoi khung.
-  "[&_.prereq-block]:my-4 [&_.prereq-block]:rounded-lg [&_.prereq-block]:bg-surface-muted/50 [&_.prereq-block]:p-5 " +
-  "[&_.prereq-header]:mb-3 [&_.prereq-header]:flex [&_.prereq-header]:items-center [&_.prereq-header]:gap-1.5 " +
-  "[&_.prereq-header-icon]:text-ink-faint " +
+  // [2026-10-01 fix #2] LAN DAU dung bg-surface-muted/50 (50% opacity) + KHONG
+  // co icon trong HTML tinh (chi co trong React NodeView luc soan) - bug that
+  // su: markdown serialize QUEN ghi class="prereq-block" vao the <div> ngoai
+  // cung (chi co data-prereq-block), nen CSS ben duoi CHUA BAO GIO khop duoc
+  // tren trang da xuat ban - nguoi dung bao dung: "lại không có UI nào phân
+  // biệt... tôi muốn nó có nền gray nhẹ, cho padding vào". Da sua class bi
+  // thieu (xem addStorage() o dinh nghia node) + doi bg-surface-muted/50 ->
+  // bg-surface-muted (khong opacity, ro rang hon, dung y "nền gray nhẹ" thay
+  // vi mo den muc gan nhu vo hinh) + them border rieng biet han vien cac
+  // paragraph binh thuong xung quanh.
+  "[&_.prereq-block]:my-4 [&_.prereq-block]:rounded-lg [&_.prereq-block]:border [&_.prereq-block]:border-border [&_.prereq-block]:bg-surface-muted [&_.prereq-block]:p-5 " +
+  "[&_.prereq-header]:mb-3 [&_.prereq-header]:flex [&_.prereq-header]:items-center [&_.prereq-header]:gap-2 " +
+  "[&_.prereq-header-icon]:text-[13px] [&_.prereq-header-icon]:leading-none [&_.prereq-header-icon]:text-ink-faint " +
   "[&_.prereq-header-label]:text-[11px] [&_.prereq-header-label]:font-semibold [&_.prereq-header-label]:tracking-wide [&_.prereq-header-label]:text-ink-faint [&_.prereq-header-label]:uppercase " +
   "[&_.prereq-body_p:first-child]:mt-0 [&_.prereq-body_p:last-child]:mb-0 " +
   // StatsBar ("thanh thống kê") - yeu cau nguoi dung kem anh mau: hang ngang

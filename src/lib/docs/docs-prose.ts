@@ -20,7 +20,8 @@ export const DOCS_PROSE_CLASS =
   "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-border-strong [&_blockquote]:pl-4 " +
   "[&_hr]:my-8 [&_hr]:border-border " +
   // Mau xanh lam-tim nhat (chip) - xem comment chi tiet trong POST_PROSE_CLASS.
-  "[&_code]:rounded-md [&_code]:bg-[#eef1ff] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] [&_code]:text-[#3b5bdb] " +
+  // border them vao - xem comment day du trong POST_PROSE_CLASS (post-extensions.ts).
+  "[&_code]:rounded-md [&_code]:border [&_code]:border-[color-mix(in_srgb,#eef1ff,black_15%)] [&_code]:bg-[#eef1ff] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] [&_code]:text-[#3b5bdb] " +
   "[&_pre]:my-4 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-[#0d1117] [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-[13px] [&_pre]:text-[#e6edf3] " +
   "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[#e6edf3] " +
   "[&_img]:my-4 [&_img]:rounded-xl [&_img]:border [&_img]:border-border [&_img]:max-w-full " +
@@ -240,9 +241,9 @@ export const DOCS_PROSE_CLASS =
   // PrereqBlock - COPY tu POST_PROSE_CLASS y het (cung ly do khong import
   // truc tiep, xem comment dau file) - xem comment day du o dinh nghia node
   // trong post-extensions.ts.
-  "[&_.prereq-block]:my-4 [&_.prereq-block]:rounded-lg [&_.prereq-block]:bg-surface-muted/50 [&_.prereq-block]:p-5 " +
-  "[&_.prereq-header]:mb-3 [&_.prereq-header]:flex [&_.prereq-header]:items-center [&_.prereq-header]:gap-1.5 " +
-  "[&_.prereq-header-icon]:text-ink-faint " +
+  "[&_.prereq-block]:my-4 [&_.prereq-block]:rounded-lg [&_.prereq-block]:border [&_.prereq-block]:border-border [&_.prereq-block]:bg-surface-muted [&_.prereq-block]:p-5 " +
+  "[&_.prereq-header]:mb-3 [&_.prereq-header]:flex [&_.prereq-header]:items-center [&_.prereq-header]:gap-2 " +
+  "[&_.prereq-header-icon]:text-[13px] [&_.prereq-header-icon]:leading-none [&_.prereq-header-icon]:text-ink-faint " +
   "[&_.prereq-header-label]:text-[11px] [&_.prereq-header-label]:font-semibold [&_.prereq-header-label]:tracking-wide [&_.prereq-header-label]:text-ink-faint [&_.prereq-header-label]:uppercase " +
   "[&_.prereq-body_p:first-child]:mt-0 [&_.prereq-body_p:last-child]:mb-0 " +
   // StatsBar - xem comment chi tiet trong POST_PROSE_CLASS.

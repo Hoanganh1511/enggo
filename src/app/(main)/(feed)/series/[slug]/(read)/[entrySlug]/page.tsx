@@ -18,7 +18,6 @@ import { SeriesShareButtons } from "@/components/series/SeriesShareButtons";
 import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner";
 import { SeriesEntryContentBlocks } from "@/components/series/SeriesEntryContentBlocks";
 import { SeriesDictionaryView } from "@/components/series/SeriesDictionaryView";
-import { EntryAutoFocusMode } from "@/components/series/EntryAutoFocusMode";
 import { EntryPageActionsRow } from "@/components/series/EntryPageActionsRow";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
@@ -418,17 +417,11 @@ export default async function SeriesEntryPage({
   // khac ben duoi) vi CAN biet ngay du lieu that de quyet dinh nhanh nao.
   const data = await dataPromise;
   if (data?.entry.dictionarySections?.length) {
-    return (
-      <>
-        <EntryAutoFocusMode />
-        <SeriesDictionaryView sections={data.entry.dictionarySections} />
-      </>
-    );
+    return <SeriesDictionaryView sections={data.entry.dictionarySections} />;
   }
 
   return (
     <div className="pb-20">
-      <EntryAutoFocusMode />
       {/* [2026-09-30] Header + <hr> CHUYEN VAO BEN TRONG <article> (KHAC ban
           truoc - xem lich su comment cu ben duoi) - yeu cau nguoi dung: "TOC
           bên phải nên bắt đầu ngang hàng với đầu bài (breadcrumb/title), thay
