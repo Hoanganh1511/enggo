@@ -86,6 +86,38 @@ export function SeriesEntryEditor({
         })();
         return true; // da tu xu ly - chan Tiptap chen them noi dung thua tu clipboard.
       },
+      // [2026-09-30] Keo-tha (drag & drop) 1 file anh tu NGOAI trinh duyet
+      // (vd tu File Explorer/Finder) tha vao vung soan - yeu cau nguoi dung:
+      // "Triển khai tính năng giúp kéo ảnh từ bên ngoài và thả vào ô là cũng
+      // upload". Cung 1 duong upload voi handlePaste o tren, chi khac cho
+      // CHEN: dung view.posAtCoords(event.x/y) de biet CHINH XAC tha vao vi
+      // tri nao trong tai lieu (khong phai luon chen o cuoi/o con tro dang
+      // dung), roi insertContentAt DUNG vi tri do - khop hanh vi nguoi dung ky
+      // vong khi keo-tha (anh xuat hien dung cho tha, khong "nhay" di noi
+      // khac). Tiptap MAC DINH da co the tu xu ly drop-anh-thanh-base64 (nhu
+      // paste) - van phai chan tay giong het ly do handlePaste da giai thich
+      // (Image.configure({allowBase64:false}) se tu choi, ra "ảnh hỏng").
+      handleDrop: (view, event) => {
+        const files = Array.from(event.dataTransfer?.files ?? []);
+        const imageFile = files.find((f) => f.type.startsWith("image/"));
+        if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly drop binh thuong (vd keo doan text)
+        event.preventDefault();
+        const coords = { left: event.clientX, top: event.clientY };
+        const pos = view.posAtCoords(coords)?.pos ?? view.state.selection.from;
+        void (async () => {
+          try {
+            const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
+            const formData = new FormData();
+            formData.append("file", uploadFile);
+            formData.append("kind", "image");
+            const uploaded = await uploadPostImageAction(formData);
+            editor?.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: uploaded.url } }).run();
+          } catch (err) {
+            toast.danger(getApiErrorMessage(err, "Thả ảnh thất bại, thử lại sau."));
+          }
+        })();
+        return true; // da tu xu ly - chan hanh vi drop mac dinh cua trinh duyet/Tiptap.
+      },
     },
     onUpdate: ({ editor }) => {
       // tiptap-markdown khong ship type khai bao (.d.ts) rieng - "markdown" o

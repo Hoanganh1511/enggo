@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getSelfStatusAction } from "@/actions/users/get-self-status";
 import { getContentSeriesOverviewAction } from "@/actions/discover/content-series/get-content-series-overview";
 import { SeriesSidebar } from "@/components/series/SeriesSidebar";
+import { EntryAutoFocusMode } from "@/components/series/EntryAutoFocusMode";
 
 // Layout rieng cho khu vuc sua/tao Entry (manage/entries/[entrySlug],
 // manage/entries/new) - yeu cau nguoi dung: "muốn đổi sang bài khác sửa
@@ -32,6 +33,12 @@ export default async function ManageEntriesLayout({
 
   return (
     <div className="flex min-w-0 gap-8 pb-20">
+      {/* An sidebar chinh (HomeDashboardSidebar) khu vuc sua/tao Entry - yeu
+          cau nguoi dung: "Trong phần sửa bài viết cũng bỏ sidebar main đi",
+          dung LAI y het co che Focus mode co san da dung cho trang doc Entry
+          cong khai (xem EntryAutoFocusMode.tsx) - mount o layout DUNG CHUNG
+          nay nen ap dung cho CA "manage/entries/new" LAN "manage/entries/[entrySlug]". */}
+      <EntryAutoFocusMode />
       <aside className="hidden w-64 shrink-0 lg:block">
         {/* sticky + max-h + scrollbar-none - dung y het (read)/layout.tsx
             (sidebar cong khai) de cay dai van cuon rieng duoc, khong tran
