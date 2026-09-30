@@ -2391,8 +2391,26 @@ export const PrereqBlock = Node.create({
       },
     };
   },
+  // [2026-10-01 fix crash that su] contentElement dung 1 HAM (khong phai
+  // chuoi selector tinh) - bug nguoi dung bao kem anh "This page couldn't
+  // load" + "Cannot read properties of null (reading 'firstChild')": entry
+  // da luu 1 PrereqBlock TRUOC ban redesign nay (ban CU dung `data-items` +
+  // `<ul class="prereq-items">`, KHONG CO `<div class="prereq-body">`) - mo
+  // lai entry do de sua, ProseMirror tim contentElement bang selector
+  // ":scope > div.prereq-body" KHONG THAY (HTML cu khong co the nay), tra ve
+  // null, va tu crash NGAY LUC PARSE (truoc ca khi code cua ta kip chay) vi
+  // no cho rang 1 node co `content: "block+"` LUON PHAI co 1 contentElement
+  // hop le. Fallback: neu khong tim thay div.prereq-body (du lieu cu), tra ve
+  // CHINH phan tu goc - ProseMirror se tu parse moi con truc tiep (bao gom ca
+  // header cu) thanh noi dung, KHONG dep bang ban moi nhung KHONG CON CRASH,
+  // giu lai duoc toan bo van ban cu thay vi mat trang/mat noi dung.
   parseHTML() {
-    return [{ tag: "div[data-prereq-block]", contentElement: ":scope > div.prereq-body" }];
+    return [
+      {
+        tag: "div[data-prereq-block]",
+        contentElement: (el) => el.querySelector(":scope > div.prereq-body") ?? el,
+      },
+    ];
   },
   renderHTML({ HTMLAttributes, node }) {
     const title = (node.attrs.title as string) || "";
