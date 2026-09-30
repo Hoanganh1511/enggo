@@ -51,6 +51,7 @@ import {
   MousePointerClick,
   ListVideo,
   SquareTerminal,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -476,6 +477,16 @@ export function PostEditorToolbar({
     insertBlockWithSpacing(editor, { type: "installBlock", attrs: { command: "", description: "", buttons: [] } });
   };
 
+  // Chen "Cần biết trước khi đọc tiếp" (PrereqBlock) - yeu cau nguoi dung:
+  // "1 tính năng insert một vùng chủ yếu để giải thích những khái niệm cần
+  // biết, cần nắm qua trước khi đọc cái nội dung tiếp theo".
+  const insertPrereqBlock = () => {
+    insertBlockWithSpacing(editor, {
+      type: "prereqBlock",
+      attrs: { title: "Cần biết trước khi đọc tiếp", items: [{ id: "1", term: "", definition: "" }] },
+    });
+  };
+
   return (
     <>
     <div
@@ -546,6 +557,7 @@ export function PostEditorToolbar({
       <Btn label="Nhóm nút" Icon={MousePointerClick} onClick={insertEntryButtonGroup} />
       <Btn label="Danh sách bài học (thẻ dọc)" Icon={ListVideo} onClick={insertLessonListBlock} />
       <Btn label="Box lệnh cài đặt (copy-paste)" Icon={SquareTerminal} onClick={insertInstallBlock} />
+      <Btn label="Cần biết trước khi đọc tiếp (khái niệm nền tảng)" Icon={BookOpen} onClick={insertPrereqBlock} />
       <Divider />
       <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
       <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />
