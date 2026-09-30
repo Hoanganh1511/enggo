@@ -46,6 +46,11 @@ import {
   AlignCenter,
   AlignRight,
   Superscript,
+  Megaphone,
+  RectangleHorizontal,
+  MousePointerClick,
+  ListVideo,
+  SquareTerminal,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -444,6 +449,33 @@ export function PostEditorToolbar({
     insertBlockWithSpacing(editor, { type: "statsBar", attrs: { items: STATS_BAR_DEFAULT_ITEMS } });
   };
 
+  // 5 khoi trang tri Entry moi (PromoCard/EntryBanner/EntryButtonGroup/
+  // LessonListBlock/InstallBlock) - THAY THE he thong "Section chèn thêm" cu
+  // (form JSON rieng, 3 vung top/middle/bottom - xem comment day du o dinh
+  // nghia cac node nay trong post-extensions.ts). Deu la atom, chen 1 lan voi
+  // attrs mac dinh de sua ngay.
+  const insertPromoCard = () => {
+    insertBlockWithSpacing(editor, {
+      type: "promoCard",
+      attrs: { style: "feature", imageUrl: null, eyebrow: "", title: "Tiêu đề", description: "", buttonLabel: "Xem thêm", buttonHref: "" },
+    });
+  };
+  const insertEntryBanner = () => {
+    insertBlockWithSpacing(editor, { type: "entryBanner", attrs: { eyebrow: "", title: "Tiêu đề", description: "" } });
+  };
+  const insertEntryButtonGroup = () => {
+    insertBlockWithSpacing(editor, {
+      type: "entryButtonGroup",
+      attrs: { buttons: [{ label: "Xem thêm", href: "", style: "solid" }] },
+    });
+  };
+  const insertLessonListBlock = () => {
+    insertBlockWithSpacing(editor, { type: "lessonListBlock", attrs: { heading: "", items: [] } });
+  };
+  const insertInstallBlock = () => {
+    insertBlockWithSpacing(editor, { type: "installBlock", attrs: { command: "", description: "", buttons: [] } });
+  };
+
   return (
     <>
     <div
@@ -508,6 +540,12 @@ export function PostEditorToolbar({
       <Btn label="Chia đôi (soạn được cả 2 bên)" Icon={Columns2} onClick={insertSplitBlock} />
       <Btn label="Block Hồ sơ (ảnh vuông + tên + nội dung)" Icon={Contact} onClick={insertProfileBlock} />
       <Btn label="Thanh thống kê (5 ô số liệu ngang)" Icon={BarChart3} onClick={insertStatsBar} />
+      <Divider />
+      <Btn label="Thẻ quảng bá (icon/ảnh + tiêu đề + mô tả + nút)" Icon={Megaphone} onClick={insertPromoCard} />
+      <Btn label="Băng nhấn mạnh (eyebrow + tiêu đề + mô tả)" Icon={RectangleHorizontal} onClick={insertEntryBanner} />
+      <Btn label="Nhóm nút" Icon={MousePointerClick} onClick={insertEntryButtonGroup} />
+      <Btn label="Danh sách bài học (thẻ dọc)" Icon={ListVideo} onClick={insertLessonListBlock} />
+      <Btn label="Box lệnh cài đặt (copy-paste)" Icon={SquareTerminal} onClick={insertInstallBlock} />
       <Divider />
       <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
       <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />

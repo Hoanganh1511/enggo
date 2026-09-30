@@ -150,18 +150,19 @@ async function EntryHeader({
         contentMarkdown={entry.contentMarkdown}
       />
 
-      {/* Danh sach khoi noi dung tuy chinh (TOC box/install/buttonGroup/
-          callout) - NGAY DUOI subtitle (yeu cau nguoi dung: "cái box toc sẽ
-          hiện dạng grid ở dưới subtitle", sau do mo rong thanh nhieu loai
-          khoi sap xep duoc: "custom thêm đa dạng các element... sắp xếp thứ
-          tự hiển thị"). entry.contentBlocks rong/null -> tu fallback ve 1
-          khoi TOC duy nhat, CHI tren entry "map" (xem
-          SeriesEntryContentBlocks.tsx - yeu cau nguoi dung: "Chỉ trang Map
-          mới cho phép... box TOC dạng khung... Còn đâu không cho"). */}
+      {/* [2026-09-30] Chi con 1 LAN DUY NHAT (khong con rai rac zone top/
+          middle/bottom o 3 noi khac nhau tren trang - xem comment day du o
+          SeriesEntryContentBlocks.tsx) - CHI de doc lai du lieu CU da luu tu
+          truoc khi he thong "Section chèn thêm" bi bo (yeu cau nguoi dung:
+          "Giờ gộp tất cả vào trong 1 cục body"). entry.contentBlocks rong/null
+          -> tu fallback ve 1 khoi TOC duy nhat, CHI tren entry "map". */}
       <SeriesEntryContentBlocks
         blocks={entry.contentBlocks}
         contentMarkdown={entry.contentMarkdown}
         entrySlug={entry.slug}
+        emailCourseEnabled={series.emailCourseEnabled}
+        emailCourseTitle={series.emailCourseTitle ?? undefined}
+        emailCourseDescription={series.emailCourseDescription ?? undefined}
       />
 
       {entry.source && (
@@ -195,19 +196,6 @@ async function EntryHeader({
         showShareAndNext={!isExploreTopLevel}
       />
 
-      {/* Zone "middle" - giua cum Top va than bai, NGAY TREN <hr> ben duoi -
-          yeu cau nguoi dung (them sau cung, mo rong tu he thong block dau
-          bai): "thêm 1 button + vào để cho phép người dùng thêm section
-          vào giữa" 2 vung Top/Than. */}
-      <SeriesEntryContentBlocks
-        blocks={entry.contentBlocks}
-        contentMarkdown={entry.contentMarkdown}
-        entrySlug={entry.slug}
-        zone="middle"
-        emailCourseEnabled={series.emailCourseEnabled}
-        emailCourseTitle={series.emailCourseTitle ?? undefined}
-        emailCourseDescription={series.emailCourseDescription ?? undefined}
-      />
     </FadeIn>
   );
 }
@@ -321,18 +309,6 @@ async function EntryExtras({
         />
       </div>
 
-      {/* Zone "bottom" - sau than bai, TRUOC pagination Next (yeu cau nguoi
-          dung: "có cả dấu + ở cuối - sau phần thân để thêm section block
-          cho phần dưới"). */}
-      <SeriesEntryContentBlocks
-        blocks={entry.contentBlocks}
-        contentMarkdown={entry.contentMarkdown}
-        entrySlug={entry.slug}
-        zone="bottom"
-        emailCourseEnabled={series.emailCourseEnabled}
-        emailCourseTitle={series.emailCourseTitle ?? undefined}
-        emailCourseDescription={series.emailCourseDescription ?? undefined}
-      />
     </FadeIn>
   );
 }
@@ -453,46 +429,21 @@ export default async function SeriesEntryPage({
   return (
     <div className="pb-20">
       <EntryAutoFocusMode />
-      {/* pb-6 o day (thay vi my-6 tren chinh <hr> ben duoi) - yeu cau nguoi
-          dung: "không muốn nó margin y 6... điều chỉnh padding của các phần
-          tiếp giáp với nó để bù không gian" - khoang cach TRUOC hr gio la
-          padding-bottom cua khoi header nay, khong con la margin cua <hr>. */}
-      <div className="pb-6">
-        <Suspense
-          fallback={
-            <FadeIn>
-              <EntryHeaderSkeleton />
-            </FadeIn>
-          }
-        >
-          <EntryHeader dataPromise={dataPromise} slug={slug} />
-        </Suspense>
-      </div>
-
-      {/* Duong ke ngang tach tieu de/mo ta khoi than bai - yeu cau nguoi
-          dung, khop mockup tham khao. Nam NGOAI hang flex 2 cot ben duoi (het
-          chieu rong ca article LAN aside) - truoc day nam TRONG <article>
-          nen TOC/aside ben phai bat dau ngay tu dinh trang (ngang hang
-          breadcrumb), khong khop vi tri bat dau THAT cua than bai (nguoi
-          dung bao loi). KHONG con my-6 (xem pb-6/pt-6 o 2 khoi tiep giap).
-          -mx-6 lg:-mx-10 them vao - khop DUNG bleed cua cac <hr> trong than
-          bai (xem EntryBody, "[&_hr]:-mx-6 lg:[&_hr]:-mx-10") - truoc do
-          hr nay CHUA bleed nen ngan hon han cac hr phia duoi, nhin "khác
-          riêng" (yeu cau nguoi dung). */}
-      <hr className="-mx-6 border-border lg:-mx-10" />
-
-      {/* gap-6 (khong phai gap-8 nhu truoc) - aside da tu them pl-8 RIENG cho
-          khoang trong SAU duong ke doc (border-l), cong don voi gap cua flex
-          cha se thanh khoang cach thua qua muc.
-          [2026-09-15 fix] pt-6 CHUYEN vao BEN TRONG <article>/<aside> (thay
-          vi dat o div flex cha nhu truoc) - luc pt-6 nam o div cha, border-r
-          cua <article> CHI bat dau SAU khoang pt-6 do (border thuoc ve
-          <article>, o DUOI padding-top cua the cha) => ho ra 1 dai TRANG
-          NGANG giua <hr> phia tren va diem bat dau THAT cua duong vien doc,
-          nhin "2 đường line border không liền mạch" (yeu cau nguoi dung).
-          Dua pt-6 vao TRONG <article> (border-r bao QUANH CA phan padding
-          do) thi duong vien doc bat dau NGAY tu sat duoi <hr>, khoang cach
-          6 gio nam o BEN TRONG khung vien thay vi truoc no. */}
+      {/* [2026-09-30] Header + <hr> CHUYEN VAO BEN TRONG <article> (KHAC ban
+          truoc - xem lich su comment cu ben duoi) - yeu cau nguoi dung: "TOC
+          bên phải nên bắt đầu ngang hàng với đầu bài (breadcrumb/title), thay
+          vì chỉ ngang với thân bài chính". Truoc day Header+hr nam NGOAI hang
+          flex article+aside nen <aside> (TOC) chi bat dau tu vi tri THAN BAI,
+          thap hon han breadcrumb/title/download-buttons/cum toc-box o tren -
+          nguoi dung goi day la "layout lộn xộn". Dua CA header LAN body/extras
+          vao CHUNG 1 <article> (cot trai cua hang flex) thi <aside> tu nhien
+          bat dau NGANG HANG voi dinh trang (breadcrumb) vi CA 2 cot gio la
+          anh em TRUC TIEP trong CUNG 1 hang flex, khong con div bao rieng o
+          NGOAI hang flex nua. <hr> KHONG CON CAN bleed (-mx-6/lg:-mx-10) nua -
+          truoc day no phai "tran" ra khoi padding trang de bang chieu rong CA
+          article LAN aside (vi nam NGOAI hang flex, o cap page); gio nam
+          TRONG article, chieu rong TU NHIEN cua no da la dung do rong cot noi
+          dung (khong lan sang cot TOC) - khong can meo gi them. */}
       <div className="flex gap-6">
         {/* pb-10 (khong phai pb-0 mac dinh) - NOI vien border-r cua article
             keo dai xuong THEM 1 khoang truoc khi ket thuc, thay vi dut ngay
@@ -504,6 +455,20 @@ export default async function SeriesEntryPage({
             duoi) nen se noi SAT ngay sau padding nay, khong con margin-top
             rieng nua. */}
         <article className="min-w-0 flex-1 border-r border-border pr-6 pb-10 lg:pr-10">
+          <div className="pb-6">
+            <Suspense
+              fallback={
+                <FadeIn>
+                  <EntryHeaderSkeleton />
+                </FadeIn>
+              }
+            >
+              <EntryHeader dataPromise={dataPromise} slug={slug} />
+            </Suspense>
+          </div>
+
+          <hr className="border-border" />
+
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
@@ -527,10 +492,10 @@ export default async function SeriesEntryPage({
 
         {/* Duong ke doc tach cot TOC ben phai - yeu cau nguoi dung. pl-8
             (thay vi dua vao gap-8 cua flex cha) de co khoang trong GIUA
-            duong ke va chu, khong bam sat vien. sticky top-6: bat dau CUNG
-            vi tri voi than bai (ngay sau hr o tren, khong con o tren cung
-            trang nua) roi dinh lai o do khi cuon xuong. */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pt-6 pl-8 xl:flex">
+            duong ke va chu, khong bam sat vien. sticky top-6: neo lai o do
+            khi cuon xuong (KHONG con pt-6 rieng - <aside> gio bat dau NGANG
+            HANG voi dinh <article>, khong can offset xuong nua). */}
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-8 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>

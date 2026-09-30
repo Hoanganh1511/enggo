@@ -195,6 +195,48 @@ export const DOCS_PROSE_CLASS =
   "[&_.profile-block-avatar-empty]:bg-surface-muted " +
   "[&_.profile-block-name]:text-[17px] [&_.profile-block-name]:font-bold [&_.profile-block-name]:text-ink " +
   "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0 " +
+  // ===== EntryButtonGroup/EntryBanner/PromoCard/LessonListBlock/InstallBlock -
+  // COPY tu POST_PROSE_CLASS y het (cung ly do khong import truc tiep, xem
+  // comment dau file) - thay the he thong "Section chèn thêm" cu, xem comment
+  // day du o dinh nghia cac node nay trong post-extensions.ts.
+  "[&_.entry-button-group]:my-4 [&_.entry-button-group]:flex [&_.entry-button-group]:flex-wrap [&_.entry-button-group]:items-center [&_.entry-button-group]:gap-2.5 " +
+  "[&_.entry-btn]:inline-flex [&_.entry-btn]:items-center [&_.entry-btn]:gap-1 [&_.entry-btn]:rounded-lg [&_.entry-btn]:px-4 [&_.entry-btn]:py-2 [&_.entry-btn]:text-[13.5px] [&_.entry-btn]:font-medium [&_.entry-btn]:no-underline [&_.entry-btn]:transition-opacity [&_.entry-btn]:duration-150 [&_.entry-btn]:hover:opacity-85 " +
+  "[&_.entry-btn-solid]:bg-ink [&_.entry-btn-solid]:text-white " +
+  "[&_.entry-btn-outline]:border [&_.entry-btn-outline]:border-ink [&_.entry-btn-outline]:text-ink " +
+  "[&_.entry-btn-ghost]:text-ink-muted " +
+  "[&_.entry-banner]:my-4 [&_.entry-banner]:rounded-lg [&_.entry-banner]:bg-surface-muted [&_.entry-banner]:p-6 " +
+  "[&_.entry-banner-eyebrow]:mb-1 [&_.entry-banner-eyebrow]:block [&_.entry-banner-eyebrow]:text-[11px] [&_.entry-banner-eyebrow]:font-semibold [&_.entry-banner-eyebrow]:tracking-wide [&_.entry-banner-eyebrow]:text-ink-faint [&_.entry-banner-eyebrow]:uppercase " +
+  "[&_.entry-banner-title]:text-[17px] [&_.entry-banner-title]:font-bold [&_.entry-banner-title]:text-ink " +
+  "[&_.entry-banner-desc]:mt-1.5 [&_.entry-banner-desc]:text-[14px] [&_.entry-banner-desc]:text-ink-muted " +
+  "[&_.promo-card]:my-4 [&_.promo-card]:flex [&_.promo-card]:flex-wrap [&_.promo-card]:items-center [&_.promo-card]:gap-4 [&_.promo-card]:rounded-lg [&_.promo-card]:p-5 " +
+  "[&_.promo-card-bot]:border [&_.promo-card-bot]:border-border [&_.promo-card-bot]:bg-surface " +
+  "[&_.promo-card-feature]:bg-primary-soft " +
+  "[&_.promo-card-deeper]:border [&_.promo-card-deeper]:border-border [&_.promo-card-deeper]:bg-surface-muted " +
+  "[&_.promo-card-image]:size-14 [&_.promo-card-image]:shrink-0 [&_.promo-card-image]:rounded-lg [&_.promo-card-image]:bg-surface-muted [&_.promo-card-image]:object-cover " +
+  "[&_.promo-card-body]:flex [&_.promo-card-body]:min-w-0 [&_.promo-card-body]:flex-1 [&_.promo-card-body]:flex-col [&_.promo-card-body]:gap-1 " +
+  "[&_.promo-card-eyebrow]:text-[11px] [&_.promo-card-eyebrow]:font-semibold [&_.promo-card-eyebrow]:tracking-wide [&_.promo-card-eyebrow]:text-ink-faint [&_.promo-card-eyebrow]:uppercase " +
+  "[&_.promo-card-title]:text-[16px] [&_.promo-card-title]:font-bold [&_.promo-card-title]:text-ink " +
+  "[&_.promo-card-desc]:text-[13.5px] [&_.promo-card-desc]:text-ink-muted " +
+  "[&_.promo-card-btn]:inline-flex [&_.promo-card-btn]:shrink-0 [&_.promo-card-btn]:items-center [&_.promo-card-btn]:gap-1 [&_.promo-card-btn]:rounded-lg [&_.promo-card-btn]:px-4.5 [&_.promo-card-btn]:py-2.5 [&_.promo-card-btn]:text-[13.5px] [&_.promo-card-btn]:font-semibold [&_.promo-card-btn]:no-underline [&_.promo-card-btn]:transition-opacity [&_.promo-card-btn]:duration-150 [&_.promo-card-btn]:hover:opacity-90 " +
+  "[&_.promo-card-bot_.promo-card-btn]:bg-accent-gold [&_.promo-card-bot_.promo-card-btn]:text-ink " +
+  "[&_.promo-card-feature_.promo-card-btn]:bg-primary [&_.promo-card-feature_.promo-card-btn]:text-white " +
+  "[&_.promo-card-deeper_.promo-card-btn]:bg-accent-gold [&_.promo-card-deeper_.promo-card-btn]:text-ink " +
+  "[&_.lesson-list-block]:my-4 [&_.lesson-list-block]:flex [&_.lesson-list-block]:flex-col [&_.lesson-list-block]:gap-3 " +
+  "[&_.lesson-list-heading]:text-[20px] [&_.lesson-list-heading]:font-extrabold [&_.lesson-list-heading]:text-ink " +
+  "[&_.lesson-list-items]:flex [&_.lesson-list-items]:flex-col [&_.lesson-list-items]:gap-3 " +
+  "[&_.lesson-list-item]:flex [&_.lesson-list-item]:items-center [&_.lesson-list-item]:gap-4 [&_.lesson-list-item]:rounded-lg [&_.lesson-list-item]:border [&_.lesson-list-item]:border-border [&_.lesson-list-item]:bg-surface [&_.lesson-list-item]:p-3 [&_.lesson-list-item]:no-underline [&_.lesson-list-item]:transition-colors [&_.lesson-list-item]:duration-150 [&_.lesson-list-item]:hover:border-ink/20 " +
+  "[&_.lesson-list-item-image]:h-16 [&_.lesson-list-item-image]:w-24 [&_.lesson-list-item-image]:shrink-0 [&_.lesson-list-item-image]:rounded-lg [&_.lesson-list-item-image]:bg-surface-muted [&_.lesson-list-item-image]:object-cover " +
+  "[&_.lesson-list-item-body]:flex [&_.lesson-list-item-body]:min-w-0 [&_.lesson-list-item-body]:flex-1 [&_.lesson-list-item-body]:flex-col " +
+  "[&_.lesson-list-item-index]:font-mono [&_.lesson-list-item-index]:text-[12px] [&_.lesson-list-item-index]:text-ink-faint " +
+  "[&_.lesson-list-item-title]:mt-0.5 [&_.lesson-list-item-title]:text-[16px] [&_.lesson-list-item-title]:font-bold [&_.lesson-list-item-title]:text-ink " +
+  "[&_.lesson-list-item-desc]:mt-0.5 [&_.lesson-list-item-desc]:text-[13.5px] [&_.lesson-list-item-desc]:text-ink-muted " +
+  "[&_.install-block]:my-4 [&_.install-block]:overflow-hidden [&_.install-block]:rounded-lg [&_.install-block]:border [&_.install-block]:border-border " +
+  "[&_.install-block-command]:flex [&_.install-block-command]:items-center [&_.install-block-command]:justify-between [&_.install-block-command]:gap-3 [&_.install-block-command]:bg-[#0d1117] [&_.install-block-command]:px-4 [&_.install-block-command]:py-3 " +
+  "[&_.install-block-command_code]:min-w-0 [&_.install-block-command_code]:flex-1 [&_.install-block-command_code]:overflow-x-auto [&_.install-block-command_code]:font-mono [&_.install-block-command_code]:text-[13px] [&_.install-block-command_code]:whitespace-pre [&_.install-block-command_code]:text-[#e6edf3] " +
+  "[&_.install-block-copy]:shrink-0 [&_.install-block-copy]:cursor-pointer [&_.install-block-copy]:rounded-md [&_.install-block-copy]:px-2 [&_.install-block-copy]:py-1 [&_.install-block-copy]:text-[11.5px] [&_.install-block-copy]:text-[#8b949e] [&_.install-block-copy]:hover:bg-white/10 [&_.install-block-copy]:hover:text-white " +
+  "[&_.install-block-footer]:flex [&_.install-block-footer]:flex-wrap [&_.install-block-footer]:items-center [&_.install-block-footer]:justify-between [&_.install-block-footer]:gap-3 [&_.install-block-footer]:px-4 [&_.install-block-footer]:py-3 " +
+  "[&_.install-block-desc]:text-[13px] [&_.install-block-desc]:text-ink-faint " +
+  "[&_.install-block-buttons]:flex [&_.install-block-buttons]:flex-wrap [&_.install-block-buttons]:items-center [&_.install-block-buttons]:gap-2 " +
   // StatsBar - xem comment chi tiet trong POST_PROSE_CLASS.
   "[&_.stats-bar]:mt-9 [&_.stats-bar]:mb-10 [&_.stats-bar]:flex [&_.stats-bar]:flex-wrap [&_.stats-bar]:border-y [&_.stats-bar]:border-[#2b333e] [&_.stats-bar]:bg-[#141920] " +
   "[&_.stats-bar-item]:flex [&_.stats-bar-item]:min-w-[110px] [&_.stats-bar-item]:flex-1 [&_.stats-bar-item]:basis-[30%] [&_.stats-bar-item]:flex-col [&_.stats-bar-item]:px-5 [&_.stats-bar-item]:py-5 " +

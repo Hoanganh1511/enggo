@@ -14,7 +14,6 @@ import { DocsMarkdown } from "@/components/docs/DocsMarkdown";
 import { SeriesEntryEditor } from "@/components/series/SeriesEntryEditor";
 import { SeriesIconPicker } from "@/components/series/SeriesIconPicker";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
-import { EntryContentBlocksEditor } from "@/components/series/EntryContentBlocksEditor";
 import { DictionarySectionsEditor } from "@/components/series/DictionarySectionsEditor";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { LayoutSpinnerOverlay } from "@/components/ui/layout-spinner";
@@ -89,9 +88,11 @@ export function SeriesEntryForm({
     initial?.installTabs ?? [],
   );
   const [readTimeOverride, setReadTimeOverride] = useState(initial?.readTimeMinutes ?? undefined);
-  const [contentBlocks, setContentBlocks] = useState<EntryContentBlock[]>(
-    initial?.contentBlocks ?? [],
-  );
+  // Khong con setter - form nay khong sua duoc contentBlocks nua (xem comment
+  // day du o cho render truoc day, "Section chèn thêm" da bo), chi GIU LAI
+  // nguyen gia tri CU de gui kem trong payload, tranh mat du lieu entry da
+  // co san blocks tu truoc.
+  const [contentBlocks] = useState<EntryContentBlock[]>(initial?.contentBlocks ?? []);
   const [hasDictionary, setHasDictionary] = useState(Boolean(initial?.dictionarySections?.length));
   const [dictionarySections, setDictionarySections] = useState<DictionarySection[]>(
     initial?.dictionarySections ?? [],
@@ -289,13 +290,20 @@ export function SeriesEntryForm({
           <input className={inputClass} value={source} onChange={(e) => setSource(e.target.value)} />
         </div>
 
-        {/* [2026-09-16] Gop 3 "cục" rieng (Top/giữa/cuối) thanh 1 khoi DUY
-            NHAT - yeu cau nguoi dung: "Không tách thành 3 cục riêng này. Xóa
-            cái Top Đầu Bài đi. Giờ để 1 button click, sau đó nó hiện modal
-            ra chọn 1 trong 2 cái. Rồi chọn mẫu, vậy cho gọn" (xem chi tiet
-            trong EntryContentBlocksEditor.tsx - modal 2 buoc chon vi tri roi
-            chon mau, thay the han zone "top"/rieng label moi zone). */}
-        <EntryContentBlocksEditor blocks={contentBlocks} onChange={setContentBlocks} />
+        {/* [2026-09-30] "Section chèn thêm" (form JSON rieng, 3 vung top/
+            middle/bottom - EntryContentBlocksEditor.tsx) DA BO HAN khoi form
+            soan - yeu cau nguoi dung: "Giờ gộp tất cả vào trong 1 cục body để
+            insert lúc edit thôi. Không tách thành phần đầu trên, phần giữa gì
+            nữa". Cac loai khoi truoc day chen qua day (botHelp/featurePromo/
+            deeperCourse/buttonGroup/callout/lessonList/install) gio la NODE
+            TIPTAP that, chen truc tiep trong "Thân bài" ben duoi (xem
+            PromoCard/EntryBanner/EntryButtonGroup/LessonListBlock/InstallBlock
+            trong post-extensions.ts) - soan lien mach 1 luong DUY NHAT. State
+            `contentBlocks` VAN giu nguyen (khong hien UI sua nua) va van gui
+            kem trong payload luc luu - CHI de KHONG lam mat du lieu CU cua
+            entry da co san blocks tu truoc (van hien duoc o trang cong khai,
+            xem SeriesEntryContentBlocks.tsx), KHONG con cach nao tao MOI/sua
+            qua giao dien nay nua. */}
 
         <div>
           <div className="mb-1 flex items-center justify-between">

@@ -24,6 +24,11 @@ import { GridCellView } from "./grid-cell-view";
 import { CardGridView } from "./card-grid-view";
 import { ProfileBlockView } from "./profile-block-view";
 import { SplitBlockView } from "./split-block-view";
+import { PromoCardView } from "./promo-card-view";
+import { EntryBannerView } from "./entry-banner-view";
+import { EntryButtonGroupView } from "./entry-button-group-view";
+import { LessonListBlockView } from "./lesson-list-block-view";
+import { InstallBlockView } from "./install-block-view";
 
 // tiptap-markdown khong ship .d.ts rieng (xem SeriesEntryEditor.tsx) - khai
 // bao TOI THIEU 2 kieu nay (dung y het API cua prosemirror-markdown's
@@ -1881,6 +1886,482 @@ export const ProfileBlock = Node.create({
   },
 });
 
+// ===== Cac "khoi trang tri" Entry (PromoCard/EntryBanner/EntryButtonGroup/
+// LessonListBlock/InstallBlock) - yeu cau nguoi dung: "Giờ gộp tất cả vào
+// trong 1 cục body để insert lúc edit thôi. Không tách thành phần đầu trên,
+// phần giữa gì nữa" - THAY THE he thong "Section chèn thêm" CU (form JSON
+// rieng ngoai Tiptap, chia 3 "zone" top/middle/bottom - xem
+// EntryContentBlocksEditor.tsx/SeriesEntryContentBlocks.tsx, CON GIU LAI CHI
+// de doc du lieu CU da luu, KHONG con cho tao moi qua form do nua). Cac loai
+// khoi truoc day (botHelp/featurePromo/deeperCourse/buttonGroup/callout/
+// lessonList/install) gio la NODE TIPTAP that, chen truc tiep vao THAN BAI
+// (contentMarkdown) giong het Accordion/Grid/CardGrid - soan lien mach 1 luong
+// DUY NHAT, khong con khai niem "vi tri chen" tach roi nua.
+//
+// botHelp/featurePromo/deeperCourse GOP LAM 1 node PromoCard DUY NHAT (3 kieu
+// cu chi khac nhau ve mau nen/nut bam + co anh hay khong, cung 1 bo field
+// eyebrow/title/description/nut) - dung 1 attr `style` de chon bien the, thay
+// vi 3 node rieng gan nhu trung lap hoan toan.
+
+export type PromoCardStyle = "bot" | "feature" | "deeper";
+export type EntryBlockButtonItem = { label: string; href: string; style: "solid" | "outline" | "ghost" };
+
+export function normalizeEntryButtonItem(raw: Partial<EntryBlockButtonItem>): EntryBlockButtonItem {
+  return {
+    label: raw.label ?? "",
+    href: raw.href ?? "",
+    style: raw.style === "solid" || raw.style === "ghost" ? raw.style : "outline",
+  };
+}
+
+function entryButtonsNode(buttons: EntryBlockButtonItem[]): unknown[] {
+  return buttons.map((b) => [
+    "a",
+    { class: `entry-btn entry-btn-${b.style}`, ...(b.href ? { href: b.href } : {}) },
+    b.label,
+  ]);
+}
+
+function entryButtonsHtml(buttons: EntryBlockButtonItem[]): string {
+  const esc = escapeHtmlAttr;
+  return buttons
+    .map((b) => `<a class="entry-btn entry-btn-${b.style}"${b.href ? ` href="${esc(b.href)}"` : ""}>${esc(b.label)}</a>`)
+    .join("");
+}
+
+export const EntryButtonGroup = Node.create({
+  name: "entryButtonGroup",
+  group: "block",
+  atom: true,
+  // selectable:false - xem comment day du o GridCell.
+  selectable: false,
+  addAttributes() {
+    return {
+      buttons: {
+        default: [{ label: "Xem thêm", href: "", style: "solid" }] as EntryBlockButtonItem[],
+        parseHTML: (el) => {
+          try {
+            const raw = JSON.parse(el.getAttribute("data-buttons") ?? "[]") as Partial<EntryBlockButtonItem>[];
+            return raw.map(normalizeEntryButtonItem);
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-buttons": JSON.stringify(attrs.buttons ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-entry-button-group]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const buttons = ((node.attrs.buttons ?? []) as Partial<EntryBlockButtonItem>[]).map(normalizeEntryButtonItem);
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "entry-button-group", "data-entry-button-group": "" }),
+      ...entryButtonsNode(buttons),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(EntryButtonGroupView);
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const buttons = ((node.attrs.buttons ?? []) as Partial<EntryBlockButtonItem>[]).map(normalizeEntryButtonItem);
+          state.ensureNewLine();
+          state.write(
+            `<div class="entry-button-group" data-entry-button-group data-buttons="${escapeHtmlAttr(JSON.stringify(buttons))}">${entryButtonsHtml(buttons)}</div>`,
+          );
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
+export const EntryBanner = Node.create({
+  name: "entryBanner",
+  group: "block",
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      eyebrow: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-eyebrow") || "",
+        renderHTML: (attrs) => (attrs.eyebrow ? { "data-eyebrow": attrs.eyebrow as string } : {}),
+      },
+      title: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-title") || "",
+        renderHTML: (attrs) => (attrs.title ? { "data-title": attrs.title as string } : {}),
+      },
+      description: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-description") || "",
+        renderHTML: (attrs) => (attrs.description ? { "data-description": attrs.description as string } : {}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-entry-banner]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const eyebrow = (node.attrs.eyebrow as string) || "";
+    const title = (node.attrs.title as string) || "";
+    const description = (node.attrs.description as string) || "";
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "entry-banner", "data-entry-banner": "" }),
+      ...(eyebrow ? [["span", { class: "entry-banner-eyebrow" }, eyebrow]] : []),
+      ["p", { class: "entry-banner-title" }, title],
+      ...(description ? [["p", { class: "entry-banner-desc" }, description]] : []),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(EntryBannerView);
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const esc = escapeHtmlAttr;
+          const eyebrow = (node.attrs.eyebrow as string) || "";
+          const title = (node.attrs.title as string) || "";
+          const description = (node.attrs.description as string) || "";
+          state.ensureNewLine();
+          state.write(
+            `<div class="entry-banner" data-entry-banner${eyebrow ? ` data-eyebrow="${esc(eyebrow)}"` : ""}${title ? ` data-title="${esc(title)}"` : ""}${description ? ` data-description="${esc(description)}"` : ""}>` +
+              (eyebrow ? `<span class="entry-banner-eyebrow">${esc(eyebrow)}</span>` : "") +
+              `<p class="entry-banner-title">${esc(title)}</p>` +
+              (description ? `<p class="entry-banner-desc">${esc(description)}</p>` : "") +
+              `</div>`,
+          );
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
+export type PromoCardAttrs = {
+  style: PromoCardStyle;
+  imageUrl: string | null;
+  eyebrow: string;
+  title: string;
+  description: string;
+  buttonLabel: string;
+  buttonHref: string;
+};
+
+export const PromoCard = Node.create({
+  name: "promoCard",
+  group: "block",
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      style: {
+        default: "feature" as PromoCardStyle,
+        parseHTML: (el) => (el.getAttribute("data-style") as PromoCardStyle) || "feature",
+        renderHTML: (attrs) => ({ "data-style": attrs.style as string }),
+      },
+      imageUrl: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-image-url") || null,
+        renderHTML: (attrs) => (attrs.imageUrl ? { "data-image-url": attrs.imageUrl as string } : {}),
+      },
+      eyebrow: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-eyebrow") || "",
+        renderHTML: (attrs) => (attrs.eyebrow ? { "data-eyebrow": attrs.eyebrow as string } : {}),
+      },
+      title: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-title") || "",
+        renderHTML: (attrs) => (attrs.title ? { "data-title": attrs.title as string } : {}),
+      },
+      description: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-description") || "",
+        renderHTML: (attrs) => (attrs.description ? { "data-description": attrs.description as string } : {}),
+      },
+      buttonLabel: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-button-label") || "",
+        renderHTML: (attrs) => (attrs.buttonLabel ? { "data-button-label": attrs.buttonLabel as string } : {}),
+      },
+      buttonHref: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-button-href") || "",
+        renderHTML: (attrs) => (attrs.buttonHref ? { "data-button-href": attrs.buttonHref as string } : {}),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-promo-card]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const a = node.attrs as PromoCardAttrs;
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: `promo-card promo-card-${a.style}`, "data-promo-card": "" }),
+      ...(a.imageUrl ? [["img", { class: "promo-card-image", src: a.imageUrl, alt: "" }]] : []),
+      [
+        "div",
+        { class: "promo-card-body" },
+        ...(a.eyebrow ? [["span", { class: "promo-card-eyebrow" }, a.eyebrow]] : []),
+        ["p", { class: "promo-card-title" }, a.title],
+        ...(a.description ? [["p", { class: "promo-card-desc" }, a.description]] : []),
+      ],
+      ...(a.buttonLabel
+        ? [["a", { class: "promo-card-btn", ...(a.buttonHref ? { href: a.buttonHref } : {}) }, a.buttonLabel]]
+        : []),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(PromoCardView);
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const esc = escapeHtmlAttr;
+          const a = node.attrs as PromoCardAttrs;
+          const attrsHtml =
+            `data-promo-card data-style="${esc(a.style)}"` +
+            (a.imageUrl ? ` data-image-url="${esc(a.imageUrl)}"` : "") +
+            (a.eyebrow ? ` data-eyebrow="${esc(a.eyebrow)}"` : "") +
+            (a.title ? ` data-title="${esc(a.title)}"` : "") +
+            (a.description ? ` data-description="${esc(a.description)}"` : "") +
+            (a.buttonLabel ? ` data-button-label="${esc(a.buttonLabel)}"` : "") +
+            (a.buttonHref ? ` data-button-href="${esc(a.buttonHref)}"` : "");
+          const imageHtml = a.imageUrl ? `<img class="promo-card-image" src="${esc(a.imageUrl)}" alt="">` : "";
+          const bodyHtml =
+            `<div class="promo-card-body">` +
+            (a.eyebrow ? `<span class="promo-card-eyebrow">${esc(a.eyebrow)}</span>` : "") +
+            `<p class="promo-card-title">${esc(a.title)}</p>` +
+            (a.description ? `<p class="promo-card-desc">${esc(a.description)}</p>` : "") +
+            `</div>`;
+          const btnHtml = a.buttonLabel
+            ? `<a class="promo-card-btn"${a.buttonHref ? ` href="${esc(a.buttonHref)}"` : ""}>${esc(a.buttonLabel)}</a>`
+            : "";
+          state.ensureNewLine();
+          state.write(`<div class="promo-card promo-card-${esc(a.style)}" ${attrsHtml}>${imageHtml}${bodyHtml}${btnHtml}</div>`);
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
+export type LessonListItem = { id: string; imageUrl: string; title: string; description: string; href: string };
+
+export function normalizeLessonListItem(raw: Partial<LessonListItem>): LessonListItem {
+  return {
+    id: raw.id ?? Math.random().toString(36).slice(2),
+    imageUrl: raw.imageUrl ?? "",
+    title: raw.title ?? "",
+    description: raw.description ?? "",
+    href: raw.href ?? "",
+  };
+}
+
+function lessonListItemsHtml(items: LessonListItem[]): string {
+  const esc = escapeHtmlAttr;
+  return items
+    .map(
+      (item, i) =>
+        `<a class="lesson-list-item"${item.href ? ` href="${esc(item.href)}"` : ""}>` +
+        `<img class="lesson-list-item-image" src="${esc(item.imageUrl)}" alt="">` +
+        `<span class="lesson-list-item-body">` +
+        `<span class="lesson-list-item-index">${String(i + 1).padStart(2, "0")}</span>` +
+        `<span class="lesson-list-item-title">${esc(item.title)}</span>` +
+        (item.description ? `<span class="lesson-list-item-desc">${esc(item.description)}</span>` : "") +
+        `</span></a>`,
+    )
+    .join("");
+}
+
+export const LessonListBlock = Node.create({
+  name: "lessonListBlock",
+  group: "block",
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      heading: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-heading") || "",
+        renderHTML: (attrs) => (attrs.heading ? { "data-heading": attrs.heading as string } : {}),
+      },
+      items: {
+        default: [] as LessonListItem[],
+        parseHTML: (el) => {
+          try {
+            const raw = JSON.parse(el.getAttribute("data-items") ?? "[]") as Partial<LessonListItem>[];
+            return raw.map(normalizeLessonListItem);
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-items": JSON.stringify(attrs.items ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-lesson-list]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const heading = (node.attrs.heading as string) || "";
+    const items = ((node.attrs.items ?? []) as Partial<LessonListItem>[]).map(normalizeLessonListItem);
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "lesson-list-block", "data-lesson-list": "" }),
+      ...(heading ? [["p", { class: "lesson-list-heading" }, heading]] : []),
+      [
+        "div",
+        { class: "lesson-list-items" },
+        ...items.map((item, i) => [
+          "a",
+          { class: "lesson-list-item", ...(item.href ? { href: item.href } : {}) },
+          ["img", { class: "lesson-list-item-image", src: item.imageUrl, alt: "" }],
+          [
+            "span",
+            { class: "lesson-list-item-body" },
+            ["span", { class: "lesson-list-item-index" }, String(i + 1).padStart(2, "0")],
+            ["span", { class: "lesson-list-item-title" }, item.title],
+            ...(item.description ? [["span", { class: "lesson-list-item-desc" }, item.description]] : []),
+          ],
+        ]),
+      ],
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(LessonListBlockView);
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const esc = escapeHtmlAttr;
+          const heading = (node.attrs.heading as string) || "";
+          const items = ((node.attrs.items ?? []) as Partial<LessonListItem>[]).map(normalizeLessonListItem);
+          state.ensureNewLine();
+          state.write(
+            `<div class="lesson-list-block" data-lesson-list${heading ? ` data-heading="${esc(heading)}"` : ""} data-items="${esc(JSON.stringify(items))}">` +
+              (heading ? `<p class="lesson-list-heading">${esc(heading)}</p>` : "") +
+              `<div class="lesson-list-items">${lessonListItemsHtml(items)}</div>` +
+              `</div>`,
+          );
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
+export const InstallBlock = Node.create({
+  name: "installBlock",
+  group: "block",
+  atom: true,
+  selectable: false,
+  addAttributes() {
+    return {
+      command: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-command") || "",
+        renderHTML: (attrs) => (attrs.command ? { "data-command": attrs.command as string } : {}),
+      },
+      description: {
+        default: "",
+        parseHTML: (el) => el.getAttribute("data-description") || "",
+        renderHTML: (attrs) => (attrs.description ? { "data-description": attrs.description as string } : {}),
+      },
+      buttons: {
+        default: [] as EntryBlockButtonItem[],
+        parseHTML: (el) => {
+          try {
+            const raw = JSON.parse(el.getAttribute("data-buttons") ?? "[]") as Partial<EntryBlockButtonItem>[];
+            return raw.map(normalizeEntryButtonItem);
+          } catch {
+            return [];
+          }
+        },
+        renderHTML: (attrs) => ({ "data-buttons": JSON.stringify(attrs.buttons ?? []) }),
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "div[data-install-block]" }];
+  },
+  renderHTML({ HTMLAttributes, node }) {
+    const command = (node.attrs.command as string) || "";
+    const description = (node.attrs.description as string) || "";
+    const buttons = ((node.attrs.buttons ?? []) as Partial<EntryBlockButtonItem>[]).map(normalizeEntryButtonItem);
+    return [
+      "div",
+      mergeAttributes(HTMLAttributes, { class: "install-block", "data-install-block": "" }),
+      [
+        "div",
+        { class: "install-block-command" },
+        ["code", {}, command],
+        [
+          "button",
+          {
+            type: "button",
+            class: "install-block-copy",
+            "data-cmd": command,
+            onclick: "navigator.clipboard.writeText(this.dataset.cmd)",
+          },
+          "Copy",
+        ],
+      ],
+      ...(description || buttons.length > 0
+        ? [
+            [
+              "div",
+              { class: "install-block-footer" },
+              ...(description ? [["p", { class: "install-block-desc" }, description]] : []),
+              ...(buttons.length > 0 ? [["div", { class: "install-block-buttons" }, ...entryButtonsNode(buttons)]] : []),
+            ],
+          ]
+        : []),
+    ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(InstallBlockView);
+  },
+  addStorage() {
+    return {
+      markdown: {
+        serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
+          const esc = escapeHtmlAttr;
+          const command = (node.attrs.command as string) || "";
+          const description = (node.attrs.description as string) || "";
+          const buttons = ((node.attrs.buttons ?? []) as Partial<EntryBlockButtonItem>[]).map(normalizeEntryButtonItem);
+          const footerHtml =
+            description || buttons.length > 0
+              ? `<div class="install-block-footer">${description ? `<p class="install-block-desc">${esc(description)}</p>` : ""}${
+                  buttons.length > 0 ? `<div class="install-block-buttons">${entryButtonsHtml(buttons)}</div>` : ""
+                }</div>`
+              : "";
+          state.ensureNewLine();
+          state.write(
+            `<div class="install-block" data-install-block${command ? ` data-command="${esc(command)}"` : ""}${description ? ` data-description="${esc(description)}"` : ""} data-buttons="${esc(JSON.stringify(buttons))}">` +
+              `<div class="install-block-command"><code>${esc(command)}</code><button type="button" class="install-block-copy" data-cmd="${esc(command)}" onclick="navigator.clipboard.writeText(this.dataset.cmd)">Copy</button></div>` +
+              footerHtml +
+              `</div>`,
+          );
+          state.closeBlock(node);
+        },
+      },
+    };
+  },
+});
+
 // [2026-09-18] DA GO BO "TrailingNode" (tung o day) - tung them de fix bug
 // "thêm 1 cái accordion geographical vào sau cái accordion geographical
 // trước đó đã đặt vào thì ko đặt dc con trỏ vào" (khong co "khe" con tro sau
@@ -2259,6 +2740,11 @@ export function getPostExtensions(): Extensions {
     SplitColumn,
     SplitBlock,
     ProfileBlock,
+    PromoCard,
+    EntryBanner,
+    EntryButtonGroup,
+    LessonListBlock,
+    InstallBlock,
   ];
 }
 
@@ -2680,6 +3166,47 @@ export const POST_PROSE_CLASS =
   "[&_.profile-block-avatar-empty]:bg-surface-muted " +
   "[&_.profile-block-name]:text-[17px] [&_.profile-block-name]:font-bold [&_.profile-block-name]:text-ink " +
   "[&_.profile-block-body_p:first-child]:mt-0 [&_.profile-block-body_p:last-child]:mb-0 " +
+  // ===== EntryButtonGroup/EntryBanner/PromoCard/LessonListBlock/InstallBlock -
+  // thay the he thong "Section chèn thêm" cu (form JSON ngoai Tiptap, xem
+  // comment day du o dinh nghia cac node nay trong post-extensions.ts).
+  "[&_.entry-button-group]:my-4 [&_.entry-button-group]:flex [&_.entry-button-group]:flex-wrap [&_.entry-button-group]:items-center [&_.entry-button-group]:gap-2.5 " +
+  "[&_.entry-btn]:inline-flex [&_.entry-btn]:items-center [&_.entry-btn]:gap-1 [&_.entry-btn]:rounded-lg [&_.entry-btn]:px-4 [&_.entry-btn]:py-2 [&_.entry-btn]:text-[13.5px] [&_.entry-btn]:font-medium [&_.entry-btn]:no-underline [&_.entry-btn]:transition-opacity [&_.entry-btn]:duration-150 [&_.entry-btn]:hover:opacity-85 " +
+  "[&_.entry-btn-solid]:bg-ink [&_.entry-btn-solid]:text-white " +
+  "[&_.entry-btn-outline]:border [&_.entry-btn-outline]:border-ink [&_.entry-btn-outline]:text-ink " +
+  "[&_.entry-btn-ghost]:text-ink-muted " +
+  "[&_.entry-banner]:my-4 [&_.entry-banner]:rounded-lg [&_.entry-banner]:bg-surface-muted [&_.entry-banner]:p-6 " +
+  "[&_.entry-banner-eyebrow]:mb-1 [&_.entry-banner-eyebrow]:block [&_.entry-banner-eyebrow]:text-[11px] [&_.entry-banner-eyebrow]:font-semibold [&_.entry-banner-eyebrow]:tracking-wide [&_.entry-banner-eyebrow]:text-ink-faint [&_.entry-banner-eyebrow]:uppercase " +
+  "[&_.entry-banner-title]:text-[17px] [&_.entry-banner-title]:font-bold [&_.entry-banner-title]:text-ink " +
+  "[&_.entry-banner-desc]:mt-1.5 [&_.entry-banner-desc]:text-[14px] [&_.entry-banner-desc]:text-ink-muted " +
+  "[&_.promo-card]:my-4 [&_.promo-card]:flex [&_.promo-card]:flex-wrap [&_.promo-card]:items-center [&_.promo-card]:gap-4 [&_.promo-card]:rounded-lg [&_.promo-card]:p-5 " +
+  "[&_.promo-card-bot]:border [&_.promo-card-bot]:border-border [&_.promo-card-bot]:bg-surface " +
+  "[&_.promo-card-feature]:bg-primary-soft " +
+  "[&_.promo-card-deeper]:border [&_.promo-card-deeper]:border-border [&_.promo-card-deeper]:bg-surface-muted " +
+  "[&_.promo-card-image]:size-14 [&_.promo-card-image]:shrink-0 [&_.promo-card-image]:rounded-lg [&_.promo-card-image]:bg-surface-muted [&_.promo-card-image]:object-cover " +
+  "[&_.promo-card-body]:flex [&_.promo-card-body]:min-w-0 [&_.promo-card-body]:flex-1 [&_.promo-card-body]:flex-col [&_.promo-card-body]:gap-1 " +
+  "[&_.promo-card-eyebrow]:text-[11px] [&_.promo-card-eyebrow]:font-semibold [&_.promo-card-eyebrow]:tracking-wide [&_.promo-card-eyebrow]:text-ink-faint [&_.promo-card-eyebrow]:uppercase " +
+  "[&_.promo-card-title]:text-[16px] [&_.promo-card-title]:font-bold [&_.promo-card-title]:text-ink " +
+  "[&_.promo-card-desc]:text-[13.5px] [&_.promo-card-desc]:text-ink-muted " +
+  "[&_.promo-card-btn]:inline-flex [&_.promo-card-btn]:shrink-0 [&_.promo-card-btn]:items-center [&_.promo-card-btn]:gap-1 [&_.promo-card-btn]:rounded-lg [&_.promo-card-btn]:px-4.5 [&_.promo-card-btn]:py-2.5 [&_.promo-card-btn]:text-[13.5px] [&_.promo-card-btn]:font-semibold [&_.promo-card-btn]:no-underline [&_.promo-card-btn]:transition-opacity [&_.promo-card-btn]:duration-150 [&_.promo-card-btn]:hover:opacity-90 " +
+  "[&_.promo-card-bot_.promo-card-btn]:bg-accent-gold [&_.promo-card-bot_.promo-card-btn]:text-ink " +
+  "[&_.promo-card-feature_.promo-card-btn]:bg-primary [&_.promo-card-feature_.promo-card-btn]:text-white " +
+  "[&_.promo-card-deeper_.promo-card-btn]:bg-accent-gold [&_.promo-card-deeper_.promo-card-btn]:text-ink " +
+  "[&_.lesson-list-block]:my-4 [&_.lesson-list-block]:flex [&_.lesson-list-block]:flex-col [&_.lesson-list-block]:gap-3 " +
+  "[&_.lesson-list-heading]:text-[20px] [&_.lesson-list-heading]:font-extrabold [&_.lesson-list-heading]:text-ink " +
+  "[&_.lesson-list-items]:flex [&_.lesson-list-items]:flex-col [&_.lesson-list-items]:gap-3 " +
+  "[&_.lesson-list-item]:flex [&_.lesson-list-item]:items-center [&_.lesson-list-item]:gap-4 [&_.lesson-list-item]:rounded-lg [&_.lesson-list-item]:border [&_.lesson-list-item]:border-border [&_.lesson-list-item]:bg-surface [&_.lesson-list-item]:p-3 [&_.lesson-list-item]:no-underline [&_.lesson-list-item]:transition-colors [&_.lesson-list-item]:duration-150 [&_.lesson-list-item]:hover:border-ink/20 " +
+  "[&_.lesson-list-item-image]:h-16 [&_.lesson-list-item-image]:w-24 [&_.lesson-list-item-image]:shrink-0 [&_.lesson-list-item-image]:rounded-lg [&_.lesson-list-item-image]:bg-surface-muted [&_.lesson-list-item-image]:object-cover " +
+  "[&_.lesson-list-item-body]:flex [&_.lesson-list-item-body]:min-w-0 [&_.lesson-list-item-body]:flex-1 [&_.lesson-list-item-body]:flex-col " +
+  "[&_.lesson-list-item-index]:font-mono [&_.lesson-list-item-index]:text-[12px] [&_.lesson-list-item-index]:text-ink-faint " +
+  "[&_.lesson-list-item-title]:mt-0.5 [&_.lesson-list-item-title]:text-[16px] [&_.lesson-list-item-title]:font-bold [&_.lesson-list-item-title]:text-ink " +
+  "[&_.lesson-list-item-desc]:mt-0.5 [&_.lesson-list-item-desc]:text-[13.5px] [&_.lesson-list-item-desc]:text-ink-muted " +
+  "[&_.install-block]:my-4 [&_.install-block]:overflow-hidden [&_.install-block]:rounded-lg [&_.install-block]:border [&_.install-block]:border-border " +
+  "[&_.install-block-command]:flex [&_.install-block-command]:items-center [&_.install-block-command]:justify-between [&_.install-block-command]:gap-3 [&_.install-block-command]:bg-[#0d1117] [&_.install-block-command]:px-4 [&_.install-block-command]:py-3 " +
+  "[&_.install-block-command_code]:min-w-0 [&_.install-block-command_code]:flex-1 [&_.install-block-command_code]:overflow-x-auto [&_.install-block-command_code]:font-mono [&_.install-block-command_code]:text-[13px] [&_.install-block-command_code]:whitespace-pre [&_.install-block-command_code]:text-[#e6edf3] " +
+  "[&_.install-block-copy]:shrink-0 [&_.install-block-copy]:cursor-pointer [&_.install-block-copy]:rounded-md [&_.install-block-copy]:px-2 [&_.install-block-copy]:py-1 [&_.install-block-copy]:text-[11.5px] [&_.install-block-copy]:text-[#8b949e] [&_.install-block-copy]:hover:bg-white/10 [&_.install-block-copy]:hover:text-white " +
+  "[&_.install-block-footer]:flex [&_.install-block-footer]:flex-wrap [&_.install-block-footer]:items-center [&_.install-block-footer]:justify-between [&_.install-block-footer]:gap-3 [&_.install-block-footer]:px-4 [&_.install-block-footer]:py-3 " +
+  "[&_.install-block-desc]:text-[13px] [&_.install-block-desc]:text-ink-faint " +
+  "[&_.install-block-buttons]:flex [&_.install-block-buttons]:flex-wrap [&_.install-block-buttons]:items-center [&_.install-block-buttons]:gap-2 " +
   // StatsBar ("thanh thống kê") - yeu cau nguoi dung kem anh mau: hang ngang
   // 5 o so lieu, style "bảng dữ liệu biên tập" (editorial data table) - nen/
   // vien LUON CO DINH mau toi (#141920/#2b333e), KHONG doi theo theme sang/
