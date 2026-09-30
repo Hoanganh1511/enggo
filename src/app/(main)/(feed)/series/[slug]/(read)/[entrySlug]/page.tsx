@@ -71,7 +71,10 @@ async function EntryHeader({
   const { series, entry, totalCount, next } = data;
   const positionIndex = entry.orderIndex + 1;
   const entryUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/series/${slug}/${entry.slug}`;
-  const isExploreTopLevel = isExploreTopLevelEntry(series.categories, entry.categoryId);
+  const isExploreTopLevel = isExploreTopLevelEntry(
+    series.categories,
+    entry.categoryId,
+  );
 
   return (
     <FadeIn>
@@ -128,7 +131,11 @@ async function EntryHeader({
         {entry.subtitle && (
           <p
             className="mt-1 text-[18px] font-normal"
-            style={{ color: "#667085", lineHeight: 1.55, letterSpacing: "-0.01em" }}
+            style={{
+              color: "#667085",
+              lineHeight: 1.55,
+              letterSpacing: "-0.01em",
+            }}
           >
             {entry.subtitle}
           </p>
@@ -348,7 +355,8 @@ async function EntryNextBanner({
   // Entry o cap dau tien cua Explore (Map, Skills...) khong hien banner "bai
   // tiep theo" - cung ly do/yeu cau voi EntryPageActionsRow o EntryHeader
   // (xem isExploreTopLevelEntry dau file).
-  if (!next || isExploreTopLevelEntry(series.categories, entry.categoryId)) return null;
+  if (!next || isExploreTopLevelEntry(series.categories, entry.categoryId))
+    return null;
   const categoryTitle =
     series.categories.find((c) => c.id === next.categoryId)?.title ?? null;
 
@@ -385,7 +393,7 @@ async function EntrySidebarShare({
 
   return (
     <FadeIn delay={0.24}>
-      <div className="border-t border-border pt-4">
+      <div className="border-t border-border py-4">
         <p className="font-content mb-2 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">
           Share
         </p>
