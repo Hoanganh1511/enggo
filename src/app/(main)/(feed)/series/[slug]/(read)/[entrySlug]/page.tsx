@@ -194,7 +194,6 @@ async function EntryHeader({
         isAdmin={status.isAdmin}
         showShareAndNext={!isExploreTopLevel}
       />
-
     </FadeIn>
   );
 }
@@ -307,7 +306,6 @@ async function EntryExtras({
           title={entry.title}
         />
       </div>
-
     </FadeIn>
   );
 }
@@ -488,7 +486,7 @@ export default async function SeriesEntryPage({
             duong ke va chu, khong bam sat vien. sticky top-6: neo lai o do
             khi cuon xuong (KHONG con pt-6 rieng - <aside> gio bat dau NGANG
             HANG voi dinh <article>, khong can offset xuong nua). */}
-        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-8 xl:flex">
+        <aside className="sticky top-6 hidden h-fit w-56 shrink-0 flex-col gap-6 pl-6 xl:flex">
           <Suspense
             fallback={
               <FadeIn delay={0.12}>
