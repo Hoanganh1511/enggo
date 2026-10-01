@@ -3134,7 +3134,11 @@ export const POST_PROSE_CLASS =
   // nay LAP LAI DUNG tren MOI dong khi doan to mau bi ngat dong (mac dinh
   // "slice" chi chua padding trai/phai o dau/cuoi CA CUM, giua chung cac dong
   // se om sat lai).
-  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5 " +
+  // rounded-[4px] - yeu cau nguoi dung: "màu nền khi set nó đang vuông vức,
+  // cho nó radius 4px". box-decoration-clone (xem comment tren) dam bao
+  // radius nay cung LAP LAI dung tren moi dong khi bi ngat dong, khong chi
+  // bo tron o dong dau/cuoi.
+  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:rounded-[4px] [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5 " +
   // Grid (yeu cau nguoi dung: grid tuy chinh hang/cot, moi o co head mau
   // nen/badge/so buoc + body rich text) - moi o la 1 THE rieng (bo vien
   // rounded-lg, cach nhau qua `gap`) thay vi 1 luoi border-collapse chung

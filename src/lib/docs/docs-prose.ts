@@ -141,7 +141,7 @@ export const DOCS_PROSE_CLASS =
   "[&_.flow-diagram-branch-stem]:after:absolute [&_.flow-diagram-branch-stem]:after:bottom-0 [&_.flow-diagram-branch-stem]:after:left-1/2 [&_.flow-diagram-branch-stem]:after:-translate-x-1/2 [&_.flow-diagram-branch-stem]:after:border-x-[5px] [&_.flow-diagram-branch-stem]:after:border-t-[7px] [&_.flow-diagram-branch-stem]:after:border-x-transparent [&_.flow-diagram-branch-stem]:after:border-t-ink-faint [&_.flow-diagram-branch-stem]:after:content-[''] " +
   "[&_.flow-diagram-note-branch]:mt-1 [&_.flow-diagram-note-branch]:mb-1 [&_.flow-diagram-note-branch]:max-w-[10rem] [&_.flow-diagram-note-branch]:text-center [&_.flow-diagram-note-branch]:text-[11px] [&_.flow-diagram-note-branch]:text-ink-faint [&_.flow-diagram-note-branch]:italic " +
   // Mau NEN (BackgroundColor) - xem comment chi tiet trong POST_PROSE_CLASS.
-  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5 " +
+  "[&_span[style*=background-color]]:box-decoration-clone [&_span[style*=background-color]]:rounded-[4px] [&_span[style*=background-color]]:px-1 [&_span[style*=background-color]]:py-0.5 " +
   // Grid - trang doc cong khai render tu HTML tho (Grid.addStorage() da ghi
   // SAN grid-template-columns lam inline style ngay trong chuoi HTML, xem
   // post-extensions.ts) - CHI can display:grid qua class o day, KHONG can

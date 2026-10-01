@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { BubbleMenu } from "@tiptap/react/menus";
 import { NodeSelection, type EditorState } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/react";
@@ -130,48 +131,72 @@ function ColorSection({ editor }: { editor: Editor }) {
     setPanelOpen(false);
   }
 
-  if (!panelOpen) {
-    return (
+  // [2026-10-02] Panel mo rong duoc dat trong 1 lop `absolute` RIENG (tach
+  // khoi flow binh thuong), KHONG con doi element o day thanh panel to hon
+  // (nhu truoc) - bug nguoi dung bao: "sau khi chọn cái pop tool chọn màu nó
+  // nhảy vị trí". Nguyen nhan: BubbleMenu (floating-ui) do KICH THUOC THAT
+  // cua children de tinh lai toa do moi lan render - luc bam nut Palette,
+  // children doi tu 1 nut vuong nho (size-7) thanh 1 panel 2 hang rong hon
+  // NGAY TRONG LUONG DO ("flow"), khien chieu cao do duoc cua ca BubbleMenu
+  // tang len dot ngot -> floating-ui tinh lai vi tri (placement:"top" neo
+  // theo CANH DUOI, canh tren day len cao hon) -> toan bo thanh menu "nhay"
+  // len. Fix: nut Palette LUON giu nguyen kich thuoc co dinh trong luong do
+  // (BubbleMenu khong bao gio thay doi kich thuoc do duoc vi viec nay), panel
+  // la 1 lop phu ABSOLUTE chong len tren (lay ra khoi flow -> KHONG anh huong
+  // kich thuoc cha) - giong y het cach 1 dropdown/popover binh thuong hoat
+  // dong doc lap voi layout ben duoi no.
+  return (
+    <div className="relative">
       <button
         type="button"
         title="Chọn màu chữ/nền cho đoạn đang chọn"
         onMouseDown={(e) => {
           e.preventDefault();
-          setPanelOpen(true);
+          setPanelOpen((v) => !v);
         }}
-        className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted hover:bg-hover-bg hover:text-ink"
+        className={cn(
+          "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted hover:bg-hover-bg hover:text-ink",
+          panelOpen && "bg-hover-bg text-ink",
+        )}
       >
         <Palette size={15} strokeWidth={1.9} />
       </button>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-1.5">
-        <span className="w-9 shrink-0 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Chữ</span>
-        <ColorSwatchRow
-          colors={TEXT_COLORS}
-          activeValue={currentColor}
-          onPick={(value) => {
-            const chain = editor.chain().focus();
-            if (value) chain.setColor(value).run();
-            else chain.unsetColor().run();
-          }}
-        />
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="w-9 shrink-0 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Nền</span>
-        <ColorSwatchRow
-          colors={BG_COLORS}
-          activeValue={currentBg}
-          onPick={(value) => {
-            const chain = editor.chain().focus();
-            if (value) chain.setBackgroundColor(value).run();
-            else chain.unsetBackgroundColor().run();
-          }}
-        />
-      </div>
+      <AnimatePresence>
+        {panelOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute top-full left-0 z-10 mt-2 flex flex-col gap-2 rounded-lg border border-border bg-surface p-2 shadow-dropdown"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="w-9 shrink-0 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Chữ</span>
+              <ColorSwatchRow
+                colors={TEXT_COLORS}
+                activeValue={currentColor}
+                onPick={(value) => {
+                  const chain = editor.chain().focus();
+                  if (value) chain.setColor(value).run();
+                  else chain.unsetColor().run();
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-9 shrink-0 text-[11px] font-semibold tracking-wide text-ink-faint uppercase">Nền</span>
+              <ColorSwatchRow
+                colors={BG_COLORS}
+                activeValue={currentBg}
+                onPick={(value) => {
+                  const chain = editor.chain().focus();
+                  if (value) chain.setBackgroundColor(value).run();
+                  else chain.unsetBackgroundColor().run();
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
