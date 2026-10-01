@@ -45,6 +45,13 @@ type MarkdownSerializerState = {
   renderInline: (node: TiptapNode) => void;
   wrapBlock: (delim: string, firstDelim: string | null, node: TiptapNode, f: () => void) => void;
   esc: (str: string, startOfLine?: boolean) => string;
+  // Co TU tiptap-markdown doc o node "hardBreak" (xem node_modules/tiptap-markdown/
+  // src/extensions/nodes/hard-break.js) de quyet dinh ghi "<br>" (an toan
+  // trong 1 dong pipe-table) hay "\\\n" (xuong dong THAT, binh thuong ngoai
+  // bang) cho 1 lan xuong dong mem (Shift+Enter) - serializer "table" GOC cua
+  // tiptap-markdown tu BAT co nay truoc khi ghi hang/tat luc xong (table.js
+  // dong 21/42), TableWithAlignMarkdown ben duoi PHAI lam dung y het.
+  inTable?: boolean;
 };
 
 export type CalloutVariant = "info" | "warn" | "danger" | "success";
@@ -2736,6 +2743,19 @@ const TableWithAlignMarkdown = Table.extend({
             state.closeBlock(node);
             return;
           }
+          // [2026-10-02] state.inTable = true/false - bug nguoi dung bao: 1 o
+          // bang co xuong dong mem (Shift+Enter) khien bang bi "vo" thanh
+          // nhieu hang sai lech sau khi luu+tai lai trang. Nguyen nhan: node
+          // "hardBreak" cua tiptap-markdown (hard-break.js) tu doc co
+          // `state.inTable` de chon ghi "<br>" (an toan, nam gon 1 dong) hay
+          // "\\\n" (xuong dong THAT) - serializer "table" GOC cua thu vien tu
+          // bat/tat co nay, nhung TableWithAlignMarkdown (ghi de rieng o day
+          // de ho tro can le cot) truoc gio QUEN lam dieu tuong tu, khien
+          // hardBreak luon ghi xuong dong THAT ngay ca trong 1 hang pipe-table
+          // (vd "| a\n |") - 1 dong markdown bang chi duoc phep nam gon DUNG 1
+          // dong, xuong dong that giua chung lam dut hang, phan con lai bi
+          // doc nham thanh VAN BAN/HANG MOI o ngoai bang.
+          state.inTable = true;
           const rows = tableRowsOf(node);
           rows.forEach((row, i) => {
             const cells = tableCellsOf(row);
@@ -2756,6 +2776,7 @@ const TableWithAlignMarkdown = Table.extend({
             }
           });
           state.closeBlock(node);
+          state.inTable = false;
         },
         parse: {},
       },
