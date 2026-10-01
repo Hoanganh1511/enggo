@@ -2576,6 +2576,13 @@ const TypographyInputRules = Extension.create({
         find: /->$/,
         replace: "→",
       }),
+      // "!=" -> dau khac "≠" - yeu cau nguoi dung: "Khi gõ != thì đổi thành ≠
+      // nhé". Kich hoat NGAY khi go xong ky tu "=" (cung tinh than "->" o
+      // tren, khong can dau cach kem theo).
+      textInputRule({
+        find: /!=$/,
+        replace: "≠",
+      }),
     ];
   },
 });

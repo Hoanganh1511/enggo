@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import Placeholder from "@tiptap/extension-placeholder";
 import { Markdown } from "tiptap-markdown";
@@ -143,6 +144,21 @@ export function SeriesEntryEditor({
       onChange(markdownStorage.markdown.getMarkdown());
     },
   });
+
+  // [2026-10-01] Khoa editor (setEditable(false)) trong luc dang luu - bug
+  // nguoi dung bao kem anh chup: dang dung trong 1 bang roi bam Luu, thanh
+  // dieu khien bang (SelectionFloatingMenu.tsx, merge tu TableControlsMenu cu)
+  // VAN con hien SAC NET ngay giua man hinh da mo/blur boi LayoutSpinnerOverlay
+  // (SeriesEntryForm.tsx) - BubbleMenu nay portal thang ra document.body voi
+  // z-50 (CAO HON z-40 cua overlay, co chu dich tu truoc de KHONG bi overlay
+  // de len luc dang soan binh thuong), nen luc dang luu no "nổi" han len tren
+  // lop mo, nhin nhu bi ket/vo giao dien. shouldShow cua CA SelectionFloatingMenu
+  // LAN TableControlsMenu (du file sau da khong con dung) deu co san dieu kien
+  // "!ed.isEditable -> an" - chi can CHINH THANG editable=false trong luc
+  // saving la ca 2 menu tu an, khong can sua rieng tung bubble menu.
+  useEffect(() => {
+    editor?.setEditable(!saving);
+  }, [editor, saving]);
 
   if (!editor) {
     return <div className="min-h-64 rounded-lg border border-border bg-surface" />;
