@@ -38,7 +38,10 @@ export default async function DocsArticlePage({
         </div>
       </article>
 
-      <aside className="sticky top-6 hidden h-fit w-56 shrink-0 xl:block">
+      {/* w-[324px] - yeu cau nguoi dung: "Cho diện tích chiều rộng của phần
+          bên TOC tăng thêm 100px" (mac dinh w-56 = 224px, cong them 100 =
+          324px). */}
+      <aside className="sticky top-6 hidden h-fit w-81 shrink-0 xl:block">
         <DocsToc toc={toc} />
       </aside>
     </div>
