@@ -32,6 +32,12 @@ export default async function ManageEntriesLayout({
 
   return (
     <div className="flex min-w-0 gap-8 pb-20">
+      {/* An sidebar chinh (HomeDashboardSidebar) khu vuc sua/tao Entry - yeu
+          cau nguoi dung: "Trong phần sửa bài viết cũng bỏ sidebar main đi".
+          [2026-10-01] KHONG con qua Focus mode/EntryAutoFocusMode (gay nhay/
+          giat luc chuyen Entry) - HomeDashboardSidebar.tsx gio TU an dua THANG
+          vao pathname (xem use-series-entry-sidebar-hidden.ts), khong can
+          mount gi o day nua. */}
       <aside className="hidden w-64 shrink-0 lg:block">
         {/* sticky + max-h + scrollbar-none - dung y het (read)/layout.tsx
             (sidebar cong khai) de cay dai van cuon rieng duoc, khong tran

@@ -213,6 +213,35 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
         })();
         return true; // da tu xu ly - chan Tiptap chen them noi dung thua tu clipboard (vd ten file).
       },
+      // [2026-09-30] Keo-tha (drag & drop) 1 file anh tu NGOAI trinh duyet -
+      // yeu cau nguoi dung: "Triển khai tính năng giúp kéo ảnh từ bên ngoài
+      // và thả vào ô là cũng upload" (xem giai thich chi tiet ve
+      // posAtCoords/allowBase64 trong SeriesEntryEditor.tsx, cung 1 duong
+      // upload voi handlePaste o tren).
+      handleDrop: (view, event) => {
+        const files = Array.from(event.dataTransfer?.files ?? []);
+        const imageFile = files.find((f) => f.type.startsWith("image/"));
+        if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly drop binh thuong (vd keo doan text)
+        event.preventDefault();
+        const coords = { left: event.clientX, top: event.clientY };
+        const pos = view.posAtCoords(coords)?.pos ?? view.state.selection.from;
+        setPendingInlineImageUploads((n) => n + 1);
+        void (async () => {
+          try {
+            const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
+            const formData = new FormData();
+            formData.append("file", uploadFile);
+            formData.append("kind", "image");
+            const uploaded = await uploadPostImageAction(formData);
+            editor?.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: uploaded.url } }).run();
+          } catch (err) {
+            setError(getApiErrorMessage(err, "Thả ảnh thất bại, thử lại sau."));
+          } finally {
+            setPendingInlineImageUploads((n) => n - 1);
+          }
+        })();
+        return true; // da tu xu ly - chan hanh vi drop mac dinh cua trinh duyet/Tiptap.
+      },
     },
     onUpdate: () => scheduleAutosave(),
   });

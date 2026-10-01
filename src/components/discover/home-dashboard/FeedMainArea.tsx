@@ -1,15 +1,20 @@
 "use client";
 
 import { useFocusModeStore } from "@/stores/focus-mode-store";
+import { useSeriesEntrySidebarHidden } from "@/lib/use-series-entry-sidebar-hidden";
 import { cn } from "@/lib/utils";
 
-// Boc <main> cua (feed)/layout.tsx (Server Component, khong doc duoc Zustand
-// truc tiep) - CHI tach rieng phan can doc focus-mode-store: bo padding trai
-// lg:pl-61 (danh cho HomeDashboardSidebar) khi dang Focus mode, vi luc do
-// HomeDashboardSidebar.tsx tu an (return null) nen khong con chiem cho nua -
-// giu nguyen padding do se de lai 1 khoang trong vo nghia ben trai.
+// Boc <main> cua (feed)/layout.tsx (Server Component, khong doc duoc Zustand/
+// usePathname truc tiep) - CHI tach rieng phan can doc dieu kien an sidebar:
+// bo padding trai lg:pl-61 (danh cho HomeDashboardSidebar) khi sidebar do tu
+// an (return null, qua CA 2 duong: Focus mode LAN pathname tinh cho trang doc/
+// sua Entry Series - xem comment day du trong HomeDashboardSidebar.tsx/
+// use-series-entry-sidebar-hidden.ts) - giu nguyen padding do se de lai 1
+// khoang trong vo nghia ben trai.
 export function FeedMainArea({ children }: { children: React.ReactNode }) {
   const focusModeActive = useFocusModeStore((s) => s.active);
+  const sidebarHiddenByRoute = useSeriesEntrySidebarHidden();
+  const sidebarHidden = focusModeActive || sidebarHiddenByRoute;
 
   // [2026-09-16] z-index CO DINH z-10 tro lai (bo han z-50 dieu kien) - luc
   // "Cinema Mode" (2026-09-15, da bo) HomeDashboardSidebar.tsx van HIEN san
@@ -18,7 +23,7 @@ export function FeedMainArea({ children }: { children: React.ReactNode }) {
   // "thắng" ca - z-index nao cung nhu nhau khi doi phuong khong ton tai.
   return (
     <main
-      className={cn("relative z-10 py-6", !focusModeActive && "lg:pl-61")}
+      className={cn("relative z-10 py-6", !sidebarHidden && "lg:pl-61")}
     >
       {/* [2026-09-14] Tung dung "lg:pl-16 khi Focus mode" (thay vi lg:pl-10)
           de nhuong cho nut tron toggle sidebar CO DINH. DA BO (2026-09-15) -

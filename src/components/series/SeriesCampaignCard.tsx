@@ -3,7 +3,10 @@ import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SeriesCardLink } from "./SeriesCardLink";
-import type { ContentSeriesAction, ContentSeriesListItem } from "@/lib/api/content-series";
+import type {
+  ContentSeriesAction,
+  ContentSeriesListItem,
+} from "@/lib/api/content-series";
 
 // The "campaign card" - redesign toan bo Series card (yeu cau nguoi dung,
 // kem anh mau note.com: anh trai/phai + badge + tieu de/mo ta + CTA + nen
@@ -25,7 +28,10 @@ const BADGE_VARIANT_CLASS: Record<string, string> = {
   deadline: "bg-danger/10 text-danger",
 };
 
-function badgeStyle(series: ContentSeriesListItem): { className?: string; style?: React.CSSProperties } {
+function badgeStyle(series: ContentSeriesListItem): {
+  className?: string;
+  style?: React.CSSProperties;
+} {
   if (series.badgeVariant === "custom") {
     return {
       style: {
@@ -34,7 +40,10 @@ function badgeStyle(series: ContentSeriesListItem): { className?: string; style?
       },
     };
   }
-  return { className: BADGE_VARIANT_CLASS[series.badgeVariant] ?? BADGE_VARIANT_CLASS.info };
+  return {
+    className:
+      BADGE_VARIANT_CLASS[series.badgeVariant] ?? BADGE_VARIANT_CLASS.info,
+  };
 }
 
 // "còn N ngày" / "Đã kết thúc" - tinh THANG tai thoi diem render, KHONG co
@@ -46,12 +55,21 @@ function deadlineText(deadlineAt: string): string {
   return days <= 1 ? "Còn hôm nay" : `Còn ${days} ngày`;
 }
 
-function ActionButton({ action, compact }: { action: ContentSeriesAction; compact?: boolean }) {
+function ActionButton({
+  action,
+  compact,
+}: {
+  action: ContentSeriesAction;
+  compact?: boolean;
+}) {
   const isExternal = /^https?:\/\//.test(action.url);
   const className = cn(
     "inline-flex shrink-0 items-center gap-1 rounded-lg font-medium transition-opacity duration-150 ease-out hover:opacity-85",
     compact ? "text-[12px]" : "text-[13px]",
-    action.style === "primary" && (compact ? "bg-ink px-2.5 py-1.5 text-white" : "bg-ink px-4 py-2 text-white"),
+    action.style === "primary" &&
+      (compact
+        ? "bg-ink px-2.5 py-1.5 text-white"
+        : "bg-ink px-4 py-2 text-white"),
     action.style === "secondary" &&
       (compact
         ? "border border-current px-2.5 py-1.5"
@@ -110,7 +128,11 @@ export function SeriesCampaignCard({
       ? "text-white"
       : "text-ink"
     : "text-ink";
-  const mutedColorClass = cardBg ? (isLightBg ? "text-white/75" : "text-ink-muted") : "text-ink-muted";
+  const mutedColorClass = cardBg
+    ? isLightBg
+      ? "text-white/75"
+      : "text-ink-muted"
+    : "text-ink-muted";
 
   // [2026-09-19] compact doi tu h-28 CO DINH sang aspect-[250/140] - yeu cau
   // nguoi dung: "Tham khảo cấu trúc UI của card Seri ở trang home... Sao cho
@@ -122,33 +144,52 @@ export function SeriesCampaignCard({
         "relative shrink-0 overflow-hidden bg-surface-muted",
         variant === "compact" ? "aspect-250/140 w-full" : "h-full",
       )}
-      style={variant === "banner" ? { width: `${series.imageWidthPercent}%` } : undefined}
+      style={
+        variant === "banner"
+          ? { width: `${series.imageWidthPercent}%` }
+          : undefined
+      }
     >
       <Image
         src={series.coverImageUrl}
         alt=""
         fill
-        className={series.imageFit === "contain" ? "object-contain" : "object-cover"}
+        className={
+          series.imageFit === "contain" ? "object-contain" : "object-cover"
+        }
       />
     </div>
   );
 
   const badge = series.showBadge && series.badgeText && (
     <span
-      className={cn("inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold", badgeStyle(series).className)}
+      className={cn(
+        "inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold",
+        badgeStyle(series).className,
+      )}
       style={badgeStyle(series).style}
     >
       {series.badgeText}
     </span>
   );
   const deadline = series.showDeadline && series.deadlineAt && (
-    <span className={cn("inline-block rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold", textColorClass)}>
+    <span
+      className={cn(
+        "inline-block rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold",
+        textColorClass,
+      )}
+    >
       {deadlineText(series.deadlineAt)}
     </span>
   );
 
   const content = (
-    <div className={cn("flex min-w-0 flex-1 flex-col justify-center gap-1.5", variant === "banner" ? "p-4" : "p-3")}>
+    <div
+      className={cn(
+        "flex min-w-0 flex-1 flex-col justify-center gap-1.5",
+        variant === "banner" ? "p-4" : "p-3",
+      )}
+    >
       {(badge || deadline) && (
         <div className="flex flex-wrap items-center gap-1.5">
           {badge}
@@ -170,7 +211,12 @@ export function SeriesCampaignCard({
           note.com: anh -> tieu de -> 1 dong icon+so lieu -> mo ta 2 dong).
           Truoc do compact CHI co tieu de, khong co ca 2 phan nay. */}
       {variant === "compact" && (
-        <p className={cn("flex items-center gap-1 text-[11px] font-semibold", mutedColorClass)}>
+        <p
+          className={cn(
+            "flex items-center gap-1 text-[11px] font-semibold",
+            mutedColorClass,
+          )}
+        >
           <BookOpen size={11} aria-hidden="true" />
           {series._count.entries} phần
         </p>
@@ -187,10 +233,21 @@ export function SeriesCampaignCard({
         </p>
       )}
       {hasActions && (
-        <div className={cn("mt-1 flex flex-wrap items-center gap-2", isLightBg && "text-white")}>
-          {series.actions.slice(0, variant === "compact" ? 1 : 3).map((action) => (
-            <ActionButton key={action.id} action={action} compact={variant === "compact"} />
-          ))}
+        <div
+          className={cn(
+            "mt-1 flex flex-wrap items-center gap-2",
+            isLightBg && "text-white",
+          )}
+        >
+          {series.actions
+            .slice(0, variant === "compact" ? 1 : 3)
+            .map((action) => (
+              <ActionButton
+                key={action.id}
+                action={action}
+                compact={variant === "compact"}
+              />
+            ))}
         </div>
       )}
     </div>
@@ -228,7 +285,11 @@ export function SeriesCampaignCard({
   // tranh <a> long <a>), tung nut CTA tu dieu huong rieng.
   if (!hasActions) {
     return (
-      <SeriesCardLink href={`/series/${series.slug}/map`} className={cardClassName} style={cardStyle}>
+      <SeriesCardLink
+        href={`/series/${series.slug}/map`}
+        className={cardClassName}
+        style={cardStyle}
+      >
         {image}
         {content}
       </SeriesCardLink>

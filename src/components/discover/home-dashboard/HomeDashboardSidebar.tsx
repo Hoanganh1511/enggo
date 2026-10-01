@@ -22,6 +22,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
+import { useSeriesEntrySidebarHidden } from "@/lib/use-series-entry-sidebar-hidden";
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -209,7 +210,17 @@ export function HomeDashboardSidebar() {
   // truoc, dung y dinh nay) nen return null o day la DU: khong con sidebar
   // chiem cho, phan noi dung Series tu nhien dan rong ra het khoang trong do.
   const focusModeActive = useFocusModeStore((s) => s.active);
-  if (focusModeActive) return null;
+  // [2026-10-01] An HAN (khong qua Focus mode store) tren trang doc/sua Entry
+  // Series - yeu cau nguoi dung: "Lúc chuyển bài nó bị tắt focus mode xong lại
+  // bật lại. Tôi không thích trải nghiệm này. Ý là bỏ hẳn cái sidebar main đi.
+  // Focus mode không liên quan". Truoc day dung EntryAutoFocusMode.tsx
+  // (mount/unmount setActive() qua Focus mode store MOI LAN doi Entry) - 2
+  // buoc tat-roi-bat lien tiep do KHONG dam bao chay lien tuc trong 1 frame,
+  // sinh ra hien tuong nhay/giat that su nguoi dung thay duoc luc chuyen bai.
+  // useSeriesEntrySidebarHidden() tinh THANG tu pathname (thuan render, khong
+  // qua effect) - LUON on dinh dung ngay, khong con "tat roi bat lai".
+  const sidebarHiddenByRoute = useSeriesEntrySidebarHidden();
+  if (focusModeActive || sidebarHiddenByRoute) return null;
 
   return (
     <aside

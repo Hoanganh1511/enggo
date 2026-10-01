@@ -46,6 +46,13 @@ import {
   AlignCenter,
   AlignRight,
   Superscript,
+  Megaphone,
+  RectangleHorizontal,
+  MousePointerClick,
+  ListVideo,
+  SquareTerminal,
+  BookOpen,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -89,57 +96,57 @@ function Btn({
   );
 }
 
-// Nut popover 2 lua chon cho "Accordion" - yeu cau nguoi dung: "khi click để
-// nó insert vào, nó sẽ hiện ra 2 options để chọn". Trigger CUNG kieu voi Btn
-// (size-8, cung mau hover) de khong lech giao dien voi cac nut xung quanh.
-function AccordionPickerBtn({
-  onInsertPlain,
-  onInsertMedia,
-}: {
-  onInsertPlain: () => void;
-  onInsertMedia: () => void;
-}) {
+// Nut DUY NHAT gop TAT CA cac loai "chèn khối" (truoc day moi loai la 1 nut
+// icon rieng, xep thanh 1 HANG DAI ~17 nut lam toolbar qua tai/roi mat) - yeu
+// cau nguoi dung: "Tất cả các insert các dạng khối trong editor để hiển thị
+// chung trong một button thôi nhé. Khi click btn đó sẽ hiện ra để chọn loại
+// insert vào". Popover chia THEO NHOM (dieu huong/gap-mo/bo cuc/quang ba) cho
+// de quet mat hon la 1 danh sach phang 17 dong; nhom "Gấp/mở" gop luon 2 lua
+// chon Accordion (truoc day la AccordionPickerBtn rieng) thanh 2 dong PHANG
+// trong CUNG popover nay, khong con popover long ben trong popover nua.
+type InsertMenuItem = { label: string; Icon: LucideIcon; onClick: () => void };
+type InsertMenuSection = { label: string; items: InsertMenuItem[] };
+
+function InsertBlockMenu({ sections }: { sections: InsertMenuSection[] }) {
   const [open, setOpen] = useState(false);
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          title="Accordion (bấm để mở/đóng)"
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
+          title="Chèn khối"
+          className="flex h-8 shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 text-ink-muted transition-colors duration-150 ease-out hover:bg-hover-bg hover:text-ink"
         >
-          <ListCollapse size={16} strokeWidth={1.9} />
+          <LayoutGrid size={16} strokeWidth={1.9} />
+          <span className="text-[13px] font-medium">Chèn khối</span>
+          <ChevronDown size={12} strokeWidth={2.2} />
         </button>
       </PopoverTrigger>
-      <PopoverContent open={open} align="start" sideOffset={6} className="z-50 w-60 rounded-lg border border-border bg-surface p-1 shadow-dropdown">
-        <button
-          type="button"
-          onClick={() => {
-            onInsertPlain();
-            setOpen(false);
-          }}
-          className="flex w-full cursor-pointer items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-hover-bg"
-        >
-          <ListCollapse size={16} strokeWidth={1.9} className="mt-0.5 shrink-0 text-ink-faint" />
-          <span>
-            <span className="block text-[13px] font-medium text-ink">Accordion thường</span>
-            <span className="block text-[11.5px] text-ink-faint">Chỉ có tiêu đề văn bản</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            onInsertMedia();
-            setOpen(false);
-          }}
-          className="flex w-full cursor-pointer items-start gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-hover-bg"
-        >
-          <LayoutPanelTop size={16} strokeWidth={1.9} className="mt-0.5 shrink-0 text-ink-faint" />
-          <span>
-            <span className="block text-[13px] font-medium text-ink">Accordion (ảnh + tiêu đề + mô tả)</span>
-            <span className="block text-[11.5px] text-ink-faint">Header dạng icon vuông kèm mô tả</span>
-          </span>
-        </button>
+      <PopoverContent
+        open={open}
+        align="start"
+        sideOffset={6}
+        className="z-50 max-h-112 w-80 overflow-y-auto rounded-lg border border-border bg-surface p-1.5 shadow-dropdown"
+      >
+        {sections.map((section) => (
+          <div key={section.label} className="mb-1 last:mb-0">
+            <p className="px-2.5 pt-2 pb-1 text-[10.5px] font-semibold tracking-wide text-ink-faint uppercase">{section.label}</p>
+            {section.items.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => {
+                  item.onClick();
+                  setOpen(false);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left hover:bg-hover-bg"
+              >
+                <item.Icon size={15} strokeWidth={1.9} className="shrink-0 text-ink-faint" />
+                <span className="text-[13px] text-ink">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        ))}
       </PopoverContent>
     </PopoverRoot>
   );
@@ -444,6 +451,46 @@ export function PostEditorToolbar({
     insertBlockWithSpacing(editor, { type: "statsBar", attrs: { items: STATS_BAR_DEFAULT_ITEMS } });
   };
 
+  // 5 khoi trang tri Entry moi (PromoCard/EntryBanner/EntryButtonGroup/
+  // LessonListBlock/InstallBlock) - THAY THE he thong "Section chèn thêm" cu
+  // (form JSON rieng, 3 vung top/middle/bottom - xem comment day du o dinh
+  // nghia cac node nay trong post-extensions.ts). Deu la atom, chen 1 lan voi
+  // attrs mac dinh de sua ngay.
+  const insertPromoCard = () => {
+    insertBlockWithSpacing(editor, {
+      type: "promoCard",
+      attrs: { style: "feature", imageUrl: null, eyebrow: "", title: "Tiêu đề", description: "", buttonLabel: "Xem thêm", buttonHref: "" },
+    });
+  };
+  const insertEntryBanner = () => {
+    insertBlockWithSpacing(editor, { type: "entryBanner", attrs: { eyebrow: "", title: "Tiêu đề", description: "" } });
+  };
+  const insertEntryButtonGroup = () => {
+    insertBlockWithSpacing(editor, {
+      type: "entryButtonGroup",
+      attrs: { buttons: [{ label: "Xem thêm", href: "", style: "solid" }] },
+    });
+  };
+  const insertLessonListBlock = () => {
+    insertBlockWithSpacing(editor, { type: "lessonListBlock", attrs: { heading: "", items: [] } });
+  };
+  const insertInstallBlock = () => {
+    insertBlockWithSpacing(editor, { type: "installBlock", attrs: { command: "", description: "", buttons: [] } });
+  };
+
+  // Chen "Cần biết trước khi đọc tiếp" (PrereqBlock) - yeu cau nguoi dung:
+  // "1 tính năng insert một vùng chủ yếu để giải thích những khái niệm cần
+  // biết, cần nắm qua trước khi đọc cái nội dung tiếp theo". [2026-10-01]
+  // content THAT (khong con `items` co cau truc) - 1 paragraph rong san
+  // trong body (giong Accordion/ProfileBlock).
+  const insertPrereqBlock = () => {
+    insertBlockWithSpacing(editor, {
+      type: "prereqBlock",
+      attrs: { title: "Cần biết trước khi đọc tiếp" },
+      content: [{ type: "paragraph" }],
+    });
+  };
+
   return (
     <>
     <div
@@ -496,18 +543,49 @@ export function PostEditorToolbar({
           dung duoc khi con tro o trong bang, va thieu han thao tac xoa). */}
       <Btn label="Bảng" Icon={TableIcon} active={editor.isActive("table")} onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} />
       <Divider />
-      <Btn label="Go deeper" Icon={Asterisk} onClick={insertGoDeeper} />
-      <Btn label="Mục lục đánh số (theo H2)" Icon={ListTree} onClick={insertToc} />
-      <Btn label="Đọc thêm (chọn bài viết)" Icon={GalleryVerticalEnd} onClick={insertCuratedList} />
-      <Btn label="TOC dạng box (theo H2)" Icon={LayoutGrid} onClick={insertQuestionPicker} />
-      <AccordionPickerBtn onInsertPlain={insertAccordion} onInsertMedia={insertMediaAccordion} />
-      <Btn label="Accordion Geographical (số lượng + list dot màu)" Icon={CircleDot} onClick={insertStatAccordion} />
-      <Btn label="Sơ đồ luồng (các bước nối tiếp, có mô tả trên mũi tên)" Icon={Workflow} onClick={insertFlowDiagram} />
-      <Btn label="Grid (tuỳ chỉnh số hàng/cột)" Icon={Grid3x3} onClick={insertGrid} />
-      <Btn label="Grid card (icon + trạng thái + mô tả + link)" Icon={IdCard} onClick={insertCardGrid} />
-      <Btn label="Chia đôi (soạn được cả 2 bên)" Icon={Columns2} onClick={insertSplitBlock} />
-      <Btn label="Block Hồ sơ (ảnh vuông + tên + nội dung)" Icon={Contact} onClick={insertProfileBlock} />
-      <Btn label="Thanh thống kê (5 ô số liệu ngang)" Icon={BarChart3} onClick={insertStatsBar} />
+      <InsertBlockMenu
+        sections={[
+          {
+            label: "Điều hướng & tổng quan",
+            items: [
+              { label: "Go deeper", Icon: Asterisk, onClick: insertGoDeeper },
+              { label: "Mục lục đánh số (theo H2)", Icon: ListTree, onClick: insertToc },
+              { label: "Đọc thêm (chọn bài viết)", Icon: GalleryVerticalEnd, onClick: insertCuratedList },
+              { label: "TOC dạng box (theo H2)", Icon: LayoutGrid, onClick: insertQuestionPicker },
+              { label: "Cần biết trước khi đọc tiếp", Icon: BookOpen, onClick: insertPrereqBlock },
+            ],
+          },
+          {
+            label: "Gấp / mở",
+            items: [
+              { label: "Accordion thường", Icon: ListCollapse, onClick: insertAccordion },
+              { label: "Accordion (ảnh + tiêu đề + mô tả)", Icon: LayoutPanelTop, onClick: insertMediaAccordion },
+              { label: "Accordion Geographical (số lượng + list dot màu)", Icon: CircleDot, onClick: insertStatAccordion },
+            ],
+          },
+          {
+            label: "Bố cục / lưới",
+            items: [
+              { label: "Grid (tuỳ chỉnh số hàng/cột)", Icon: Grid3x3, onClick: insertGrid },
+              { label: "Grid card (icon + trạng thái + mô tả + link)", Icon: IdCard, onClick: insertCardGrid },
+              { label: "Chia đôi (soạn được cả 2 bên)", Icon: Columns2, onClick: insertSplitBlock },
+              { label: "Block Hồ sơ (ảnh vuông + tên + nội dung)", Icon: Contact, onClick: insertProfileBlock },
+              { label: "Thanh thống kê (5 ô số liệu ngang)", Icon: BarChart3, onClick: insertStatsBar },
+              { label: "Sơ đồ luồng (các bước nối tiếp)", Icon: Workflow, onClick: insertFlowDiagram },
+            ],
+          },
+          {
+            label: "Quảng bá & hành động",
+            items: [
+              { label: "Thẻ quảng bá (icon/ảnh + tiêu đề + mô tả + nút)", Icon: Megaphone, onClick: insertPromoCard },
+              { label: "Băng nhấn mạnh (eyebrow + tiêu đề + mô tả)", Icon: RectangleHorizontal, onClick: insertEntryBanner },
+              { label: "Nhóm nút", Icon: MousePointerClick, onClick: insertEntryButtonGroup },
+              { label: "Danh sách bài học (thẻ dọc)", Icon: ListVideo, onClick: insertLessonListBlock },
+              { label: "Box lệnh cài đặt (copy-paste)", Icon: SquareTerminal, onClick: insertInstallBlock },
+            ],
+          },
+        ]}
+      />
       <Divider />
       <Btn label="Căn trái" Icon={AlignLeft} active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} />
       <Btn label="Căn giữa" Icon={AlignCenter} active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} />

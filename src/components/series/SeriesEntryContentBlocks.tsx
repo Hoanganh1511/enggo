@@ -12,30 +12,24 @@ import { SeriesEmailSignup } from "./SeriesEmailSignup";
 import type {
   EntryBlockButton,
   EntryContentBlock,
-  EntryContentBlockZone,
   EntryLessonListItem,
 } from "@/lib/api/content-series";
 
-// Danh sach khoi noi dung CO THE CHEN vao 3 vi tri ("zone") tren 1 trang
-// Entry - yeu cau nguoi dung mo rong tu "nua tren" ban dau ("chia làm nửa
-// trên... custom thêm đa dạng các element") sang 1 bo cuc day du: "top"
-// (duoi subtitle, hanh vi CU), "middle" (giua cum Top va than bai markdown)
-// va "bottom" (sau than bai, truoc pagination Next) - xem cach dung 3 lan
-// component nay trong [entrySlug]/page.tsx (EntryHeader cho top+middle,
-// EntryExtras cho bottom) va EntryContentBlocksEditor.tsx (form soan, cung
-// chia 3 khu theo dung zone).
-//
-// Backward-compat: block cu (tao TRUOC khi co `zone`) khong co field nay -
-// coi la "top" (xem `(block.zone ?? "top")`). Rieng zone "top" con giu fallback
-// rong = 1 khoi TOC ngam dinh (hanh vi tu luc chua co blocks), NHUNG CHI khi
-// entrySlug === "map" (xem loc block "toc" ben duoi - yeu cau nguoi dung
-// rieng: "Chỉ trang Map mới cho phép... box TOC dạng khung... Còn đâu
-// không cho").
+// [2026-09-30] Khong con chia 3 "zone" (top/middle/bottom) nua - yeu cau
+// nguoi dung: "Giờ gộp tất cả vào trong 1 cục body để insert lúc edit thôi.
+// Không tách thành phần đầu trên, phần giữa gì nữa". He thong "Section chèn
+// thêm" CU (form JSON rieng ngoai Tiptap, EntryContentBlocksEditor.tsx) DA BO
+// HAN khoi form soan (SeriesEntryForm.tsx) - cac loai khoi MOI (botHelp/
+// featurePromo/deeperCourse/buttonGroup/callout/lessonList/install) gio la
+// NODE TIPTAP that, chen truc tiep trong than bai (xem PromoCard/EntryBanner/
+// EntryButtonGroup/LessonListBlock/InstallBlock trong post-extensions.ts).
+// Component nay CHI CON DUNG DE DOC LAI du lieu CU da luu tu truoc (tranh mat
+// noi dung entry cu) - render TOAN BO blocks (bo qua `zone`, gop lam 1 vi tri
+// DUY NHAT thay vi rai rac 3 noi nhu truoc) ngay 1 lan trong [entrySlug]/page.tsx.
 export function SeriesEntryContentBlocks({
   blocks,
   contentMarkdown,
   entrySlug,
-  zone = "top",
   emailCourseEnabled,
   emailCourseTitle,
   emailCourseDescription,
@@ -43,25 +37,15 @@ export function SeriesEntryContentBlocks({
   blocks: EntryContentBlock[] | null | undefined;
   contentMarkdown: string;
   entrySlug: string;
-  zone?: EntryContentBlockZone;
-  // CHI zone middle/bottom moi co the chua block "newsletter" - zone "top"
-  // khong can truyen (block "newsletter" khong bao gio co zone "top", xem
-  // union type trong content-series.ts).
   emailCourseEnabled?: boolean;
   emailCourseTitle?: string;
   emailCourseDescription?: string;
 }) {
   const isMap = entrySlug === "map";
-  const isTopZone = zone === "top";
-  const zoneBlocks = (blocks ?? []).filter(
-    (block) => (block.zone ?? "top") === zone,
-  );
-  const base: EntryContentBlock[] =
-    zoneBlocks.length > 0
-      ? zoneBlocks
-      : isTopZone && isMap
-        ? [{ id: "legacy-toc", type: "toc" }]
-        : [];
+  // Fallback rong = 1 khoi TOC ngam dinh (hanh vi tu luc chua co blocks),
+  // CHI khi entrySlug === "map" (yeu cau nguoi dung rieng: "Chỉ trang Map
+  // mới cho phép... box TOC dạng khung... Còn đâu không cho").
+  const base: EntryContentBlock[] = blocks && blocks.length > 0 ? blocks : isMap ? [{ id: "legacy-toc", type: "toc" }] : [];
   const resolved = base.filter((block) => block.type !== "toc" || isMap);
 
   if (resolved.length === 0) return null;

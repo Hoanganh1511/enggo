@@ -9,6 +9,7 @@ import {
   SeriesMobileTopBar,
   SeriesSidebarDrawer,
 } from "@/components/series/SeriesMobileNav";
+import { SeriesScrollToTopButton } from "@/components/series/SeriesScrollToTopButton";
 
 // Layout dung chung cho toan bo 1 Series (Overview + moi Entry) - sidebar
 // trai (cay category/entry) o day de KHONG remount khi chuyen qua lai giua
@@ -59,6 +60,11 @@ export default async function SeriesLayout({
         categories={series.categories}
         entries={series.entries}
       />
+
+      {/* "Lên đầu trang" goc duoi-phai, CHI hien tu lg: (desktop) - yeu cau
+          nguoi dung: "Trang chi tiết (xem) bài viết, bổ sung thêm button
+          tròn góc dưới bên phải scroll to top" (xem SeriesScrollToTopButton.tsx). */}
+      <SeriesScrollToTopButton />
 
       {/* Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang
           trong quanh no) - yeu cau nguoi dung, khop mockup. (feed)/layout.tsx (cha)
