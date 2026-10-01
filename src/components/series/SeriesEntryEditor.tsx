@@ -12,6 +12,7 @@ import { uploadPostImageAction } from "@/actions/discover/upload-post-image";
 import { convertHeicToJpegIfNeeded } from "@/lib/heic-convert";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { toast } from "@/lib/toast/toast-store";
+import { insertUploadingImagePlaceholder, resolveUploadingImage } from "@/components/compose/image-upload-with-preview";
 
 // Editor RICH cho Nội dung Entry - DUNG DUNG 1 bo extension/toolbar VOI
 // Composer.tsx (yeu cau nguoi dung: "đồng bộ tất cả giống compose" - lan
@@ -79,6 +80,10 @@ export function SeriesEntryEditor({
         const imageFile = files.find((f) => f.type.startsWith("image/"));
         if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly paste binh thuong (text/HTML)
         event.preventDefault();
+        if (!editor) return true;
+        // Chen preview NGAY (xem image-upload-with-preview.ts) - khac truoc
+        // day (cho upload xong moi chen, khong co gi hien thi trong luc cho).
+        const { uploadId, previewSrc } = insertUploadingImagePlaceholder(editor, imageFile);
         void (async () => {
           try {
             const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
@@ -86,8 +91,9 @@ export function SeriesEntryEditor({
             formData.append("file", uploadFile);
             formData.append("kind", "image");
             const uploaded = await uploadPostImageAction(formData);
-            editor?.chain().focus().setImage({ src: uploaded.url }).run();
+            resolveUploadingImage(editor, uploadId, previewSrc, uploaded);
           } catch (err) {
+            resolveUploadingImage(editor, uploadId, previewSrc, null);
             toast.danger(getApiErrorMessage(err, "Dán ảnh thất bại, thử lại sau."));
           }
         })();
@@ -109,8 +115,10 @@ export function SeriesEntryEditor({
         const imageFile = files.find((f) => f.type.startsWith("image/"));
         if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly drop binh thuong (vd keo doan text)
         event.preventDefault();
+        if (!editor) return true;
         const coords = { left: event.clientX, top: event.clientY };
         const pos = view.posAtCoords(coords)?.pos ?? view.state.selection.from;
+        const { uploadId, previewSrc } = insertUploadingImagePlaceholder(editor, imageFile, pos);
         void (async () => {
           try {
             const uploadFile = await convertHeicToJpegIfNeeded(imageFile);
@@ -118,8 +126,9 @@ export function SeriesEntryEditor({
             formData.append("file", uploadFile);
             formData.append("kind", "image");
             const uploaded = await uploadPostImageAction(formData);
-            editor?.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: uploaded.url } }).run();
+            resolveUploadingImage(editor, uploadId, previewSrc, uploaded);
           } catch (err) {
+            resolveUploadingImage(editor, uploadId, previewSrc, null);
             toast.danger(getApiErrorMessage(err, "Thả ảnh thất bại, thử lại sau."));
           }
         })();

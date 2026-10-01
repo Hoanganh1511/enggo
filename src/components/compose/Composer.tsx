@@ -65,6 +65,7 @@ import {
 import { getPostExtensions, POST_PROSE_CLASS } from "@/components/compose/post-extensions";
 import { PostEditorToolbar } from "@/components/compose/PostEditorToolbar";
 import { TableControlsMenu } from "@/components/compose/TableControlsMenu";
+import { insertUploadingImagePlaceholder, resolveUploadingImage } from "@/components/compose/image-upload-with-preview";
 
 type PublishVisibility = "draft" | "public" | "limited";
 type RightTab = "publish" | "ai";
@@ -194,6 +195,10 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
         const imageFile = files.find((f) => f.type.startsWith("image/"));
         if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly paste binh thuong (text/HTML)
         event.preventDefault();
+        if (!editor) return true;
+        // Chen preview NGAY (xem image-upload-with-preview.ts) - khac truoc
+        // day (cho upload xong moi chen, khong co gi hien thi trong luc cho).
+        const { uploadId, previewSrc } = insertUploadingImagePlaceholder(editor, imageFile);
         // Tang dem TRUOC khi upload - canPublish (duoi) doc dem nay de CHAN
         // dang/luu trong luc cho, tranh mat anh vi bam Luu qua nhanh.
         setPendingInlineImageUploads((n) => n + 1);
@@ -204,8 +209,9 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
             formData.append("file", uploadFile);
             formData.append("kind", "image");
             const uploaded = await uploadPostImageAction(formData);
-            editor?.chain().focus().setImage({ src: uploaded.url }).run();
+            resolveUploadingImage(editor, uploadId, previewSrc, uploaded);
           } catch (err) {
+            resolveUploadingImage(editor, uploadId, previewSrc, null);
             setError(getApiErrorMessage(err, "Dán ảnh thất bại, thử lại sau."));
           } finally {
             setPendingInlineImageUploads((n) => n - 1);
@@ -223,8 +229,10 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
         const imageFile = files.find((f) => f.type.startsWith("image/"));
         if (!imageFile) return false; // khong phai anh - de Tiptap tu xu ly drop binh thuong (vd keo doan text)
         event.preventDefault();
+        if (!editor) return true;
         const coords = { left: event.clientX, top: event.clientY };
         const pos = view.posAtCoords(coords)?.pos ?? view.state.selection.from;
+        const { uploadId, previewSrc } = insertUploadingImagePlaceholder(editor, imageFile, pos);
         setPendingInlineImageUploads((n) => n + 1);
         void (async () => {
           try {
@@ -233,8 +241,9 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
             formData.append("file", uploadFile);
             formData.append("kind", "image");
             const uploaded = await uploadPostImageAction(formData);
-            editor?.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: uploaded.url } }).run();
+            resolveUploadingImage(editor, uploadId, previewSrc, uploaded);
           } catch (err) {
+            resolveUploadingImage(editor, uploadId, previewSrc, null);
             setError(getApiErrorMessage(err, "Thả ảnh thất bại, thử lại sau."));
           } finally {
             setPendingInlineImageUploads((n) => n - 1);

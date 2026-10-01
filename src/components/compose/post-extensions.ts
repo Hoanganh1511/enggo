@@ -6,6 +6,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import { ImageView } from "./image-view";
 import Code from "@tiptap/extension-code";
 import { TableKit, Table } from "@tiptap/extension-table";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
@@ -2657,7 +2658,39 @@ function tableAlignDelimiter(align: unknown): string {
 // anh (dua tren defaultMarkdownSerializer.nodes.image cua prosemirror-markdown),
 // CHI THEM state.closeBlock(node) sau khi ghi xong - dung y het cach
 // "paragraph" lam voi cac node con inline cua no.
+// [2026-10-02] width/align - yeu cau nguoi dung: "paste xong chưa có chỗ
+// chỉnh size hiển thị ảnh, vị trí trái, phải, chính giữa". 2 attrs MOI, mac
+// dinh width=null (anh rong tu nhien, giong het hanh vi CU) va align="center"
+// (giu nguyen hanh vi hien tai - anh dang mac dinh nam giua nho `[&_img]`
+// khong co quy tac canh le rieng, tuong duong center trong 1 cot noi dung 1
+// cot). `uploading`/`uploadId` (rendered:false - KHONG BAO GIO lot vao HTML/
+// markdown xuat ra, chi la trang thai noi bo luc dang soan) phuc vu preview
+// luc paste/drop (xem image-view.tsx + image-upload-with-preview.ts).
 const ImageWithBlockMarkdown = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: (el: HTMLElement) => {
+          const w = el.getAttribute("width");
+          return w ? Number(w) : null;
+        },
+        renderHTML: (attrs: Record<string, unknown>) =>
+          attrs.width ? { width: String(attrs.width) } : {},
+      },
+      align: {
+        default: "center",
+        parseHTML: (el: HTMLElement) => el.getAttribute("data-align") || "center",
+        renderHTML: (attrs: Record<string, unknown>) => ({ "data-align": (attrs.align as string) || "center" }),
+      },
+      uploading: { default: false, rendered: false },
+      uploadId: { default: null, rendered: false },
+    };
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageView);
+  },
   addStorage() {
     return {
       markdown: {
@@ -2666,7 +2699,32 @@ const ImageWithBlockMarkdown = Image.extend({
           const src = ((node.attrs.src as string) || "").replace(/[()]/g, "\\$&");
           const titleAttr = node.attrs.title as string | undefined;
           const title = titleAttr ? ` "${titleAttr.replace(/"/g, '\\"')}"` : "";
-          state.write(`![${alt}](${src}${title})`);
+          const width = node.attrs.width as number | null;
+          const align = (node.attrs.align as string) || "center";
+          // Mac dinh (chua tung resize/doi canh le) - GIU NGUYEN cu phap
+          // markdown chuan `![alt](src "title")` y het truoc day, KHONG anh
+          // huong du lieu da luu cua tat ca anh cu.
+          if (!width && align === "center") {
+            state.write(`![${alt}](${src}${title})`);
+            state.closeBlock(node);
+            return;
+          }
+          // Da resize/doi canh le - xuong cap ve raw HTML (<div> la 1 trong
+          // cac the duoc CommonMark cong nhan la "HTML block" ngay ca khi
+          // dung 1 minh, xem ly do chi tiet da ap dung cho node "table" ngay
+          // tren) de width/align SONG duoc qua vong luu+doc lai: `width` la
+          // thuoc tinh HTML chuan (px), `data-align` doc lai duoc bang
+          // parseHTML() cua CHINH node nay (addAttributes o tren) - khong
+          // can suy luan tu CSS. `style="text-align:...` ap dung cho TRANG
+          // DOC CONG KHAI (khong co NodeView/JS, chi dua vao CSS/HTML tho
+          // qua rehype-raw) de anh thuc su nam dung vi tri.
+          const escAlt = escapeHtmlAttr((node.attrs.alt as string) || "");
+          const escTitle = titleAttr ? ` title="${escapeHtmlAttr(titleAttr)}"` : "";
+          const widthAttr = width ? ` width="${width}"` : "";
+          state.ensureNewLine();
+          state.write(`<div style="text-align:${align};">`);
+          state.write(`<img src="${src}" alt="${escAlt}"${escTitle}${widthAttr} data-align="${align}" />`);
+          state.write(`</div>`);
           state.closeBlock(node);
         },
       },
