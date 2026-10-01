@@ -179,7 +179,9 @@ export function Composer({ initialPost }: { initialPost?: Post } = {}) {
     immediatelyRender: false,
     shouldRerenderOnTransaction: true,
     editorProps: {
-      attributes: { class: POST_PROSE_CLASS + " min-h-[230px]" },
+      // spellcheck="false" - dong bo voi SeriesEntryEditor.tsx (xem comment
+      // chi tiet o do), tat popup goi y chinh ta mac dinh cua trinh duyet.
+      attributes: { class: POST_PROSE_CLASS + " min-h-[230px]", spellcheck: "false" },
       // Dan (Ctrl+V) 1 anh THAT (vd screenshot copy tu ngoai) vao THAN BAI -
       // truoc day khong co gi ca, Tiptap mac dinh chi hieu text/HTML tren
       // clipboard, anh bi lang le bo qua (bao loi nguoi dung). Rieng KHONG

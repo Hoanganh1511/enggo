@@ -47,7 +47,11 @@ function shouldShowUnifiedMenu({ editor: ed, state }: { editor: Editor; state: E
   return hasTextSelection || ed.isActive("table");
 }
 
-const BUBBLE_MENU_OPTIONS = { placement: "top" as const };
+// [2026-10-01] offset:108 - yeu cau nguoi dung: "cách lên trên thêm 100px so
+// với vị trí con trỏ được chọn". Mac dinh cua chinh BubbleMenuPlugin la 8
+// (xem floatingUIOptions trong node_modules/.pnpm/@tiptap+extension-bubble-menu),
+// cong them 100 theo dung y "thêm" (khong phai THAY the thanh 100) -> 108.
+const BUBBLE_MENU_OPTIONS = { placement: "top" as const, offset: 108 };
 
 const TEXT_COLORS: { label: string; value: string | null }[] = [
   { label: "Mặc định", value: null },

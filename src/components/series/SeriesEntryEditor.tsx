@@ -55,7 +55,14 @@ export function SeriesEntryEditor({
     immediatelyRender: false,
     shouldRerenderOnTransaction: true,
     editorProps: {
-      attributes: { class: POST_PROSE_CLASS + " min-h-64 px-3 py-2.5" },
+      // spellcheck="false" - yeu cau nguoi dung: "bỏ cái gợi ý từ gì nền đen
+      // này đi" (popup goi y chinh ta MAC DINH cua trinh duyet - Edge/Chrome
+      // tu gach chan do + hien goi y khi tu "sai chinh ta" theo tu dien
+      // TIENG ANH cua may, trong khi noi dung o day thuong la tieng Viet xen
+      // thuat ngu/code tieng Anh, gay goi y sai lech lien tuc va gay roi mat
+      // khi soan). Day la thuoc tinh HTML chuan, KHONG lien quan gi Tiptap -
+      // trinh duyet tu TAT han spellcheck/goi y cho vung contentEditable nay.
+      attributes: { class: POST_PROSE_CLASS + " min-h-64 px-3 py-2.5", spellcheck: "false" },
       // [2026-09-25] Dan (Ctrl+V) 1 anh THAT (vd screenshot copy tu ngoai) -
       // yeu cau nguoi dung: "Copy ảnh paste trực tiếp vào thì không hiện".
       // Nguyen nhan: KHONG co handlePaste rieng o day (khac Composer.tsx da

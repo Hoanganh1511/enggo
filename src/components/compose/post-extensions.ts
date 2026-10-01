@@ -6,6 +6,7 @@ import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
+import Code from "@tiptap/extension-code";
 import { TableKit, Table } from "@tiptap/extension-table";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
@@ -2191,7 +2192,10 @@ const TableWithAlignMarkdown = Table.extend({
 
 export function getPostExtensions(): Extensions {
   return [
-    StarterKit.configure({ link: false, underline: false }),
+    // code: false - StarterKit KHONG con tu dang ky "code" (inline) nua,
+    // thay bang CodeInline ben duoi (inclusive:false) - xem comment chi
+    // tiet ngay canh CodeInline.
+    StarterKit.configure({ link: false, underline: false, code: false }),
     EmptyParagraphBackspaceKeymap,
     TypographyInputRules,
     Underline,
@@ -2225,6 +2229,18 @@ export function getPostExtensions(): Extensions {
     TextStyle.extend({ inclusive: false }),
     Color,
     BackgroundColor,
+    // [2026-10-01] inclusive:false cho mark "code" (CUNG LY DO HET voi
+    // TextStyle o tren) - yeu cau nguoi dung: "ở syntax `......` tại ký tự
+    // cuối, phải ấn mũi tên right, hoặc đóng bằng ` thì mới thoát cái khối
+    // đó". Mac dinh (inclusive:true, @tiptap/extension-code khong tu doi
+    // gia tri nay) con tro dung NGAY RIA PHAI 1 doan code inline se TU DONG
+    // "thua ke" mark do khi go tiep - phai bam ArrowRight (thoat vi tri bien
+    // sang ben ngoai mark) hoac go them 1 dau backtick (dong roi mo lai 1
+    // doan code moi, VO TINH thoat duoc) moi tra ve van ban thuong. Ban mo
+    // rong nay THAY THE "code" cua StarterKit (xem `code:false` o tren) -
+    // KHONG dung chung ten voi node/mark nao khac nen khong co rui ro
+    // "Duplicate extension names" nhu truong hop Table/Image.
+    Code.extend({ inclusive: false }),
     // Can le trai/giua/phai - yeu cau nguoi dung cho phan body cua Grid ("text
     // body thì cho soạn bình thường, có căn chỉnh trái phải giữa, in đậm, in
     // nghiêng, list"). Ap dung cho ca "paragraph" (dung chung TOAN BO schema,
