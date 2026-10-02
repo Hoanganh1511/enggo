@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Clock, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackingPageHeader } from "@/components/tracking/TrackingPageHeader";
@@ -15,11 +15,40 @@ import {
 type ViewMode = "week" | "month";
 type ItemsByDate = Record<string, ApiPlannerItem[]>;
 
+// Van dung cho head MonthGrid (tieng Viet, giu nguyen - yeu cau nguoi dung
+// CHI noi ve "trục X" cua lich co luoi gio, tuc WeekTimeGrid ben duoi).
 const WEEKDAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+// [2026-10-02] Rieng head WeekTimeGrid - yeu cau nguoi dung: "các ngày trong
+// tuần theo tiếng anh". Thu 2 (index 0, T2) la dau tuan theo startOfWeek() da
+// dung xuyen suot file nay (ISO 8601, tuan bat dau Thu Hai).
+const WEEKDAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_LABELS = [
   "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
   "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
+
+// [2026-10-02] Bang mau cho checklist - yeu cau nguoi dung: "khi tạo
+// checklist cũng được chọn loại màu cho nó". TAI DUNG dung 6 mau + "Mac dinh"
+// da co san o TEXT_COLORS (SelectionFloatingMenu.tsx, tinh nang chon mau chu
+// trong editor) thay vi bia 1 bang mau rieng cho Planner - nhat quan mau sac
+// trong toan app (nguoi dung da chon dung bang mau nay roi "Tai dung 7 mau da
+// co trong editor" khi duoc hoi).
+const PLANNER_COLORS: { label: string; value: string | null }[] = [
+  { label: "Mặc định", value: null },
+  { label: "Đỏ", value: "#ef4444" },
+  { label: "Cam", value: "#f97316" },
+  { label: "Vàng", value: "#eab308" },
+  { label: "Xanh lá", value: "#22c55e" },
+  { label: "Xanh dương", value: "#3b82f6" },
+  { label: "Tím", value: "#a855f7" },
+];
+
+// Luoi gio (truc Y) WeekTimeGrid - CHI view Tuan (o Thang qua nho de ve luoi
+// gio hop ly, theo dung xac nhan cua nguoi dung). 56px/gio (h-14 Tailwind) -
+// du cao de doc so gio ro rang nhung khong qua dai (24 gio x 56px = 1344px,
+// cuon rieng trong 1 khung cao co dinh thay vi day dai ca trang).
+const HOUR_ROW_HEIGHT = 56;
+const HOURS = Array.from({ length: 24 }, (_, h) => h);
 
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -115,10 +144,19 @@ export function PlannerShell({
     setItemsByDate((prev) => ({ ...prev, [date]: updater(prev[date] ?? []) }));
   }
 
-  async function handleAddItem(title: string, kind: PlannerItemKind, scheduledMinute?: number) {
-    const created = await createPlannerItemAction({ date: selectedDate, title, kind, scheduledMinute }).catch(
-      () => null,
-    );
+  async function handleAddItem(
+    title: string,
+    kind: PlannerItemKind,
+    scheduledMinute?: number,
+    color?: string,
+  ) {
+    const created = await createPlannerItemAction({
+      date: selectedDate,
+      title,
+      kind,
+      scheduledMinute,
+      color,
+    }).catch(() => null);
     if (created) patchDate(selectedDate, (items) => [...items, created]);
   }
 
@@ -199,13 +237,15 @@ export function PlannerShell({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_380px]">
-        <div className={cn("rounded-xl border border-border bg-surface p-3", isLoading && "opacity-60")}>
-          {viewMode === "week" ? (
-            <WeekGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={setSelectedDate} />
-          ) : (
+        {viewMode === "week" ? (
+          <div className={cn("overflow-hidden rounded-xl border border-border bg-surface", isLoading && "opacity-60")}>
+            <WeekTimeGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={setSelectedDate} />
+          </div>
+        ) : (
+          <div className={cn("rounded-xl border border-border bg-surface p-3", isLoading && "opacity-60")}>
             <MonthGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={setSelectedDate} />
-          )}
-        </div>
+          </div>
+        )}
 
         <DayDetailPanel
           date={selectedDate}
@@ -257,9 +297,12 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
       {visible.map((item) => (
         <div key={item.id} className="flex min-w-0 items-center gap-1">
           <span
+            style={item.color && !item.done ? { backgroundColor: item.color } : undefined}
             className={cn(
               "size-1 shrink-0 rounded-full",
-              item.done ? "bg-ink-faint/50" : item.kind === "BIG" ? "bg-primary/70" : "bg-ink-faint",
+              !item.color &&
+                (item.done ? "bg-ink-faint/50" : item.kind === "BIG" ? "bg-primary/70" : "bg-ink-faint"),
+              item.color && item.done && "bg-ink-faint/50",
             )}
             aria-hidden="true"
           />
@@ -279,7 +322,69 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
   );
 }
 
-function WeekGrid({
+// Danh sach viec KHONG dat gio ("ca ngay") hien 1 hang rieng NGAY TREN luoi
+// gio (giong Google Calendar) - KHONG the dinh vi chung theo truc Y vi khong
+// co scheduledMinute de tinh "top".
+function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
+  return (
+    <span
+      title={item.title}
+      style={{
+        borderTopColor: item.color ?? "var(--border-strong)",
+        backgroundColor: item.color ? `${item.color}1A` : undefined,
+      }}
+      className={cn(
+        "block w-full truncate rounded-md border border-border border-t-2 bg-surface-muted px-1.5 py-0.5 text-[11px] leading-[1.3]",
+        item.done ? "text-ink-faint line-through" : "text-ink-muted",
+      )}
+    >
+      {item.title}
+    </span>
+  );
+}
+
+// The "su kien" dinh vi theo gio NGAY TREN luoi - yeu cau nguoi dung: "Các
+// thẻ checklist trong ngày trong calendar thì thiết kế bo viền nhẹ, cho nhìn
+// thấy màu border top". `style` (khong phai className) cho mau - mau la HEX
+// DONG do nguoi dung tu chon (PLANNER_COLORS), Tailwind utility class KHONG
+// the bieu dien gia tri dong luc runtime, chi co inline style lam duoc.
+// `1A` noi vao cuoi hex = ~10% alpha (dang hex 2 ky tu, 0x1A/0xFF ~ 10%) -
+// nen mau RAT NHAT lam vien/chu van la mau chinh, giu dung tinh than "bo vien
+// nhẹ" (khong phai 1 khoi mau dac).
+function TimedItemChip({
+  item,
+  top,
+}: {
+  item: ApiPlannerItem;
+  top: number;
+}) {
+  return (
+    <div
+      title={`${minutesToLabel(item.scheduledMinute ?? 0)} · ${item.title}`}
+      style={{
+        top,
+        borderTopColor: item.color ?? "var(--border-strong)",
+        backgroundColor: item.color ? `${item.color}1A` : "var(--surface-muted)",
+      }}
+      className={cn(
+        "absolute right-1 left-1 flex h-6 items-center truncate rounded-md border border-border/70 border-t-2 px-1.5 text-[11px] leading-none",
+        item.done ? "text-ink-faint line-through" : "text-ink-muted",
+      )}
+    >
+      <span className="truncate">{item.title}</span>
+    </div>
+  );
+}
+
+// [2026-10-02] Luoi gio kieu Google Calendar - thay cho WeekGrid dang card
+// liet ke truoc day, CHI ap dung view Tuan (yeu cau nguoi dung: "Trục Y thì
+// là các khung giờ trong ngày", xac nhan CHI view Tuan khi duoc hoi vi o
+// Thang qua nho de ve luoi gio hop ly). Head gom 2 phan (yeu cau nguoi dung:
+// "bổ sung head trục X và Y gồm: các ngày trong tuần theo tiếng anh, xuống
+// dòng là Tháng, Năm"): 1 dong rieng "Tháng X, Năm" phia tren, roi moi den
+// hang 7 cot thu (tieng Anh) + so ngay - truc Y la cot nhan gio (00:00-23:00)
+// ben trai luoi.
+function WeekTimeGrid({
   anchor,
   selectedDate,
   itemsByDate,
@@ -290,37 +395,104 @@ function WeekGrid({
   itemsByDate: ItemsByDate;
   onSelect: (date: string) => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i));
   const today = toISODate(new Date());
+  const weekStart = new Date(startOfWeek(anchor));
+  const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
+
+  // Cuon san toi ~7h sang luc mo/doi tuan - tranh nguoi dung luon phai tu keo
+  // tu 00:00 (gio it ai len lich) moi thay noi dung ban ngay.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 7 * HOUR_ROW_HEIGHT - 24 });
+  }, [anchor]);
+
   return (
-    <div className="grid grid-cols-7 gap-1.5">
-      {days.map((d, i) => (
-        <button
-          key={d}
-          type="button"
-          onClick={() => onSelect(d)}
-          // min-h-36 - yeu cau nguoi dung: "Cho các ô trong lịch to ra" (de co
-          // cho hien danh sach viec ben duoi, khong chi so/tong nhu truoc).
-          // items-stretch (khong con items-center) + text-left - danh sach
-          // viec can CAN TRAI tu nhien nhu 1 checklist thu nho, khong hop ly
-          // neu can giua.
-          className={cn(
-            "flex min-h-36 cursor-pointer flex-col items-stretch gap-0.5 rounded-lg border p-2.5 text-left transition-colors duration-150 ease-out",
-            d === selectedDate ? "border-primary bg-primary/5" : "border-border hover:bg-hover-bg",
-          )}
-        >
-          <div className="flex items-center justify-between gap-1.5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[11px] text-ink-faint">{WEEKDAY_LABELS[i]}</span>
-              <span className={cn("text-[15px] font-semibold", d === today ? "text-primary" : "text-ink")}>
+    <div className="flex flex-col">
+      <div className="shrink-0 border-b border-border">
+        <p className="px-3 pt-2.5 pb-1 text-[13px] font-semibold text-ink">{monthYearLabel}</p>
+        <div className="grid grid-cols-[48px_repeat(7,1fr)]">
+          <div />
+          {days.map((d, i) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => onSelect(d)}
+              className={cn(
+                "flex cursor-pointer flex-col items-center gap-0.5 border-l border-border py-1.5 transition-colors duration-150 ease-out hover:bg-hover-bg",
+                d === selectedDate && "bg-primary/5",
+              )}
+            >
+              <span className="text-[10.5px] font-medium tracking-wide text-ink-faint uppercase">
+                {WEEKDAY_LABELS_EN[i]}
+              </span>
+              <span
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full text-[13px] font-semibold",
+                  d === today ? "bg-primary text-surface" : d === selectedDate ? "text-primary" : "text-ink",
+                )}
+              >
                 {Number(d.slice(8, 10))}
               </span>
-            </div>
-            <DaySummary items={itemsByDate[d] ?? []} />
+            </button>
+          ))}
+        </div>
+        {/* Hang "ca ngay" - viec KHONG dat gio, xem AllDayItemChip. */}
+        <div className="grid grid-cols-[48px_repeat(7,1fr)] border-t border-border">
+          <div className="py-1 text-center text-[9px] text-ink-faint">Cả ngày</div>
+          {days.map((d) => {
+            const allDay = (itemsByDate[d] ?? []).filter((it) => it.scheduledMinute === null);
+            return (
+              <div key={d} className="flex min-h-7 flex-col gap-0.5 border-l border-border px-1 py-1">
+                {allDay.map((item) => (
+                  <AllDayItemChip key={item.id} item={item} />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Than luoi gio - cuon rieng (max-h co dinh), truc Y la cot nhan gio. */}
+      <div ref={scrollRef} className="max-h-130 overflow-y-auto">
+        <div className="grid grid-cols-[48px_repeat(7,1fr)]">
+          <div className="flex flex-col">
+            {HOURS.map((h) => (
+              <div key={h} style={{ height: HOUR_ROW_HEIGHT }} className="relative border-t border-border">
+                {h > 0 && (
+                  <span className="absolute -top-2 right-1.5 text-[10px] text-ink-faint">
+                    {h.toString().padStart(2, "0")}:00
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
-          <DayItemsPreview items={itemsByDate[d] ?? []} />
-        </button>
-      ))}
+          {days.map((d) => {
+            const timed = (itemsByDate[d] ?? []).filter(
+              (it): it is ApiPlannerItem & { scheduledMinute: number } => it.scheduledMinute !== null,
+            );
+            return (
+              <div
+                key={d}
+                className={cn("relative border-l border-border", d === selectedDate && "bg-primary/5")}
+                style={{ height: HOUR_ROW_HEIGHT * 24 }}
+              >
+                {HOURS.map((h) => (
+                  <div
+                    key={h}
+                    className="cursor-pointer border-t border-border hover:bg-hover-bg"
+                    style={{ height: HOUR_ROW_HEIGHT }}
+                    onClick={() => onSelect(d)}
+                  />
+                ))}
+                {timed.map((item) => (
+                  <TimedItemChip key={item.id} item={item} top={(item.scheduledMinute / 60) * HOUR_ROW_HEIGHT} />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -401,7 +573,18 @@ function ItemRow({
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-2 py-1">
+    // [2026-10-02] The checklist bo vien nhe + border-top mau - yeu cau
+    // nguoi dung: "thiết kế bo viền nhẹ, cho nhìn thấy màu border top".
+    // border-border/70 (nhe hon border-border mac dinh) cho 3 canh con lai,
+    // rieng border-t-2 LAY mau TU item.color (qua style, khong phai
+    // className - xem comment chi tiet trong TimedItemChip o tren) - khong
+    // co mau (item.color null) thi fallback ve --border-strong, van CO phan
+    // biet voi border nhe 3 canh con lai (toi hon 1 chut) thay vi hoan toan
+    // phang.
+    <div
+      style={{ borderTopColor: item.color ?? "var(--border-strong)" }}
+      className="flex items-center gap-2 rounded-md border border-border/70 border-t-2 bg-surface px-2 py-1.5"
+    >
       <input
         type="checkbox"
         checked={item.done}
@@ -451,7 +634,10 @@ function BigItemRow({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-surface-muted/40 p-2">
+    <div
+      style={{ borderTopColor: item.color ?? "var(--border-strong)" }}
+      className="rounded-lg border border-border/70 border-t-2 bg-surface-muted/40 p-2"
+    >
       <div className="flex items-center gap-1.5">
         <button
           type="button"
@@ -516,7 +702,7 @@ function DayDetailPanel({
 }: {
   date: string;
   items: ApiPlannerItem[];
-  onAddItem: (title: string, kind: PlannerItemKind, scheduledMinute?: number) => void;
+  onAddItem: (title: string, kind: PlannerItemKind, scheduledMinute?: number, color?: string) => void;
   onAddChild: (parentId: string, title: string) => void;
   onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
@@ -524,11 +710,12 @@ function DayDetailPanel({
   const [draft, setDraft] = useState("");
   const [draftKind, setDraftKind] = useState<PlannerItemKind>("SIMPLE");
   const [draftTime, setDraftTime] = useState("");
+  const [draftColor, setDraftColor] = useState<string | null>(null);
 
   function submit() {
     const title = draft.trim();
     if (!title) return;
-    onAddItem(title, draftKind, draftTime ? timeInputToMinutes(draftTime) : undefined);
+    onAddItem(title, draftKind, draftTime ? timeInputToMinutes(draftTime) : undefined, draftColor ?? undefined);
     setDraft("");
     setDraftTime("");
   }
@@ -573,6 +760,37 @@ function DayDetailPanel({
             title="Đặt giờ (không bắt buộc)"
             className="h-9 w-24 shrink-0 rounded-lg border border-border bg-background px-1.5 text-xs text-ink outline-none focus:border-primary/50"
           />
+        </div>
+        <div className="flex items-center gap-1.5">
+          {/* Chon mau - yeu cau nguoi dung: "khi tạo checklist cũng được
+              chọn loại màu cho nó". Nut tron rong/dac theo mau, vien dup
+              (ring-2 ring-ink) danh dau mau DANG chon, giu lai qua cac lan
+              Them lien tiep (khong reset ve null sau submit) - cung tinh
+              than voi draftKind o duoi, tien cho nguoi dung them nhieu viec
+              CUNG 1 chu de/mau lien tiep khong phai chon lai moi lan. */}
+          {PLANNER_COLORS.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              title={c.label}
+              onClick={() => setDraftColor(c.value)}
+              className={cn(
+                "flex size-5.5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface transition-shadow duration-100 ease-out",
+                draftColor === c.value && "ring-2 ring-ink",
+              )}
+              style={{ backgroundColor: c.value ?? "transparent" }}
+            >
+              {c.value === null && (
+                <span
+                  className="pointer-events-none block size-full"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 4px)",
+                  }}
+                />
+              )}
+            </button>
+          ))}
         </div>
         <div className="flex items-center justify-between gap-2">
           <div className="flex gap-0.5 rounded-md bg-surface-muted p-0.5">

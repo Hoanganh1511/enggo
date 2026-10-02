@@ -9,6 +9,8 @@ export type ApiPlannerItem = {
   title: string;
   kind: PlannerItemKind;
   scheduledMinute: number | null;
+  // Mau the (hex "#rrggbb") - xem PLANNER_COLORS trong PlannerShell.tsx.
+  color: string | null;
   done: boolean;
   orderIndex: number;
   parentId: string | null;
@@ -23,6 +25,7 @@ export type PlannerItemInput = {
   title: string;
   kind?: PlannerItemKind;
   scheduledMinute?: number;
+  color?: string;
   // Truyen de chen 1 DAU VIEC CON vao duoi 1 planner "lớn" da co san thay vi
   // tao item top-level moi - xem PlannerService.create() o backend.
   parentId?: string;
@@ -33,6 +36,7 @@ export type PlannerItemUpdateInput = Partial<{
   // null = xoa gio da dat (khac undefined = giu nguyen) - xem comment
   // PlannerService.update() o backend.
   scheduledMinute: number | null;
+  color: string | null;
   orderIndex: number;
 }>;
 
