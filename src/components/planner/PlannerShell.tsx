@@ -224,9 +224,58 @@ function DaySummary({ items }: { items: ApiPlannerItem[] }) {
   if (items.length === 0) return null;
   const done = items.filter((i) => i.done).length;
   return (
-    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-ink-faint">
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] font-medium text-ink-faint">
       {done}/{items.length}
     </span>
+  );
+}
+
+// [2026-10-02] So viec toi da hien TRUC TIEP trong 1 o lich (tuan/thang) -
+// yeu cau nguoi dung: "Có việc cần làm đơn hay lớn trong ngày show ra luôn
+// trên lịch. Tối đa 5 cái, từ cái thứ 6 hiện dấu ....". Qua con so nay se
+// lam o lich cao qua muc/vo bo cuc thang - "..." (1 dong rieng, KHONG phai
+// "+N") la dau hieu CON NUA, dung y chu "dấu ...." nguoi dung ta.
+const MAX_PREVIEW_ITEMS = 5;
+
+// Danh sach viec RUT GON hien NGAY trong o ngay - ap dung CHUNG cho ca
+// WeekGrid/MonthGrid (truoc day o lich CHI co so/tong, phai bam vao moi thay
+// ten viec o panel ben phai). `truncate` (khong phai line-clamp nhieu dong)
+// cho TUNG dong viec - 1 viec dai qua se bi CAT GON thanh 1 dong + dau "..."
+// cuoi dong thay vi troi xuong dong 2 lam lech chieu cao cac o ke nhau trong
+// cung 1 hang luoi (yeu cau nguoi dung: "Để ý về lineclamp, break line").
+// `min-w-0` tren CA wrapper LAN tung dong - truncate chi hoat dong khi phan
+// tu bi GIOI HAN chieu rong THAT, mac dinh 1 flex item (ca flex-col) co
+// min-width "auto" chong lai viec co lai, can override ve 0 de overflow-
+// hidden/ellipsis phat huy dung (loi pho bien khi dung truncate trong flex).
+function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
+  if (items.length === 0) return null;
+  const sorted = [...items].sort((a, b) => a.orderIndex - b.orderIndex);
+  const visible = sorted.slice(0, MAX_PREVIEW_ITEMS);
+  const hasMore = sorted.length > MAX_PREVIEW_ITEMS;
+  return (
+    <div className="mt-0.5 flex min-w-0 flex-1 flex-col gap-px overflow-hidden">
+      {visible.map((item) => (
+        <div key={item.id} className="flex min-w-0 items-center gap-1">
+          <span
+            className={cn(
+              "size-1 shrink-0 rounded-full",
+              item.done ? "bg-ink-faint/50" : item.kind === "BIG" ? "bg-primary/70" : "bg-ink-faint",
+            )}
+            aria-hidden="true"
+          />
+          <span
+            title={item.title}
+            className={cn(
+              "min-w-0 flex-1 truncate text-[10.5px] leading-[1.4]",
+              item.done ? "text-ink-faint line-through" : "text-ink-muted",
+            )}
+          >
+            {item.title}
+          </span>
+        </div>
+      ))}
+      {hasMore && <span className="pl-2.5 text-[10.5px] leading-none text-ink-faint">····</span>}
+    </div>
   );
 }
 
@@ -250,16 +299,26 @@ function WeekGrid({
           key={d}
           type="button"
           onClick={() => onSelect(d)}
+          // min-h-36 - yeu cau nguoi dung: "Cho các ô trong lịch to ra" (de co
+          // cho hien danh sach viec ben duoi, khong chi so/tong nhu truoc).
+          // items-stretch (khong con items-center) + text-left - danh sach
+          // viec can CAN TRAI tu nhien nhu 1 checklist thu nho, khong hop ly
+          // neu can giua.
           className={cn(
-            "flex cursor-pointer flex-col items-center gap-0.5 rounded-lg border p-3 text-center transition-colors duration-150 ease-out",
+            "flex min-h-36 cursor-pointer flex-col items-stretch gap-0.5 rounded-lg border p-2.5 text-left transition-colors duration-150 ease-out",
             d === selectedDate ? "border-primary bg-primary/5" : "border-border hover:bg-hover-bg",
           )}
         >
-          <span className="text-[11px] text-ink-faint">{WEEKDAY_LABELS[i]}</span>
-          <span className={cn("text-lg font-semibold", d === today ? "text-primary" : "text-ink")}>
-            {Number(d.slice(8, 10))}
-          </span>
-          <DaySummary items={itemsByDate[d] ?? []} />
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-[11px] text-ink-faint">{WEEKDAY_LABELS[i]}</span>
+              <span className={cn("text-[15px] font-semibold", d === today ? "text-primary" : "text-ink")}>
+                {Number(d.slice(8, 10))}
+              </span>
+            </div>
+            <DaySummary items={itemsByDate[d] ?? []} />
+          </div>
+          <DayItemsPreview items={itemsByDate[d] ?? []} />
         </button>
       ))}
     </div>
@@ -306,15 +365,22 @@ function MonthGrid({
               key={d}
               type="button"
               onClick={() => onSelect(d)}
+              // min-h-32 (truoc day min-h-16=64px, qua chat de hien them
+              // danh sach viec) - yeu cau nguoi dung: "Cho các ô trong lịch
+              // to ra". items-stretch + text-left (khong con items-center) -
+              // can trai danh sach viec nhu 1 checklist thu nho trong o.
               className={cn(
-                "flex min-h-16 cursor-pointer flex-col items-center gap-0.5 rounded-lg border p-1.5 transition-colors duration-150 ease-out",
+                "flex min-h-32 cursor-pointer flex-col items-stretch gap-0.5 rounded-lg border p-2 text-left transition-colors duration-150 ease-out",
                 d === selectedDate ? "border-primary bg-primary/5" : "border-border hover:bg-hover-bg",
               )}
             >
-              <span className={cn("text-[13px] font-semibold", d === today ? "text-primary" : "text-ink")}>
-                {Number(d.slice(8, 10))}
-              </span>
-              <DaySummary items={itemsByDate[d] ?? []} />
+              <div className="flex items-center justify-between gap-1">
+                <span className={cn("text-[13px] font-semibold", d === today ? "text-primary" : "text-ink")}>
+                  {Number(d.slice(8, 10))}
+                </span>
+                <DaySummary items={itemsByDate[d] ?? []} />
+              </div>
+              <DayItemsPreview items={itemsByDate[d] ?? []} />
             </button>
           ),
         )}
