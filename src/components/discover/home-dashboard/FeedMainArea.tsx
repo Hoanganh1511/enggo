@@ -1,7 +1,7 @@
 "use client";
 
 import { useFocusModeStore } from "@/stores/focus-mode-store";
-import { useSeriesEntrySidebarHidden } from "@/lib/use-series-entry-sidebar-hidden";
+import { useMainSidebarHidden } from "@/lib/use-main-sidebar-hidden";
 import { cn } from "@/lib/utils";
 
 // Boc <main> cua (feed)/layout.tsx (Server Component, khong doc duoc Zustand/
@@ -9,11 +9,11 @@ import { cn } from "@/lib/utils";
 // bo padding trai lg:pl-61 (danh cho HomeDashboardSidebar) khi sidebar do tu
 // an (return null, qua CA 2 duong: Focus mode LAN pathname tinh cho trang doc/
 // sua Entry Series - xem comment day du trong HomeDashboardSidebar.tsx/
-// use-series-entry-sidebar-hidden.ts) - giu nguyen padding do se de lai 1
+// use-main-sidebar-hidden.ts) - giu nguyen padding do se de lai 1
 // khoang trong vo nghia ben trai.
 export function FeedMainArea({ children }: { children: React.ReactNode }) {
   const focusModeActive = useFocusModeStore((s) => s.active);
-  const sidebarHiddenByRoute = useSeriesEntrySidebarHidden();
+  const sidebarHiddenByRoute = useMainSidebarHidden();
   const sidebarHidden = focusModeActive || sidebarHiddenByRoute;
 
   // [2026-09-16] z-index CO DINH z-10 tro lai (bo han z-50 dieu kien) - luc

@@ -22,7 +22,7 @@ import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
-import { useSeriesEntrySidebarHidden } from "@/lib/use-series-entry-sidebar-hidden";
+import { useMainSidebarHidden } from "@/lib/use-main-sidebar-hidden";
 
 // Sidebar CHINH THUC cua layout /home (xem (feed)/home/layout.tsx) - port
 // nguyen ban tu source knowledge-dashboard-nextjs.zip (bang mau/spacing cua
@@ -217,9 +217,9 @@ export function HomeDashboardSidebar() {
   // (mount/unmount setActive() qua Focus mode store MOI LAN doi Entry) - 2
   // buoc tat-roi-bat lien tiep do KHONG dam bao chay lien tuc trong 1 frame,
   // sinh ra hien tuong nhay/giat that su nguoi dung thay duoc luc chuyen bai.
-  // useSeriesEntrySidebarHidden() tinh THANG tu pathname (thuan render, khong
+  // useMainSidebarHidden() tinh THANG tu pathname (thuan render, khong
   // qua effect) - LUON on dinh dung ngay, khong con "tat roi bat lai".
-  const sidebarHiddenByRoute = useSeriesEntrySidebarHidden();
+  const sidebarHiddenByRoute = useMainSidebarHidden();
   if (focusModeActive || sidebarHiddenByRoute) return null;
 
   return (
