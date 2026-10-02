@@ -1,4 +1,5 @@
 import { Node, Extension, mergeAttributes, textInputRule, getHTMLFromFragment, type Extensions } from "@tiptap/core";
+import { Fragment } from "@tiptap/pm/model";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -164,27 +165,32 @@ export const Callout = Node.create({
       ["div", { class: "callout-body" }, 0],
     ];
   },
-  // Serialize ve Markdown (dung khi SeriesEntryEditor.tsx - editor Entry
-  // Series - luu ra STRING markdown qua tiptap-markdown, package KHONG tu
-  // biet render 1 node LA cua app nhu Callout nen se BO QUA/loi neu khong
-  // khai bao rieng o day. Composer.tsx (Post) KHONG dung Markdown extension
-  // nen KHONG doc toi storage nay - hoan toan an toan them vao, chi la 1 lop
-  // "du phong" khi node nay xuat hien trong 1 tai lieu co serialize markdown.
-  // Xuong cap thanh 1 blockquote co nhan chu de o dong dau (mat rieng
-  // mau/icon, giu lai NOI DUNG that).
+  // [2026-10-02] Serialize THANG ra HTML that (khong con xuong cap thanh
+  // blockquote nhu truoc) - yeu cau nguoi dung: "Danger, Goodtips, Warning
+  // trong editor lúc sửa thì đúng UI, mà lưu bài viết xong nó lại quy về hết
+  // thành quote". Ban cu (wrapBlock("> ", ...) + nhan **label** o dong dau)
+  // la 1 QUYET DINH THIET KE CO Y tai thoi diem do (xem lich su: cung tinh
+  // than GlossaryHint TUNG xuong cap thanh text nghieng truoc khi fix) -
+  // nhung mat han mau sac/icon/khung rieng cua tung chu de (Danger/Warning/
+  // Good tips), chi con 1 blockquote DONG NHAT nhu nhau. Dung
+  // getHTMLFromFragment (tien ich CHINH THUC cua @tiptap/core, cung ky thuat
+  // da dung cho o bang "phuc tap" va GlossaryHint) - GOI THANG renderHTML()
+  // o TREN cua CHINH node nay (Fragment.from(node) boc ca cai node callout,
+  // khong chi content ben trong) nen HTML xuat ra LUON khop 100% voi giao
+  // dien dang hien trong editor (khung mau + icon + nhan chu de + noi dung
+  // that, gom ca bold/list/link long nhau) - khong con 2 noi dinh nghia giao
+  // dien rieng re de lech nhau nua. `div[data-callout]` la 1 trong cac the
+  // CommonMark cong nhan la "HTML block" (type 6) ngay ca khi dung 1 minh,
+  // round-trip lai dung qua parseHTML() da khai bao san o tren.
   addStorage() {
     return {
       markdown: {
         serialize: (state: MarkdownSerializerState, node: TiptapNode) => {
-          const variant =
-            (node.attrs.variant as CalloutVariant) in CALLOUT_LABELS
-              ? (node.attrs.variant as CalloutVariant)
-              : "info";
-          state.wrapBlock("> ", null, node, () => {
-            state.write(`**${CALLOUT_LABELS[variant]}**`);
-            state.ensureNewLine();
-            state.renderContent(node);
-          });
+          const schema = (node as unknown as { type: { schema: unknown } }).type.schema;
+          const html = getHTMLFromFragment(Fragment.from(node as never), schema as never);
+          state.ensureNewLine();
+          state.write(html);
+          state.closeBlock(node);
         },
       },
     };

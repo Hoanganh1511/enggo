@@ -19,6 +19,23 @@ export const DOCS_PROSE_CLASS =
   "[&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 " +
   "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-border-strong [&_blockquote]:pl-4 " +
   "[&_hr]:my-8 [&_hr]:border-border " +
+  // Callout (Danger/Warning/Good tips/Lưu ý) - COPY tu POST_PROSE_CLASS y
+  // het (cung ly do khong import truc tiep, xem comment dau file).
+  // [2026-10-02] THEM MOI o day - truoc do THIEU HAN, Callout.addStorage()
+  // (post-extensions.ts) tung xuong cap markdown thanh 1 blockquote thuong
+  // (mat mau/icon) nen khong can CSS rieng; sau khi sua serializer ghi THANG
+  // ra HTML that (div[data-callout]) de giu dung giao dien luc luu+doc lai -
+  // yeu cau nguoi dung: "Danger, Goodtips, Warning trong editor lúc sửa thì
+  // đúng UI, mà lưu bài viết xong nó lại quy về hết thành quote" - thieu CSS
+  // nay se khien trang doc cong khai hien 1 div TRAN khong mau/khung, PHAI co
+  // o day moi thay dung giao dien nhu luc soan.
+  "[&_div[data-callout]]:my-4 [&_div[data-callout]]:overflow-hidden [&_div[data-callout]]:rounded-lg [&_div[data-callout]]:border [&_div[data-callout]]:px-4 [&_div[data-callout]]:py-3 " +
+  "[&_div[data-callout]_.callout-header]:mb-1.5 [&_div[data-callout]_.callout-header]:flex [&_div[data-callout]_.callout-header]:items-center [&_div[data-callout]_.callout-header]:gap-1.5 [&_div[data-callout]_.callout-header]:text-[13px] [&_div[data-callout]_.callout-header]:font-semibold " +
+  "[&_div[data-callout]_.callout-body_p]:my-1 [&_div[data-callout]_.callout-body_p]:text-ink-muted " +
+  "[&_div[data-callout][data-variant='info']]:border-primary/40 [&_div[data-callout][data-variant='info']]:bg-primary/8 [&_div[data-callout][data-variant='info']_.callout-header]:text-primary " +
+  "[&_div[data-callout][data-variant='warn']]:border-warning/40 [&_div[data-callout][data-variant='warn']]:bg-warning/10 [&_div[data-callout][data-variant='warn']_.callout-header]:text-warning " +
+  "[&_div[data-callout][data-variant='danger']]:border-danger/40 [&_div[data-callout][data-variant='danger']]:bg-danger/10 [&_div[data-callout][data-variant='danger']_.callout-header]:text-danger " +
+  "[&_div[data-callout][data-variant='success']]:border-success/40 [&_div[data-callout][data-variant='success']]:bg-success/10 [&_div[data-callout][data-variant='success']_.callout-header]:text-success " +
   // Mau xanh lam-tim nhat (chip) - xem comment chi tiet trong POST_PROSE_CLASS.
   // border them vao - xem comment day du trong POST_PROSE_CLASS (post-extensions.ts).
   "[&_code]:rounded-md [&_code]:border [&_code]:border-[color-mix(in_srgb,#eef1ff,black_15%)] [&_code]:bg-[#eef1ff] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[13px] [&_code]:text-[#3b5bdb] " +
@@ -48,10 +65,10 @@ export const DOCS_PROSE_CLASS =
   "[&_tr>*:last-child]:border-r-0 [&_tbody_tr:last-child>*]:border-b-0 " +
   // "TOC 4-box cau hoi" (QuestionPicker, xem post-extensions.ts) - COPY tu
   // POST_PROSE_CLASS y het (cung ly do khong import truc tiep, xem comment
-  // dau file). QuestionPicker.addStorage() ghi RA HTML THAT (khac
-  // Callout/GoDeeper/TocBlock khac chi xuong cap text) nen CAN bo CSS nay o
-  // day de <details>/<summary> hien dung grid/collapse khi doc qua
-  // DocsMarkdown.tsx (rehype-raw).
+  // dau file). QuestionPicker.addStorage() ghi RA HTML THAT (khac GoDeeper/
+  // TocBlock van con xuong cap text) nen CAN bo CSS nay o day de
+  // <details>/<summary> hien dung grid/collapse khi doc qua DocsMarkdown.tsx
+  // (rehype-raw).
   "[&_div[data-question-picker]]:my-5 [&_div[data-question-picker]]:grid [&_div[data-question-picker]]:grid-cols-1 [&_div[data-question-picker]]:gap-2 sm:[&_div[data-question-picker]]:grid-cols-2 " +
   "[&_.question-picker-item]:rounded-xl [&_.question-picker-item]:border [&_.question-picker-item]:border-border [&_.question-picker-item]:px-3.5 " +
   "[&_.question-picker-item[open]]:bg-surface-muted " +
