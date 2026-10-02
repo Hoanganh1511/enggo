@@ -8,6 +8,109 @@ gặp vấn đề tương tự) thì hiểu được lý do đằng sau quyết 
 
 ---
 
+## 2026-10-02 — 4 lỗi hay lặp lại khi thêm block Tiptap mới (đợt Planner/PromoCard/Callout/Prereq)
+
+Gộp chung 1 mục cho 4 lỗi khác nhau nhưng CÙNG MỘT NGUỒN: thêm hàng loạt node
+Tiptap mới (PromoCard/EntryBanner/LessonListBlock/InstallBlock/PrereqBlock/
+Callout redesign) trong 1 đợt ngắn, lặp lại đúng 4 kiểu sai này nhiều lần.
+Note lại để lần sau thêm block mới không giẫm lại vết cũ.
+
+### 1. `<input>` nguyên sinh trong NodeView tự chèn dấu ngoặc kép/ngoặc đơn khi gõ
+
+**Triệu chứng:** gõ `"Auto rotate"` vào 1 ô `<input>` thường (không phải vùng
+soạn Tiptap) bên trong 1 NodeView (ví dụ ô nhãn chủ đề Callout), ra kết quả
+lệch kiểu `"Auto "rotate` — dấu `"` đóng bị chèn sai vị trí.
+
+**Root cause:** tính năng "gợi ý văn bản cho bàn phím vật lý" của Windows/Edge
+tự động chèn SẴN 1 dấu đóng ngay khi gõ dấu mở, nhưng không đặt con trỏ đúng
+chỗ — ký tự gõ tiếp theo bị lệch vào giữa cặp dấu thay vì nối sau. Đây là hành
+vi của OS/trình duyệt, không phải bug trong code React/Tiptap, và xảy ra với
+BẤT KỲ `<input>`/`<textarea>` thường nào trong trang, không riêng gì Tiptap.
+
+**Fix:** thêm `autoComplete="off"` `autoCorrect="off"` `autoCapitalize="off"`
+`spellCheck={false}` vào input bị báo lỗi — tắt hẳn các tính năng "gợi ý/tự
+sửa" của trình duyệt cho riêng ô đó.
+
+**Cách tư duy rút ra:** MỌI `<input>`/`<textarea>` thường được thêm vào trong
+NodeView từ giờ nên có sẵn 4 thuộc tính này ngay từ đầu (giống cách
+`SeriesEntryEditor.tsx` đã tắt `spellcheck` cho vùng soạn chính) — không cần
+đợi người dùng báo từng ô một. Hiện tại (2026-10-02) mới fix ô nhãn Callout;
+còn nhiều `<input>` khác thêm cùng đợt (PromoCard title/button, EntryBanner,
+GridCellHead badge/tên...) CHƯA được áp dụng, dễ bị báo lại ở ô khác.
+
+### 2. Node "content thật" (content: "block+") cần `selectable: false`
+
+**Triệu chứng:** bôi đen/copy 1 đoạn văn bản nằm BÊN TRONG 1 khối (ví dụ 1 ô
+của Grid, lồng trong Accordion), nhưng clipboard lại chứa NGUYÊN CẢ khối cha
+(cả Accordion ngoài cùng), không chỉ đoạn text đã chọn.
+
+**Root cause:** mọi node Tiptap mặc định `selectable: true` — có thể trở
+thành 1 `NodeSelection` ("chọn nguyên khối"), không chỉ `TextSelection`. Các
+node "content thật" trong file này (Accordion/Grid/GridCell/SplitBlock/
+ProfileBlock/Callout...) đều có 1 hàng điều khiển `contentEditable={false}`
+(header, nút +/-, badge...) nằm SÁT vùng soạn thật — 1 thao tác kéo-chọn/
+click gần biên dễ khiến ProseMirror "nhảy" sang NodeSelection của khối cha,
+copy NodeSelection đó ra cả node.
+
+**Fix:** set tường minh `selectable: false` trên node đó — ép ProseMirror
+luôn phải tìm 1 `TextSelection` hợp lệ gần nhất thay vì cho "chọn nguyên
+khối". Không ảnh hưởng tính năng khác vì nhân đôi/xoá khối đã dùng
+`BlockActionsMenu` qua `getPos()`/`nodeSize` trực tiếp, không dựa vào
+NodeSelection.
+
+**Cách tư duy rút ra:** bất kỳ node mới nào có `content: "block+"` (chứa rich
+text thật) VÀ có 1 hàng điều khiển `contentEditable={false}` cạnh vùng soạn —
+thêm `selectable: false` ngay từ lúc tạo node, đừng đợi bug copy-nhầm xuất
+hiện mới vá.
+
+### 3. `addStorage().markdown.serialize()` quên gắn `class` giống hệt `renderHTML()` — editor bình thường, trang xuất bản mất hết CSS
+
+**Triệu chứng:** 1 block mới (PrereqBlock) hiện đúng UI lúc soạn (NodeView
+React, đọc attrs trực tiếp), nhưng ra trang đã xuất bản thì KHÔNG có nền/viền/
+padding gì cả — y như văn bản thường, dù class CSS đã viết đúng trong
+`POST_PROSE_CLASS`/`DOCS_PROSE_CLASS`.
+
+**Root cause:** trang xuất bản không dùng NodeView — nó đọc `contentMarkdown`
+(chuỗi markdown/HTML tĩnh do `addStorage().markdown.serialize()` ghi ra) qua
+`DocsMarkdown`/`rehype-raw`. Hàm `serialize()` viết tay chuỗi HTML riêng,
+TÁCH BIỆT hoàn toàn với `renderHTML()` (dùng cho schema/editor) — gõ tay nên
+dễ quên 1 `class="..."` nào đó trên thẻ bọc ngoài. CSS vẫn đúng, chỉ là
+selector `.prereq-block` không khớp được gì vì HTML thật thiếu đúng class đó.
+
+**Fix:** soát lại `serialize()`, thêm đúng `class` còn thiếu trên thẻ bọc
+ngoài cùng.
+
+**Cách tư duy rút ra:** mỗi lần thêm/sửa 1 node có cả `renderHTML()` LẪN
+`addStorage().serialize()` viết tay riêng (không dùng `getHTMLFromFragment`
+để tự động đồng bộ 2 nơi — xem Callout, nơi ĐÃ làm đúng kiểu này), phải tự
+đối chiếu THỦ CÔNG từng class/attribute giữa 2 hàm, và **test thật trên trang
+đã xuất bản**, không chỉ xem preview trong lúc soạn — 2 đường render này độc
+lập hoàn toàn, "soạn thấy đúng" không đảm bảo "xuất bản thấy đúng".
+
+### 4. Hàm private đệ quy thiếu kiểu trả về tường minh → rò `any` ra mọi nơi gọi nó
+
+**Triệu chứng:** `pnpm lint` (backend NestJS) báo hàng loạt
+`@typescript-eslint/no-unsafe-return` ở MỌI chỗ gọi `toApi()` trong
+`PlannerService`, dù logic hoàn toàn đúng và `pnpm build` không báo lỗi gì.
+
+**Root cause:** `toApi()` gọi ĐỆ QUY chính nó (để map `children`), nhưng
+không khai báo kiểu trả về tường minh. TypeScript không tự suy luận được kiểu
+trả về của 1 hàm gọi đệ quy chính nó (vòng lặp suy luận), nên âm thầm rơi về
+`any` cho CẢ hàm — rò ra mọi nơi gọi `toApi()`, dù mỗi chỗ gọi đều đúng kiểu
+dữ liệu thật ở runtime.
+
+**Fix:** khai báo 1 interface `PlannerItemApi` tường minh (export ra, vì
+field trả về public của class được export cũng phải "nêu tên được" kiểu đó -
+TS4053), gắn làm kiểu trả về tường minh cho `toApi()`.
+
+**Cách tư duy rút ra:** hàm nào GỌI ĐỆ QUY CHÍNH NÓ luôn cần kiểu trả về
+tường minh — đây không phải optional style, mà là giới hạn thật của suy luận
+kiểu TypeScript. `pnpm build` (tsc thường) có thể không báo gì (vẫn suy luận
+được `any` hợp lệ), nhưng `pnpm lint` (quy tắc type-aware) sẽ bắt được —
+không nên bỏ qua warning "unsafe return of any" chỉ vì build vẫn xanh.
+
+---
+
 ## 2026-09-11 — Gắn link trong Compose: lưu lại chỉ có gạch chân, mất href
 
 **Triệu chứng:** người dùng bôi đen 1 cụm text, gắn link qua nút "Liên kết"
