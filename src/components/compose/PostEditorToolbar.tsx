@@ -60,6 +60,7 @@ import { toast } from "@/lib/toast/toast-store";
 import {
   normalizeCardGridItem,
   STATS_BAR_DEFAULT_ITEMS,
+  defaultCalloutLabel,
   type CalloutVariant,
   type QuestionPickerItem,
 } from "./post-extensions";
@@ -239,7 +240,7 @@ export function PostEditorToolbar({
     } else if (editor.isActive("callout")) {
       editor.chain().focus().updateAttributes("callout", { variant }).run();
     } else {
-      editor.chain().focus().toggleWrap("callout", { variant }).run();
+      editor.chain().focus().toggleWrap("callout", { variant, label: defaultCalloutLabel(variant) }).run();
     }
   };
 

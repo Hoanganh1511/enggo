@@ -12,6 +12,7 @@ import Code from "@tiptap/extension-code";
 import { TableKit, Table } from "@tiptap/extension-table";
 import { TextStyle, Color, BackgroundColor } from "@tiptap/extension-text-style";
 import TextAlign from "@tiptap/extension-text-align";
+import { CalloutView } from "./callout-view";
 import { GlossaryHint } from "./glossary-hint-extension";
 import { Footnote } from "./footnote-extension";
 import { SearchReplace } from "./search-replace-extension";
@@ -58,16 +59,28 @@ type MarkdownSerializerState = {
 
 export type CalloutVariant = "info" | "warn" | "danger" | "success";
 
-// Nhan hien thi cho tung chu de callout - 3 chu de CHINH nguoi dung tao duoc
-// tu toolbar (warn/danger/success), "info" la gia tri mac dinh CU giu lai de
-// tuong thich nguoc voi noi dung da luu truoc khi co 3 chu de nay (khong con
-// nut rieng tren toolbar, xem PostEditorToolbar.tsx).
+// Nhan MAC DINH cho tung chu de callout (chi dung luc TAO MOI/du lieu CU
+// chua co `label` rieng - xem addAttributes().label ben duoi) - KHONG CON
+// FIX CUNG nua, nguoi dung sua tu do duoc ngay trong NodeView (callout-view.tsx).
+// Yeu cau nguoi dung: "Dạng này tôi muốn không fix cứng chữ Danger mà có thể
+// edit chữ đấy. Bổ sung luôn emoji '⚠' mặc định trước nó" - them san "⚠️ "
+// truoc moi nhan mac dinh (nguoi dung van xoa/sua tu do sau khi tao, day CHI
+// la gia tri KHOI TAO).
 const CALLOUT_LABELS: Record<CalloutVariant, string> = {
-  info: "Lưu ý",
-  warn: "Warning",
-  danger: "Danger",
-  success: "Good tips",
+  info: "⚠️ Lưu ý",
+  warn: "⚠️ Warning",
+  danger: "⚠️ Danger",
+  success: "⚠️ Good tips",
 };
+
+// Export rieng cho PostEditorToolbar.tsx - luc CHEN MOI 1 callout qua
+// toggleWrap(), attr `label` PHAI duoc truyen tuong minh (addAttributes().default
+// la gia tri TINH "", khong the tu doi theo `variant` cua CHINH lan chen do -
+// parseHTML fallback o duoi CHI chay luc PARSE tu DOM, khong chay luc tao
+// node moi qua command).
+export function defaultCalloutLabel(variant: CalloutVariant): string {
+  return CALLOUT_LABELS[variant] ?? CALLOUT_LABELS.info;
+}
 
 // Icon (path data COPY tu lucide-react: Info/TriangleAlert/OctagonAlert/
 // Lightbulb) - Callout la 1 Node THUAN Tiptap (dung chung schema giua editor
@@ -123,12 +136,30 @@ export const Callout = Node.create({
   group: "block",
   content: "block+",
   defining: true,
+  isolating: true,
+  // selectable:false - xem comment day du o GridCell.
+  selectable: false,
   addAttributes() {
     return {
       variant: {
         default: "info",
         parseHTML: (el) => el.getAttribute("data-variant") ?? "info",
         renderHTML: (attrs) => ({ "data-variant": attrs.variant as string }),
+      },
+      // Nhan header - TRUOC DAY fix cung theo CALLOUT_LABELS[variant], KHONG
+      // sua duoc. Gio la 1 attr THAT, sua tu do qua NodeView (callout-view.tsx).
+      // parseHTML: du lieu CU (da luu truoc khi co attr nay) khong co
+      // "data-label" -> fallback ve CALLOUT_LABELS theo variant cua CHINH the
+      // do, dam bao noi dung cu van hien ra hop ly thay vi rong.
+      label: {
+        default: "",
+        parseHTML: (el) => {
+          const stored = el.getAttribute("data-label");
+          if (stored !== null) return stored;
+          const variant = (el.getAttribute("data-variant") as CalloutVariant) || "info";
+          return CALLOUT_LABELS[variant] ?? CALLOUT_LABELS.info;
+        },
+        renderHTML: (attrs) => (attrs.label ? { "data-label": attrs.label as string } : {}),
       },
     };
   },
@@ -140,6 +171,7 @@ export const Callout = Node.create({
       (node.attrs.variant as CalloutVariant) in CALLOUT_LABELS
         ? (node.attrs.variant as CalloutVariant)
         : "info";
+    const label = (node.attrs.label as string) || CALLOUT_LABELS[variant];
     return [
       "div",
       mergeAttributes(HTMLAttributes, { "data-callout": "" }),
@@ -160,10 +192,13 @@ export const Callout = Node.create({
           },
           ...CALLOUT_ICONS[variant],
         ],
-        ["span", {}, CALLOUT_LABELS[variant]],
+        ["span", {}, label],
       ],
       ["div", { class: "callout-body" }, 0],
     ];
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(CalloutView);
   },
   // [2026-10-02] Serialize THANG ra HTML that (khong con xuong cap thanh
   // blockquote nhu truoc) - yeu cau nguoi dung: "Danger, Goodtips, Warning
