@@ -28,6 +28,7 @@ function useNavItems(): NavItem[] {
   const { data: session } = useSession();
   const username = session?.username;
   return [
+    { key: "planner", label: "Planner", href: "/planner", match: "startsWith" },
     { key: "docs", label: "Docs", href: "/docs", match: "startsWith" },
     { key: "pricing", label: "Pricing", href: "/pricing", match: "startsWith" },
     // { key: "communities", label: "Cộng đồng", href: "/communities", match: "startsWith" },
