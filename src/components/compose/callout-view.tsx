@@ -37,6 +37,21 @@ export function CalloutView({ node, updateAttributes, editor, getPos }: ReactNod
             value={label}
             onChange={(e) => updateAttributes({ label: e.target.value })}
             placeholder="Nhãn chủ đề..."
+            // autoCorrect/autoCapitalize/spellCheck="off" + autoComplete="off" -
+            // yeu cau nguoi dung: "Đang gõ cứ tự nhảy ra khỏi dấu đóng ngoặc
+            // kép" (kem anh: go `"Auto rotate"` ra thanh `"Auto "rotate`) -
+            // trinh duyet/OS (tinh nang "goi y van ban" cua Windows/Edge cho
+            // ban phim vat ly) tu dong CHEN SAN 1 dau `"` dong ngay khi go dau
+            // `"` mo, nhung con tro KHONG nam dung SAU dau dong do - ky tu go
+            // tiep theo chen LECH vi tri, roi dau `"` nguoi dung tu go THEM
+            // vao giua thay vi cuoi chuoi. 4 thuoc tinh nay la cach chuan de
+            // tat hoan toan goi y/tu dong sua van ban cua trinh duyet cho 1 o
+            // nhap, dung y het ly do da tat spellcheck cho vung soan chinh
+            // (xem comment spellcheck trong SeriesEntryEditor.tsx).
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             className="min-w-0 flex-1 border-none bg-transparent p-0 font-semibold text-current outline-none placeholder:text-current/50"
           />
         ) : (
