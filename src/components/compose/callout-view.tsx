@@ -8,7 +8,19 @@ import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/pop
 import { BlockActionsMenu } from "./BlockActionsMenu";
 import { CALLOUT_ICON_PRESETS, isValidCssColor } from "./post-extensions";
 
-const CALLOUT_ICON_MAP: Record<string, string> = Object.fromEntries(CALLOUT_ICON_PRESETS.map((p) => [p.key, p.emoji]));
+// [2026-10-03 fix crash] KHONG tinh san 1 Record o CAP MODULE (vd qua
+// Object.fromEntries(CALLOUT_ICON_PRESETS.map(...)) luc trươc) - post-extensions.ts
+// import NGUOC lai CalloutView tu CHINH file nay (vong import: post-extensions.ts
+// -> callout-view.tsx -> post-extensions.ts), nen luc callout-view.tsx chay
+// CODE O CAP MODULE, `CALLOUT_ICON_PRESETS` CO THE CHUA duoc khoi tao xong o
+// phia post-extensions.ts (dang o giua chung "export const CALLOUT_ICON_PRESETS
+// = [...]" vi no tam dung de import file nay truoc) - bao loi that su ("Cannot
+// access 'H' before initialization", TDZ cua const). Doi sang 1 HAM tra cuu
+// (chi chay LUC GOI, bao gio cung SAU khi moi module da nap xong) de tranh
+// hoan toan truong hop nay.
+function emojiForIcon(key: string): string {
+  return CALLOUT_ICON_PRESETS.find((p) => p.key === key)?.emoji ?? "📝";
+}
 
 // [2026-10-03 redesign] TRUOC DAY chi 3 "chủ đề" co dinh (Warning/Danger/Good
 // tips), mau/icon/vien FIX CUNG theo `variant` - yeu cau nguoi dung: "lại có
@@ -116,7 +128,7 @@ export function CalloutView({ node, updateAttributes, editor, getPos }: ReactNod
                 title="Chọn icon"
                 className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-[14px] leading-none transition-transform duration-150 ease-out hover:scale-110 hover:bg-hover-bg"
               >
-                {CALLOUT_ICON_MAP[icon] ?? "📝"}
+                {emojiForIcon(icon)}
               </button>
             </PopoverTrigger>
             <PopoverContent open={iconOpen} align="start" sideOffset={6} className="z-50 w-48 rounded-lg border border-border bg-surface p-2 shadow-dropdown">
@@ -142,7 +154,7 @@ export function CalloutView({ node, updateAttributes, editor, getPos }: ReactNod
             </PopoverContent>
           </PopoverRoot>
         ) : (
-          <span className="callout-header-icon">{CALLOUT_ICON_MAP[icon] ?? "📝"}</span>
+          <span className="callout-header-icon">{emojiForIcon(icon)}</span>
         )}
 
         {canEdit ? (
