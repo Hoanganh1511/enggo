@@ -211,16 +211,27 @@ export function PostEditorToolbar({
     editor.chain().focus().setImage({ src: url, alt, title }).run();
   };
 
-  // Chen 1 icon "?" NGAY SAU cum tu dang chon (khong boc quanh cum tu - xem
-  // glossary-hint-extension.tsx) - can 1 vung chon THAT (khong phai chi 1
-  // con tro dung yen), nen disable khi selection rong.
+  // [2026-10-03 redesign] BOC NGUYEN cum tu dang chon vao 1 node glossaryHint
+  // (khong con chen 1 icon "?" rieng SAU no nhu truoc - xem comment day du
+  // trong glossary-hint-extension.tsx) - yeu cau nguoi dung: "select text sau
+  // đó chọn tính năng đó để điền chú thích". Can 1 vung chon THAT (khong phai
+  // chi 1 con tro dung yen) de biet CHINH XAC doan text nao tro thanh noi
+  // dung cua node, nen disable khi selection rong. Dung 1 transaction THAT
+  // (replaceWith) thay vi insertContent - can giu LAI dung text da chon lam
+  // CONTENT cua node moi, khong phai chen them/xoa gi.
   const addGlossaryHint = () => {
-    const { to, empty } = editor.state.selection;
+    const { from, to, empty } = editor.state.selection;
     if (empty) return;
     editor
       .chain()
       .focus()
-      .insertContentAt(to, { type: "glossaryHint", attrs: { explanation: "" } })
+      .command(({ tr, state }) => {
+        const text = state.doc.textBetween(from, to, " ");
+        if (!text.trim()) return false;
+        const node = state.schema.nodes.glossaryHint.create({ explanation: [] }, state.schema.text(text));
+        tr.replaceWith(from, to, node);
+        return true;
+      })
       .run();
   };
 

@@ -7,90 +7,135 @@
 // van phai lay tu "@tiptap/react" (dung DUY NHAT ben trong addNodeView(),
 // khong bao gio duoc GOI luc build schema tinh nen an toan du bi anh huong
 // boi dieu kien "react-server").
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Node, mergeAttributes, getHTMLFromFragment } from "@tiptap/core";
+import { Fragment } from "@tiptap/pm/model";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { GlossaryHintView } from "./glossary-hint-view";
 
-// Node inline "chu thich thuat ngu" - 1 icon dau hoi nho DUNG NGAY SAU 1 cum
-// tu (khong phai mark boc quanh cum tu - cum tu giu nguyen, chi them 1 node
-// rieng ke ben, xem toolbar "them chu thich" trong PostEditorToolbar.tsx).
-// Click icon mo popover: doc thuong thi CHI xem noi dung giai thich (khong
-// sua duoc); editor.isEditable=true (dang soan) thi co them nut sua/xoa. La
-// atom node (khong co noi dung con), NodeView React dung CHUNG 1 component
-// cho CA che do soan (PostEditor) lan che do doc (ArticleReaderPane/PostView
-// deu dung useEditor({editable:false}) THAT, khong phai generateHTML tinh -
-// nen NodeView React nay hoat dong dung y het o ca 2 noi, khong can lam
-// rieng 1 ban "read-only" tinh bang HTML).
+// Kieu toi thieu rieng (giong TiptapNode trong post-extensions.ts) - chi can
+// .type.schema cho getHTMLFromFragment, khong muon import ca kieu Node that
+// cua ProseMirror vao day chi de 1 lan dung.
+type MinimalTiptapNode = {
+  attrs: Record<string, unknown>;
+  type: { schema: unknown };
+};
+type MinimalMarkdownState = { write: (s: string) => void };
+
+// 1 "khoi" giai thich - CHI 3 dang yeu cau nguoi dung: "văn bản bình thường,
+// list dots, list number". Khong co inline formatting (bold/link...) o day -
+// giu don gian dung pham vi yeu cau, giong tinh than getOverviewExtensions()
+// (post-extensions.ts) da gioi han tuong tu cho 1 nhu cau khac.
+export type GlossaryBlock =
+  | { type: "paragraph"; text: string }
+  | { type: "bulletList"; items: string[] }
+  | { type: "orderedList"; items: string[] };
+
+export function newGlossaryParagraph(): GlossaryBlock {
+  return { type: "paragraph", text: "" };
+}
+export function newGlossaryList(type: "bulletList" | "orderedList"): GlossaryBlock {
+  return { type, items: [""] };
+}
+
+function glossaryBlocksToDom(blocks: GlossaryBlock[]): unknown[] {
+  return blocks
+    .filter((b) => (b.type === "paragraph" ? b.text.trim() : b.items.some((i) => i.trim())))
+    .map((b) => {
+      if (b.type === "paragraph") return ["p", {}, b.text];
+      const tag = b.type === "bulletList" ? "ul" : "ol";
+      return [tag, {}, ...b.items.filter((i) => i.trim()).map((item) => ["li", {}, item])];
+    });
+}
+
+// [2026-10-03 redesign] Node inline "chu thich thuat ngu" - TRUOC DAY la 1
+// ATOM rieng (icon dau hoi) dung SAU 1 cum tu, giai thich CHI la text thuong
+// (luu trong thuoc tinh HTML "title", trinh duyet tu hien tooltip). Yeu cau
+// nguoi dung: "select text sau đó chọn tính năng đó để điền chú thích...
+// người dùng sẽ thấy nó có style nào đó để biết từ ngữ này có thể hover vào
+// để xem giải thích. Khi hover vào 1.5s, animation nước ngập chữ... thì hiển
+// thị popover giải thích... có thể giải thích với... text bình thường, list
+// dots, list number".
 //
-// File nay KHONG "use client" (khac GlossaryHintView o glossary-hint-view.tsx)
-// vi Node.create({...}) can doc duoc tu Server Component (ArticleBody.tsx
-// build schema tinh qua renderTiptapHTML() - xem docs/engineering-log.md
-// 2026-09-10). ReactNodeViewRenderer() chi TAO ra 1 NodeView constructor gan
-// voi component - ban than no khong dung hook/DOM nen goi duoc o day, hook
-// THAT nam trong GlossaryHintView (client component rieng).
+// Gio CHINH cum tu da chon la NOI DUNG THAT cua node (content:"text*", xem
+// addNodeView() - NodeViewContent thay the nut "?" cu) - cho phep style
+// THANG len cum tu (gach chan cham + hieu ung "nuoc dang" khi hover, xem
+// .glossary-term trong globals.css). `explanation` gio la 1 MANG CO CAU TRUC
+// (GlossaryBlock[], JSON blob - giong tinh than CardGrid.items) thay vi 1
+// chuoi text don, cho phep danh sach cham/so. Popover hien THUAN CSS (hover +
+// transition-delay, xem globals.css) - hoat dong dung y het tren CA editor
+// LAN trang da xuat ban (DocsMarkdown, KHONG co JS) vi HTML popover LUON co
+// san trong DOM (render qua renderHTML() ben duoi), khong can JS mount/toggle.
 export const GlossaryHint = Node.create({
   name: "glossaryHint",
   group: "inline",
   inline: true,
-  atom: true,
-  selectable: true,
+  content: "text*",
+  // selectable:false - xem comment day du o GridCell (post-extensions.ts) -
+  // cung 1 ly do: co 1 nut dieu khien contentEditable=false (banh rang sua
+  // giai thich) ngay canh vung noi dung that.
+  selectable: false,
 
-  // [2026-09-25] Luu explanation vao CHINH thuoc tinh HTML "title" (khong
-  // phai "data-explanation" nhu truoc) - yeu cau nguoi dung: "khi ra bài
-  // viết nó cũng phải hiện dấu hỏi, khi người dùng hover vào sẽ hiện dạng
-  // tooltip/popover... không phải lỗi như hiện tại: show hết lời giải thích
-  // dài ngoằng ra". Cung ly do/ky thuat da dung cho Footnote (xem
-  // footnote-extension.tsx): trang doc cong khai cua Series Entry render qua
-  // DocsMarkdown.tsx (markdown + rehype-raw ra HTML TINH, KHONG co JS chay o
-  // do) - "title" la thuoc tinh CO SAN, trinh duyet TU hien tooltip khi
-  // hover, khong can 1 dong JS nao. Truoc day addStorage() ben duoi XUONG
-  // CAP explanation thanh text in nghieng trong ngoac MOI LAN LUU (vi popover
-  // bam-de-mo cua chinh no se KHONG lam gi ca trong ngu canh tinh) - day
-  // CHINH LA bug nguoi dung bao (thay het chu giai thich ngay trong bai,
-  // khong an sau dau "?" nao ca).
   addAttributes() {
     return {
       explanation: {
-        default: "",
-        parseHTML: (el) => el.getAttribute("title") ?? "",
-        renderHTML: (attrs) => ({ title: (attrs.explanation as string) ?? "" }),
+        default: [] as GlossaryBlock[],
+        // parseHTML doc tu DOM con ".glossary-term-popover" (KHONG phai 1
+        // thuoc tinh phang) - giai thich la HTML THAT (p/ul/ol), khong con
+        // nhet vao 1 chuoi thuoc tinh duy nhat nhu "title" cu.
+        parseHTML: (el) => {
+          const popover = el.querySelector(":scope > .glossary-term-popover");
+          if (!popover) return [];
+          const blocks: GlossaryBlock[] = [];
+          popover.childNodes.forEach((child) => {
+            if (!(child instanceof HTMLElement)) return;
+            if (child.tagName === "P") {
+              blocks.push({ type: "paragraph", text: child.textContent ?? "" });
+            } else if (child.tagName === "UL" || child.tagName === "OL") {
+              blocks.push({
+                type: child.tagName === "UL" ? "bulletList" : "orderedList",
+                items: Array.from(child.querySelectorAll(":scope > li")).map((li) => li.textContent ?? ""),
+              });
+            }
+          });
+          return blocks;
+        },
+        // renderHTML rong - noi dung THAT duoc renderHTML() cua CHINH node
+        // (ben duoi) tu ghep vao 1 the con rieng, khong phai 1 thuoc tinh.
+        renderHTML: () => ({}),
       },
     };
   },
 
   parseHTML() {
-    return [{ tag: "span[data-glossary-hint]" }];
+    return [{ tag: "span[data-glossary-hint]", contentElement: ":scope > .glossary-term" }];
   },
 
-  renderHTML({ HTMLAttributes }) {
-    return ["span", mergeAttributes(HTMLAttributes, { class: "glossary-hint", "data-glossary-hint": "" }), "?"];
+  renderHTML({ HTMLAttributes, node }) {
+    const explanation = (node.attrs.explanation as GlossaryBlock[]) ?? [];
+    return [
+      "span",
+      mergeAttributes(HTMLAttributes, { class: "glossary-hint", "data-glossary-hint": "" }),
+      ["span", { class: "glossary-term" }, 0],
+      ["span", { class: "glossary-term-popover" }, ...glossaryBlocksToDom(explanation)],
+    ];
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(GlossaryHintView);
   },
-  // Markdown fallback - GIU LAI atom (khong con xuong cap nhu truoc): embed
-  // THANG raw HTML (title = CHINH thuoc tinh o addAttributes) de doc dung
-  // khi mo lai Entry sau nay, giu nguyen kha nang bam sua tiep (giong tinh
-  // than StatAccordion/FlowDiagram/Footnote).
+
+  // Markdown fallback - dung CHUNG ky thuat voi Callout (post-extensions.ts):
+  // getHTMLFromFragment() GOI THANG renderHTML() o tren, dam bao HTML xuat ra
+  // LUON khop 100% voi NodeView dang hien trong editor (khong con 2 noi dinh
+  // nghia giao dien rieng re de lech nhau - xem bai hoc da ghi trong
+  // docs/engineering-log.md 2026-10-02 muc 3).
   addStorage() {
     return {
       markdown: {
-        serialize: (state: { write: (s?: string) => void }, node: { attrs: Record<string, unknown> }) => {
-          const explanation = ((node.attrs.explanation as string) ?? "").trim();
-          // Doi \n/\r thanh khoang trang TRUOC khi escape - GlossaryHintView.tsx
-          // dung <textarea> (cho phep go nhieu dong that su). Span nay duoc
-          // nhung INLINE, tren CUNG 1 dong markdown - 1 ky tu xuong dong THAT
-          // lot vao giua thuoc tinh title se cat doi dong markdown dang do,
-          // co the khien rehype-raw khong con nhan dung day la 1 the HTML
-          // lien tuc nua (bug tiem an, chua tung xay ra nhung can chan truoc).
-          const singleLine = explanation.replace(/[\r\n]+/g, " ");
-          const escaped = singleLine
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;");
-          state.write(`<span class="glossary-hint" data-glossary-hint title="${escaped}">?</span>`);
+        serialize: (state: MinimalMarkdownState, node: MinimalTiptapNode) => {
+          const schema = node.type.schema;
+          const html = getHTMLFromFragment(Fragment.from(node as never), schema as never);
+          state.write(html);
         },
       },
     };

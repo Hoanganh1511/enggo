@@ -1266,3 +1266,109 @@ body {
    ung don gian hon (card mo rong + nen luoi zoom, thuan Framer Motion
    layoutId + Tailwind token) - khong con can CSS rieng nhu ban sci-fi/JARVIS
    cu (door-frame/fluid-track/jarvis-laser...), da xoa het class chet o day. */
+
+/* GlossaryHint (glossary-hint-extension.tsx) - REDESIGN 2026-10-03, yeu cau
+   nguoi dung: "người dùng sẽ thấy nó có style nào đó để biết từ ngữ này có
+   thể hover vào để xem giải thích. Khi hover vào 1.5s, animation nước ngập
+   chữ... thì hiển thị popover giải thích". Truoc day la 1 icon "?" rieng
+   DUNG SAU cum tu (khong doi style cum tu) + popover chi hien khi BAM (khong
+   phai hover) + giai thich CHI la text thuong (luu trong thuoc tinh "title").
+   Gio CHINH cum tu duoc chon tro thanh NOI DUNG THAT cua node (xem
+   content:"text*" trong glossary-hint-extension.tsx), duoc gach chan cham +
+   hover 1.5s moi "ngập nước" dan len roi hien popover - dung THUAN CSS
+   (khong JS) qua 2 buoc transition-delay noi tiep nhau, de hoat dong DUNG Y
+   HET tren ca luc soan (NodeView) LAN trang da xuat ban (DocsMarkdown, HTML
+   tinh khong co JS) - CHI 1 bo CSS DUY NHAT ap dung cho ca 2 noi (dung chung
+   class, khong phan biet gi giua 2 ngu canh).
+   - `.glossary-term::before` la lop "nuoc" PHU LEN TREN cum tu (cung kich
+     thuoc qua position:absolute+inset:0), ban dau bi "cat" het boi
+     clip-path:inset(100% 0 0 0) (nghia la AN TOAN BO, "muc nuoc" o day 0%) -
+     hover du 1.5s (transition-delay) moi bat dau "dâng lên" qua
+     clip-path:inset(0 0 0 0) (dang day ngap) trong 0.8s tiep theo.
+   - `.glossary-term-popover` la 1 <div> THAT SU (chua san #p/#ul/#ol HTML -
+     xem glossaryBlocksToDom() trong extension) LUON CO SAN trong DOM (khong
+     phai mount/unmount qua JS) - CHI an/hien qua opacity+visibility, cung
+     dung CHINH transition-delay 1.5s giong lop nuoc o tren de ca 2 hieu ung
+     xay ra DONG THOI sau khi het 1.5s cho. */
+.glossary-hint {
+  position: relative;
+  display: inline;
+}
+.glossary-term {
+  position: relative;
+  display: inline;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: color-mix(in srgb, var(--primary) 55%, transparent);
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.glossary-term::before {
+  content: "";
+  position: absolute;
+  inset: -1px -2px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 0.8s ease-out;
+  pointer-events: none;
+}
+.glossary-hint:hover .glossary-term::before {
+  clip-path: inset(0 0 0 0);
+  transition-delay: 1.5s;
+}
+.glossary-term-popover {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  z-index: 40;
+  width: max-content;
+  max-width: 280px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-dropdown);
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out,
+    visibility 0.2s;
+}
+.glossary-hint:hover .glossary-term-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition-delay: 1.5s;
+}
+.glossary-term-popover p {
+  margin: 0 0 6px;
+}
+.glossary-term-popover p:last-child {
+  margin-bottom: 0;
+}
+.glossary-term-popover ul,
+.glossary-term-popover ol {
+  margin: 0 0 6px;
+  padding-left: 16px;
+}
+.glossary-term-popover ul:last-child,
+.glossary-term-popover ol:last-child {
+  margin-bottom: 0;
+}
+.glossary-term-popover li + li {
+  margin-top: 2px;
+}
+/* Trong luc SOAN (co NodeView rieng, xem glossary-hint-view.tsx) - nut
+   "cau hinh" (banh rang, contentEditable=false) can thay doi KHONG AN theo
+   hover nhu popover doc o tren - luon hien san, chi mo popover SUA khi bam. */
+.glossary-term-edit-trigger {
+  position: relative;
+  display: inline-flex;
+  margin-left: 1px;
+}
