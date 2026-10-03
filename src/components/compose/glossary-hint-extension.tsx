@@ -81,10 +81,17 @@ export const GlossaryHint = Node.create({
         default: [] as GlossaryBlock[],
         // parseHTML doc tu DOM con ".glossary-term-popover" (KHONG phai 1
         // thuoc tinh phang) - giai thich la HTML THAT (p/ul/ol), khong con
-        // nhet vao 1 chuoi thuoc tinh duy nhat nhu "title" cu.
+        // nhet vao 1 chuoi thuoc tinh duy nhat nhu "title" cu. Fallback: du
+        // lieu CU (truoc redesign nay) khong co the con nay, chi co thuoc
+        // tinh "title" (text thuong) - doc lai thanh 1 khoi "paragraph" DUY
+        // NHAT thay vi mat trang, giu nguyen tinh than "khong xoa du lieu cu"
+        // da ap dung cho PrereqBlock/Callout truoc do.
         parseHTML: (el) => {
           const popover = el.querySelector(":scope > .glossary-term-popover");
-          if (!popover) return [];
+          if (!popover) {
+            const legacyTitle = el.getAttribute("title")?.trim();
+            return legacyTitle ? [{ type: "paragraph", text: legacyTitle }] : [];
+          }
           const blocks: GlossaryBlock[] = [];
           popover.childNodes.forEach((child) => {
             if (!(child instanceof HTMLElement)) return;
@@ -106,8 +113,24 @@ export const GlossaryHint = Node.create({
     };
   },
 
+  // [2026-10-03 fix crash that su] contentElement dung 1 HAM (khong phai
+  // chuoi selector tinh) - CUNG 1 bug class voi PrereqBlock hom qua (xem
+  // docs/engineering-log.md): du lieu CU (truoc redesign nay) la 1 ATOM RONG
+  // (noi dung CHI la ky tu "?", khong co the con ".glossary-term" nao) - neu
+  // contentElement la chuoi tinh, ProseMirror tim ".glossary-term" KHONG
+  // THAY, tra ve null, va crash NGAY LUC PARSE ("Cannot read properties of
+  // null") khi mo lai 1 bai da luu TRUOC ban redesign nay. Fallback ve CHINH
+  // phan tu goc (el) khi khong tim thay - noi dung se la bat ky text nao nam
+  // TRUC TIEP trong span do (vd ky tu "?" cu) thay vi crash, chap nhan duoc
+  // (xau ve mat hien thi, KHONG mat trang/mat du lieu) - chi can mo lai sua
+  // 1 lan la tu chuyen sang dinh dang moi khi luu.
   parseHTML() {
-    return [{ tag: "span[data-glossary-hint]", contentElement: ":scope > .glossary-term" }];
+    return [
+      {
+        tag: "span[data-glossary-hint]",
+        contentElement: (el) => el.querySelector(":scope > .glossary-term") ?? el,
+      },
+    ];
   },
 
   renderHTML({ HTMLAttributes, node }) {
