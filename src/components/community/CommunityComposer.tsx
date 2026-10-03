@@ -8,6 +8,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
+import { TypographyInputRules } from "@/components/compose/post-extensions";
 import {
   X,
   Trophy,
@@ -184,6 +185,12 @@ export function CommunityComposer({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      // [2026-10-03] Them cung bo "go tat" (--/-> /!=) dang dung o
+      // Composer.tsx/SeriesEntryEditor.tsx - bug nguoi dung bao: "cái chuyển
+      // đổi != áp dụng ở mọi nơi, một số nơi chưa thấy đổi" (editor nay TRUOC
+      // DAY tu khai StarterKit rieng, khong dung chung getPostExtensions()
+      // nen thieu rule).
+      TypographyInputRules,
       Placeholder.configure({
         placeholder: "Chia sẻ kiến thức, bài học hoặc tài liệu hữu ích...",
       }),

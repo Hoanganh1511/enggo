@@ -2597,7 +2597,16 @@ const EmptyParagraphBackspaceKeymap = Extension.create({
 // extension-typography - goi do kem theo RAT NHIEU rule khac KHONG duoc yeu
 // cau: dau nhay kep cong, dau "...", ky hieu ban quyen "(c)"... - cai them ca
 // goi co the gay sai y ngoai du dinh khi go van ban binh thuong).
-const TypographyInputRules = Extension.create({
+// [2026-10-03 fix] Export ra (truoc la const noi bo, CHI gan trong
+// getPostExtensions()) - bug nguoi dung bao: "cái chuyển đổi != áp dụng ở
+// mọi nơi, một số nơi chưa thấy đổi". App co 2 bo schema Tiptap DOC LAP nhau
+// (StarterKit rieng, khong dung chung getPostExtensions()): Composer.tsx/
+// SeriesEntryEditor.tsx (qua getPostExtensions(), CO rule nay) va
+// CommunityComposer.tsx (tu khai "StarterKit" tran rieng cho bai dang
+// community, KHONG CO rule nay, xem comment o do) - "một số nơi chưa thấy
+// đổi" chinh la CommunityComposer. Export de gan THEM vao extensions list
+// cua CommunityComposer.tsx, khong lap lai toan bo rule.
+export const TypographyInputRules = Extension.create({
   name: "typographyInputRules",
   addInputRules() {
     return [
