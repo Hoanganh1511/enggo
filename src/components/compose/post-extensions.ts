@@ -82,49 +82,42 @@ export function defaultCalloutLabel(variant: CalloutVariant): string {
   return CALLOUT_LABELS[variant] ?? CALLOUT_LABELS.info;
 }
 
-// Icon (path data COPY tu lucide-react: Info/TriangleAlert/OctagonAlert/
-// Lightbulb) - Callout la 1 Node THUAN Tiptap (dung chung schema giua editor
-// soan VA generateHTML() tinh trong ArticleCard/OG render sau nay), khong
-// dung component React duoc nen phai nhung thang SVG path vao renderHTML.
-const CALLOUT_ICONS: Record<
-  CalloutVariant,
-  Array<["path" | "circle", Record<string, string>]>
-> = {
-  info: [
-    ["circle", { cx: "12", cy: "12", r: "10" }],
-    ["path", { d: "M12 16v-4" }],
-    ["path", { d: "M12 8h.01" }],
-  ],
-  warn: [
-    [
-      "path",
-      {
-        d: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3",
-      },
-    ],
-    ["path", { d: "M12 9v4" }],
-    ["path", { d: "M12 17h.01" }],
-  ],
-  danger: [
-    ["path", { d: "M12 16h.01" }],
-    ["path", { d: "M12 8v4" }],
-    [
-      "path",
-      {
-        d: "M15.312 2a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586l-4.688-4.688A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2z",
-      },
-    ],
-  ],
-  success: [
-    [
-      "path",
-      {
-        d: "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5",
-      },
-    ],
-    ["path", { d: "M9 18h6" }],
-    ["path", { d: "M10 22h4" }],
-  ],
+// Cung ly do voi defaultCalloutLabel() o tren - danh cho attr `icon` (xem
+// LEGACY_VARIANT_ICON duoi).
+export function defaultCalloutIcon(variant: CalloutVariant): string {
+  return LEGACY_VARIANT_ICON[variant] ?? "note";
+}
+
+// [2026-10-03 redesign] Icon gio la 1 TAP EMOJI co dinh (khong con SVG path
+// rieng tung variant) - yeu cau nguoi dung: "nên để người soạn bài có thể
+// dynamic được việc chọn màu nền, màu border, icon thì chỉ cho chọn nhưng
+// icon phổ biến như: success, good, warning, danger, disable, pen, note,
+// pin". Dung EMOJI (khong phai SVG/lucide component) vi node nay dung CHUNG
+// 1 `renderHTML()` cho CA editor (qua NodeView) LAN HTML tinh xuat ban (qua
+// getHTMLFromFragment) - emoji la VAN BAN THUAN, hien GIONG HET nhau o ca 2
+// noi khong can dong bo SVG path rieng (xem bai hoc "markdown serialize
+// quen class" moi ghi trong docs/engineering-log.md 2026-10-02).
+export const CALLOUT_ICON_PRESETS: { key: string; emoji: string; label: string }[] = [
+  { key: "success", emoji: "✅", label: "Success" },
+  { key: "good", emoji: "👍", label: "Good" },
+  { key: "warning", emoji: "⚠️", label: "Warning" },
+  { key: "danger", emoji: "⛔", label: "Danger" },
+  { key: "disable", emoji: "🚫", label: "Disable" },
+  { key: "pen", emoji: "✏️", label: "Pen" },
+  { key: "note", emoji: "📝", label: "Note" },
+  { key: "pin", emoji: "📌", label: "Pin" },
+];
+const CALLOUT_ICON_MAP: Record<string, string> = Object.fromEntries(
+  CALLOUT_ICON_PRESETS.map((p) => [p.key, p.emoji]),
+);
+// Du lieu CU (truoc ban redesign nay) chi co `variant`, chua co `icon` rieng -
+// anh xa 1 icon hop ly theo variant cu de noi dung da luu van hien ra dung
+// tinh than, khong bi rong.
+const LEGACY_VARIANT_ICON: Record<CalloutVariant, string> = {
+  info: "note",
+  warn: "warning",
+  danger: "danger",
+  success: "success",
 };
 
 // Callout node - hop "luu y" kieu Notion/GitBook, 3 chu de Warning/Danger/
@@ -161,6 +154,36 @@ export const Callout = Node.create({
         },
         renderHTML: (attrs) => (attrs.label ? { "data-label": attrs.label as string } : {}),
       },
+      // Icon tu chon (1 trong CALLOUT_ICON_PRESETS, xem comment day du o do) -
+      // parseHTML: du lieu CU (truoc redesign, chua co "data-icon") anh xa tu
+      // `variant` cu qua LEGACY_VARIANT_ICON.
+      icon: {
+        default: "note",
+        parseHTML: (el) => {
+          const stored = el.getAttribute("data-icon");
+          if (stored) return stored;
+          const variant = (el.getAttribute("data-variant") as CalloutVariant) || "info";
+          return LEGACY_VARIANT_ICON[variant] ?? "note";
+        },
+        renderHTML: (attrs) => ({ "data-icon": attrs.icon as string }),
+      },
+      // Mau nen/vien TU CHON (hex/rgba, validate qua isValidCssColor() - xem
+      // CalloutView.tsx) - null = chua tuy chinh, dung CSS mac dinh theo
+      // `variant` (giu NGUYEN cac rule [&_div[data-callout][data-variant=...]]
+      // san co, KHONG xoa - inline style o day tu nhien DE LEN TREN class do
+      // nho specificity cao hon, khong can sua CSS gi them). Du lieu CU
+      // (chua tung co 2 attr nay) mac dinh null -> giu dung giao dien cu
+      // khong doi gi, chi NGUOI DUNG CHU DONG chon mau moi chinh sua.
+      bgColor: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-bg-color") || null,
+        renderHTML: (attrs) => (attrs.bgColor ? { "data-bg-color": attrs.bgColor as string } : {}),
+      },
+      borderColor: {
+        default: null as string | null,
+        parseHTML: (el) => el.getAttribute("data-border-color") || null,
+        renderHTML: (attrs) => (attrs.borderColor ? { "data-border-color": attrs.borderColor as string } : {}),
+      },
     };
   },
   parseHTML() {
@@ -172,26 +195,24 @@ export const Callout = Node.create({
         ? (node.attrs.variant as CalloutVariant)
         : "info";
     const label = (node.attrs.label as string) || CALLOUT_LABELS[variant];
+    const iconKey = (node.attrs.icon as string) || LEGACY_VARIANT_ICON[variant];
+    const emoji = CALLOUT_ICON_MAP[iconKey] ?? CALLOUT_ICON_MAP.note;
+    const bgColor = node.attrs.bgColor as string | null;
+    const borderColor = node.attrs.borderColor as string | null;
+    const inlineStyle = [bgColor ? `background-color:${bgColor}` : "", borderColor ? `border-color:${borderColor}` : ""]
+      .filter(Boolean)
+      .join(";");
     return [
       "div",
-      mergeAttributes(HTMLAttributes, { "data-callout": "" }),
+      mergeAttributes(HTMLAttributes, {
+        "data-callout": "",
+        "data-variant": variant,
+        ...(inlineStyle ? { style: inlineStyle } : {}),
+      }),
       [
         "div",
         { class: "callout-header", contenteditable: "false" },
-        [
-          "svg",
-          {
-            viewBox: "0 0 24 24",
-            width: "14",
-            height: "14",
-            fill: "none",
-            stroke: "currentColor",
-            "stroke-width": "2",
-            "stroke-linecap": "round",
-            "stroke-linejoin": "round",
-          },
-          ...CALLOUT_ICONS[variant],
-        ],
+        ["span", { class: "callout-header-icon" }, emoji],
         ["span", {}, label],
       ],
       ["div", { class: "callout-body" }, 0],
@@ -3077,6 +3098,7 @@ export const POST_PROSE_CLASS =
   // dung (kem anh mau so sanh): "Tôi muốn nó có lớp border đậm trông 3d".
   "[&_div[data-callout]]:my-4 [&_div[data-callout]]:overflow-hidden [&_div[data-callout]]:rounded-lg [&_div[data-callout]]:border-2 [&_div[data-callout]]:px-4 [&_div[data-callout]]:py-3 [&_div[data-callout]]:shadow-sm " +
   "[&_div[data-callout]_.callout-header]:mb-1.5 [&_div[data-callout]_.callout-header]:flex [&_div[data-callout]_.callout-header]:items-center [&_div[data-callout]_.callout-header]:gap-1.5 [&_div[data-callout]_.callout-header]:text-[13px] [&_div[data-callout]_.callout-header]:font-semibold " +
+  "[&_div[data-callout]_.callout-header-icon]:text-[14px] [&_div[data-callout]_.callout-header-icon]:leading-none " +
   "[&_div[data-callout]_.callout-body_p]:my-1 [&_div[data-callout]_.callout-body_p]:text-ink-muted " +
   "[&_div[data-callout][data-variant='info']]:border-primary [&_div[data-callout][data-variant='info']]:bg-primary/8 [&_div[data-callout][data-variant='info']_.callout-header]:text-primary " +
   "[&_div[data-callout][data-variant='warn']]:border-warning [&_div[data-callout][data-variant='warn']]:bg-warning/10 [&_div[data-callout][data-variant='warn']_.callout-header]:text-warning " +

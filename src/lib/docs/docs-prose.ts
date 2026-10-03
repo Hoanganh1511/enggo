@@ -31,6 +31,7 @@ export const DOCS_PROSE_CLASS =
   // o day moi thay dung giao dien nhu luc soan.
   "[&_div[data-callout]]:my-4 [&_div[data-callout]]:overflow-hidden [&_div[data-callout]]:rounded-lg [&_div[data-callout]]:border-2 [&_div[data-callout]]:px-4 [&_div[data-callout]]:py-3 [&_div[data-callout]]:shadow-sm " +
   "[&_div[data-callout]_.callout-header]:mb-1.5 [&_div[data-callout]_.callout-header]:flex [&_div[data-callout]_.callout-header]:items-center [&_div[data-callout]_.callout-header]:gap-1.5 [&_div[data-callout]_.callout-header]:text-[13px] [&_div[data-callout]_.callout-header]:font-semibold " +
+  "[&_div[data-callout]_.callout-header-icon]:text-[14px] [&_div[data-callout]_.callout-header-icon]:leading-none " +
   "[&_div[data-callout]_.callout-body_p]:my-1 [&_div[data-callout]_.callout-body_p]:text-ink-muted " +
   "[&_div[data-callout][data-variant='info']]:border-primary [&_div[data-callout][data-variant='info']]:bg-primary/8 [&_div[data-callout][data-variant='info']_.callout-header]:text-primary " +
   "[&_div[data-callout][data-variant='warn']]:border-warning [&_div[data-callout][data-variant='warn']]:bg-warning/10 [&_div[data-callout][data-variant='warn']_.callout-header]:text-warning " +

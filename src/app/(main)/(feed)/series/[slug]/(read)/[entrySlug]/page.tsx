@@ -415,7 +415,15 @@ export default async function SeriesEntryPage({
   // khac ben duoi) vi CAN biet ngay du lieu that de quyet dinh nhanh nao.
   const data = await dataPromise;
   if (data?.entry.dictionarySections?.length) {
-    return <SeriesDictionaryView sections={data.entry.dictionarySections} />;
+    return (
+      <SeriesDictionaryView
+        seriesTitle={data.series.title}
+        title={data.entry.title}
+        subtitle={data.entry.subtitle}
+        source={data.entry.source}
+        sections={data.entry.dictionarySections}
+      />
+    );
   }
 
   return (
