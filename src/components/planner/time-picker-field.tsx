@@ -144,9 +144,16 @@ export function TimePickerField({
           <ChevronDown size={13} className="ml-auto shrink-0 text-[color:var(--planner-text-muted)]" />
         </button>
       </PopoverTrigger>
+      {/* [2026-10-05] align="end" (truoc day "start") - bug phat hien qua
+          test luong tuong tac: nut nay thuong nam SAT CANH PHAI cua 1
+          sidebar HEP (380px, xem DayDetailPanel.tsx), align="start" neo
+          CANH TRAI cua popover vao canh trai nut -> popover rong 250px tran
+          HAN ra khoi sidebar, "troi" qua khoang trong gray ben ngoai card.
+          align="end" neo CANH PHAI cua popover vao canh phai nut thay vi -
+          popover mo RONG VE BEN TRAI, luon nam gon trong pham vi sidebar. */}
       <PopoverContent
         open={open}
-        align="start"
+        align="end"
         className="z-50 w-[250px] rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
       >
         <div className="flex items-center justify-between gap-2">

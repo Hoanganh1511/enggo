@@ -301,9 +301,20 @@ export function PlannerShell({
     void reload(rangeForMode(mode, anchor));
   }
 
+  // [2026-10-05] Dong bo selectedDate THEO cung do dich chuyen - bug phat
+  // hien qua test luong tuong tac: truoc day bam prev/next O LICH chi doi
+  // `anchor` (tuan/thang dang xem), `selectedDate` (ngay dang hien chi tiet
+  // ben panel phai) dung im - bam vai lan next se khien lich hien 1 tuan
+  // hoan toan khac trong khi panel VAN am tham hien ngay cu, khong con nam
+  // trong tam nhin tren luoi nua. Nguoi dung bam "+ Thêm việc cho hôm nay"
+  // luc do se vo tinh them vao 1 ngay KHONG con thay tren man hinh. Chieu
+  // nguoc lai (changeSelectedDay, doi ngay tu panel) DA tu dong bo anchor
+  // dung cach roi - sua cho doi xung ca 2 chieu.
   function changeAnchor(direction: -1 | 1) {
     const next = viewMode === "week" ? addDays(anchor, direction * 7) : addMonths(anchor, direction);
+    const diffDays = Math.round((new Date(next).getTime() - new Date(anchor).getTime()) / 86400000);
     setAnchor(next);
+    setSelectedDate((prev) => addDays(prev, diffDays));
     void reload(rangeForMode(viewMode, next));
   }
 
@@ -1109,9 +1120,25 @@ function TimelineRow({
           <Circle size={14} className="text-[color:var(--planner-border)]" />
         )}
       </div>
-      <button
-        type="button"
+      {/* [2026-10-05] div (khong phai button) - bug phat hien qua test luong
+          tuong tac: dong nay chua CAC phan tu tuong tac khac BEN TRONG no
+          (checkbox + nut Xoa), HTML khong cho phep <button> long trong
+          <button> (React tu bao loi hydration "In HTML, <button> cannot be
+          a descendant of <button>" trong console that su khi test bang
+          trinh duyet). role="button" + tabIndex + onKeyDown giu lai hanh vi
+          ban phim (Enter/Space) tuong duong nut that, cung mau voi cach
+          BigTimelineItem ben duoi DA lam dung (dung <div onClick>, khong
+          phai <button>). */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onSelect}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onSelect();
+          }
+        }}
         style={selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined}
         className={cn(
           "flex min-w-0 flex-1 cursor-pointer items-start justify-between gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
@@ -1155,7 +1182,7 @@ function TimelineRow({
             <Trash2 size={12} />
           </button>
         </div>
-      </button>
+      </div>
     </div>
   );
 }
@@ -1376,6 +1403,16 @@ function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"
     setDraft("");
     setDraftStart(null);
     setDraftFocus(false);
+    // [2026-10-05] setDraftKind("SIMPLE") - bug phat hien qua test luong
+    // tuong tac: truoc day KHONG reset, nen sau khi tao 1 viec "Lớn", lan
+    // THEM TIEP THEO (dung chung 1 instance AddTaskForm, state khong mat vi
+    // chi dang/dong chu khong unmount) VAN giu nguyen "Lớn" du nguoi dung
+    // khong chu dong chon lai - de nham tao hang loat viec "Lớn" rong khong
+    // dinh. Khac draftColor (CO Y giu lai qua cac lan Them lien tiep, xem
+    // comment o ColorSwatchRow/PLANNER_COLORS) - "Lớn" la lua chon ÍT GẶP
+    // HON, nen luon ve mac dinh "Đơn" sau moi lan them, cung tinh than voi
+    // draftFocus o tren.
+    setDraftKind("SIMPLE");
     setOpen(false);
   }
 
