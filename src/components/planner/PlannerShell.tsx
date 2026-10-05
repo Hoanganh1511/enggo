@@ -12,6 +12,7 @@ import {
   Clock,
   Flame,
   ListFilter,
+  Pencil,
   Plus,
   Sparkles,
   Trash2,
@@ -287,6 +288,13 @@ export function PlannerShell({
   // Detail" (o day don gian hoa thanh HIGHLIGHT, khong tach 1 man hinh Task
   // Detail rieng - xem giai thich trong DayDetailPanel).
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  // [2026-10-05] "Click vào khoảng trống → thêm việc nhanh với giờ điền
+  // sẵn" - yeu cau nguoi dung (state #6/#13 trong spec). Luu PHUT da click
+  // (date da co san qua selectedDate, click 1 o gio cung goi onSelect(d) nhu
+  // binh thuong) - DayDetailPanel/AddTaskForm doc gia tri nay de TU MO form
+  // + dien san gio, roi "tieu thu" (dat ve null) de khong mo lai lan nua neu
+  // component re-render vi ly do khac.
+  const [quickAddPrefill, setQuickAddPrefill] = useState<number | null>(null);
 
   async function reload(range: { from: string; to: string }) {
     setIsLoading(true);
@@ -380,7 +388,7 @@ export function PlannerShell({
 
   async function handleToggleDone(item: ApiPlannerItem, parentId?: string) {
     const done = !item.done;
-    patchDate(selectedDate, (items) =>
+    patchDate(item.date, (items) =>
       parentId
         ? items.map((p) =>
             p.id === parentId ? { ...p, children: (p.children ?? []).map((c) => (c.id === item.id ? { ...c, done } : c)) } : p,
@@ -391,12 +399,60 @@ export function PlannerShell({
   }
 
   async function handleDelete(item: ApiPlannerItem, parentId?: string) {
-    patchDate(selectedDate, (items) =>
+    patchDate(item.date, (items) =>
       parentId
         ? items.map((p) => (p.id === parentId ? { ...p, children: (p.children ?? []).filter((c) => c.id !== item.id) } : p))
         : items.filter((i) => i.id !== item.id),
     );
+    if (selectedItemId === item.id) setSelectedItemId(null);
     await deletePlannerItemAction(item.id).catch(() => {});
+  }
+
+  // [2026-10-05] Sua 1 item SAU KHI DA TAO - yeu cau nguoi dung: "hiện KHÔNG
+  // có cách nào sửa lại tiêu đề/giờ/màu sau khi tạo, chỉ tick done hoặc
+  // xoá". Dung CHUNG cho 2 cho: (1) form sua inline trong SCHEDULE (TimelineRow/
+  // BigTimelineItem), (2) keo-tha/keo gian truc tiep tren luoi gio
+  // (WeekTimeGrid) - ca 2 deu chi la "doi 1 vai field cua 1 item co san",
+  // khong can 2 ham rieng. Dung `item.date` (KHONG phai selectedDate) de
+  // patch DUNG bucket ngay cua CHINH item do - quan trong cho truong hop keo
+  // tha tren lich (nguoi dung co the dang xem 1 tuan ma selectedDate la 1
+  // ngay KHAC voi ngay dang keo).
+  async function handleUpdateItem(
+    item: ApiPlannerItem,
+    updates: Partial<{
+      title: string;
+      scheduledMinute: number | null;
+      durationMinutes: number | null;
+      color: string | null;
+      isFocus: boolean;
+    }>,
+    parentId?: string,
+  ) {
+    patchDate(item.date, (items) =>
+      parentId
+        ? items.map((p) =>
+            p.id === parentId
+              ? { ...p, children: (p.children ?? []).map((c) => (c.id === item.id ? { ...c, ...updates } : c)) }
+              : p,
+          )
+        : items.map((i) => (i.id === item.id ? { ...i, ...updates } : i)),
+    );
+    await updatePlannerItemAction(item.id, updates).catch(() => {});
+  }
+
+  // Keo-tha (doi gio bat dau) / keo gian canh duoi (doi thoi luong) TRUC
+  // TIEP tren luoi gio - xem TimedItemChip. Chi danh cho item TOP-LEVEL co
+  // gio (children khong hien tren luoi, chi hien trong SCHEDULE).
+  function handleUpdateItemTime(item: ApiPlannerItem, newStart: number, newDuration: number) {
+    void handleUpdateItem(item, { scheduledMinute: newStart, durationMinutes: newDuration });
+  }
+
+  // Click 1 o gio TRONG tren luoi tuan - yeu cau nguoi dung (state #6):
+  // "Click vào khoảng trống... hệ thống tự hiểu Date/Start, mở Add Task".
+  // CHI luu lai PHUT - ngay da duoc chinh CHINH `onSelect(d)` (goi kem luc
+  // click, xem WeekTimeGrid) tu dong chuyen selectedDate dung ngay cot do roi.
+  function handleSlotClick(minute: number) {
+    setQuickAddPrefill(minute);
   }
 
   // [2026-10-05] Tach rieng 2 moc ngay (khong con 1 chuoi "rangeLabel" gop
@@ -561,6 +617,8 @@ export function PlannerShell({
                 selectedItemId={selectedItemId}
                 onSelect={selectDate}
                 onSelectItem={setSelectedItemId}
+                onSlotClick={handleSlotClick}
+                onUpdateItemTime={handleUpdateItemTime}
               />
             </div>
           ) : (
@@ -583,7 +641,10 @@ export function PlannerShell({
             onAddChild={handleAddChild}
             onToggleDone={handleToggleDone}
             onDelete={handleDelete}
+            onUpdateItem={handleUpdateItem}
             onChangeDay={changeSelectedDay}
+            quickAddPrefill={quickAddPrefill}
+            onConsumePrefill={() => setQuickAddPrefill(null)}
           />
         </div>
       </div>
@@ -687,6 +748,11 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
 //   len hien 2 dong rieng (gio/tieu de).
 // - Hoan thanh (section II.11): KHONG xam toan bo, chi gach ngang + opacity
 //   .55, nen pastel VAN GIU de con nhan ra chu de.
+// Snap keo-tha/keo-gian ve moc 15 phut - vua du nho de linh hoat, vua du lon
+// de khong "run tay" bam trung dung phut le vo nghia.
+const DRAG_SNAP_MINUTES = 15;
+const DRAG_SNAP_PX = (HOUR_ROW_HEIGHT * DRAG_SNAP_MINUTES) / 60;
+
 function TimedItemChip({
   item,
   top,
@@ -695,6 +761,7 @@ function TimedItemChip({
   width,
   selected,
   onSelect,
+  onUpdateTime,
   isToday,
   nowMinute,
 }: {
@@ -705,22 +772,104 @@ function TimedItemChip({
   width: string;
   selected: boolean;
   onSelect: () => void;
+  onUpdateTime: (newStart: number, newDuration: number) => void;
   isToday: boolean;
   nowMinute: number;
 }) {
   const cat = getCategory(item.color);
   const status = computeItemStatus(item, isToday, nowMinute);
-  const compact = height < 40;
-  const timeLabel = `${minutesToLabel(item.scheduledMinute ?? 0)} — ${minutesToLabel(itemEndMinute(item))}`;
+  // [2026-10-05] Keo-tha de doi gio bat dau (keo than the) / keo canh duoi
+  // de doi thoi luong (keo tay cam rieng) - yeu cau nguoi dung: "Kéo thả để
+  // thay đổi thời gian... Resize... Không cần mở Edit". `drag` null = khong
+  // dang keo (dung top/height tu props, TINH TU du lieu THAT tren server);
+  // khi dang keo, hien thi theo `drag.deltaPx` (preview CUC BO, CHUA luu) -
+  // chi goi onUpdateTime (API that) LUC THA chuot (mouseup), khong goi lien
+  // tuc theo tung pixel di chuyen.
+  const [drag, setDrag] = useState<{ mode: "move" | "resize"; deltaPx: number } | null>(null);
+  // Ban SONG SONG voi `drag` state (doc duoc NGAY lap tuc trong onUp, khong
+  // can qua updater function cua setState - xem comment chi tiet trong
+  // startDrag ben duoi).
+  const dragRef = useRef<{ mode: "move" | "resize"; deltaPx: number } | null>(null);
+  const suppressClickRef = useRef(false);
+
+  const displayTop = drag?.mode === "move" ? top + drag.deltaPx : top;
+  const displayHeight = drag?.mode === "resize" ? Math.max(DRAG_SNAP_PX, height + drag.deltaPx) : height;
+  const liveStart = Math.round((displayTop / HOUR_ROW_HEIGHT) * 60);
+  const liveDuration = Math.round((displayHeight / HOUR_ROW_HEIGHT) * 60);
+  const compact = displayHeight < 40;
+  const timeLabel = drag
+    ? `${minutesToLabel(liveStart)} — ${minutesToLabel(liveStart + liveDuration)}`
+    : `${minutesToLabel(item.scheduledMinute ?? 0)} — ${minutesToLabel(itemEndMinute(item))}`;
+
+  function startDrag(e: React.MouseEvent, mode: "move" | "resize") {
+    if (e.button !== 0) return; // chi chuot trai
+    e.preventDefault();
+    e.stopPropagation();
+    const startClientY = e.clientY;
+    const initial = { mode, deltaPx: 0 };
+    dragRef.current = initial;
+    setDrag(initial);
+
+    function onMove(ev: MouseEvent) {
+      const raw = ev.clientY - startClientY;
+      const snapped = Math.round(raw / DRAG_SNAP_PX) * DRAG_SNAP_PX;
+      if (Math.abs(snapped) >= DRAG_SNAP_PX) suppressClickRef.current = true;
+      const next = { mode, deltaPx: snapped };
+      dragRef.current = next;
+      setDrag(next);
+    }
+    // [2026-10-05] Doc dragRef.current (BIEN THUONG, khong phai updater
+    // function cua setDrag) de lay gia tri CUOI CUNG - bug phat hien qua
+    // test luong tuong tac that: ban truoc goi onUpdateTime(...) (set-state
+    // cua PlannerShell, component CHA) NGAY BEN TRONG ham updater truyen cho
+    // setDrag(d => {...}), React canh bao that su trong console: "Cannot
+    // update a component (PlannerShell) while rendering a different
+    // component (TimedItemChip)" - updater function cua setState PHAI la
+    // PURE (chi tinh state moi TU state cu), goi mot setState KHAC (cua
+    // component cha) o giua lam viec do la tac dung phu trai quy tac. Sua
+    // bang cach tach rieng: onUpdateTime goi SAU, NGOAI setDrag, truc tiep
+    // trong onUp (1 DOM event handler binh thuong, khong phai updater).
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      const final = dragRef.current;
+      dragRef.current = null;
+      setDrag(null);
+      if (final && final.deltaPx !== 0) {
+        const currentStart = item.scheduledMinute ?? 0;
+        const currentDuration = itemEndMinute(item) - currentStart;
+        const deltaMinutes = Math.round((final.deltaPx / HOUR_ROW_HEIGHT) * 60);
+        if (final.mode === "move") {
+          const newStart = Math.min(Math.max(currentStart + deltaMinutes, 0), 24 * 60 - DRAG_SNAP_MINUTES);
+          onUpdateTime(newStart, currentDuration);
+        } else {
+          const newDuration = Math.min(
+            Math.max(currentDuration + deltaMinutes, DRAG_SNAP_MINUTES),
+            24 * 60 - currentStart,
+          );
+          onUpdateTime(currentStart, newDuration);
+        }
+      }
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
 
   return (
     <button
       type="button"
-      onClick={onSelect}
+      onMouseDown={(e) => startDrag(e, "move")}
+      onClick={() => {
+        if (suppressClickRef.current) {
+          suppressClickRef.current = false;
+          return;
+        }
+        onSelect();
+      }}
       title={`${timeLabel} · ${item.title}`}
       style={{
-        top,
-        height: Math.max(height, 20),
+        top: displayTop,
+        height: Math.max(displayHeight, 20),
         left,
         width,
         backgroundColor: cat.pastel,
@@ -728,7 +877,8 @@ function TimedItemChip({
         boxShadow: selected ? `0 0 0 2px white, 0 0 0 3px ${cat.accent}` : undefined,
       }}
       className={cn(
-        "absolute z-[1] flex cursor-pointer flex-col justify-center overflow-hidden rounded-[7px] border-l-[3px] px-1.5 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        "group absolute z-[1] flex flex-col justify-center overflow-hidden rounded-[7px] border-l-[3px] px-1.5 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        drag ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]" : "cursor-grab",
         item.done && "opacity-55",
       )}
     >
@@ -738,7 +888,7 @@ function TimedItemChip({
             <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accent }} aria-hidden="true" />
           )}
           <span className="shrink-0 text-[10px] font-medium" style={{ color: cat.accent }}>
-            {minutesToLabel(item.scheduledMinute ?? 0)}
+            {minutesToLabel(drag ? liveStart : (item.scheduledMinute ?? 0))}
           </span>
           <span
             className={cn(
@@ -778,6 +928,19 @@ function TimedItemChip({
           </span>
         </>
       )}
+      {/* [2026-10-05] Tay cam resize - keo rieng canh nay de doi THOI LUONG
+          (giu nguyen gio bat dau), khac keo THAN the (doi gio bat dau, giu
+          nguyen thoi luong). stopPropagation trong startDrag ngan event
+          "chay len" <button> cha (tranh kich hoat CA 2 kieu keo cung luc).
+          opacity-0 + group-hover - CHI hien ro khi di chuot vao ca the (dung
+          `group` da gan tren <button> cha), tranh ri mat 1 thanh mau luc
+          binh thuong. */}
+      <div
+        onMouseDown={(e) => startDrag(e, "resize")}
+        className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+        style={{ backgroundColor: cat.accent }}
+        aria-hidden="true"
+      />
     </button>
   );
 }
@@ -796,6 +959,8 @@ function WeekTimeGrid({
   selectedItemId,
   onSelect,
   onSelectItem,
+  onSlotClick,
+  onUpdateItemTime,
 }: {
   anchor: string;
   selectedDate: string;
@@ -803,6 +968,8 @@ function WeekTimeGrid({
   selectedItemId: string | null;
   onSelect: (date: string) => void;
   onSelectItem: (id: string) => void;
+  onSlotClick: (minute: number) => void;
+  onUpdateItemTime: (item: ApiPlannerItem, newStart: number, newDuration: number) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i));
@@ -919,12 +1086,19 @@ function WeekTimeGrid({
                     : { height: HOUR_ROW_HEIGHT * 24 }
                 }
               >
+                {/* [2026-10-05] Click 1 o gio TRONG - yeu cau nguoi dung
+                    (state #6): "Click vào khoảng trống → mở Add Task, giờ
+                    điền sẵn". onSlotClick CHI luu phut (h*60) - ngay da duoc
+                    chon dung qua onSelect(d) o CUNG 1 lan click. */}
                 {HOURS.map((h) => (
                   <div
                     key={h}
                     className="cursor-pointer border-t border-[color:var(--planner-border-soft)] hover:bg-[var(--planner-surface-soft)]"
                     style={{ height: HOUR_ROW_HEIGHT }}
-                    onClick={() => onSelect(d)}
+                    onClick={() => {
+                      onSelect(d);
+                      onSlotClick(h * 60);
+                    }}
                   />
                 ))}
                 {laidOut.map(({ item, col, cols }) => (
@@ -940,6 +1114,7 @@ function WeekTimeGrid({
                       onSelect(d);
                       onSelectItem(item.id);
                     }}
+                    onUpdateTime={(newStart, newDuration) => onUpdateItemTime(item, newStart, newDuration)}
                     isToday={isToday}
                     nowMinute={nowMinute}
                   />
@@ -1163,6 +1338,7 @@ function TimelineRow({
   onSelect,
   onToggleDone,
   onDelete,
+  onEdit,
 }: {
   item: ApiPlannerItem;
   status: ItemStatus;
@@ -1170,6 +1346,7 @@ function TimelineRow({
   onSelect: () => void;
   onToggleDone: () => void;
   onDelete: () => void;
+  onEdit: () => void;
 }) {
   const cat = getCategory(item.color);
   return (
@@ -1239,16 +1416,72 @@ function TimelineRow({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete();
+              onEdit();
             }}
-            className="cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-danger"
-            aria-label="Xoá"
+            className="cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-[color:var(--planner-primary)]"
+            aria-label="Sửa"
           >
-            <Trash2 size={12} />
+            <Pencil size={12} />
           </button>
+          <DeleteConfirmButton label={item.title} onConfirm={onDelete} />
         </div>
       </div>
     </div>
+  );
+}
+
+// [2026-10-05] Xac nhan TRUOC KHI xoa that su - yeu cau nguoi dung (state
+// #9): "Destructive action cần confirmation" - truoc day bam Xoá la MAT
+// NGAY khong hoi lai. Dung popover nho (tai dung PopoverRoot/Content da co
+// san, cung ky thuat voi Filters) neo DUNG vao nut Xoa thay vi 1 modal toan
+// man hinh rieng - gon hon, khong can them 1 he thong Dialog/overlay moi
+// cho CHI 1 cho dung.
+function DeleteConfirmButton({ label, onConfirm }: { label: string; onConfirm: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <PopoverRoot open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-danger"
+          aria-label="Xoá"
+        >
+          <Trash2 size={12} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        open={open}
+        align="end"
+        className="z-50 w-60 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
+      >
+        <div onClick={(e) => e.stopPropagation()}>
+          <p className="text-[13px] font-semibold text-[color:var(--planner-text-primary)]">Xoá công việc?</p>
+          <p className="mt-0.5 text-[12px] text-[color:var(--planner-text-muted)]">
+            Bạn có chắc muốn xoá &quot;{label}&quot;? Hành động này không thể hoàn tác.
+          </p>
+          <div className="mt-2.5 flex justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="h-7 cursor-pointer rounded-[8px] px-2.5 text-[12px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onConfirm();
+              }}
+              className="h-7 cursor-pointer rounded-[8px] bg-danger px-2.5 text-[12px] font-semibold text-white hover:opacity-90"
+            >
+              Xoá
+            </button>
+          </div>
+        </div>
+      </PopoverContent>
+    </PopoverRoot>
   );
 }
 
@@ -1284,14 +1517,7 @@ function ItemRow({
       >
         {item.title}
       </span>
-      <button
-        type="button"
-        onClick={() => onDelete(item, parentId)}
-        className="shrink-0 cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)] hover:text-danger"
-        aria-label="Xoá"
-      >
-        <Trash2 size={13} />
-      </button>
+      <DeleteConfirmButton label={item.title} onConfirm={() => onDelete(item, parentId)} />
     </div>
   );
 }
@@ -1307,6 +1533,7 @@ function BigTimelineItem({
   onToggleDone,
   onDelete,
   onAddChild,
+  onEdit,
 }: {
   item: ApiPlannerItem;
   status: ItemStatus;
@@ -1315,6 +1542,7 @@ function BigTimelineItem({
   onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
   onAddChild: (parentId: string, title: string) => void;
+  onEdit: () => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [childDraft, setChildDraft] = useState("");
@@ -1384,13 +1612,14 @@ function BigTimelineItem({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(item);
+              onEdit();
             }}
-            className="shrink-0 cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-danger"
-            aria-label="Xoá"
+            className="shrink-0 cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-[color:var(--planner-primary)]"
+            aria-label="Sửa"
           >
-            <Trash2 size={13} />
+            <Pencil size={13} />
           </button>
+          <DeleteConfirmButton label={item.title} onConfirm={() => onDelete(item)} />
         </div>
         {expanded && (
           <div className="mt-1 ml-5 flex flex-col gap-0.5 border-l border-[color:var(--planner-border-soft)] pl-2.5">
@@ -1445,7 +1674,15 @@ function EmptyIllustration() {
 // tro cua "Quick Add" (section 13) - 2 muc trong spec vo tinh mo ta CUNG 1
 // hanh dong (them nhanh 1 viec cho hom nay), tach thanh 2 UI rieng se trung
 // lap chuc nang.
-function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"] }) {
+function AddTaskForm({
+  onAddItem,
+  prefillStart,
+  onConsumePrefill,
+}: {
+  onAddItem: DayDetailPanelProps["onAddItem"];
+  prefillStart: number | null;
+  onConsumePrefill: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftKind, setDraftKind] = useState<PlannerItemKind>("SIMPLE");
@@ -1453,6 +1690,22 @@ function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"
   const [draftDuration, setDraftDuration] = useState(DEFAULT_DURATION_MINUTES);
   const [draftColor, setDraftColor] = useState<string | null>(null);
   const [draftFocus, setDraftFocus] = useState(false);
+
+  // [2026-10-05] Click 1 o gio TRONG tren luoi tuan (state #6) - tu MO form
+  // nay + dien san gio da click, thay vi nguoi dung phai tu bam "+ Thêm
+  // việc" roi tu mo Time Picker chon lai. `onConsumePrefill()` dat prefill
+  // ve null NGAY sau khi dung - tranh mo lai form 1 lan nua neu component
+  // re-render vi ly do khac (vd nguoi dung tu dong Huỷ form).
+  useEffect(() => {
+    if (prefillStart === null) return;
+    const t = setTimeout(() => {
+      setOpen(true);
+      setDraftStart(prefillStart);
+      onConsumePrefill();
+    }, 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillStart]);
 
   function submit() {
     const title = draft.trim();
@@ -1599,6 +1852,132 @@ function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"
   );
 }
 
+// [2026-10-05] Sua 1 item CO SAN (tieu de/gio/thoi luong/mau/trong tam) -
+// yeu cau nguoi dung: "Sửa ngay trong dòng" (khong tach rieng 1 man hinh
+// "Task Detail" nhu spec goc, xem comment goc o PlannerShell). Tai dung
+// NGUYEN giao dien cac truong cua AddTaskForm (title/TimePickerField/color/
+// focus) nhung KHONG co lua chon "Đơn/Lớn" (kind co dinh tu luc tao, doi
+// kind sau khi da co san con/khong con hop ly ve du lieu) va nut hanh dong
+// doi thanh "Lưu"/"Huỷ" thay vi "Thêm". Hien THAY THE cho dong thuong trong
+// SCHEDULE (xem DayDetailPanel) khi editingId === item.id.
+function EditItemForm({
+  item,
+  onSave,
+  onCancel,
+}: {
+  item: ApiPlannerItem;
+  onSave: (updates: {
+    title: string;
+    scheduledMinute: number | null;
+    durationMinutes: number | null;
+    color: string | null;
+    isFocus: boolean;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState(item.title);
+  const [start, setStart] = useState<number | null>(item.scheduledMinute);
+  const [duration, setDuration] = useState(item.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+  const [color, setColor] = useState<string | null>(item.color);
+  const [focus, setFocus] = useState(item.isFocus);
+
+  function save() {
+    const t = title.trim();
+    if (!t) return;
+    onSave({
+      title: t,
+      scheduledMinute: start,
+      durationMinutes: start !== null ? duration : null,
+      color,
+      isFocus: focus,
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[10px] border border-[color:var(--planner-primary)]/50 bg-[var(--planner-surface-soft)] p-2.5">
+      <div className="flex items-center gap-1.5">
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") save();
+            if (e.key === "Escape") onCancel();
+          }}
+          placeholder="Tên công việc..."
+          className="h-9 min-w-0 flex-1 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:shadow-[0_0_0_3px_rgba(71,120,232,.08)]"
+        />
+        <TimePickerField
+          startMinute={start}
+          durationMinutes={duration}
+          onChange={(s, d) => {
+            setStart(s);
+            setDuration(d);
+          }}
+        />
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        {PLANNER_COLORS.map((c) => (
+          <button
+            key={c.label}
+            type="button"
+            title={c.label}
+            onClick={() => setColor(c.value)}
+            style={
+              color === c.value ? { boxShadow: "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)" } : undefined
+            }
+            className={cn(
+              "flex size-6 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-[color:var(--planner-border)] transition-shadow duration-100 ease-out",
+              color !== c.value && "ring-offset-1 ring-offset-white",
+            )}
+          >
+            <span className="block size-full" style={{ backgroundColor: c.value ?? "transparent" }}>
+              {c.value === null && (
+                <span
+                  className="pointer-events-none block size-full"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, var(--planner-border) 0, var(--planner-border) 1px, transparent 1px, transparent 4px)",
+                  }}
+                />
+              )}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <label className="flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[color:var(--planner-text-secondary)]">
+        <input
+          type="checkbox"
+          checked={focus}
+          onChange={(e) => setFocus(e.target.checked)}
+          className="size-3.5 cursor-pointer accent-[color:var(--planner-primary)]"
+        />
+        <Flame size={12} className="text-[#d97706]" /> Đánh dấu là việc trọng tâm hôm nay
+      </label>
+
+      <div className="flex items-center justify-end gap-1.5">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-[34px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+        >
+          Huỷ
+        </button>
+        <button
+          type="button"
+          onClick={save}
+          disabled={!title.trim()}
+          className="h-[34px] cursor-pointer rounded-[9px] bg-[color:var(--planner-primary)] px-3.5 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+        >
+          Lưu
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type DayDetailPanelProps = {
   date: string;
   items: ApiPlannerItem[];
@@ -1615,7 +1994,20 @@ type DayDetailPanelProps = {
   onAddChild: (parentId: string, title: string) => void;
   onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
+  onUpdateItem: (
+    item: ApiPlannerItem,
+    updates: Partial<{
+      title: string;
+      scheduledMinute: number | null;
+      durationMinutes: number | null;
+      color: string | null;
+      isFocus: boolean;
+    }>,
+    parentId?: string,
+  ) => void;
   onChangeDay: (direction: -1 | 1) => void;
+  quickAddPrefill: number | null;
+  onConsumePrefill: () => void;
 };
 
 function DayDetailPanel({
@@ -1627,10 +2019,17 @@ function DayDetailPanel({
   onAddChild,
   onToggleDone,
   onDelete,
+  onUpdateItem,
   onChangeDay,
+  quickAddPrefill,
+  onConsumePrefill,
 }: DayDetailPanelProps) {
   const [filter, setFilter] = useState<FilterValue>("ALL");
   const [filterOpen, setFilterOpen] = useState(false);
+  // [2026-10-05] "Sửa ngay trong dòng" - id item DANG duoc sua (null = khong
+  // co gi dang sua). So sanh === item.id trong vong lap render ben duoi de
+  // quyet dinh hien EditItemForm THAY CHO dong binh thuong.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const sorted = [...items].sort((a, b) => a.orderIndex - b.orderIndex);
   const isEmpty = sorted.length === 0;
@@ -1702,7 +2101,7 @@ function DayDetailPanel({
             </div>
           </div>
           <div className="border-t border-[color:var(--planner-border-soft)]" />
-          <AddTaskForm onAddItem={onAddItem} />
+          <AddTaskForm onAddItem={onAddItem} prefillStart={quickAddPrefill} onConsumePrefill={onConsumePrefill} />
         </>
       ) : (
         <>
@@ -1781,7 +2180,18 @@ function DayDetailPanel({
             ) : (
               <div className="relative flex flex-col gap-1 border-l border-[color:var(--planner-border-soft)] pl-0">
                 {filtered.map((item) =>
-                  item.kind === "BIG" ? (
+                  editingId === item.id ? (
+                    <div key={item.id} className="pl-6">
+                      <EditItemForm
+                        item={item}
+                        onCancel={() => setEditingId(null)}
+                        onSave={(updates) => {
+                          onUpdateItem(item, updates);
+                          setEditingId(null);
+                        }}
+                      />
+                    </div>
+                  ) : item.kind === "BIG" ? (
                     <BigTimelineItem
                       key={item.id}
                       item={item}
@@ -1791,6 +2201,7 @@ function DayDetailPanel({
                       onToggleDone={onToggleDone}
                       onDelete={onDelete}
                       onAddChild={onAddChild}
+                      onEdit={() => setEditingId(item.id)}
                     />
                   ) : (
                     <TimelineRow
@@ -1801,13 +2212,14 @@ function DayDetailPanel({
                       onSelect={() => onSelectItem(item.id)}
                       onToggleDone={() => onToggleDone(item)}
                       onDelete={() => onDelete(item)}
+                      onEdit={() => setEditingId(item.id)}
                     />
                   ),
                 )}
               </div>
             )}
 
-            <AddTaskForm onAddItem={onAddItem} />
+            <AddTaskForm onAddItem={onAddItem} prefillStart={quickAddPrefill} onConsumePrefill={onConsumePrefill} />
           </div>
         </>
       )}
