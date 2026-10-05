@@ -51,7 +51,21 @@ export function SeriesEntryEditor({
     extensions: [
       ...getPostExtensions(),
       Placeholder.configure({ placeholder: "Viết nội dung bài học tại đây..." }),
-      Markdown.configure({ tightLists: true, linkify: false }),
+      // transformPastedText:true - yeu cau nguoi dung: dan text THUONG (vd
+      // copy tu ChatGPT) co cu phap markdown (bang/heading/list/bold...)
+      // phai TU DUNG thanh node THAT trong editor, khong bi Tiptap mac
+      // dinh tach moi dong thanh 1 doan van rieng (dung bug nguoi dung vua
+      // gap: dan 1 bang markdown, luu lai thanh cac dong CACH NHAU boi dong
+      // trong, pha vo cu phap bang GFM - bang bien thanh text tho o trang
+      // doc). tiptap-markdown DA CO SAN co nay (MarkdownClipboard - xem
+      // node_modules/tiptap-markdown/src/extensions/tiptap/clipboard.js),
+      // hook vao dung "clipboardTextParser" cua ProseMirror de parse text
+      // dan qua CHINH parser markdown-it dang dung (thay vi hanh vi mac
+      // dinh: tach theo tung dong rong thanh doan van) - khong can code
+      // rieng. Van TON TRONG "dan dang plain text" (Ctrl+Shift+V, giu
+      // nguyen van ban tho khong dien giai) vi thu vien tu kiem tra co nay
+      // TRUOC, bo qua parse markdown neu nguoi dung giu Shift luc dan.
+      Markdown.configure({ tightLists: true, linkify: false, transformPastedText: true }),
     ],
     content: value,
     immediatelyRender: false,
