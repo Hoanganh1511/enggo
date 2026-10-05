@@ -9,8 +9,14 @@ export type ApiPlannerItem = {
   title: string;
   kind: PlannerItemKind;
   scheduledMinute: number | null;
-  // Mau the (hex "#rrggbb") - xem PLANNER_COLORS trong PlannerShell.tsx.
+  // Mau the (hex "#rrggbb") - dung lam "category" (xem CATEGORY_BY_COLOR
+  // trong PlannerShell.tsx) thay vi them 1 field category rieng.
   color: string | null;
+  // Thoi luong (phut) - null = chua dat, FE tu fallback ve 1 gia tri mac
+  // dinh khi can ve UI (xem DEFAULT_DURATION_MINUTES trong PlannerShell.tsx).
+  durationMinutes: number | null;
+  // Nguoi dung tu danh dau "việc trọng tâm hôm nay" ("Today's Focus").
+  isFocus: boolean;
   done: boolean;
   orderIndex: number;
   parentId: string | null;
@@ -26,6 +32,8 @@ export type PlannerItemInput = {
   kind?: PlannerItemKind;
   scheduledMinute?: number;
   color?: string;
+  durationMinutes?: number;
+  isFocus?: boolean;
   // Truyen de chen 1 DAU VIEC CON vao duoi 1 planner "lớn" da co san thay vi
   // tao item top-level moi - xem PlannerService.create() o backend.
   parentId?: string;
@@ -37,6 +45,8 @@ export type PlannerItemUpdateInput = Partial<{
   // PlannerService.update() o backend.
   scheduledMinute: number | null;
   color: string | null;
+  durationMinutes: number | null;
+  isFocus: boolean;
   orderIndex: number;
 }>;
 

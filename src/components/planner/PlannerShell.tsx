@@ -4,10 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   CalendarCheck2,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Circle,
   Clock,
+  Flame,
+  ListFilter,
   Plus,
   Sparkles,
   Trash2,
@@ -20,6 +24,7 @@ import {
   updatePlannerItemAction,
   deletePlannerItemAction,
 } from "@/actions/planner/planner";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 type ViewMode = "week" | "month";
 type ItemsByDate = Record<string, ApiPlannerItem[]>;
@@ -31,6 +36,9 @@ const WEEKDAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 // tuần theo tiếng anh". Thu 2 (index 0, T2) la dau tuan theo startOfWeek() da
 // dung xuyen suot file nay (ISO 8601, tuan bat dau Thu Hai).
 const WEEKDAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_FULL_EN = [
+  "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY",
+];
 const WEEKDAY_LONG_VI = [
   "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật",
 ];
@@ -38,22 +46,59 @@ const MONTH_LABELS = [
   "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
   "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
 ];
-
-// [2026-10-02] Bang mau cho checklist - yeu cau nguoi dung: "khi tạo
-// checklist cũng được chọn loại màu cho nó". TAI DUNG dung 6 mau + "Mac dinh"
-// da co san o TEXT_COLORS (SelectionFloatingMenu.tsx, tinh nang chon mau chu
-// trong editor) thay vi bia 1 bang mau rieng cho Planner - nhat quan mau sac
-// trong toan app (nguoi dung da chon dung bang mau nay roi "Tai dung 7 mau da
-// co trong editor" khi duoc hoi).
-const PLANNER_COLORS: { label: string; value: string | null }[] = [
-  { label: "Mặc định", value: null },
-  { label: "Đỏ", value: "#ef4444" },
-  { label: "Cam", value: "#f97316" },
-  { label: "Vàng", value: "#eab308" },
-  { label: "Xanh lá", value: "#22c55e" },
-  { label: "Xanh dương", value: "#3b82f6" },
-  { label: "Tím", value: "#a855f7" },
+const MONTH_LABELS_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
 ];
+
+// [2026-10-05] "Category" cho checklist - yeu cau nguoi dung (redesign Right
+// Panel/Calendar Canvas): moi viec thuoc 1 chu de (Work/Learning/Health/
+// Personal/Project...), mau pastel RIENG lam nen the + 1 mau "accent" dam
+// hon lam vien trai/dot. Nguoi dung xac nhan: "Tái dùng color hiện có làm
+// category" - TAI DUNG dung 6 gia tri hex cua PLANNER_COLORS (lan truoc,
+// SelectionFloatingMenu.tsx) lam KHOA, KHONG them field category rieng/
+// khong migration moi - chi gan them 1 nhan + 1 mau pastel cho MOI hex da
+// co san. `accent` = chinh hex do (dung lam dot/vien trai/text nhan manh),
+// `pastel` la ban rat nhat cua accent (nen the, xem Part II spec: "Pastel
+// Background... phải muted, không neon").
+type CategoryMeta = { label: string; accent: string; pastel: string };
+const CATEGORY_BY_COLOR: Record<string, CategoryMeta> = {
+  "#ef4444": { label: "Cá nhân", accent: "#ef4444", pastel: "#fdecef" },
+  "#f97316": { label: "Nội dung", accent: "#f97316", pastel: "#fff1e6" },
+  "#eab308": { label: "Học tập", accent: "#eab308", pastel: "#fff5d9" },
+  "#22c55e": { label: "Sức khoẻ", accent: "#22c55e", pastel: "#eaf8f2" },
+  "#3b82f6": { label: "Công việc", accent: "#3b82f6", pastel: "#eaf2ff" },
+  "#a855f7": { label: "Dự án", accent: "#a855f7", pastel: "#f0eaff" },
+};
+const DEFAULT_CATEGORY: CategoryMeta = { label: "Khác", accent: "#98a2b3", pastel: "#f1f3f5" };
+function getCategory(color: string | null): CategoryMeta {
+  return (color && CATEGORY_BY_COLOR[color]) || DEFAULT_CATEGORY;
+}
+// Bang chon mau/category luc tao viec - tai dung CHINH CATEGORY_BY_COLOR lam
+// nguon DUY NHAT (khong khai bao trung lap 1 danh sach rieng nhu truoc).
+const PLANNER_COLORS: { label: string; value: string | null }[] = [
+  { label: DEFAULT_CATEGORY.label, value: null },
+  ...Object.entries(CATEGORY_BY_COLOR).map(([hex, meta]) => ({ label: meta.label, value: hex })),
+];
+
+// Bo loc "SCHEDULE" (yeu cau nguoi dung, section 15 "Filter"): theo trang
+// thai (Tat ca/Chua xong/Hoan thanh) HOAC theo category - gop CHUNG 1 danh
+// sach lua chon (dung tinh than ban mockup "All/Work/Learning/.../Completed/
+// Incomplete" liet ke CUNG 1 cho).
+type FilterValue = "ALL" | "DONE" | "TODO" | string;
+const FILTER_OPTIONS: { value: FilterValue; label: string }[] = [
+  { value: "ALL", label: "Tất cả" },
+  { value: "TODO", label: "Chưa xong" },
+  { value: "DONE", label: "Hoàn thành" },
+  ...Object.entries(CATEGORY_BY_COLOR).map(([hex, meta]) => ({ value: hex, label: meta.label })),
+];
+
+// [2026-10-05] Thoi luong MAC DINH (phut) khi 1 viec co gio bat dau nhung
+// CHUA tung dat durationMinutes (item cu truoc migration, hoac nguoi dung bo
+// trong luc tao) - dung de VE UI (do dai khoi trong luoi gio, gio ket thuc
+// trong timeline...), KHONG ghi nguoc lai DB (item.durationMinutes van la
+// null, chi FE tu suy luan luc hien thi).
+const DEFAULT_DURATION_MINUTES = 60;
 
 // Luoi gio (truc Y) WeekTimeGrid - CHI view Tuan (o Thang qua nho de ve luoi
 // gio hop ly, theo dung xac nhan cua nguoi dung). [2026-10-05] 64px/gio (tang
@@ -94,7 +139,7 @@ function endOfMonth(dateStr: string): string {
   return toISODate(d);
 }
 function minutesToLabel(m: number): string {
-  const h = Math.floor(m / 60);
+  const h = Math.floor(m / 60) % 24;
   const mm = m % 60;
   return `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
@@ -114,13 +159,103 @@ function rangeForMode(mode: ViewMode, anchor: string): { from: string; to: strin
     ? { from: startOfWeek(anchor), to: addDays(startOfWeek(anchor), 6) }
     : { from: startOfMonth(anchor), to: endOfMonth(anchor) };
 }
-// "Thứ Hai, 5 tháng 10, 2026" - yeu cau nguoi dung (sidebar date): "2026-10-05
-// / Thứ Hai, 5 tháng 10, 2026" (dong phu, sau dong ISO date chinh).
+// "Thứ Hai, 5 tháng 10, 2026" - dong phu (sau dong ISO/English o sidebar).
 function formatLongDateVi(dateStr: string): string {
   const d = new Date(dateStr);
   const day = d.getDay(); // 0 = Chu nhat
   const weekdayIdx = day === 0 ? 6 : day - 1;
   return `${WEEKDAY_LONG_VI[weekdayIdx]}, ${d.getDate()} tháng ${d.getMonth() + 1}, ${d.getFullYear()}`;
+}
+// "October 5, 2026" - yeu cau nguoi dung (Day Header moi): "MONDAY / October
+// 5, 2026 / Thứ Hai...".
+function formatLongDateEn(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${MONTH_LABELS_EN[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+function weekdayFullEn(dateStr: string): string {
+  const d = new Date(dateStr);
+  const day = d.getDay();
+  return WEEKDAY_FULL_EN[day === 0 ? 6 : day - 1];
+}
+// Gio KET THUC suy ra tu scheduledMinute + durationMinutes (hoac mac dinh) -
+// CHI co y nghia voi viec co dat gio (scheduledMinute != null).
+function itemEndMinute(item: ApiPlannerItem): number {
+  return (item.scheduledMinute ?? 0) + (item.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+}
+function formatHoursMinutes(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+// Trang thai 1 viec TRONG NGAY (yeu cau nguoi dung: "Timeline có trạng thái...
+// Completed/In progress/Upcoming"). "current" CHI co the xay ra khi dang xem
+// DUNG ngay hom nay VA gio hien tai nam trong [start, end) cua viec - tinh
+// LAI moi lan render (khong luu DB, khong can 1 field "status" rieng, luon
+// phan anh dung thoi diem THAT).
+type ItemStatus = "done" | "current" | "upcoming";
+function computeItemStatus(item: ApiPlannerItem, isToday: boolean, nowMinute: number): ItemStatus {
+  if (item.done) return "done";
+  if (!isToday || item.scheduledMinute === null) return "upcoming";
+  const end = itemEndMinute(item);
+  if (nowMinute >= item.scheduledMinute && nowMinute < end) return "current";
+  return "upcoming";
+}
+
+// Thuat toan XEP COT kinh dien cho cac su kien TRUNG GIO trong CUNG 1 ngay
+// (yeu cau nguoi dung, section II.15 "Overlapping Events": "không ép chúng
+// đè lên nhau... chia cột, giống logic của Google Calendar"). Gom cac viec
+// co khoang thoi gian [start,end) GIAO NHAU thanh 1 "cum", trong 1 cum gan
+// THAM LAM (greedy) moi viec vao cot DAU TIEN co cho trong (end cua cot do
+// <= start cua viec) - khong co cot nao rang thi mo cot moi. Sap xep truoc
+// theo start (roi end) de dam bao xu ly dung thu tu thoi gian.
+function layoutTimedItems(
+  items: (ApiPlannerItem & { scheduledMinute: number })[],
+): { item: ApiPlannerItem & { scheduledMinute: number }; col: number; cols: number }[] {
+  const entries = items
+    .map((it) => ({ it, start: it.scheduledMinute, end: itemEndMinute(it) }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const result: { item: ApiPlannerItem & { scheduledMinute: number }; col: number; cols: number }[] = [];
+  let cluster: typeof entries = [];
+  let clusterEnd = -1;
+
+  function flushCluster() {
+    if (cluster.length === 0) return;
+    const colEnds: number[] = [];
+    const assigned: { entry: (typeof entries)[number]; col: number }[] = [];
+    for (const entry of cluster) {
+      let placedCol = -1;
+      for (let c = 0; c < colEnds.length; c++) {
+        if (colEnds[c] <= entry.start) {
+          colEnds[c] = entry.end;
+          placedCol = c;
+          break;
+        }
+      }
+      if (placedCol === -1) {
+        colEnds.push(entry.end);
+        placedCol = colEnds.length - 1;
+      }
+      assigned.push({ entry, col: placedCol });
+    }
+    const totalCols = colEnds.length;
+    for (const a of assigned) result.push({ item: a.entry.it, col: a.col, cols: totalCols });
+    cluster = [];
+  }
+
+  for (const entry of entries) {
+    if (cluster.length > 0 && entry.start >= clusterEnd) {
+      flushCluster();
+      clusterEnd = -1;
+    }
+    cluster.push(entry);
+    clusterEnd = Math.max(clusterEnd, entry.end);
+  }
+  flushCluster();
+  return result;
 }
 
 // Planner - trang /planner RIENG, HOAN TOAN MOI (yeu cau nguoi dung: "Triển
@@ -130,12 +265,13 @@ function formatLongDateVi(dateStr: string): string {
 // gi voi /tracking (dang khoa, xem tracking/layout.tsx) - tu PlannerItem
 // rieng (backend) den component nay.
 //
-// [2026-10-05] UI/UX "premium workspace" - yeu cau nguoi dung dua ra 1 spec
-// day du (nen/padding/typography/mau/radius/shadow/spacing rieng cho trang
-// nay). Toan bo mau/token moi nam trong class "planner-scope" (xem
-// globals.css, cung tinh than voi .dashboard-scope/.series-scope da co) -
-// KHONG tai dung --ink/--border/--surface goc cua app (gia tri khac that su
-// so voi spec, xem comment chi tiet trong globals.css).
+// [2026-10-05] UI/UX "premium workspace" (2 lan redesign lien tiep) - yeu
+// cau nguoi dung dua ra 1 spec day du (nen/padding/typography/mau/radius/
+// shadow/spacing rieng cho trang nay, roi tiep tuc redesign SAU rieng Right
+// Panel + Calendar event card). Toan bo mau/token moi nam trong class
+// "planner-scope" (xem globals.css, cung tinh than voi .dashboard-scope/
+// .series-scope da co) - KHONG tai dung --ink/--border/--surface goc cua
+// app (gia tri khac that su so voi spec, xem comment chi tiet trong globals.css).
 export function PlannerShell({
   initialDate,
   initialItems,
@@ -148,6 +284,12 @@ export function PlannerShell({
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [itemsByDate, setItemsByDate] = useState<ItemsByDate>(() => groupByDate(initialItems));
   const [isLoading, setIsLoading] = useState(false);
+  // Dong bo "chon 1 su kien" GIUA calendar canvas (click 1 the gio) VA Right
+  // Panel (highlight dong tuong ung trong Schedule) - yeu cau nguoi dung,
+  // section II.10 "Selected State": "Đồng thời: Right panel chuyển sang Task
+  // Detail" (o day don gian hoa thanh HIGHLIGHT, khong tach 1 man hinh Task
+  // Detail rieng - xem giai thich trong DayDetailPanel).
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
 
   async function reload(range: { from: string; to: string }) {
     setIsLoading(true);
@@ -177,13 +319,18 @@ export function PlannerShell({
     void reload(rangeForMode(viewMode, t));
   }
 
+  function selectDate(date: string) {
+    setSelectedDate(date);
+    setSelectedItemId(null);
+  }
+
   // "Sidebar Navigation" (section 18) - chuyen ngay TRUC TIEP tu sidebar,
   // khong can quay lai bam vao lich. Neu ngay moi ROI RA NGOAI pham vi
   // (from/to) dang tai cho anchor hien tai, doi anchor + tai lai DUNG
   // khoang do - dam bao itemsByDate luon co du lieu cho ngay vua chuyen toi.
   function changeSelectedDay(direction: -1 | 1) {
     const next = addDays(selectedDate, direction);
-    setSelectedDate(next);
+    selectDate(next);
     const range = rangeForMode(viewMode, anchor);
     if (next < range.from || next > range.to) {
       setAnchor(next);
@@ -200,6 +347,8 @@ export function PlannerShell({
     kind: PlannerItemKind,
     scheduledMinute?: number,
     color?: string,
+    durationMinutes?: number,
+    isFocus?: boolean,
   ) {
     const created = await createPlannerItemAction({
       date: selectedDate,
@@ -207,6 +356,8 @@ export function PlannerShell({
       kind,
       scheduledMinute,
       color,
+      durationMinutes,
+      isFocus,
     }).catch(() => null);
     if (created) patchDate(selectedDate, (items) => [...items, created]);
   }
@@ -333,7 +484,14 @@ export function PlannerShell({
                 isLoading && "opacity-60",
               )}
             >
-              <WeekTimeGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={setSelectedDate} />
+              <WeekTimeGrid
+                anchor={anchor}
+                selectedDate={selectedDate}
+                itemsByDate={itemsByDate}
+                selectedItemId={selectedItemId}
+                onSelect={selectDate}
+                onSelectItem={setSelectedItemId}
+              />
             </div>
           ) : (
             <div
@@ -342,13 +500,15 @@ export function PlannerShell({
                 isLoading && "opacity-60",
               )}
             >
-              <MonthGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={setSelectedDate} />
+              <MonthGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={selectDate} />
             </div>
           )}
 
           <DayDetailPanel
             date={selectedDate}
             items={itemsByDate[selectedDate] ?? []}
+            selectedItemId={selectedItemId}
+            onSelectItem={setSelectedItemId}
             onAddItem={handleAddItem}
             onAddChild={handleAddChild}
             onToggleDone={handleToggleDone}
@@ -378,16 +538,9 @@ function DaySummary({ items }: { items: ApiPlannerItem[] }) {
 // "+N") la dau hieu CON NUA, dung y chu "dấu ...." nguoi dung ta.
 const MAX_PREVIEW_ITEMS = 5;
 
-// Danh sach viec RUT GON hien NGAY trong o ngay - ap dung CHUNG cho ca
-// WeekGrid/MonthGrid (truoc day o lich CHI co so/tong, phai bam vao moi thay
-// ten viec o panel ben phai). `truncate` (khong phai line-clamp nhieu dong)
-// cho TUNG dong viec - 1 viec dai qua se bi CAT GON thanh 1 dong + dau "..."
-// cuoi dong thay vi troi xuong dong 2 lam lech chieu cao cac o ke nhau trong
-// cung 1 hang luoi (yeu cau nguoi dung: "Để ý về lineclamp, break line").
-// `min-w-0` tren CA wrapper LAN tung dong - truncate chi hoat dong khi phan
-// tu bi GIOI HAN chieu rong THAT, mac dinh 1 flex item (ca flex-col) co
-// min-width "auto" chong lai viec co lai, can override ve 0 de overflow-
-// hidden/ellipsis phat huy dung (loi pho bien khi dung truncate trong flex).
+// Danh sach viec RUT GON hien NGAY trong o ngay (MonthGrid) - `truncate`
+// (khong phai line-clamp nhieu dong) cho TUNG dong viec, `min-w-0` tren CA
+// wrapper LAN tung dong de truncate phat huy dung trong flex.
 function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
   if (items.length === 0) return null;
   const sorted = [...items].sort((a, b) => a.orderIndex - b.orderIndex);
@@ -395,35 +548,29 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
   const hasMore = sorted.length > MAX_PREVIEW_ITEMS;
   return (
     <div className="mt-0.5 flex min-w-0 flex-1 flex-col gap-px overflow-hidden">
-      {visible.map((item) => (
-        <div key={item.id} className="flex min-w-0 items-center gap-1">
-          <span
-            style={item.color && !item.done ? { backgroundColor: item.color } : undefined}
-            className={cn(
-              "size-1 shrink-0 rounded-full",
-              !item.color &&
-                (item.done
-                  ? "bg-[color:var(--planner-text-muted)]/50"
-                  : item.kind === "BIG"
-                    ? "bg-[color:var(--planner-primary)]/70"
-                    : "bg-[color:var(--planner-text-muted)]"),
-              item.color && item.done && "bg-[color:var(--planner-text-muted)]/50",
-            )}
-            aria-hidden="true"
-          />
-          <span
-            title={item.title}
-            className={cn(
-              "min-w-0 flex-1 truncate text-[10.5px] leading-[1.4]",
-              item.done
-                ? "text-[color:var(--planner-text-muted)] line-through"
-                : "text-[color:var(--planner-text-secondary)]",
-            )}
-          >
-            {item.title}
-          </span>
-        </div>
-      ))}
+      {visible.map((item) => {
+        const cat = getCategory(item.color);
+        return (
+          <div key={item.id} className="flex min-w-0 items-center gap-1">
+            <span
+              style={{ backgroundColor: item.done ? undefined : cat.accent }}
+              className={cn("size-1 shrink-0 rounded-full", item.done && "bg-[color:var(--planner-text-muted)]/50")}
+              aria-hidden="true"
+            />
+            <span
+              title={item.title}
+              className={cn(
+                "min-w-0 flex-1 truncate text-[10.5px] leading-[1.4]",
+                item.done
+                  ? "text-[color:var(--planner-text-muted)] line-through"
+                  : "text-[color:var(--planner-text-secondary)]",
+              )}
+            >
+              {item.title}
+            </span>
+          </div>
+        );
+      })}
       {hasMore && (
         <span className="pl-2.5 text-[10.5px] leading-none text-[color:var(--planner-text-muted)]">····</span>
       )}
@@ -432,21 +579,18 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
 }
 
 // Danh sach viec KHONG dat gio ("ca ngay") hien 1 hang rieng NGAY TREN luoi
-// gio (giong Google Calendar) - KHONG the dinh vi chung theo truc Y vi khong
-// co scheduledMinute de tinh "top".
+// gio (giong Google Calendar). [2026-10-05] Restyle theo "Event Card" moi
+// (Part II): nen pastel CUA CATEGORY + vien trai accent 3px, KHONG con border
+// 4 canh + border-top nhu truoc.
 function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
+  const cat = getCategory(item.color);
   return (
     <span
       title={item.title}
-      style={{
-        borderTopColor: item.color ?? "var(--planner-border)",
-        backgroundColor: item.color ? `${item.color}1A` : undefined,
-      }}
+      style={{ backgroundColor: cat.pastel, borderLeftColor: cat.accent }}
       className={cn(
-        "block w-full truncate rounded-md border border-[color:var(--planner-border)] border-t-2 bg-[var(--planner-surface-soft)] px-1.5 py-0.5 text-[11px] leading-[1.3]",
-        item.done
-          ? "text-[color:var(--planner-text-muted)] line-through"
-          : "text-[color:var(--planner-text-secondary)]",
+        "block w-full truncate rounded-[7px] border-l-[3px] px-1.5 py-0.5 text-[11px] leading-[1.3] font-medium",
+        item.done ? "text-[color:var(--planner-text-muted)] line-through opacity-55" : "text-[color:var(--planner-text-primary)]",
       )}
     >
       {item.title}
@@ -454,71 +598,138 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
   );
 }
 
-// The "su kien" dinh vi theo gio NGAY TREN luoi - yeu cau nguoi dung: "Các
-// thẻ checklist trong ngày trong calendar thì thiết kế bo viền nhẹ, cho nhìn
-// thấy màu border top". `style` (khong phai className) cho mau - mau la HEX
-// DONG do nguoi dung tu chon (PLANNER_COLORS), Tailwind utility class KHONG
-// the bieu dien gia tri dong luc runtime, chi co inline style lam duoc.
-// `1A` noi vao cuoi hex = ~10% alpha (dang hex 2 ky tu, 0x1A/0xFF ~ 10%) -
-// nen mau RAT NHAT lam vien/chu van la mau chinh, giu dung tinh than "bo vien
-// nhẹ" (khong phai 1 khoi mau dac).
+// [2026-10-05] The "su kien" dinh vi theo gio tren luoi - VIET LAI HOAN TOAN
+// theo "Overall Event Design Philosophy" (Part II.16): "Soft surface +
+// semantic color + strong typography + minimal chrome" - KHONG con border
+// 4 canh/border-top/shadow mac dinh nhu ban truoc, thay bang:
+// - Nen PASTEL cua category (section II.2) + vien trai 3px mau accent
+//   (section II.3) - "Soft Color Block" (section II.1).
+// - Bo goc 7px (section II.4, "Không nên 14–16px... Calendar có rất nhiều
+//   card... 7–8px phù hợp hơn").
+// - Thu tu doc: GIO truoc (10px/500, mau accent) roi moi den TIEU DE (12px/
+//   600) - section II.5/6, "Mắt sẽ scan thời gian trước → sau đó đọc task".
+// - KHONG shadow mac dinh (section II.8) - CHI hover (subtle) / selected
+//   (vien xanh). `hover:brightness-95` (CSS filter, hoat dong voi BAT KY mau
+//   nen dong nao, khong can biet truoc gia tri hex) thay cho viec tinh mau
+//   hover rieng.
+// - Mat do noi dung THEO CHIEU CAO thuc te (section II.13 "Adaptive
+//   content"): duoi 40px chi hien 1 dong gon "giờ + tiêu đề", tu 40px tro
+//   len hien 2 dong rieng (gio/tieu de).
+// - Hoan thanh (section II.11): KHONG xam toan bo, chi gach ngang + opacity
+//   .55, nen pastel VAN GIU de con nhan ra chu de.
 function TimedItemChip({
   item,
   top,
+  height,
+  left,
+  width,
+  selected,
+  onSelect,
+  isToday,
+  nowMinute,
 }: {
   item: ApiPlannerItem;
   top: number;
+  height: number;
+  left: string;
+  width: string;
+  selected: boolean;
+  onSelect: () => void;
+  isToday: boolean;
+  nowMinute: number;
 }) {
+  const cat = getCategory(item.color);
+  const status = computeItemStatus(item, isToday, nowMinute);
+  const compact = height < 40;
+  const timeLabel = `${minutesToLabel(item.scheduledMinute ?? 0)} — ${minutesToLabel(itemEndMinute(item))}`;
+
   return (
-    <div
-      title={`${minutesToLabel(item.scheduledMinute ?? 0)} · ${item.title}`}
+    <button
+      type="button"
+      onClick={onSelect}
+      title={`${timeLabel} · ${item.title}`}
       style={{
         top,
-        borderTopColor: item.color ?? "var(--planner-border)",
-        backgroundColor: item.color ? `${item.color}1A` : "var(--planner-surface-soft)",
+        height: Math.max(height, 20),
+        left,
+        width,
+        backgroundColor: cat.pastel,
+        borderLeftColor: cat.accent,
+        boxShadow: selected ? `0 0 0 2px white, 0 0 0 3px ${cat.accent}` : undefined,
       }}
       className={cn(
-        "absolute right-1 left-1 flex h-6 items-center truncate rounded-md border border-[color:var(--planner-border)] border-t-2 px-1.5 text-[11px] leading-none",
-        item.done
-          ? "text-[color:var(--planner-text-muted)] line-through"
-          : "text-[color:var(--planner-text-secondary)]",
+        "absolute z-[1] flex cursor-pointer flex-col justify-center overflow-hidden rounded-[7px] border-l-[3px] px-1.5 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        item.done && "opacity-55",
       )}
     >
-      <span className="truncate">{item.title}</span>
-    </div>
+      {compact ? (
+        <span className="flex items-center gap-1 truncate">
+          {status === "current" && (
+            <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accent }} aria-hidden="true" />
+          )}
+          <span className="shrink-0 text-[10px] font-medium" style={{ color: cat.accent }}>
+            {minutesToLabel(item.scheduledMinute ?? 0)}
+          </span>
+          <span
+            className={cn(
+              "truncate text-[12px] font-semibold text-[color:var(--planner-text-primary)]",
+              item.done && "line-through",
+            )}
+          >
+            {item.title}
+          </span>
+        </span>
+      ) : (
+        <>
+          <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: cat.accent }}>
+            {status === "current" && (
+              <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accent }} aria-hidden="true" />
+            )}
+            {timeLabel}
+          </span>
+          <span
+            className={cn(
+              "truncate text-[12px] font-semibold text-[color:var(--planner-text-primary)]",
+              item.done && "line-through",
+            )}
+          >
+            {item.title}
+          </span>
+        </>
+      )}
+    </button>
   );
 }
 
 // [2026-10-02] Luoi gio kieu Google Calendar - thay cho WeekGrid dang card
-// liet ke truoc day, CHI ap dung view Tuan (yeu cau nguoi dung: "Trục Y thì
-// là các khung giờ trong ngày", xac nhan CHI view Tuan khi duoc hoi vi o
-// Thang qua nho de ve luoi gio hop ly). Head gom 2 phan (yeu cau nguoi dung:
-// "bổ sung head trục X và Y gồm: các ngày trong tuần theo tiếng anh, xuống
-// dòng là Tháng, Năm"): 1 dong rieng "Tháng X, Năm" phia tren, roi moi den
-// hang 7 cot thu (tieng Anh) + so ngay - truc Y la cot nhan gio (00:00-23:00)
-// ben trai luoi.
+// liet ke truoc day, CHI ap dung view Tuan. Head gom 2 phan: 1 dong rieng
+// "Tháng X, Năm" phia tren, roi moi den hang 7 cot thu (tieng Anh) + so ngay -
+// truc Y la cot nhan gio (00:00-23:00) ben trai luoi.
 //
-// [2026-10-05] Restyle toan bo theo spec (section 8-14): border nhat
-// (--planner-border/--planner-border-soft), nhan gio can PHAI mau nhat
-// (section 12), cot "Hom nay" to mau gradient rat nhe thay vi mot khoi mau
-// (section 10), vien tron ngay "Hom nay" tinh gon hon kem do bong xanh nhe
-// (section 9), hang "Cả ngày" nen hoi khac (section 14).
+// [2026-10-05] + Xep cot cho su kien trung gio (layoutTimedItems, section
+// II.15) + dong bo selectedItemId voi Right Panel.
 function WeekTimeGrid({
   anchor,
   selectedDate,
   itemsByDate,
+  selectedItemId,
   onSelect,
+  onSelectItem,
 }: {
   anchor: string;
   selectedDate: string;
   itemsByDate: ItemsByDate;
+  selectedItemId: string | null;
   onSelect: (date: string) => void;
+  onSelectItem: (id: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i));
   const today = toISODate(new Date());
   const weekStart = new Date(startOfWeek(anchor));
   const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
+  const now = new Date();
+  const nowMinute = now.getHours() * 60 + now.getMinutes();
 
   // Cuon san toi ~7h sang luc mo/doi tuan - tranh nguoi dung luon phai tu keo
   // tu 00:00 (gio it ai len lich) moi thay noi dung ban ngay.
@@ -605,6 +816,7 @@ function WeekTimeGrid({
             const timed = (itemsByDate[d] ?? []).filter(
               (it): it is ApiPlannerItem & { scheduledMinute: number } => it.scheduledMinute !== null,
             );
+            const laidOut = layoutTimedItems(timed);
             const isToday = d === today;
             return (
               <div
@@ -627,8 +839,22 @@ function WeekTimeGrid({
                     onClick={() => onSelect(d)}
                   />
                 ))}
-                {timed.map((item) => (
-                  <TimedItemChip key={item.id} item={item} top={(item.scheduledMinute / 60) * HOUR_ROW_HEIGHT} />
+                {laidOut.map(({ item, col, cols }) => (
+                  <TimedItemChip
+                    key={item.id}
+                    item={item}
+                    top={(item.scheduledMinute / 60) * HOUR_ROW_HEIGHT}
+                    height={((itemEndMinute(item) - item.scheduledMinute) / 60) * HOUR_ROW_HEIGHT}
+                    left={`calc(${(100 / cols) * col}% + 2px)`}
+                    width={`calc(${100 / cols}% - 4px)`}
+                    selected={selectedItemId === item.id}
+                    onSelect={() => {
+                      onSelect(d);
+                      onSelectItem(item.id);
+                    }}
+                    isToday={isToday}
+                    nowMinute={nowMinute}
+                  />
                 ))}
               </div>
             );
@@ -679,10 +905,6 @@ function MonthGrid({
               key={d}
               type="button"
               onClick={() => onSelect(d)}
-              // min-h-32 (truoc day min-h-16=64px, qua chat de hien them
-              // danh sach viec) - yeu cau nguoi dung: "Cho các ô trong lịch
-              // to ra". items-stretch + text-left - can trai danh sach viec
-              // nhu 1 checklist thu nho trong o.
               className={cn(
                 "flex min-h-32 cursor-pointer flex-col items-stretch gap-0.5 rounded-lg border p-2 text-left transition-colors duration-150 ease-out",
                 d === selectedDate
@@ -710,6 +932,222 @@ function MonthGrid({
   );
 }
 
+// Vong tron % hoan thanh (section 3 "Today's Progress") - 1 METER don gian
+// (1 gia tri duy nhat, khong phai bieu do nhieu chuoi) nen CHI can 1 mau
+// accent + 1 track nhat, khong can bang mau phan loai/legend (xem dataviz
+// skill - "choosing a form": 1 headline % hop ly nhat la 1 stat-tile/meter).
+function ProgressRing({ pct, size = 56, stroke = 5 }: { pct: number; size?: number; stroke?: number }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const dash = (Math.min(100, Math.max(0, pct)) / 100) * c;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--planner-border-soft)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="var(--planner-primary)"
+        strokeWidth={stroke}
+        strokeDasharray={`${dash} ${c - dash}`}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// "Today's Progress" (section 3) - % hoan thanh (vong tron + thanh ngang) +
+// so viec + thoi gian da len lich/da hoan thanh (dua tren durationMinutes).
+function TodayProgress({ items }: { items: ApiPlannerItem[] }) {
+  const total = items.length;
+  const done = items.filter((i) => i.done).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  const timedItems = items.filter((i) => i.scheduledMinute !== null);
+  const plannedMinutes = timedItems.reduce((sum, i) => sum + (i.durationMinutes ?? DEFAULT_DURATION_MINUTES), 0);
+  const doneMinutes = timedItems
+    .filter((i) => i.done)
+    .reduce((sum, i) => sum + (i.durationMinutes ?? DEFAULT_DURATION_MINUTES), 0);
+
+  if (total === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <p className="text-[11px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+        Today&apos;s progress
+      </p>
+      <div className="flex items-center gap-3.5">
+        <div className="relative flex shrink-0 items-center justify-center">
+          <ProgressRing pct={pct} />
+          <span className="absolute text-[13px] font-bold text-[color:var(--planner-text-primary)]">{pct}%</span>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <p className="text-[12.5px] font-medium text-[color:var(--planner-text-secondary)]">
+            {done} / {total} tasks completed
+          </p>
+          {plannedMinutes > 0 && (
+            <>
+              <p className="text-[11px] text-[color:var(--planner-text-muted)]">
+                {formatHoursMinutes(doneMinutes)} / {formatHoursMinutes(plannedMinutes)}
+              </p>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--planner-border-soft)]">
+                <div
+                  className="h-full rounded-full bg-[color:var(--planner-primary)] transition-[width] duration-300 ease-out"
+                  style={{ width: `${plannedMinutes ? Math.min(100, (doneMinutes / plannedMinutes) * 100) : 0}%` }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// "Today's Focus" (section 4/5) - 1 viec DUY NHAT duoc nguoi dung tu danh
+// dau isFocus=true (xem checkbox trong form them viec) duoc "elevate" len
+// dau panel. CHI lay item DAU TIEN co co nay (khong rang buoc unique o DB,
+// xem comment schema.prisma) - khong hien gi neu khong co item nao duoc
+// danh dau (KHONG bia 1 "goi y" tu dong, dung y nguoi dung: "cách mình
+// recommend cho MVP: User tự chọn ⭐ khi tạo task").
+function TodayFocusCard({
+  item,
+  onContinue,
+}: {
+  item: ApiPlannerItem;
+  onContinue: () => void;
+}) {
+  const cat = getCategory(item.color);
+  return (
+    <div className="flex flex-col gap-1">
+      <p className="text-[11px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+        Today&apos;s focus
+      </p>
+      <div
+        style={{ backgroundColor: cat.pastel, borderColor: cat.accent + "40" }}
+        className="flex flex-col gap-2 rounded-[12px] border p-3"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span
+            style={{ color: cat.accent }}
+            className="rounded-full bg-white/70 px-2 py-0.5 text-[10.5px] font-semibold"
+          >
+            {cat.label}
+          </span>
+          <span className="flex items-center gap-1 text-[10.5px] font-semibold text-[#d97706]">
+            <Flame size={11} strokeWidth={2.5} /> Trọng tâm
+          </span>
+        </div>
+        <p
+          className={cn(
+            "text-[14px] font-semibold text-[color:var(--planner-text-primary)]",
+            item.done && "line-through opacity-55",
+          )}
+        >
+          {item.title}
+        </p>
+        {item.scheduledMinute !== null && (
+          <p className="text-[12px] font-medium" style={{ color: cat.accent }}>
+            {minutesToLabel(item.scheduledMinute)} — {minutesToLabel(itemEndMinute(item))}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={onContinue}
+          className="ml-auto cursor-pointer rounded-[8px] bg-white px-3 py-1.5 text-[12px] font-semibold text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)] transition-colors duration-150 ease-out hover:bg-white/80"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 1 dong trong "SCHEDULE" timeline (section 6/7/8) - thay cho ItemRow phang
+// truoc day: co dot trang thai (done/current/upcoming) NOI VOI 1 duong doc
+// (connector, ve boi CHINH container cha qua border-l, xem SCHEDULE below),
+// gio BAT DAU-KET THUC, dot category, co the expand (viec "Lớn").
+function TimelineRow({
+  item,
+  status,
+  selected,
+  onSelect,
+  onToggleDone,
+  onDelete,
+}: {
+  item: ApiPlannerItem;
+  status: ItemStatus;
+  selected: boolean;
+  onSelect: () => void;
+  onToggleDone: () => void;
+  onDelete: () => void;
+}) {
+  const cat = getCategory(item.color);
+  return (
+    <div className="relative flex gap-2.5 pl-0.5">
+      {/* Dot trang thai - noi voi duong connector cua ca danh sach (border-l
+          cua UL cha). */}
+      <div className="relative z-[1] mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
+        {status === "done" ? (
+          <CheckCircle2 size={16} className="text-[color:var(--planner-primary)]" />
+        ) : status === "current" ? (
+          <span className="size-2.5 rounded-full" style={{ backgroundColor: cat.accent }} />
+        ) : (
+          <Circle size={14} className="text-[color:var(--planner-border)]" />
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onSelect}
+        style={selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined}
+        className={cn(
+          "flex min-w-0 flex-1 cursor-pointer items-start justify-between gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
+          status === "current" && "bg-[var(--planner-primary-soft)]",
+        )}
+      >
+        <div className="flex min-w-0 flex-col gap-0.5">
+          {item.scheduledMinute !== null && (
+            <span className="text-[11px] font-medium" style={{ color: cat.accent }}>
+              {minutesToLabel(item.scheduledMinute)} — {minutesToLabel(itemEndMinute(item))}
+            </span>
+          )}
+          <span
+            className={cn(
+              "truncate text-[13px] font-medium",
+              item.done
+                ? "text-[color:var(--planner-text-muted)] line-through"
+                : "text-[color:var(--planner-text-primary)]",
+            )}
+          >
+            {item.title}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <input
+            type="checkbox"
+            checked={item.done}
+            onClick={(e) => e.stopPropagation()}
+            onChange={onToggleDone}
+            className="size-3.5 cursor-pointer accent-[color:var(--planner-primary)]"
+          />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-danger"
+            aria-label="Xoá"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </button>
+    </div>
+  );
+}
+
 function ItemRow({
   item,
   parentId,
@@ -722,16 +1160,7 @@ function ItemRow({
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
 }) {
   return (
-    // [2026-10-02] The checklist bo vien nhe + border-top mau - yeu cau
-    // nguoi dung: "thiết kế bo viền nhẹ, cho nhìn thấy màu border top".
-    // border nhe cho 3 canh con lai, rieng border-t-2 LAY mau TU item.color
-    // (qua style, khong phai className - xem comment chi tiet trong
-    // TimedItemChip o tren) - khong co mau (item.color null) thi fallback ve
-    // --planner-border, van CO phan biet voi border nhe 3 canh con lai.
-    <div
-      style={{ borderTopColor: item.color ?? "var(--planner-border)" }}
-      className="flex items-center gap-2 rounded-md border border-[color:var(--planner-border-soft)] border-t-2 bg-white px-2 py-1.5"
-    >
+    <div className="flex items-center gap-2 rounded-md border border-[color:var(--planner-border-soft)] bg-white px-2 py-1.5">
       <input
         type="checkbox"
         checked={item.done}
@@ -763,13 +1192,22 @@ function ItemRow({
   );
 }
 
-function BigItemRow({
+// Viec "Lớn" (co dau viec con) trong SCHEDULE timeline - giu nguyen cach
+// expand/them dau viec con nhu truoc, chi doi "vo ngoai" thanh 1 dong
+// TimelineRow-style (dot trang thai + co the chon) thay vi card rieng biet.
+function BigTimelineItem({
   item,
+  status,
+  selected,
+  onSelect,
   onToggleDone,
   onDelete,
   onAddChild,
 }: {
   item: ApiPlannerItem;
+  status: ItemStatus;
+  selected: boolean;
+  onSelect: () => void;
   onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
   onAddChild: (parentId: string, title: string) => void;
@@ -777,6 +1215,7 @@ function BigItemRow({
   const [expanded, setExpanded] = useState(true);
   const [childDraft, setChildDraft] = useState("");
   const children = item.children ?? [];
+  const cat = getCategory(item.color);
 
   function submitChild() {
     const title = childDraft.trim();
@@ -786,73 +1225,95 @@ function BigItemRow({
   }
 
   return (
-    <div
-      style={{ borderTopColor: item.color ?? "var(--planner-border)" }}
-      className="rounded-lg border border-[color:var(--planner-border-soft)] border-t-2 bg-[var(--planner-surface-soft)] p-2"
-    >
-      <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-[color:var(--planner-text-muted)] hover:bg-white"
-        >
-          <ChevronDown size={14} className={cn("transition-transform duration-150", !expanded && "-rotate-90")} />
-        </button>
-        <input
-          type="checkbox"
-          checked={item.done}
-          onChange={() => onToggleDone(item)}
-          className="size-3.5 shrink-0 cursor-pointer accent-[color:var(--planner-primary)]"
-        />
-        <span
+    <div className="relative flex gap-2.5 pl-0.5">
+      <div className="relative z-[1] mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
+        {status === "done" ? (
+          <CheckCircle2 size={16} className="text-[color:var(--planner-primary)]" />
+        ) : status === "current" ? (
+          <span className="size-2.5 rounded-full" style={{ backgroundColor: cat.accent }} />
+        ) : (
+          <Circle size={14} className="text-[color:var(--planner-border)]" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div
+          onClick={onSelect}
+          style={selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined}
           className={cn(
-            "flex-1 truncate text-[13px] font-semibold",
-            item.done ? "text-[color:var(--planner-text-muted)] line-through" : "text-[color:var(--planner-text-primary)]",
+            "flex cursor-pointer items-center gap-1.5 rounded-[10px] px-2 py-1.5 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
+            status === "current" && "bg-[var(--planner-primary-soft)]",
           )}
         >
-          {item.title}
-        </span>
-        {children.length > 0 && (
-          <span className="shrink-0 text-[11px] text-[color:var(--planner-text-muted)]">
-            {children.filter((c) => c.done).length}/{children.length}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded((v) => !v);
+            }}
+            className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-[color:var(--planner-text-muted)] hover:bg-white"
+          >
+            <ChevronDown size={14} className={cn("transition-transform duration-150", !expanded && "-rotate-90")} />
+          </button>
+          <input
+            type="checkbox"
+            checked={item.done}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => onToggleDone(item)}
+            className="size-3.5 shrink-0 cursor-pointer accent-[color:var(--planner-primary)]"
+          />
+          <span
+            className={cn(
+              "flex-1 truncate text-[13px] font-semibold",
+              item.done
+                ? "text-[color:var(--planner-text-muted)] line-through"
+                : "text-[color:var(--planner-text-primary)]",
+            )}
+          >
+            {item.title}
           </span>
-        )}
-        <button
-          type="button"
-          onClick={() => onDelete(item)}
-          className="shrink-0 cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-danger"
-          aria-label="Xoá"
-        >
-          <Trash2 size={13} />
-        </button>
-      </div>
-      {expanded && (
-        <div className="mt-1 ml-6.5 flex flex-col gap-0.5 border-l border-[color:var(--planner-border-soft)] pl-2.5">
-          {children.map((child) => (
-            <ItemRow key={child.id} item={child} parentId={item.id} onToggleDone={onToggleDone} onDelete={onDelete} />
-          ))}
-          <div className="flex items-center gap-1.5 py-1">
-            <Plus size={12} className="shrink-0 text-[color:var(--planner-text-muted)]" />
-            <input
-              value={childDraft}
-              onChange={(e) => setChildDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submitChild();
-              }}
-              placeholder="Thêm đầu việc con..."
-              className="h-6 min-w-0 flex-1 bg-transparent text-[12.5px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)]"
-            />
-          </div>
+          {children.length > 0 && (
+            <span className="shrink-0 text-[11px] text-[color:var(--planner-text-muted)]">
+              {children.filter((c) => c.done).length}/{children.length}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(item);
+            }}
+            className="shrink-0 cursor-pointer rounded-md p-1 text-[color:var(--planner-text-muted)] hover:bg-white hover:text-danger"
+            aria-label="Xoá"
+          >
+            <Trash2 size={13} />
+          </button>
         </div>
-      )}
+        {expanded && (
+          <div className="mt-1 ml-5 flex flex-col gap-0.5 border-l border-[color:var(--planner-border-soft)] pl-2.5">
+            {children.map((child) => (
+              <ItemRow key={child.id} item={child} parentId={item.id} onToggleDone={onToggleDone} onDelete={onDelete} />
+            ))}
+            <div className="flex items-center gap-1.5 py-1">
+              <Plus size={12} className="shrink-0 text-[color:var(--planner-text-muted)]" />
+              <input
+                value={childDraft}
+                onChange={(e) => setChildDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submitChild();
+                }}
+                placeholder="Thêm đầu việc con..."
+                className="h-6 min-w-0 flex-1 bg-transparent text-[12.5px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)]"
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 // Empty state illustration (section 19/20) - icon lich dat trong 1 vong tron
-// mau xanh nhat (--planner-primary-soft) kem 2 cham "✦" trang tri nho o 2
-// goc doi dien - KHONG dung illustration cartoon phuc tap, chi 1 icon + cham
-// trang tri toi gian dung tinh than "professional minimalism" cua spec.
+// mau xanh nhat kem 2 cham "✦" trang tri nho o 2 goc doi dien.
 function EmptyIllustration() {
   return (
     <div className="relative flex size-14 shrink-0 items-center justify-center">
@@ -873,47 +1334,231 @@ function EmptyIllustration() {
   );
 }
 
+// Form them viec (text + gio + thoi luong + category + "Lớn"/"Đơn" + "việc
+// trọng tâm") - section 12 "Add Task được chuyển thành Secondary Action":
+// GAP lai thanh 1 nut "+ Thêm việc" nho, CHI mo rong thanh form day du khi
+// bam vao (thay vi chiem 30-40% dien tich sidebar nhu truoc). Gop LUON vai
+// tro cua "Quick Add" (section 13) - 2 muc trong spec vo tinh mo ta CUNG 1
+// hanh dong (them nhanh 1 viec cho hom nay), tach thanh 2 UI rieng se trung
+// lap chuc nang.
+function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"] }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [draftKind, setDraftKind] = useState<PlannerItemKind>("SIMPLE");
+  const [draftTime, setDraftTime] = useState("");
+  const [draftDuration, setDraftDuration] = useState(String(DEFAULT_DURATION_MINUTES));
+  const [draftColor, setDraftColor] = useState<string | null>(null);
+  const [draftFocus, setDraftFocus] = useState(false);
+
+  function submit() {
+    const title = draft.trim();
+    if (!title) return;
+    const duration = Number(draftDuration);
+    onAddItem(
+      title,
+      draftKind,
+      draftTime ? timeInputToMinutes(draftTime) : undefined,
+      draftColor ?? undefined,
+      draftTime && duration > 0 ? duration : undefined,
+      draftFocus || undefined,
+    );
+    setDraft("");
+    setDraftTime("");
+    setDraftFocus(false);
+    setOpen(false);
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex cursor-pointer items-center gap-1.5 rounded-[10px] border border-dashed border-[color:var(--planner-border)] px-3 py-2 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:border-[color:var(--planner-primary)] hover:text-[color:var(--planner-primary)]"
+      >
+        <Plus size={13} /> Thêm việc cho hôm nay...
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[10px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] p-2.5">
+      <div className="flex items-center gap-1.5">
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") setOpen(false);
+          }}
+          placeholder="Thêm việc cần làm..."
+          className="h-9 min-w-0 flex-1 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:shadow-[0_0_0_3px_rgba(71,120,232,.08)]"
+        />
+        <input
+          type="time"
+          value={draftTime}
+          onChange={(e) => setDraftTime(e.target.value)}
+          title="Đặt giờ (không bắt buộc)"
+          className="h-9 w-[78px] shrink-0 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-1.5 text-xs text-[color:var(--planner-text-primary)] outline-none focus:border-[#b9c9ef]"
+        />
+        <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-1.5">
+          <input
+            type="number"
+            min={5}
+            step={5}
+            value={draftDuration}
+            onChange={(e) => setDraftDuration(e.target.value)}
+            title="Thời lượng (phút)"
+            className="h-full w-9 text-right text-xs text-[color:var(--planner-text-primary)] outline-none"
+          />
+          <span className="text-[10px] text-[color:var(--planner-text-muted)]">phút</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        {PLANNER_COLORS.map((c) => (
+          <button
+            key={c.label}
+            type="button"
+            title={c.label}
+            onClick={() => setDraftColor(c.value)}
+            style={
+              draftColor === c.value
+                ? { boxShadow: "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)" }
+                : undefined
+            }
+            className={cn(
+              "flex size-6 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-[color:var(--planner-border)] transition-shadow duration-100 ease-out",
+              draftColor !== c.value && "ring-offset-1 ring-offset-white",
+            )}
+          >
+            <span className="block size-full" style={{ backgroundColor: c.value ?? "transparent" }}>
+              {c.value === null && (
+                <span
+                  className="pointer-events-none block size-full"
+                  style={{
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, var(--planner-border) 0, var(--planner-border) 1px, transparent 1px, transparent 4px)",
+                  }}
+                />
+              )}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <label className="flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[color:var(--planner-text-secondary)]">
+        <input
+          type="checkbox"
+          checked={draftFocus}
+          onChange={(e) => setDraftFocus(e.target.checked)}
+          className="size-3.5 cursor-pointer accent-[color:var(--planner-primary)]"
+        />
+        <Flame size={12} className="text-[#d97706]" /> Đánh dấu là việc trọng tâm hôm nay
+      </label>
+
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-0.5 rounded-[10px] bg-[#f5f6f8] p-0.5">
+          {(["SIMPLE", "BIG"] as PlannerItemKind[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setDraftKind(k)}
+              className={cn(
+                "cursor-pointer rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-medium transition-colors duration-150 ease-out",
+                draftKind === k
+                  ? "bg-white text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)]"
+                  : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+              )}
+            >
+              {k === "SIMPLE" ? "Đơn" : "Lớn / Subtasks"}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="h-[34px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+          >
+            Huỷ
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!draft.trim()}
+            className="h-[34px] cursor-pointer rounded-[9px] bg-[color:var(--planner-primary)] px-3.5 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          >
+            Thêm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type DayDetailPanelProps = {
+  date: string;
+  items: ApiPlannerItem[];
+  selectedItemId: string | null;
+  onSelectItem: (id: string | null) => void;
+  onAddItem: (
+    title: string,
+    kind: PlannerItemKind,
+    scheduledMinute?: number,
+    color?: string,
+    durationMinutes?: number,
+    isFocus?: boolean,
+  ) => void;
+  onAddChild: (parentId: string, title: string) => void;
+  onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
+  onDelete: (item: ApiPlannerItem, parentId?: string) => void;
+  onChangeDay: (direction: -1 | 1) => void;
+};
+
 function DayDetailPanel({
   date,
   items,
+  selectedItemId,
+  onSelectItem,
   onAddItem,
   onAddChild,
   onToggleDone,
   onDelete,
   onChangeDay,
-}: {
-  date: string;
-  items: ApiPlannerItem[];
-  onAddItem: (title: string, kind: PlannerItemKind, scheduledMinute?: number, color?: string) => void;
-  onAddChild: (parentId: string, title: string) => void;
-  onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
-  onDelete: (item: ApiPlannerItem, parentId?: string) => void;
-  onChangeDay: (direction: -1 | 1) => void;
-}) {
-  const [draft, setDraft] = useState("");
-  const [draftKind, setDraftKind] = useState<PlannerItemKind>("SIMPLE");
-  const [draftTime, setDraftTime] = useState("");
-  const [draftColor, setDraftColor] = useState<string | null>(null);
-
-  function submit() {
-    const title = draft.trim();
-    if (!title) return;
-    onAddItem(title, draftKind, draftTime ? timeInputToMinutes(draftTime) : undefined, draftColor ?? undefined);
-    setDraft("");
-    setDraftTime("");
-  }
+}: DayDetailPanelProps) {
+  const [filter, setFilter] = useState<FilterValue>("ALL");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const sorted = [...items].sort((a, b) => a.orderIndex - b.orderIndex);
   const isEmpty = sorted.length === 0;
+  const focusItem = sorted.find((i) => i.isFocus) ?? null;
+  const isToday = date === toISODate(new Date());
+  const now = new Date();
+  const nowMinute = now.getHours() * 60 + now.getMinutes();
+
+  const filtered = sorted.filter((item) => {
+    if (filter === "ALL") return true;
+    if (filter === "DONE") return item.done;
+    if (filter === "TODO") return !item.done;
+    return item.color === filter;
+  });
+  const activeFilterLabel = FILTER_OPTIONS.find((f) => f.value === filter)?.label ?? "Tất cả";
 
   return (
-    // Sidebar Card (section 16) - "Daily command center" (section 15), khong
-    // con la 1 form nhap task tran trui nhu truoc.
+    // Sidebar Card - "Daily command center", khong con la 1 form nhap task
+    // tran trui nhu truoc.
     <div className="flex flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
-      {/* Sidebar Date + Navigation (section 17/18). */}
+      {/* Day Header (section 1) - MONDAY / October 5, 2026 / Thứ Hai... +
+          nav ngay. */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-0.5">
-          <p className="text-[20px] font-bold tracking-[-0.3px] text-[color:var(--planner-text-primary)]">{date}</p>
+          <p className="text-[11px] font-bold tracking-[.08em] text-[color:var(--planner-primary)] uppercase">
+            {weekdayFullEn(date)}
+          </p>
+          <p className="text-[18px] font-bold tracking-[-0.3px] text-[color:var(--planner-text-primary)]">
+            {formatLongDateEn(date)}
+          </p>
           <p className="text-[12px] text-[color:var(--planner-text-muted)]">{formatLongDateVi(date)}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -936,141 +1581,129 @@ function DayDetailPanel({
         </div>
       </div>
 
-      <div className="border-t border-[color:var(--planner-border-soft)]" />
-
-      {/* Empty State Illustration (section 19/20) - CHI hien khi ngay nay
-          chua co viec nao, nhu 1 "hero" chao mung nam TREN form nhap. */}
-      {isEmpty && (
-        <div className="flex flex-col items-center gap-2.5 py-4 text-center">
-          <EmptyIllustration />
-          <div className="flex flex-col gap-0.5">
-            <p className="text-[13px] font-semibold text-[color:var(--planner-text-secondary)]">Chưa có việc nào</p>
-            <p className="text-[12px] text-[color:var(--planner-text-muted)]">
-              Hãy thêm công việc để lên kế hoạch nhé!
-            </p>
+      {isEmpty ? (
+        <>
+          <div className="border-t border-[color:var(--planner-border-soft)]" />
+          {/* Empty State Illustration - CHI hien khi ngay nay chua co viec nao. */}
+          <div className="flex flex-col items-center gap-2.5 py-4 text-center">
+            <EmptyIllustration />
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[13px] font-semibold text-[color:var(--planner-text-secondary)]">Chưa có việc nào</p>
+              <p className="text-[12px] text-[color:var(--planner-text-muted)]">
+                Hãy thêm công việc để lên kế hoạch nhé!
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+          <div className="border-t border-[color:var(--planner-border-soft)]" />
+          <AddTaskForm onAddItem={onAddItem} />
+        </>
+      ) : (
+        <>
+          <div className="border-t border-[color:var(--planner-border-soft)]" />
 
-      <div className="border-t border-[color:var(--planner-border-soft)]" />
+          <TodayProgress items={sorted} />
 
-      {/* Task Input (section 21). */}
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center gap-1.5">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submit();
-            }}
-            placeholder="Thêm việc cần làm..."
-            className="h-10 min-w-0 flex-1 rounded-[10px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-3 text-[13.5px] text-[color:var(--planner-text-primary)] outline-none transition-colors duration-150 ease-out placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:bg-white focus:shadow-[0_0_0_3px_rgba(71,120,232,.08)]"
-          />
-          <input
-            type="time"
-            value={draftTime}
-            onChange={(e) => setDraftTime(e.target.value)}
-            title="Đặt giờ (không bắt buộc)"
-            className="h-10 w-[84px] shrink-0 rounded-[10px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2 text-xs text-[color:var(--planner-text-primary)] outline-none transition-colors duration-150 ease-out focus:border-[#b9c9ef] focus:bg-white focus:shadow-[0_0_0_3px_rgba(71,120,232,.08)]"
-          />
-        </div>
+          {focusItem && (
+            <>
+              <div className="border-t border-[color:var(--planner-border-soft)]" />
+              <TodayFocusCard item={focusItem} onContinue={() => onSelectItem(focusItem.id)} />
+            </>
+          )}
 
-        {/* Color Picker (section 22) - vong tron chon mau, mau DANG chon co
-            vien kep (trang + navy) thay vi chi doi mau vien thuong. */}
-        <div className="flex items-center gap-1.5">
-          {PLANNER_COLORS.map((c) => (
-            <button
-              key={c.label}
-              type="button"
-              title={c.label}
-              onClick={() => setDraftColor(c.value)}
-              style={
-                draftColor === c.value
-                  ? { boxShadow: "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)" }
-                  : undefined
-              }
-              className={cn(
-                "flex size-6 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-[color:var(--planner-border)] transition-shadow duration-100 ease-out",
-                draftColor !== c.value && "ring-offset-1 ring-offset-white",
-              )}
-            >
-              <span
-                className="block size-full"
-                style={{ backgroundColor: c.value ?? "transparent" }}
-              >
-                {c.value === null && (
-                  <span
-                    className="pointer-events-none block size-full"
-                    style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(45deg, var(--planner-border) 0, var(--planner-border) 1px, transparent 1px, transparent 4px)",
-                    }}
-                  />
+          <div className="border-t border-[color:var(--planner-border-soft)]" />
+
+          {/* SCHEDULE (section 6/15) - header + filter + timeline. */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-bold tracking-[.08em] text-[color:var(--planner-text-muted)] uppercase">
+                Schedule <span className="font-medium normal-case">· {filtered.length} việc</span>
+              </p>
+              <PopoverRoot open={filterOpen} onOpenChange={setFilterOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex cursor-pointer items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium transition-colors duration-150 ease-out",
+                      filter === "ALL"
+                        ? "border-[color:var(--planner-border)] text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+                        : "border-[color:var(--planner-primary)] bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]",
+                    )}
+                  >
+                    <ListFilter size={11} /> {filter === "ALL" ? "Filters" : activeFilterLabel}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  open={filterOpen}
+                  align="end"
+                  className="z-50 w-44 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
+                >
+                  {FILTER_OPTIONS.map((f) => (
+                    <button
+                      key={f.value}
+                      type="button"
+                      onClick={() => {
+                        setFilter(f.value);
+                        setFilterOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full cursor-pointer items-center gap-1.5 rounded-[7px] px-2 py-1.5 text-left text-[12.5px] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
+                        filter === f.value
+                          ? "font-semibold text-[color:var(--planner-text-primary)]"
+                          : "text-[color:var(--planner-text-secondary)]",
+                      )}
+                    >
+                      {f.value !== "ALL" && f.value !== "DONE" && f.value !== "TODO" && (
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: getCategory(f.value).accent }}
+                        />
+                      )}
+                      {f.label}
+                    </button>
+                  ))}
+                </PopoverContent>
+              </PopoverRoot>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center gap-1 rounded-[12px] border border-[#f0f2f5] bg-[#fcfdff] px-4 py-6 text-center">
+                <p className="text-[12.5px] font-medium text-[color:var(--planner-text-secondary)]">
+                  Không có việc phù hợp bộ lọc
+                </p>
+              </div>
+            ) : (
+              <div className="relative flex flex-col gap-1 border-l border-[color:var(--planner-border-soft)] pl-0">
+                {filtered.map((item) =>
+                  item.kind === "BIG" ? (
+                    <BigTimelineItem
+                      key={item.id}
+                      item={item}
+                      status={computeItemStatus(item, isToday, nowMinute)}
+                      selected={selectedItemId === item.id}
+                      onSelect={() => onSelectItem(item.id)}
+                      onToggleDone={onToggleDone}
+                      onDelete={onDelete}
+                      onAddChild={onAddChild}
+                    />
+                  ) : (
+                    <TimelineRow
+                      key={item.id}
+                      item={item}
+                      status={computeItemStatus(item, isToday, nowMinute)}
+                      selected={selectedItemId === item.id}
+                      onSelect={() => onSelectItem(item.id)}
+                      onToggleDone={() => onToggleDone(item)}
+                      onDelete={() => onDelete(item)}
+                    />
+                  ),
                 )}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Task Type (section 23, segmented control) + Add Button (section 24). */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-0.5 rounded-[10px] bg-[#f5f6f8] p-0.5">
-            {(["SIMPLE", "BIG"] as PlannerItemKind[]).map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setDraftKind(k)}
-                className={cn(
-                  "cursor-pointer rounded-[8px] px-2.5 py-1.5 text-[11.5px] font-medium transition-colors duration-150 ease-out",
-                  draftKind === k
-                    ? "bg-white text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)]"
-                    : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
-                )}
-              >
-                {k === "SIMPLE" ? "Đơn" : "Lớn / Subtasks"}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!draft.trim()}
-            className="h-[38px] cursor-pointer rounded-[10px] bg-[color:var(--planner-primary)] px-[18px] text-[13px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-          >
-            Thêm
-          </button>
-        </div>
-      </div>
-
-      <div className="border-t border-[color:var(--planner-border-soft)]" />
-
-      {/* "Việc trong ngày" (section 25) - section header + counter, roi den
-          DANH SACH THAT (hoac mini empty-card, section 26, khi rong). */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <p className="text-[14px] font-bold text-[color:var(--planner-text-primary)]">Việc trong ngày</p>
-          <span className="rounded-full bg-[#f2f4f7] px-1.5 py-0.5 text-[11px] font-medium text-[color:var(--planner-text-secondary)]">
-            {items.length}
-          </span>
-        </div>
-
-        {isEmpty ? (
-          <div className="flex flex-col items-center gap-1 rounded-[12px] border border-[#f0f2f5] bg-[#fcfdff] px-4 py-6 text-center">
-            <p className="text-[12.5px] font-medium text-[color:var(--planner-text-secondary)]">Chưa có việc nào</p>
-            <p className="text-[12px] text-[color:var(--planner-text-muted)]">Thêm công việc ở trên để bắt đầu</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            {sorted.map((item) =>
-              item.kind === "BIG" ? (
-                <BigItemRow key={item.id} item={item} onToggleDone={onToggleDone} onDelete={onDelete} onAddChild={onAddChild} />
-              ) : (
-                <ItemRow key={item.id} item={item} onToggleDone={onToggleDone} onDelete={onDelete} />
-              ),
+              </div>
             )}
+
+            <AddTaskForm onAddItem={onAddItem} />
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
