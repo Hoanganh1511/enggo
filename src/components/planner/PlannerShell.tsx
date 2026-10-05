@@ -408,71 +408,86 @@ export function PlannerShell({
           "radial-gradient(circle at top left, #eef4ff 0%, transparent 30%)",
       }}
     >
-      <div className="mx-auto flex max-w-[1800px] flex-col gap-6 px-7 py-7 lg:px-11">
-        {/* Header (section 4) - tach khoi TrackingPageHeader dung chung (title
-            + nut "?" popover) vi spec yeu cau rieng 1 dong subtitle tinh than
-            product, khong phai giai thich ky thuat dang popover. */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-[26px] font-bold tracking-[-0.5px] text-[color:var(--planner-text-primary)]">
-              Planner
-            </h1>
-            <p className="text-[13px] text-[color:var(--planner-text-secondary)]">
-              Plan your week, focus on what matters.
-            </p>
-          </div>
+      <div className="mx-auto max-w-[1800px] px-7 py-7 lg:px-11">
+        {/* [2026-10-05] Nhom Header+ViewSwitcher+DateNav GOP vao 1 sidebar
+            NHO ben trai (truoc day xep thanh 2 hang NGANG phia tren, chiem
+            mat ~200px chieu cao TRUOC KHI toi noi dung that) - yeu cau nguoi
+            dung: "Nguyên phần cụm trên chiếm quá nhiều diện tích. Tạo cái
+            sidebar nhỏ cho mấy thông tin đó đi. Để đẩy mấy phần kia lên".
+            3 cot tu lg tro len (sidebar nho | calendar | panel chi tiet
+            ngay) - duoi lg xep chong doc (grid-cols-1) nhu cu. */}
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[208px_1fr_380px]">
+          <div className="flex flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] lg:sticky lg:top-7">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-[20px] font-bold tracking-[-0.4px] text-[color:var(--planner-text-primary)]">
+                Planner
+              </h1>
+              <p className="text-[12px] text-[color:var(--planner-text-secondary)]">
+                Plan your week, focus on what matters.
+              </p>
+            </div>
 
-          {/* View Switcher (section 5) - Tuan | Thang | nut "Hom nay". */}
-          <div className="flex items-center gap-0.5 rounded-xl border border-[color:var(--planner-border-soft)] bg-white/70 p-1">
-            {(["week", "month"] as ViewMode[]).map((mode) => (
+            <div className="border-t border-[color:var(--planner-border-soft)]" />
+
+            {/* View Switcher (section 5) - xep DOC (truoc day ngang) de vua
+                be rong hep cua sidebar. */}
+            <div className="flex flex-col gap-0.5 rounded-xl border border-[color:var(--planner-border-soft)] bg-white/70 p-1">
+              {(["week", "month"] as ViewMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => switchMode(mode)}
+                  className={cn(
+                    "cursor-pointer rounded-lg px-3 py-1.5 text-left text-[13px] font-medium transition-colors duration-150 ease-out",
+                    viewMode === mode
+                      ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_2px_8px_rgba(20,30,50,0.06)]"
+                      : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                  )}
+                >
+                  {mode === "week" ? "Tuần" : "Tháng"}
+                </button>
+              ))}
               <button
-                key={mode}
                 type="button"
-                onClick={() => switchMode(mode)}
+                onClick={goToToday}
                 className={cn(
-                  "cursor-pointer rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out",
-                  viewMode === mode
-                    ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_2px_8px_rgba(20,30,50,0.06)]"
-                    : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                  "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[13px] font-medium text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-white hover:text-[color:var(--planner-primary)]",
                 )}
               >
-                {mode === "week" ? "Tuần" : "Tháng"}
+                <CalendarCheck2 size={14} strokeWidth={2} /> Hôm nay
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={goToToday}
-              title="Về hôm nay"
-              className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-white hover:text-[color:var(--planner-primary)]"
-            >
-              <CalendarCheck2 size={15} strokeWidth={2} />
-            </button>
-          </div>
-        </div>
+            </div>
 
-        {/* Date Navigation (section 6). */}
-        <div className="-mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => changeAnchor(-1)}
-            className="flex h-[38px] w-[42px] cursor-pointer items-center justify-center rounded-[10px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-          >
-            <ChevronLeft size={16} className="text-[color:var(--planner-text-secondary)]" />
-          </button>
-          <div className="flex h-[38px] items-center gap-1.5 rounded-[10px] border border-[color:var(--planner-border)] bg-white px-3">
-            <CalendarDays size={14} className="text-[color:var(--planner-text-muted)]" />
-            <span className="text-[14px] font-semibold text-[color:var(--planner-text-primary)]">{rangeLabel}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => changeAnchor(1)}
-            className="flex h-[38px] w-[42px] cursor-pointer items-center justify-center rounded-[10px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-          >
-            <ChevronRight size={16} className="text-[color:var(--planner-text-secondary)]" />
-          </button>
-        </div>
+            <div className="border-t border-[color:var(--planner-border-soft)]" />
 
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_380px]">
+            {/* Date Navigation (section 6) - xep DOC, nut prev/next canh
+                nhau phia tren, nhan khoang ngay/thang phia duoi. */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => changeAnchor(-1)}
+                  className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+                >
+                  <ChevronLeft size={15} className="text-[color:var(--planner-text-secondary)]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeAnchor(1)}
+                  className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+                >
+                  <ChevronRight size={15} className="text-[color:var(--planner-text-secondary)]" />
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2 py-2">
+                <CalendarDays size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
+                <span className="text-[12.5px] leading-[1.3] font-semibold text-[color:var(--planner-text-primary)]">
+                  {rangeLabel}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Calendar Main Card (section 7). */}
           {viewMode === "week" ? (
             <div
