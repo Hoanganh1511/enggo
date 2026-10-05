@@ -25,6 +25,7 @@ import {
   deletePlannerItemAction,
 } from "@/actions/planner/planner";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { TimePickerField } from "./time-picker-field";
 
 type ViewMode = "week" | "month";
 type ItemsByDate = Record<string, ApiPlannerItem[]>;
@@ -142,10 +143,6 @@ function minutesToLabel(m: number): string {
   const h = Math.floor(m / 60) % 24;
   const mm = m % 60;
   return `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
-}
-function timeInputToMinutes(value: string): number {
-  const [h, mm] = value.split(":").map(Number);
-  return h * 60 + mm;
 }
 function groupByDate(items: ApiPlannerItem[]): ItemsByDate {
   const map: ItemsByDate = {};
@@ -1345,25 +1342,24 @@ function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftKind, setDraftKind] = useState<PlannerItemKind>("SIMPLE");
-  const [draftTime, setDraftTime] = useState("");
-  const [draftDuration, setDraftDuration] = useState(String(DEFAULT_DURATION_MINUTES));
+  const [draftStart, setDraftStart] = useState<number | null>(null);
+  const [draftDuration, setDraftDuration] = useState(DEFAULT_DURATION_MINUTES);
   const [draftColor, setDraftColor] = useState<string | null>(null);
   const [draftFocus, setDraftFocus] = useState(false);
 
   function submit() {
     const title = draft.trim();
     if (!title) return;
-    const duration = Number(draftDuration);
     onAddItem(
       title,
       draftKind,
-      draftTime ? timeInputToMinutes(draftTime) : undefined,
+      draftStart ?? undefined,
       draftColor ?? undefined,
-      draftTime && duration > 0 ? duration : undefined,
+      draftStart !== null ? draftDuration : undefined,
       draftFocus || undefined,
     );
     setDraft("");
-    setDraftTime("");
+    setDraftStart(null);
     setDraftFocus(false);
     setOpen(false);
   }
@@ -1394,25 +1390,14 @@ function AddTaskForm({ onAddItem }: { onAddItem: DayDetailPanelProps["onAddItem"
           placeholder="Thêm việc cần làm..."
           className="h-9 min-w-0 flex-1 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:shadow-[0_0_0_3px_rgba(71,120,232,.08)]"
         />
-        <input
-          type="time"
-          value={draftTime}
-          onChange={(e) => setDraftTime(e.target.value)}
-          title="Đặt giờ (không bắt buộc)"
-          className="h-9 w-[78px] shrink-0 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-1.5 text-xs text-[color:var(--planner-text-primary)] outline-none focus:border-[#b9c9ef]"
+        <TimePickerField
+          startMinute={draftStart}
+          durationMinutes={draftDuration}
+          onChange={(start, duration) => {
+            setDraftStart(start);
+            setDraftDuration(duration);
+          }}
         />
-        <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-1.5">
-          <input
-            type="number"
-            min={5}
-            step={5}
-            value={draftDuration}
-            onChange={(e) => setDraftDuration(e.target.value)}
-            title="Thời lượng (phút)"
-            className="h-full w-9 text-right text-xs text-[color:var(--planner-text-primary)] outline-none"
-          />
-          <span className="text-[10px] text-[color:var(--planner-text-muted)]">phút</span>
-        </div>
       </div>
 
       <div className="flex items-center gap-1.5">
