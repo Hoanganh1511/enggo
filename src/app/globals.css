@@ -303,6 +303,34 @@
   --sidebar-icon-color: #8a8d92; /* Icon truoc entry */
 }
 
+/* [2026-10-05] Design token RIENG cho /planner (PlannerShell.tsx) - yeu cau
+   nguoi dung dua ra 1 bo spec UI/UX day du voi bang mau/typography/radius/
+   shadow CU THE, muc dich "premium workspace" tach biet voi cam giac
+   "internal admin tool". Dat ten TIEN TO "--planner-" (khong tai dung
+   --ink/--border/--surface goc hay --background/--foreground cua
+   .dashboard-scope o tren) vi 2 ly do: (1) gia tri KHAC nhau that su (vd
+   --border root #e4e4e7 vs spec yeu cau #e9edf2), dung chung se vo tinh lam
+   SAI mau o cac khu vuc khac cung doc --border; (2) --ink/--surface KHONG bi
+   .dashboard-scope ghi de (no chi ghi de --foreground/--background, ten
+   KHAC) nen PlannerShell truoc day dung text-ink/bg-surface thuc ra van doc
+   token GOC o :root, khong phai mau rieng nguoi dung vua dua - tranh nham lan
+   tuong tu cho khu vuc nay bang cach tach han 1 bo ten MOI, khong trung voi
+   bat ky token nao da co. Component trong PlannerShell.tsx dung
+   bg-[var(--planner-bg)] v.v. thay vi hex thang - doi theme = sua 1 cho o day. */
+.planner-scope {
+  --planner-bg: #f7f8fa;
+  --planner-surface: #ffffff;
+  --planner-surface-soft: #fafbfc;
+  --planner-text-primary: #172033;
+  --planner-text-secondary: #667085;
+  --planner-text-muted: #98a2b3;
+  --planner-border: #e9edf2;
+  --planner-border-soft: #f0f2f5;
+  --planner-primary: #4f7ff0;
+  --planner-primary-soft: #f3f6ff;
+  --planner-today-bg: #f7f9ff;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
