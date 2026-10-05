@@ -419,16 +419,32 @@ export function PlannerShell({
           "radial-gradient(circle at top left, #eef4ff 0%, transparent 30%)",
       }}
     >
-      <div className="mx-auto max-w-[1800px] px-7 py-7 lg:px-11">
+      {/* [2026-10-05] Bo max-w-[1800px] (truoc day gioi han giua trang,
+          thua han 1 khoang xam lon 2 ben tren man hinh rong) - yeu cau
+          nguoi dung: "Cảm thấy planner vẫn thừa quá nhiều diện tích, hãy mở
+          rộng tối đa ra". Gio dung HET chieu rong thuc co (sau khi da huy
+          padding cua FeedMainArea o -mx-4/6/10 tren), chi con px-7/lg:px-11
+          lam "le trang" toi thieu. */}
+      <div className="px-7 py-7 lg:px-11">
         {/* [2026-10-05] Nhom Header+ViewSwitcher+DateNav GOP vao 1 sidebar
             NHO ben trai (truoc day xep thanh 2 hang NGANG phia tren, chiem
             mat ~200px chieu cao TRUOC KHI toi noi dung that) - yeu cau nguoi
             dung: "Nguyên phần cụm trên chiếm quá nhiều diện tích. Tạo cái
             sidebar nhỏ cho mấy thông tin đó đi. Để đẩy mấy phần kia lên".
             3 cot tu lg tro len (sidebar nho | calendar | panel chi tiet
-            ngay) - duoi lg xep chong doc (grid-cols-1) nhu cu. */}
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[208px_1fr_380px]">
-          <div className="flex flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] lg:sticky lg:top-7">
+            ngay) - duoi lg xep chong doc (grid-cols-1) nhu cu.
+            [2026-10-05] lg:h-[calc(100dvh-112px)] - yeu cau nguoi dung:
+            "ưu tiên diện tích cho phần lịch, sao cho hiển thị được nhiều
+            nhất". 112px = --header-height (56px, TopHeaderBar co dinh phia
+            tren) + py-7 CUA CHINH div nay (28px x 2 = 56px) - phan con lai
+            CHINH XAC la chieu cao vung xem thuc te con lai duoi header, cho
+            CA 3 cot deu cao BANG NHAU va cao HET man hinh thay vi chi cao
+            vua du noi dung (truoc day lich chi cao ~520px co dinh du man
+            hinh con rat nhieu khoang trong ben duoi). CHI ap dung tu lg (3
+            cot) tro len - duoi lg (xep chong doc) de moi khoi tu nhien theo
+            chieu cao noi dung, ep h co dinh se rat xau khi xep doc. */}
+        <div className="grid grid-cols-1 items-start gap-5 lg:h-[calc(100dvh-112px)] lg:grid-cols-[208px_1fr_380px] lg:items-stretch">
+          <div className="flex h-fit flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] lg:sticky lg:top-7">
             <div className="flex flex-col gap-1">
               <h1 className="text-[20px] font-bold tracking-[-0.4px] text-[color:var(--planner-text-primary)]">
                 Planner
@@ -499,11 +515,15 @@ export function PlannerShell({
             </div>
           </div>
 
-          {/* Calendar Main Card (section 7). */}
+          {/* Calendar Main Card (section 7). h-full + overflow-hidden - cho
+              phep card GIAN HET chieu cao hang luoi (lg:h-[calc(100dvh-112px)]
+              o the cha), than luoi gio (WeekTimeGrid) tu cuon RIENG BEN
+              TRONG (flex-1, xem ben duoi) thay vi ca card phinh to qua
+              chieu cao cho phep. */}
           {viewMode === "week" ? (
             <div
               className={cn(
-                "overflow-hidden rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
+                "flex h-full flex-col overflow-hidden rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
                 isLoading && "opacity-60",
               )}
             >
@@ -519,7 +539,7 @@ export function PlannerShell({
           ) : (
             <div
               className={cn(
-                "rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
+                "h-full overflow-y-auto rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
                 isLoading && "opacity-60",
               )}
             >
@@ -761,7 +781,7 @@ function WeekTimeGrid({
   }, [anchor]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="shrink-0 border-b border-[color:var(--planner-border-soft)]">
         <p className="px-3 pt-2.5 pb-1 text-[14px] font-semibold text-[color:var(--planner-text-primary)]">
           {monthYearLabel}
@@ -817,8 +837,15 @@ function WeekTimeGrid({
         </div>
       </div>
 
-      {/* Than luoi gio - cuon rieng (max-h co dinh), truc Y la cot nhan gio. */}
-      <div ref={scrollRef} className="max-h-130 overflow-y-auto">
+      {/* [2026-10-05] flex-1 min-h-0 (truoc day max-h-130 = 520px CO DINH,
+          thua rat nhieu khoang trong duoi lich tren man hinh cao) - than
+          luoi gio GIAN HET phan chieu cao CON LAI cua card (sau khi tru head
+          + hang "Cả ngày" o tren), tu cuon RIENG BEN TRONG. min-h-0 BAT
+          BUOC phai co - mac dinh 1 flex item co min-height:auto (= chieu cao
+          NOI DUNG THAT, o day la 1536px cho 24 gio), chong lai viec co lai
+          theo flex-1, se day card PHINH TO qua chieu cao cho phep thay vi
+          chiu cat/cuon dung cho. */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-[48px_repeat(7,1fr)]">
           <div className="flex flex-col">
             {HOURS.map((h) => (
@@ -1584,8 +1611,13 @@ function DayDetailPanel({
 
   return (
     // Sidebar Card - "Daily command center", khong con la 1 form nhap task
-    // tran trui nhu truoc.
-    <div className="flex flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
+    // tran trui nhu truoc. h-full + overflow-y-auto (2026-10-05) - panel
+    // nay gio cung GIAN HET chieu cao hang luoi (cung cap voi lich ben
+    // trai) - ngay co NHIEU viec/dai se tu cuon RIENG BEN TRONG chinh no
+    // thay vi day ca trang cao them (khop yeu cau "ưu tiên diện tích cho
+    // phần lịch, sao cho hiển thị được nhiều nhất" - lich luon giu DUNG 1
+    // khung cao co dinh, khong bi panh ben canh keo gian).
+    <div className="flex h-full flex-col gap-4 overflow-y-auto rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
       {/* Day Header (section 1) - MONDAY / October 5, 2026 / Thứ Hai... +
           nav ngay. */}
       <div className="flex items-start justify-between gap-2">
