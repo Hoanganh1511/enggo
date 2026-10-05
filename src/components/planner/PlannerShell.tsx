@@ -399,10 +399,17 @@ export function PlannerShell({
     await deletePlannerItemAction(item.id).catch(() => {});
   }
 
-  const rangeLabel =
-    viewMode === "week"
-      ? `${startOfWeek(anchor)} → ${addDays(startOfWeek(anchor), 6)}`
-      : `${MONTH_LABELS[new Date(anchor).getMonth()]} ${new Date(anchor).getFullYear()}`;
+  // [2026-10-05] Tach rieng 2 moc ngay (khong con 1 chuoi "rangeLabel" gop
+  // chung) - bug nguoi dung bao: "tràn dòng hay dí nội dung" - sidebar hep
+  // (208px) khong du cho CA chuoi "2026-10-05 → 2026-10-11" tren 1 dong,
+  // trinh duyet TU NGAT DONG tai dau "-" (vd "2026-" xuong dong, "10-11" o
+  // dong sau) vi CSS mac dinh coi dau gach ngang la 1 diem ngat dong hop le -
+  // ngat NGAY GIUA 1 ngay, rat kho doc. Render rieng moi ngay trong 1 the
+  // whitespace-nowrap (xem JSX ben duoi) dam bao NEU phai xuong dong thi chi
+  // xuong dong tai mui ten "→" (giua 2 ngay), khong bao gio vo giua 1 ngay.
+  const rangeStart = startOfWeek(anchor);
+  const rangeEnd = addDays(startOfWeek(anchor), 6);
+  const monthLabel = `${MONTH_LABELS[new Date(anchor).getMonth()]} ${new Date(anchor).getFullYear()}`;
 
   return (
     // planner-scope - nap bo CSS var rieng (xem globals.css). "-mx-4 sm:-mx-6
@@ -443,8 +450,18 @@ export function PlannerShell({
             hinh con rat nhieu khoang trong ben duoi). CHI ap dung tu lg (3
             cot) tro len - duoi lg (xep chong doc) de moi khoi tu nhien theo
             chieu cao noi dung, ep h co dinh se rat xau khi xep doc. */}
-        <div className="grid grid-cols-1 items-start gap-5 lg:h-[calc(100dvh-112px)] lg:grid-cols-[208px_1fr_380px] lg:items-stretch">
-          <div className="flex h-fit flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] lg:sticky lg:top-7">
+        {/* [2026-10-05] xl: (truoc day lg:) - bug phat hien qua kiem tra
+            them: tai cac be rong "vua du" lg (~1024-1279px), 3 cot
+            208px+1fr+380px chi con lai RAT IT cho cot calendar (7 cot ngay +
+            1 cot nhan gio) - moi cot ngay con chua toi 40px, khong du cho
+            hien "HH:MM — HH:MM" tren the su kien, bi CAT CUT GIUA SO (vd
+            "09:0" thay vi "09:00", xem them fix truncate trong TimedItemChip
+            o duoi). Doi sang xl (1280px) - be rong do cot calendar con lai
+            du rong hon han, dong thoi duoi xl van giu bo cuc xep CHONG DOC
+            (grid-cols-1) von da kiem chung la hien thi TOT (lich chiem TRON
+            chieu rong, khong bi 2 cot kia chia xe). */}
+        <div className="grid grid-cols-1 items-start gap-5 xl:h-[calc(100dvh-112px)] xl:grid-cols-[208px_1fr_380px] xl:items-stretch">
+          <div className="flex h-fit flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] xl:sticky xl:top-7">
             <div className="flex flex-col gap-1">
               <h1 className="text-[20px] font-bold tracking-[-0.4px] text-[color:var(--planner-text-primary)]">
                 Planner
@@ -506,11 +523,21 @@ export function PlannerShell({
                   <ChevronRight size={15} className="text-[color:var(--planner-text-secondary)]" />
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2 py-2">
-                <CalendarDays size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
-                <span className="text-[12.5px] leading-[1.3] font-semibold text-[color:var(--planner-text-primary)]">
-                  {rangeLabel}
-                </span>
+              <div className="flex items-start gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2 py-2">
+                <CalendarDays size={13} className="mt-0.5 shrink-0 text-[color:var(--planner-text-muted)]" />
+                {viewMode === "week" ? (
+                  <span className="flex flex-wrap items-baseline gap-x-1 text-[12.5px] leading-[1.4] font-semibold text-[color:var(--planner-text-primary)]">
+                    <span className="whitespace-nowrap">{rangeStart}</span>
+                    <span className="shrink-0 text-[color:var(--planner-text-muted)]" aria-hidden="true">
+                      →
+                    </span>
+                    <span className="whitespace-nowrap">{rangeEnd}</span>
+                  </span>
+                ) : (
+                  <span className="text-[12.5px] leading-[1.4] font-semibold text-[color:var(--planner-text-primary)]">
+                    {monthLabel}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -724,11 +751,22 @@ function TimedItemChip({
         </span>
       ) : (
         <>
-          <span className="flex items-center gap-1 text-[10px] font-medium" style={{ color: cat.accent }}>
+          {/* [2026-10-05] truncate THEM VAO (truoc day thieu) - bug phat
+              hien qua kiem tra o be rong man hinh "vua du" 3 cot (khoang
+              1024-1279px, xem comment xl: o PlannerShell goc): cot moi ngay
+              luc do RAT HEP, dong gio "09:00 — 10:00" khong du cho tren 1
+              dong, bi overflow-hidden cua the cha (button bao ngoai) CAT
+              THANG giua chung so (hien "09:0" thay vi "09:00"). `truncate`
+              o day dam bao NEU khong du cho thi cat gon + "…" o CUOI, khong
+              bao gio cat GIUA 1 con so/tu nhu truoc. */}
+          <span
+            className="flex items-center gap-1 truncate text-[10px] font-medium"
+            style={{ color: cat.accent }}
+          >
             {status === "current" && (
               <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accent }} aria-hidden="true" />
             )}
-            {timeLabel}
+            <span className="truncate">{timeLabel}</span>
           </span>
           <span
             className={cn(
