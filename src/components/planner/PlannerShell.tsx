@@ -1562,7 +1562,7 @@ function TimedItemChip({
         onOpenAutoFocus={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative z-50 w-72 rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.14)]"
+        className="relative z-50 w-72 rounded-[12px] bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
       >
         {/* Hang doc 4 icon chuc nang, bam goc tren-phai CUA POPOVER (khac
             voi "bám góc trên bên trái" cua chinh POPOVER so voi the - 2 y
