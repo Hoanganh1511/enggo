@@ -36,7 +36,10 @@ export function SeriesScrollToTopButton() {
         document.querySelector<HTMLElement>("[data-scroll-root]")?.scrollTo({ top: 0, behavior: "smooth" });
       }}
       className={cn(
-        "fixed right-6 bottom-6 z-30 hidden size-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink-muted shadow-lg transition-all duration-200 ease-out hover:border-border-strong hover:text-ink lg:flex",
+        // bottom-20 (khong phai bottom-6 nhu truoc) - xep CHONG len TREN nut
+        // "My Notes" gio chiem vi tri bottom-6 co dinh (xem SeriesNotesLauncher.tsx,
+        // yeu cau nguoi dung: "nút Scroll To Top nếu hiện ra sẽ nằm ở phía trên nó").
+        "fixed right-6 bottom-20 z-30 hidden size-11 cursor-pointer items-center justify-center rounded-full border border-border bg-surface text-ink-muted shadow-lg transition-all duration-200 ease-out hover:border-border-strong hover:text-ink lg:flex",
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0",
       )}
     >

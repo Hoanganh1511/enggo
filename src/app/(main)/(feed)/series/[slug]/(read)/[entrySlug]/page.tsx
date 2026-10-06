@@ -19,6 +19,7 @@ import { SeriesNextEntryBanner } from "@/components/series/SeriesNextEntryBanner
 import { SeriesEntryContentBlocks } from "@/components/series/SeriesEntryContentBlocks";
 import { SeriesDictionaryView } from "@/components/series/SeriesDictionaryView";
 import { EntryPageActionsRow } from "@/components/series/EntryPageActionsRow";
+import { SeriesEntryNotesMount } from "@/components/series/notes/SeriesEntryNotesMount";
 import { FadeIn } from "@/components/series/SeriesSkeleton";
 import {
   EntryHeaderSkeleton,
@@ -425,9 +426,22 @@ export default async function SeriesEntryPage({
       />
     );
   }
+  // Cac nhanh Suspense (EntryHeader/EntryBody/...) ben duoi TU kiem tra rieng
+  // `if (!data) notFound()` cua CHINH chung (dataPromise truyen xuong CHUA
+  // await) - o day CAN kiem tra THEM 1 lan vi `data` o NGOAI cung da duoc
+  // await o tren (cho nhanh Dictionary) va dung THANG lam prop cho
+  // SeriesEntryNotesMount ngay ben duoi, TypeScript khong tu suy ra duoc
+  // `data` khac null chi tu nhanh return SOM o tren.
+  if (!data) notFound();
 
   return (
     <div className="pb-20">
+      {/* Dang ky ngu canh (seriesSlug/entryId/entrySlug) cho notes-store +
+          mount floating toolbar/marker le CHI khi dang xem 1 Entry CU THE
+          (nhanh layout Dictionary o tren return SOM truoc khi toi day, nen
+          khong bi mount trung cho layout do). */}
+      <SeriesEntryNotesMount seriesSlug={slug} entryId={data.entry.id} entrySlug={data.entry.slug} />
+
       {/* [2026-09-30] Header + <hr> CHUYEN VAO BEN TRONG <article> (KHAC ban
           truoc - xem lich su comment cu ben duoi) - yeu cau nguoi dung: "TOC
           bên phải nên bắt đầu ngang hàng với đầu bài (breadcrumb/title), thay

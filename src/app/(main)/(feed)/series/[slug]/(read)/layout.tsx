@@ -10,6 +10,7 @@ import {
   SeriesSidebarDrawer,
 } from "@/components/series/SeriesMobileNav";
 import { SeriesScrollToTopButton } from "@/components/series/SeriesScrollToTopButton";
+import { SeriesNotesLauncher } from "@/components/series/notes/SeriesNotesLauncher";
 
 // Layout dung chung cho toan bo 1 Series (Overview + moi Entry) - sidebar
 // trai (cay category/entry) o day de KHONG remount khi chuyen qua lai giua
@@ -61,9 +62,13 @@ export default async function SeriesLayout({
         entries={series.entries}
       />
 
-      {/* "Lên đầu trang" goc duoi-phai, CHI hien tu lg: (desktop) - yeu cau
-          nguoi dung: "Trang chi tiết (xem) bài viết, bổ sung thêm button
-          tròn góc dưới bên phải scroll to top" (xem SeriesScrollToTopButton.tsx). */}
+      {/* Nut "My Notes" (BookOpen) CHIEM vi tri goc duoi-phai co dinh - yeu
+          cau nguoi dung: "Bổ sung thêm 1 button thay thế vị trí nút Scroll
+          To Top hiện tại, nút Scroll To Top nếu hiện ra sẽ nằm ở phía trên
+          nó" (xem SeriesNotesLauncher.tsx). "Lên đầu trang" doi len bottom-20
+          (xem SeriesScrollToTopButton.tsx) de xep CHONG len tren, chi hien
+          tu lg: + khi da cuon xuong du sau. */}
+      <SeriesNotesLauncher />
       <SeriesScrollToTopButton />
 
       {/* Sidebar mau KHAC noi dung ben phai, TRAN SAT MEP (khong padding/khoang

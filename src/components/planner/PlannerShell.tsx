@@ -25,7 +25,11 @@ import {
   updatePlannerItemAction,
   deletePlannerItemAction,
 } from "@/actions/planner/planner";
-import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { TimePickerField } from "./time-picker-field";
 
 type ViewMode = "week" | "month";
@@ -39,18 +43,50 @@ const WEEKDAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 // dung xuyen suot file nay (ISO 8601, tuan bat dau Thu Hai).
 const WEEKDAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKDAY_FULL_EN = [
-  "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
 ];
 const WEEKDAY_LONG_VI = [
-  "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật",
+  "Thứ Hai",
+  "Thứ Ba",
+  "Thứ Tư",
+  "Thứ Năm",
+  "Thứ Sáu",
+  "Thứ Bảy",
+  "Chủ Nhật",
 ];
 const MONTH_LABELS = [
-  "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
-  "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
+  "Tháng 1",
+  "Tháng 2",
+  "Tháng 3",
+  "Tháng 4",
+  "Tháng 5",
+  "Tháng 6",
+  "Tháng 7",
+  "Tháng 8",
+  "Tháng 9",
+  "Tháng 10",
+  "Tháng 11",
+  "Tháng 12",
 ];
 const MONTH_LABELS_EN = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 // [2026-10-05] "Category" cho checklist - yeu cau nguoi dung (redesign Right
@@ -72,7 +108,11 @@ const CATEGORY_BY_COLOR: Record<string, CategoryMeta> = {
   "#3b82f6": { label: "Công việc", accent: "#3b82f6", pastel: "#eaf2ff" },
   "#a855f7": { label: "Dự án", accent: "#a855f7", pastel: "#f0eaff" },
 };
-const DEFAULT_CATEGORY: CategoryMeta = { label: "Khác", accent: "#98a2b3", pastel: "#f1f3f5" };
+const DEFAULT_CATEGORY: CategoryMeta = {
+  label: "Khác",
+  accent: "#98a2b3",
+  pastel: "#f1f3f5",
+};
 function getCategory(color: string | null): CategoryMeta {
   return (color && CATEGORY_BY_COLOR[color]) || DEFAULT_CATEGORY;
 }
@@ -80,7 +120,10 @@ function getCategory(color: string | null): CategoryMeta {
 // nguon DUY NHAT (khong khai bao trung lap 1 danh sach rieng nhu truoc).
 const PLANNER_COLORS: { label: string; value: string | null }[] = [
   { label: DEFAULT_CATEGORY.label, value: null },
-  ...Object.entries(CATEGORY_BY_COLOR).map(([hex, meta]) => ({ label: meta.label, value: hex })),
+  ...Object.entries(CATEGORY_BY_COLOR).map(([hex, meta]) => ({
+    label: meta.label,
+    value: hex,
+  })),
 ];
 
 // Bo loc "SCHEDULE" (yeu cau nguoi dung, section 15 "Filter"): theo trang
@@ -92,7 +135,10 @@ const FILTER_OPTIONS: { value: FilterValue; label: string }[] = [
   { value: "ALL", label: "Tất cả" },
   { value: "TODO", label: "Chưa xong" },
   { value: "DONE", label: "Hoàn thành" },
-  ...Object.entries(CATEGORY_BY_COLOR).map(([hex, meta]) => ({ value: hex, label: meta.label })),
+  ...Object.entries(CATEGORY_BY_COLOR).map(([hex, meta]) => ({
+    value: hex,
+    label: meta.label,
+  })),
 ];
 
 // [2026-10-05] Thoi luong MAC DINH (phut) khi 1 viec co gio bat dau nhung
@@ -152,7 +198,10 @@ function groupByDate(items: ApiPlannerItem[]): ItemsByDate {
   }
   return map;
 }
-function rangeForMode(mode: ViewMode, anchor: string): { from: string; to: string } {
+function rangeForMode(
+  mode: ViewMode,
+  anchor: string,
+): { from: string; to: string } {
   return mode === "week"
     ? { from: startOfWeek(anchor), to: addDays(startOfWeek(anchor), 6) }
     : { from: startOfMonth(anchor), to: endOfMonth(anchor) };
@@ -178,7 +227,10 @@ function weekdayFullEn(dateStr: string): string {
 // Gio KET THUC suy ra tu scheduledMinute + durationMinutes (hoac mac dinh) -
 // CHI co y nghia voi viec co dat gio (scheduledMinute != null).
 function itemEndMinute(item: ApiPlannerItem): number {
-  return (item.scheduledMinute ?? 0) + (item.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+  return (
+    (item.scheduledMinute ?? 0) +
+    (item.durationMinutes ?? DEFAULT_DURATION_MINUTES)
+  );
 }
 function formatHoursMinutes(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60);
@@ -194,7 +246,11 @@ function formatHoursMinutes(totalMinutes: number): string {
 // LAI moi lan render (khong luu DB, khong can 1 field "status" rieng, luon
 // phan anh dung thoi diem THAT).
 type ItemStatus = "done" | "current" | "upcoming";
-function computeItemStatus(item: ApiPlannerItem, isToday: boolean, nowMinute: number): ItemStatus {
+function computeItemStatus(
+  item: ApiPlannerItem,
+  isToday: boolean,
+  nowMinute: number,
+): ItemStatus {
   if (item.done) return "done";
   if (!isToday || item.scheduledMinute === null) return "upcoming";
   const end = itemEndMinute(item);
@@ -211,12 +267,20 @@ function computeItemStatus(item: ApiPlannerItem, isToday: boolean, nowMinute: nu
 // theo start (roi end) de dam bao xu ly dung thu tu thoi gian.
 function layoutTimedItems(
   items: (ApiPlannerItem & { scheduledMinute: number })[],
-): { item: ApiPlannerItem & { scheduledMinute: number }; col: number; cols: number }[] {
+): {
+  item: ApiPlannerItem & { scheduledMinute: number };
+  col: number;
+  cols: number;
+}[] {
   const entries = items
     .map((it) => ({ it, start: it.scheduledMinute, end: itemEndMinute(it) }))
     .sort((a, b) => a.start - b.start || a.end - b.end);
 
-  const result: { item: ApiPlannerItem & { scheduledMinute: number }; col: number; cols: number }[] = [];
+  const result: {
+    item: ApiPlannerItem & { scheduledMinute: number };
+    col: number;
+    cols: number;
+  }[] = [];
   let cluster: typeof entries = [];
   let clusterEnd = -1;
 
@@ -240,7 +304,8 @@ function layoutTimedItems(
       assigned.push({ entry, col: placedCol });
     }
     const totalCols = colEnds.length;
-    for (const a of assigned) result.push({ item: a.entry.it, col: a.col, cols: totalCols });
+    for (const a of assigned)
+      result.push({ item: a.entry.it, col: a.col, cols: totalCols });
     cluster = [];
   }
 
@@ -280,7 +345,9 @@ export function PlannerShell({
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(initialDate);
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [itemsByDate, setItemsByDate] = useState<ItemsByDate>(() => groupByDate(initialItems));
+  const [itemsByDate, setItemsByDate] = useState<ItemsByDate>(() =>
+    groupByDate(initialItems),
+  );
   const [isLoading, setIsLoading] = useState(false);
   // Dong bo "chon 1 su kien" GIUA calendar canvas (click 1 the gio) VA Right
   // Panel (highlight dong tuong ung trong Schedule) - yeu cau nguoi dung,
@@ -298,7 +365,9 @@ export function PlannerShell({
 
   async function reload(range: { from: string; to: string }) {
     setIsLoading(true);
-    const items = await listPlannerItemsAction(range.from, range.to).catch(() => []);
+    const items = await listPlannerItemsAction(range.from, range.to).catch(
+      () => [],
+    );
     setItemsByDate(groupByDate(items));
     setIsLoading(false);
   }
@@ -319,8 +388,13 @@ export function PlannerShell({
   // nguoc lai (changeSelectedDay, doi ngay tu panel) DA tu dong bo anchor
   // dung cach roi - sua cho doi xung ca 2 chieu.
   function changeAnchor(direction: -1 | 1) {
-    const next = viewMode === "week" ? addDays(anchor, direction * 7) : addMonths(anchor, direction);
-    const diffDays = Math.round((new Date(next).getTime() - new Date(anchor).getTime()) / 86400000);
+    const next =
+      viewMode === "week"
+        ? addDays(anchor, direction * 7)
+        : addMonths(anchor, direction);
+    const diffDays = Math.round(
+      (new Date(next).getTime() - new Date(anchor).getTime()) / 86400000,
+    );
     setAnchor(next);
     setSelectedDate((prev) => addDays(prev, diffDays));
     void reload(rangeForMode(viewMode, next));
@@ -354,7 +428,10 @@ export function PlannerShell({
     }
   }
 
-  function patchDate(date: string, updater: (items: ApiPlannerItem[]) => ApiPlannerItem[]) {
+  function patchDate(
+    date: string,
+    updater: (items: ApiPlannerItem[]) => ApiPlannerItem[],
+  ) {
     setItemsByDate((prev) => ({ ...prev, [date]: updater(prev[date] ?? []) }));
   }
 
@@ -379,10 +456,18 @@ export function PlannerShell({
   }
 
   async function handleAddChild(parentId: string, title: string) {
-    const created = await createPlannerItemAction({ date: selectedDate, title, parentId }).catch(() => null);
+    const created = await createPlannerItemAction({
+      date: selectedDate,
+      title,
+      parentId,
+    }).catch(() => null);
     if (!created) return;
     patchDate(selectedDate, (items) =>
-      items.map((it) => (it.id === parentId ? { ...it, children: [...(it.children ?? []), created] } : it)),
+      items.map((it) =>
+        it.id === parentId
+          ? { ...it, children: [...(it.children ?? []), created] }
+          : it,
+      ),
     );
   }
 
@@ -391,7 +476,14 @@ export function PlannerShell({
     patchDate(item.date, (items) =>
       parentId
         ? items.map((p) =>
-            p.id === parentId ? { ...p, children: (p.children ?? []).map((c) => (c.id === item.id ? { ...c, done } : c)) } : p,
+            p.id === parentId
+              ? {
+                  ...p,
+                  children: (p.children ?? []).map((c) =>
+                    c.id === item.id ? { ...c, done } : c,
+                  ),
+                }
+              : p,
           )
         : items.map((i) => (i.id === item.id ? { ...i, done } : i)),
     );
@@ -401,7 +493,14 @@ export function PlannerShell({
   async function handleDelete(item: ApiPlannerItem, parentId?: string) {
     patchDate(item.date, (items) =>
       parentId
-        ? items.map((p) => (p.id === parentId ? { ...p, children: (p.children ?? []).filter((c) => c.id !== item.id) } : p))
+        ? items.map((p) =>
+            p.id === parentId
+              ? {
+                  ...p,
+                  children: (p.children ?? []).filter((c) => c.id !== item.id),
+                }
+              : p,
+          )
         : items.filter((i) => i.id !== item.id),
     );
     if (selectedItemId === item.id) setSelectedItemId(null);
@@ -432,7 +531,12 @@ export function PlannerShell({
       parentId
         ? items.map((p) =>
             p.id === parentId
-              ? { ...p, children: (p.children ?? []).map((c) => (c.id === item.id ? { ...c, ...updates } : c)) }
+              ? {
+                  ...p,
+                  children: (p.children ?? []).map((c) =>
+                    c.id === item.id ? { ...c, ...updates } : c,
+                  ),
+                }
               : p,
           )
         : items.map((i) => (i.id === item.id ? { ...i, ...updates } : i)),
@@ -443,8 +547,15 @@ export function PlannerShell({
   // Keo-tha (doi gio bat dau) / keo gian canh duoi (doi thoi luong) TRUC
   // TIEP tren luoi gio - xem TimedItemChip. Chi danh cho item TOP-LEVEL co
   // gio (children khong hien tren luoi, chi hien trong SCHEDULE).
-  function handleUpdateItemTime(item: ApiPlannerItem, newStart: number, newDuration: number) {
-    void handleUpdateItem(item, { scheduledMinute: newStart, durationMinutes: newDuration });
+  function handleUpdateItemTime(
+    item: ApiPlannerItem,
+    newStart: number,
+    newDuration: number,
+  ) {
+    void handleUpdateItem(item, {
+      scheduledMinute: newStart,
+      durationMinutes: newDuration,
+    });
   }
 
   // Click 1 o gio TRONG tren luoi tuan - yeu cau nguoi dung (state #6):
@@ -569,22 +680,34 @@ export function PlannerShell({
                   onClick={() => changeAnchor(-1)}
                   className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
                 >
-                  <ChevronLeft size={15} className="text-[color:var(--planner-text-secondary)]" />
+                  <ChevronLeft
+                    size={15}
+                    className="text-[color:var(--planner-text-secondary)]"
+                  />
                 </button>
                 <button
                   type="button"
                   onClick={() => changeAnchor(1)}
                   className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
                 >
-                  <ChevronRight size={15} className="text-[color:var(--planner-text-secondary)]" />
+                  <ChevronRight
+                    size={15}
+                    className="text-[color:var(--planner-text-secondary)]"
+                  />
                 </button>
               </div>
               <div className="flex items-start gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2 py-2">
-                <CalendarDays size={13} className="mt-0.5 shrink-0 text-[color:var(--planner-text-muted)]" />
+                <CalendarDays
+                  size={13}
+                  className="mt-0.5 shrink-0 text-[color:var(--planner-text-muted)]"
+                />
                 {viewMode === "week" ? (
                   <span className="flex flex-wrap items-baseline gap-x-1 text-[12.5px] leading-[1.4] font-semibold text-[color:var(--planner-text-primary)]">
                     <span className="whitespace-nowrap">{rangeStart}</span>
-                    <span className="shrink-0 text-[color:var(--planner-text-muted)]" aria-hidden="true">
+                    <span
+                      className="shrink-0 text-[color:var(--planner-text-muted)]"
+                      aria-hidden="true"
+                    >
                       →
                     </span>
                     <span className="whitespace-nowrap">{rangeEnd}</span>
@@ -628,7 +751,12 @@ export function PlannerShell({
                 isLoading && "opacity-60",
               )}
             >
-              <MonthGrid anchor={anchor} selectedDate={selectedDate} itemsByDate={itemsByDate} onSelect={selectDate} />
+              <MonthGrid
+                anchor={anchor}
+                selectedDate={selectedDate}
+                itemsByDate={itemsByDate}
+                onSelect={selectDate}
+              />
             </div>
           )}
 
@@ -685,7 +813,10 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
           <div key={item.id} className="flex min-w-0 items-center gap-1">
             <span
               style={{ backgroundColor: item.done ? undefined : cat.accent }}
-              className={cn("size-1 shrink-0 rounded-full", item.done && "bg-[color:var(--planner-text-muted)]/50")}
+              className={cn(
+                "size-1 shrink-0 rounded-full",
+                item.done && "bg-[color:var(--planner-text-muted)]/50",
+              )}
               aria-hidden="true"
             />
             <span
@@ -703,7 +834,9 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
         );
       })}
       {hasMore && (
-        <span className="pl-2.5 text-[10.5px] leading-none text-[color:var(--planner-text-muted)]">····</span>
+        <span className="pl-2.5 text-[10.5px] leading-none text-[color:var(--planner-text-muted)]">
+          ····
+        </span>
       )}
     </div>
   );
@@ -721,7 +854,9 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
       style={{ backgroundColor: cat.pastel, borderLeftColor: cat.accent }}
       className={cn(
         "block w-full truncate rounded-[7px] border-l-[3px] px-1.5 py-0.5 text-[11px] leading-[1.3] font-medium",
-        item.done ? "text-[color:var(--planner-text-muted)] line-through opacity-55" : "text-[color:var(--planner-text-primary)]",
+        item.done
+          ? "text-[color:var(--planner-text-muted)] line-through opacity-55"
+          : "text-[color:var(--planner-text-primary)]",
       )}
     >
       {item.title}
@@ -785,15 +920,23 @@ function TimedItemChip({
   // khi dang keo, hien thi theo `drag.deltaPx` (preview CUC BO, CHUA luu) -
   // chi goi onUpdateTime (API that) LUC THA chuot (mouseup), khong goi lien
   // tuc theo tung pixel di chuyen.
-  const [drag, setDrag] = useState<{ mode: "move" | "resize"; deltaPx: number } | null>(null);
+  const [drag, setDrag] = useState<{
+    mode: "move" | "resize";
+    deltaPx: number;
+  } | null>(null);
   // Ban SONG SONG voi `drag` state (doc duoc NGAY lap tuc trong onUp, khong
   // can qua updater function cua setState - xem comment chi tiet trong
   // startDrag ben duoi).
-  const dragRef = useRef<{ mode: "move" | "resize"; deltaPx: number } | null>(null);
+  const dragRef = useRef<{ mode: "move" | "resize"; deltaPx: number } | null>(
+    null,
+  );
   const suppressClickRef = useRef(false);
 
   const displayTop = drag?.mode === "move" ? top + drag.deltaPx : top;
-  const displayHeight = drag?.mode === "resize" ? Math.max(DRAG_SNAP_PX, height + drag.deltaPx) : height;
+  const displayHeight =
+    drag?.mode === "resize"
+      ? Math.max(DRAG_SNAP_PX, height + drag.deltaPx)
+      : height;
   const liveStart = Math.round((displayTop / HOUR_ROW_HEIGHT) * 60);
   const liveDuration = Math.round((displayHeight / HOUR_ROW_HEIGHT) * 60);
   const compact = displayHeight < 40;
@@ -840,7 +983,10 @@ function TimedItemChip({
         const currentDuration = itemEndMinute(item) - currentStart;
         const deltaMinutes = Math.round((final.deltaPx / HOUR_ROW_HEIGHT) * 60);
         if (final.mode === "move") {
-          const newStart = Math.min(Math.max(currentStart + deltaMinutes, 0), 24 * 60 - DRAG_SNAP_MINUTES);
+          const newStart = Math.min(
+            Math.max(currentStart + deltaMinutes, 0),
+            24 * 60 - DRAG_SNAP_MINUTES,
+          );
           onUpdateTime(newStart, currentDuration);
         } else {
           const newDuration = Math.min(
@@ -874,20 +1020,31 @@ function TimedItemChip({
         width,
         backgroundColor: cat.pastel,
         borderLeftColor: cat.accent,
-        boxShadow: selected ? `0 0 0 2px white, 0 0 0 3px ${cat.accent}` : undefined,
+        boxShadow: selected
+          ? `0 0 0 2px white, 0 0 0 3px ${cat.accent}`
+          : undefined,
       }}
       className={cn(
-        "group absolute z-[1] flex flex-col justify-center overflow-hidden rounded-[7px] border-l-[3px] px-1.5 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
-        drag ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]" : "cursor-grab",
+        "group absolute z-[1] flex flex-col justify-center overflow-hidden rounded-sm border-l-[3px] px-1.5 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        drag
+          ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]"
+          : "cursor-grab",
         item.done && "opacity-55",
       )}
     >
       {compact ? (
         <span className="flex items-center gap-1 truncate">
           {status === "current" && (
-            <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accent }} aria-hidden="true" />
+            <span
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: cat.accent }}
+              aria-hidden="true"
+            />
           )}
-          <span className="shrink-0 text-[10px] font-medium" style={{ color: cat.accent }}>
+          <span
+            className="shrink-0 text-[10px] font-medium"
+            style={{ color: cat.accent }}
+          >
             {minutesToLabel(drag ? liveStart : (item.scheduledMinute ?? 0))}
           </span>
           <span
@@ -914,7 +1071,11 @@ function TimedItemChip({
             style={{ color: cat.accent }}
           >
             {status === "current" && (
-              <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accent }} aria-hidden="true" />
+              <span
+                className="size-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: cat.accent }}
+                aria-hidden="true"
+              />
             )}
             <span className="truncate">{timeLabel}</span>
           </span>
@@ -969,10 +1130,16 @@ function WeekTimeGrid({
   onSelect: (date: string) => void;
   onSelectItem: (id: string) => void;
   onSlotClick: (minute: number) => void;
-  onUpdateItemTime: (item: ApiPlannerItem, newStart: number, newDuration: number) => void;
+  onUpdateItemTime: (
+    item: ApiPlannerItem,
+    newStart: number,
+    newDuration: number,
+  ) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(anchor), i));
+  const days = Array.from({ length: 7 }, (_, i) =>
+    addDays(startOfWeek(anchor), i),
+  );
   const today = toISODate(new Date());
   const weekStart = new Date(startOfWeek(anchor));
   const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
@@ -1027,7 +1194,9 @@ function WeekTimeGrid({
             Cả ngày
           </div>
           {days.map((d) => {
-            const allDay = (itemsByDate[d] ?? []).filter((it) => it.scheduledMinute === null);
+            const allDay = (itemsByDate[d] ?? []).filter(
+              (it) => it.scheduledMinute === null,
+            );
             return (
               <div
                 key={d}
@@ -1069,7 +1238,8 @@ function WeekTimeGrid({
           </div>
           {days.map((d) => {
             const timed = (itemsByDate[d] ?? []).filter(
-              (it): it is ApiPlannerItem & { scheduledMinute: number } => it.scheduledMinute !== null,
+              (it): it is ApiPlannerItem & { scheduledMinute: number } =>
+                it.scheduledMinute !== null,
             );
             const laidOut = layoutTimedItems(timed);
             const isToday = d === today;
@@ -1081,7 +1251,8 @@ function WeekTimeGrid({
                   isToday
                     ? {
                         height: HOUR_ROW_HEIGHT * 24,
-                        backgroundImage: "linear-gradient(180deg, #f7f9ff 0%, #fbfcff 100%)",
+                        backgroundImage:
+                          "linear-gradient(180deg, #f7f9ff 0%, #fbfcff 100%)",
                       }
                     : { height: HOUR_ROW_HEIGHT * 24 }
                 }
@@ -1106,7 +1277,10 @@ function WeekTimeGrid({
                     key={item.id}
                     item={item}
                     top={(item.scheduledMinute / 60) * HOUR_ROW_HEIGHT}
-                    height={((itemEndMinute(item) - item.scheduledMinute) / 60) * HOUR_ROW_HEIGHT}
+                    height={
+                      ((itemEndMinute(item) - item.scheduledMinute) / 60) *
+                      HOUR_ROW_HEIGHT
+                    }
                     left={`calc(${(100 / cols) * col}% + 2px)`}
                     width={`calc(${100 / cols}% - 4px)`}
                     selected={selectedItemId === item.id}
@@ -1114,7 +1288,9 @@ function WeekTimeGrid({
                       onSelect(d);
                       onSelectItem(item.id);
                     }}
-                    onUpdateTime={(newStart, newDuration) => onUpdateItemTime(item, newStart, newDuration)}
+                    onUpdateTime={(newStart, newDuration) =>
+                      onUpdateItemTime(item, newStart, newDuration)
+                    }
                     isToday={isToday}
                     nowMinute={nowMinute}
                   />
@@ -1146,7 +1322,9 @@ function MonthGrid({
   const today = toISODate(new Date());
   const cells: (string | null)[] = [
     ...Array.from({ length: leadingBlank }, () => null),
-    ...Array.from({ length: totalDaysInMonth }, (_, i) => addDays(monthStart, i)),
+    ...Array.from({ length: totalDaysInMonth }, (_, i) =>
+      addDays(monthStart, i),
+    ),
   ];
   while (cells.length % 7 !== 0) cells.push(null);
 
@@ -1154,7 +1332,10 @@ function MonthGrid({
     <div className="flex flex-col gap-1.5">
       <div className="grid grid-cols-7 gap-1.5">
         {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="py-1 text-center text-[11px] font-medium text-[color:var(--planner-text-muted)]">
+          <div
+            key={label}
+            className="py-1 text-center text-[11px] font-medium text-[color:var(--planner-text-muted)]"
+          >
             {label}
           </div>
         ))}
@@ -1179,7 +1360,9 @@ function MonthGrid({
                 <span
                   className={cn(
                     "text-[14px] font-semibold",
-                    d === today ? "text-[color:var(--planner-primary)]" : "text-[color:var(--planner-text-primary)]",
+                    d === today
+                      ? "text-[color:var(--planner-primary)]"
+                      : "text-[color:var(--planner-text-primary)]",
                   )}
                 >
                   {Number(d.slice(8, 10))}
@@ -1199,13 +1382,33 @@ function MonthGrid({
 // (1 gia tri duy nhat, khong phai bieu do nhieu chuoi) nen CHI can 1 mau
 // accent + 1 track nhat, khong can bang mau phan loai/legend (xem dataviz
 // skill - "choosing a form": 1 headline % hop ly nhat la 1 stat-tile/meter).
-function ProgressRing({ pct, size = 56, stroke = 5 }: { pct: number; size?: number; stroke?: number }) {
+function ProgressRing({
+  pct,
+  size = 56,
+  stroke = 5,
+}: {
+  pct: number;
+  size?: number;
+  stroke?: number;
+}) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const dash = (Math.min(100, Math.max(0, pct)) / 100) * c;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--planner-border-soft)" strokeWidth={stroke} />
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="-rotate-90"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="var(--planner-border-soft)"
+        strokeWidth={stroke}
+      />
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -1228,10 +1431,16 @@ function TodayProgress({ items }: { items: ApiPlannerItem[] }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   const timedItems = items.filter((i) => i.scheduledMinute !== null);
-  const plannedMinutes = timedItems.reduce((sum, i) => sum + (i.durationMinutes ?? DEFAULT_DURATION_MINUTES), 0);
+  const plannedMinutes = timedItems.reduce(
+    (sum, i) => sum + (i.durationMinutes ?? DEFAULT_DURATION_MINUTES),
+    0,
+  );
   const doneMinutes = timedItems
     .filter((i) => i.done)
-    .reduce((sum, i) => sum + (i.durationMinutes ?? DEFAULT_DURATION_MINUTES), 0);
+    .reduce(
+      (sum, i) => sum + (i.durationMinutes ?? DEFAULT_DURATION_MINUTES),
+      0,
+    );
 
   if (total === 0) return null;
 
@@ -1243,7 +1452,9 @@ function TodayProgress({ items }: { items: ApiPlannerItem[] }) {
       <div className="flex items-center gap-3.5">
         <div className="relative flex shrink-0 items-center justify-center">
           <ProgressRing pct={pct} />
-          <span className="absolute text-[13px] font-bold text-[color:var(--planner-text-primary)]">{pct}%</span>
+          <span className="absolute text-[13px] font-bold text-[color:var(--planner-text-primary)]">
+            {pct}%
+          </span>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <p className="text-[12.5px] font-medium text-[color:var(--planner-text-secondary)]">
@@ -1252,12 +1463,15 @@ function TodayProgress({ items }: { items: ApiPlannerItem[] }) {
           {plannedMinutes > 0 && (
             <>
               <p className="text-[11px] text-[color:var(--planner-text-muted)]">
-                {formatHoursMinutes(doneMinutes)} / {formatHoursMinutes(plannedMinutes)}
+                {formatHoursMinutes(doneMinutes)} /{" "}
+                {formatHoursMinutes(plannedMinutes)}
               </p>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--planner-border-soft)]">
                 <div
                   className="h-full rounded-full bg-[color:var(--planner-primary)] transition-[width] duration-300 ease-out"
-                  style={{ width: `${plannedMinutes ? Math.min(100, (doneMinutes / plannedMinutes) * 100) : 0}%` }}
+                  style={{
+                    width: `${plannedMinutes ? Math.min(100, (doneMinutes / plannedMinutes) * 100) : 0}%`,
+                  }}
                 />
               </div>
             </>
@@ -1312,7 +1526,8 @@ function TodayFocusCard({
         </p>
         {item.scheduledMinute !== null && (
           <p className="text-[12px] font-medium" style={{ color: cat.accent }}>
-            {minutesToLabel(item.scheduledMinute)} — {minutesToLabel(itemEndMinute(item))}
+            {minutesToLabel(item.scheduledMinute)} —{" "}
+            {minutesToLabel(itemEndMinute(item))}
           </p>
         )}
         <button
@@ -1355,9 +1570,15 @@ function TimelineRow({
           cua UL cha). */}
       <div className="relative z-[1] mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
         {status === "done" ? (
-          <CheckCircle2 size={16} className="text-[color:var(--planner-primary)]" />
+          <CheckCircle2
+            size={16}
+            className="text-[color:var(--planner-primary)]"
+          />
         ) : status === "current" ? (
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: cat.accent }} />
+          <span
+            className="size-2.5 rounded-full"
+            style={{ backgroundColor: cat.accent }}
+          />
         ) : (
           <Circle size={14} className="text-[color:var(--planner-border)]" />
         )}
@@ -1381,7 +1602,9 @@ function TimelineRow({
             onSelect();
           }
         }}
-        style={selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined}
+        style={
+          selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined
+        }
         className={cn(
           "flex min-w-0 flex-1 cursor-pointer items-start justify-between gap-2 rounded-[10px] px-2 py-1.5 text-left transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
           status === "current" && "bg-[var(--planner-primary-soft)]",
@@ -1389,8 +1612,12 @@ function TimelineRow({
       >
         <div className="flex min-w-0 flex-col gap-0.5">
           {item.scheduledMinute !== null && (
-            <span className="text-[11px] font-medium" style={{ color: cat.accent }}>
-              {minutesToLabel(item.scheduledMinute)} — {minutesToLabel(itemEndMinute(item))}
+            <span
+              className="text-[11px] font-medium"
+              style={{ color: cat.accent }}
+            >
+              {minutesToLabel(item.scheduledMinute)} —{" "}
+              {minutesToLabel(itemEndMinute(item))}
             </span>
           )}
           <span
@@ -1436,7 +1663,13 @@ function TimelineRow({
 // san, cung ky thuat voi Filters) neo DUNG vao nut Xoa thay vi 1 modal toan
 // man hinh rieng - gon hon, khong can them 1 he thong Dialog/overlay moi
 // cho CHI 1 cho dung.
-function DeleteConfirmButton({ label, onConfirm }: { label: string; onConfirm: () => void }) {
+function DeleteConfirmButton({
+  label,
+  onConfirm,
+}: {
+  label: string;
+  onConfirm: () => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
@@ -1456,9 +1689,12 @@ function DeleteConfirmButton({ label, onConfirm }: { label: string; onConfirm: (
         className="z-50 w-60 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
       >
         <div onClick={(e) => e.stopPropagation()}>
-          <p className="text-[13px] font-semibold text-[color:var(--planner-text-primary)]">Xoá công việc?</p>
+          <p className="text-[13px] font-semibold text-[color:var(--planner-text-primary)]">
+            Xoá công việc?
+          </p>
           <p className="mt-0.5 text-[12px] text-[color:var(--planner-text-muted)]">
-            Bạn có chắc muốn xoá &quot;{label}&quot;? Hành động này không thể hoàn tác.
+            Bạn có chắc muốn xoá &quot;{label}&quot;? Hành động này không thể
+            hoàn tác.
           </p>
           <div className="mt-2.5 flex justify-end gap-1.5">
             <button
@@ -1512,12 +1748,17 @@ function ItemRow({
       <span
         className={cn(
           "flex-1 truncate text-[13px]",
-          item.done ? "text-[color:var(--planner-text-muted)] line-through" : "text-[color:var(--planner-text-primary)]",
+          item.done
+            ? "text-[color:var(--planner-text-muted)] line-through"
+            : "text-[color:var(--planner-text-primary)]",
         )}
       >
         {item.title}
       </span>
-      <DeleteConfirmButton label={item.title} onConfirm={() => onDelete(item, parentId)} />
+      <DeleteConfirmButton
+        label={item.title}
+        onConfirm={() => onDelete(item, parentId)}
+      />
     </div>
   );
 }
@@ -1560,9 +1801,15 @@ function BigTimelineItem({
     <div className="relative flex gap-2.5 pl-0.5">
       <div className="relative z-[1] mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
         {status === "done" ? (
-          <CheckCircle2 size={16} className="text-[color:var(--planner-primary)]" />
+          <CheckCircle2
+            size={16}
+            className="text-[color:var(--planner-primary)]"
+          />
         ) : status === "current" ? (
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: cat.accent }} />
+          <span
+            className="size-2.5 rounded-full"
+            style={{ backgroundColor: cat.accent }}
+          />
         ) : (
           <Circle size={14} className="text-[color:var(--planner-border)]" />
         )}
@@ -1570,7 +1817,9 @@ function BigTimelineItem({
       <div className="min-w-0 flex-1">
         <div
           onClick={onSelect}
-          style={selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined}
+          style={
+            selected ? { boxShadow: `0 0 0 1.5px ${cat.accent}` } : undefined
+          }
           className={cn(
             "flex cursor-pointer items-center gap-1.5 rounded-[10px] px-2 py-1.5 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
             status === "current" && "bg-[var(--planner-primary-soft)]",
@@ -1584,7 +1833,13 @@ function BigTimelineItem({
             }}
             className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-[color:var(--planner-text-muted)] hover:bg-white"
           >
-            <ChevronDown size={14} className={cn("transition-transform duration-150", !expanded && "-rotate-90")} />
+            <ChevronDown
+              size={14}
+              className={cn(
+                "transition-transform duration-150",
+                !expanded && "-rotate-90",
+              )}
+            />
           </button>
           <input
             type="checkbox"
@@ -1619,15 +1874,27 @@ function BigTimelineItem({
           >
             <Pencil size={13} />
           </button>
-          <DeleteConfirmButton label={item.title} onConfirm={() => onDelete(item)} />
+          <DeleteConfirmButton
+            label={item.title}
+            onConfirm={() => onDelete(item)}
+          />
         </div>
         {expanded && (
           <div className="mt-1 ml-5 flex flex-col gap-0.5 border-l border-[color:var(--planner-border-soft)] pl-2.5">
             {children.map((child) => (
-              <ItemRow key={child.id} item={child} parentId={item.id} onToggleDone={onToggleDone} onDelete={onDelete} />
+              <ItemRow
+                key={child.id}
+                item={child}
+                parentId={item.id}
+                onToggleDone={onToggleDone}
+                onDelete={onDelete}
+              />
             ))}
             <div className="flex items-center gap-1.5 py-1">
-              <Plus size={12} className="shrink-0 text-[color:var(--planner-text-muted)]" />
+              <Plus
+                size={12}
+                className="shrink-0 text-[color:var(--planner-text-muted)]"
+              />
               <input
                 value={childDraft}
                 onChange={(e) => setChildDraft(e.target.value)}
@@ -1661,7 +1928,11 @@ function EmptyIllustration() {
         aria-hidden="true"
       />
       <div className="flex size-12 items-center justify-center rounded-full bg-[color:var(--planner-primary-soft)]">
-        <CalendarDays size={22} strokeWidth={1.75} className="text-[color:var(--planner-primary)] opacity-70" />
+        <CalendarDays
+          size={22}
+          strokeWidth={1.75}
+          className="text-[color:var(--planner-primary)] opacity-70"
+        />
       </div>
     </div>
   );
@@ -1779,7 +2050,10 @@ function AddTaskForm({
             onClick={() => setDraftColor(c.value)}
             style={
               draftColor === c.value
-                ? { boxShadow: "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)" }
+                ? {
+                    boxShadow:
+                      "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)",
+                  }
                 : undefined
             }
             className={cn(
@@ -1787,7 +2061,10 @@ function AddTaskForm({
               draftColor !== c.value && "ring-offset-1 ring-offset-white",
             )}
           >
-            <span className="block size-full" style={{ backgroundColor: c.value ?? "transparent" }}>
+            <span
+              className="block size-full"
+              style={{ backgroundColor: c.value ?? "transparent" }}
+            >
               {c.value === null && (
                 <span
                   className="pointer-events-none block size-full"
@@ -1809,7 +2086,8 @@ function AddTaskForm({
           onChange={(e) => setDraftFocus(e.target.checked)}
           className="size-3.5 cursor-pointer accent-[color:var(--planner-primary)]"
         />
-        <Flame size={12} className="text-[#d97706]" /> Đánh dấu là việc trọng tâm hôm nay
+        <Flame size={12} className="text-[#d97706]" /> Đánh dấu là việc trọng
+        tâm hôm nay
       </label>
 
       <div className="flex items-center justify-between gap-2">
@@ -1877,7 +2155,9 @@ function EditItemForm({
 }) {
   const [title, setTitle] = useState(item.title);
   const [start, setStart] = useState<number | null>(item.scheduledMinute);
-  const [duration, setDuration] = useState(item.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+  const [duration, setDuration] = useState(
+    item.durationMinutes ?? DEFAULT_DURATION_MINUTES,
+  );
   const [color, setColor] = useState<string | null>(item.color);
   const [focus, setFocus] = useState(item.isFocus);
 
@@ -1925,14 +2205,22 @@ function EditItemForm({
             title={c.label}
             onClick={() => setColor(c.value)}
             style={
-              color === c.value ? { boxShadow: "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)" } : undefined
+              color === c.value
+                ? {
+                    boxShadow:
+                      "0 0 0 2px white, 0 0 0 3px var(--planner-text-primary)",
+                  }
+                : undefined
             }
             className={cn(
               "flex size-6 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full ring-1 ring-[color:var(--planner-border)] transition-shadow duration-100 ease-out",
               color !== c.value && "ring-offset-1 ring-offset-white",
             )}
           >
-            <span className="block size-full" style={{ backgroundColor: c.value ?? "transparent" }}>
+            <span
+              className="block size-full"
+              style={{ backgroundColor: c.value ?? "transparent" }}
+            >
               {c.value === null && (
                 <span
                   className="pointer-events-none block size-full"
@@ -1954,7 +2242,8 @@ function EditItemForm({
           onChange={(e) => setFocus(e.target.checked)}
           className="size-3.5 cursor-pointer accent-[color:var(--planner-primary)]"
         />
-        <Flame size={12} className="text-[#d97706]" /> Đánh dấu là việc trọng tâm hôm nay
+        <Flame size={12} className="text-[#d97706]" /> Đánh dấu là việc trọng
+        tâm hôm nay
       </label>
 
       <div className="flex items-center justify-end gap-1.5">
@@ -2044,7 +2333,8 @@ function DayDetailPanel({
     if (filter === "TODO") return !item.done;
     return item.color === filter;
   });
-  const activeFilterLabel = FILTER_OPTIONS.find((f) => f.value === filter)?.label ?? "Tất cả";
+  const activeFilterLabel =
+    FILTER_OPTIONS.find((f) => f.value === filter)?.label ?? "Tất cả";
 
   return (
     // Sidebar Card - "Daily command center", khong con la 1 form nhap task
@@ -2065,7 +2355,9 @@ function DayDetailPanel({
           <p className="text-[18px] font-bold tracking-[-0.3px] text-[color:var(--planner-text-primary)]">
             {formatLongDateEn(date)}
           </p>
-          <p className="text-[12px] text-[color:var(--planner-text-muted)]">{formatLongDateVi(date)}</p>
+          <p className="text-[12px] text-[color:var(--planner-text-muted)]">
+            {formatLongDateVi(date)}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
@@ -2094,14 +2386,20 @@ function DayDetailPanel({
           <div className="flex flex-col items-center gap-2.5 py-4 text-center">
             <EmptyIllustration />
             <div className="flex flex-col gap-0.5">
-              <p className="text-[13px] font-semibold text-[color:var(--planner-text-secondary)]">Chưa có việc nào</p>
+              <p className="text-[13px] font-semibold text-[color:var(--planner-text-secondary)]">
+                Chưa có việc nào
+              </p>
               <p className="text-[12px] text-[color:var(--planner-text-muted)]">
                 Hãy thêm công việc để lên kế hoạch nhé!
               </p>
             </div>
           </div>
           <div className="border-t border-[color:var(--planner-border-soft)]" />
-          <AddTaskForm onAddItem={onAddItem} prefillStart={quickAddPrefill} onConsumePrefill={onConsumePrefill} />
+          <AddTaskForm
+            onAddItem={onAddItem}
+            prefillStart={quickAddPrefill}
+            onConsumePrefill={onConsumePrefill}
+          />
         </>
       ) : (
         <>
@@ -2112,7 +2410,10 @@ function DayDetailPanel({
           {focusItem && (
             <>
               <div className="border-t border-[color:var(--planner-border-soft)]" />
-              <TodayFocusCard item={focusItem} onContinue={() => onSelectItem(focusItem.id)} />
+              <TodayFocusCard
+                item={focusItem}
+                onContinue={() => onSelectItem(focusItem.id)}
+              />
             </>
           )}
 
@@ -2122,7 +2423,10 @@ function DayDetailPanel({
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-bold tracking-[.08em] text-[color:var(--planner-text-muted)] uppercase">
-                Schedule <span className="font-medium normal-case">· {filtered.length} việc</span>
+                Schedule{" "}
+                <span className="font-medium normal-case">
+                  · {filtered.length} việc
+                </span>
               </p>
               <PopoverRoot open={filterOpen} onOpenChange={setFilterOpen}>
                 <PopoverTrigger asChild>
@@ -2135,7 +2439,8 @@ function DayDetailPanel({
                         : "border-[color:var(--planner-primary)] bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]",
                     )}
                   >
-                    <ListFilter size={11} /> {filter === "ALL" ? "Filters" : activeFilterLabel}
+                    <ListFilter size={11} />{" "}
+                    {filter === "ALL" ? "Filters" : activeFilterLabel}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -2158,12 +2463,16 @@ function DayDetailPanel({
                           : "text-[color:var(--planner-text-secondary)]",
                       )}
                     >
-                      {f.value !== "ALL" && f.value !== "DONE" && f.value !== "TODO" && (
-                        <span
-                          className="size-2 shrink-0 rounded-full"
-                          style={{ backgroundColor: getCategory(f.value).accent }}
-                        />
-                      )}
+                      {f.value !== "ALL" &&
+                        f.value !== "DONE" &&
+                        f.value !== "TODO" && (
+                          <span
+                            className="size-2 shrink-0 rounded-full"
+                            style={{
+                              backgroundColor: getCategory(f.value).accent,
+                            }}
+                          />
+                        )}
                       {f.label}
                     </button>
                   ))}
@@ -2219,7 +2528,11 @@ function DayDetailPanel({
               </div>
             )}
 
-            <AddTaskForm onAddItem={onAddItem} prefillStart={quickAddPrefill} onConsumePrefill={onConsumePrefill} />
+            <AddTaskForm
+              onAddItem={onAddItem}
+              prefillStart={quickAddPrefill}
+              onConsumePrefill={onConsumePrefill}
+            />
           </div>
         </>
       )}
