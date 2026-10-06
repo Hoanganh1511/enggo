@@ -13,7 +13,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   useSortable,
   arrayMove,
 } from "@dnd-kit/sortable";
@@ -45,7 +45,7 @@ export function SeriesListManager({
   if (!isAdmin) {
     const visible = seriesList.filter((s) => s.isVisible);
     return (
-      <div className="mt-8 flex flex-col gap-3">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {visible.map((series) => (
           <SeriesCampaignCard key={series.id} series={series} variant="banner" />
         ))}
@@ -80,10 +80,10 @@ export function SeriesListManager({
         </p>
       )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={items.map((s) => s.id)} strategy={rectSortingStrategy}>
           <div
             className={cn(
-              "flex flex-col gap-3 transition-opacity duration-200 ease-out",
+              "grid grid-cols-2 gap-4 transition-opacity duration-200 ease-out sm:grid-cols-3 lg:grid-cols-4",
               dragBusy && "pointer-events-none opacity-60",
             )}
           >
@@ -97,6 +97,11 @@ export function SeriesListManager({
   );
 }
 
+// [2026-10-06] The gio nam trong 1 LUOI (grid), khong con du cho dat tay
+// cam/nut cai dat o 2 BEN CANH the nhu khi con la 1 hang ngang - chuyen ca 2
+// thanh nut TRON NOI (overlay) o goc tren-phai the, CHI hien khi di chuot vao
+// (group-hover, giong BlockActionsMenu.tsx trong trinh soan Tiptap) de khong
+// che mat anh bia luc binh thuong.
 function SortableSeriesRow({ series }: { series: ContentSeriesListItem }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
     useSortable({ id: series.id });
@@ -109,34 +114,34 @@ function SortableSeriesRow({ series }: { series: ContentSeriesListItem }) {
         transition: isDragging ? transition : (transition ?? "transform 220ms cubic-bezier(0.2, 0, 0, 1)"),
         opacity: isDragging ? 0.5 : 1,
       }}
-      className="flex items-center gap-2"
+      className="group relative"
     >
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        ref={setActivatorNodeRef}
-        aria-label="Kéo để đổi thứ tự"
-        className="flex size-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-ink-faint hover:bg-hover-bg active:cursor-grabbing"
-      >
-        <GripVertical size={14} aria-hidden="true" />
-      </button>
-      <div className="min-w-0 flex-1">
-        <SeriesCampaignCard series={series} variant="banner" />
-        {!series.isVisible && (
-          <span className="mt-1 inline-block rounded bg-surface-muted px-1.5 py-0.5 text-[11px] font-medium text-ink-faint">
-            Ẩn khỏi /home + /series
-          </span>
-        )}
+      <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          ref={setActivatorNodeRef}
+          aria-label="Kéo để đổi thứ tự"
+          className="pointer-events-auto flex size-7 cursor-grab touch-none items-center justify-center rounded-md border border-border bg-surface/95 text-ink-faint shadow-sm hover:bg-hover-bg active:cursor-grabbing"
+        >
+          <GripVertical size={13} aria-hidden="true" />
+        </button>
+        <Link
+          href={`/series/${series.slug}/manage`}
+          aria-label="Quản lý series"
+          title="Quản lý series"
+          className="pointer-events-auto flex size-7 cursor-pointer items-center justify-center rounded-md border border-border bg-surface/95 text-ink-faint shadow-sm hover:bg-surface hover:text-ink"
+        >
+          <Settings size={13} aria-hidden="true" />
+        </Link>
       </div>
-      <Link
-        href={`/series/${series.slug}/manage`}
-        aria-label="Quản lý series"
-        title="Quản lý series"
-        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink-faint hover:bg-surface hover:text-ink"
-      >
-        <Settings size={16} aria-hidden="true" />
-      </Link>
+      <SeriesCampaignCard series={series} variant="banner" />
+      {!series.isVisible && (
+        <span className="mt-1 inline-block rounded bg-surface-muted px-1.5 py-0.5 text-[11px] font-medium text-ink-faint">
+          Ẩn khỏi /home + /series
+        </span>
+      )}
     </div>
   );
 }
