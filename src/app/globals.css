@@ -326,6 +326,12 @@
   --planner-text-muted: #98a2b3;
   --planner-border: #e9edf2;
   --planner-border-soft: #f0f2f5;
+  /* [2026-10-06] Rieng cho line ke NGANG/DOC trong luoi gio WeekTimeGrid -
+     yeu cau nguoi dung: "line ngang & dọc trong lịch mờ đi 30% nữa". Tach
+     RIENG khoi --planner-border-soft (dang dung CHUNG cho rat nhieu border
+     form/card/divider khac trong PlannerShell) de khong lam mo nhung cho
+     KHONG phai luoi gio. 70% opacity cua --planner-border-soft ~ "mo di 30%". */
+  --planner-grid-line: color-mix(in srgb, var(--planner-border-soft) 70%, transparent);
   --planner-primary: #4f7ff0;
   --planner-primary-soft: #f3f6ff;
   --planner-today-bg: #f7f9ff;

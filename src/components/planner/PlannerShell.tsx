@@ -1678,7 +1678,7 @@ function WeekTimeGrid({
               <div
                 key={h}
                 style={{ height: HOUR_ROW_HEIGHT }}
-                className="relative border-t border-[color:var(--planner-border-soft)]"
+                className="relative border-t border-[color:var(--planner-grid-line)]"
               >
                 {/* top-0 + -translate-y-1/2 (KHONG phai -top-2 doan truoc) -
                     yeu cau nguoi dung: "không được để sai từng giây một".
@@ -1708,7 +1708,7 @@ function WeekTimeGrid({
             return (
               <div
                 key={d}
-                className="relative border-l border-[color:var(--planner-border-soft)]"
+                className="relative border-l border-[color:var(--planner-grid-line)]"
                 style={
                   isToday
                     ? {
@@ -1726,7 +1726,7 @@ function WeekTimeGrid({
                 {HOURS.map((h) => (
                   <div
                     key={h}
-                    className="cursor-pointer border-t border-[color:var(--planner-border-soft)] hover:bg-[var(--planner-surface-soft)]"
+                    className="cursor-pointer border-t border-[color:var(--planner-grid-line)] hover:bg-[var(--planner-surface-soft)]"
                     style={{ height: HOUR_ROW_HEIGHT }}
                     onClick={() => {
                       onSelect(d);
