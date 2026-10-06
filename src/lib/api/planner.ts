@@ -36,6 +36,9 @@ export type ApiPlannerItem = {
   // Field RIENG theo Type - xem EventMetadata/HabitMetadata/ReflectionMetadata
   // trong life-item-types.ts, UI tu cast dung kieu theo `itemType`.
   metadata: Record<string, unknown> | null;
+  // [2026-10-07] Noi dung chi tiet tu do - yeu cau nguoi dung: "task cần
+  // phải có phần viết nội dung chi tiết của task nữa".
+  description: string | null;
   createdAt: string;
   updatedAt: string;
   // CHI co gia tri (mang, co the rong) o top-level item - item con (da co
@@ -61,6 +64,7 @@ export type PlannerItemInput = {
   tags?: string[];
   deadline?: string;
   metadata?: Record<string, unknown>;
+  description?: string;
 };
 export type PlannerItemUpdateInput = Partial<{
   title: string;
@@ -81,6 +85,7 @@ export type PlannerItemUpdateInput = Partial<{
   tags: string[];
   deadline: string | null;
   metadata: Record<string, unknown> | null;
+  description: string | null;
 }>;
 
 export function listPlannerItems(from: string, to: string): Promise<ApiPlannerItem[]> {

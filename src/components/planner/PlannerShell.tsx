@@ -13,7 +13,6 @@ import {
   Copy,
   Flame,
   ListFilter,
-  Palette,
   Pencil,
   Plus,
   Sparkles,
@@ -28,7 +27,6 @@ import {
   updatePlannerItemAction,
   deletePlannerItemAction,
   listPlannerTypeColorsAction,
-  setPlannerTypeColorAction,
 } from "@/actions/planner/planner";
 import {
   PopoverRoot,
@@ -39,7 +37,6 @@ import {
 import { TimePickerField } from "./time-picker-field";
 import {
   LIFE_ITEM_TYPES,
-  LIFE_ITEM_PALETTES,
   getLifeItemTypeConfig,
   resolveLifeItemPalette,
   PRIORITY_CONFIG,
@@ -150,7 +147,11 @@ const DEFAULT_DURATION_MINUTES = 60;
 // tu 56px) - yeu cau nguoi dung: "Nên tăng khoảng cách giữa các mốc... Hour
 // height khoảng 64px". 24 gio x 64px = 1536px, cuon rieng trong 1 khung cao
 // co dinh thay vi day dai ca trang.
-const HOUR_ROW_HEIGHT = 64;
+// [2026-10-07] Giam 10% (64 -> 58, lam tron tu 57.6) - yeu cau nguoi dung:
+// "Giảm chiều cao mỗi hàng tương ứng 1 tiếng đi, cao quá". Moi phep tinh
+// khac (DRAG_SNAP_PX, top/height cua TimedItemChip, cuon san 7h sang...) deu
+// suy ra TU hang so nay nen tu dong khop theo, khong can sua rieng tung cho.
+const HOUR_ROW_HEIGHT = 58;
 const HOURS = Array.from({ length: 24 }, (_, h) => h);
 
 function toISODate(d: Date): string {
@@ -504,6 +505,14 @@ export function PlannerShell({
   // + dien san gio, roi "tieu thu" (dat ve null) de khong mo lai lan nua neu
   // component re-render vi ly do khac.
   const [quickAddPrefill, setQuickAddPrefill] = useState<QuickAddPrefill>(null);
+  // [2026-10-07] "Thẻ default" tren luoi gio trong luc AddTaskForm dang mo
+  // (tu click/keo tha 1 o trong) - xem comment handleSlotClick(). null = ko
+  // co form nao dang soan tu luoi.
+  const [draftPlaceholder, setDraftPlaceholder] = useState<{
+    date: string;
+    start: number;
+    duration: number;
+  } | null>(null);
   // [2026-10-06] "User customization" (spec section 21) - tai 1 LAN luc mo
   // Planner, dua xuong CA cay qua LifeItemPaletteProvider (xem
   // life-item-palette-context.tsx) de moi noi doc mau Type (TimedItemChip/
@@ -606,6 +615,11 @@ export function PlannerShell({
     deadline?: string;
     metadata?: Record<string, unknown>;
   }) {
+    // Dong thoi voi viec AddTaskForm tu dong, don "thẻ default" tren luoi
+    // (xem handleSlotClick) - tao that su dang chay NGAM, khong can cho ket
+    // qua (submit() ben AddTaskForm cung dong form NGAY, khong doi server,
+    // cung 1 tinh than "optimistic").
+    setDraftPlaceholder(null);
     const created = await createPlannerItemAction({
       date: selectedDate,
       ...input,
@@ -752,8 +766,16 @@ export function PlannerShell({
   // "Click vào khoảng trống... hệ thống tự hiểu Date/Start, mở Add Task".
   // CHI luu lai PHUT - ngay da duoc chinh CHINH `onSelect(d)` (goi kem luc
   // click, xem WeekTimeGrid) tu dong chuyen selectedDate dung ngay cot do roi.
-  function handleSlotClick(minute: number, duration?: number) {
+  function handleSlotClick(day: string, minute: number, duration?: number) {
     setQuickAddPrefill({ start: minute, duration });
+    // [2026-10-07] "Thẻ default" placeholder tren luoi, giu CHO TOI khi
+    // AddTaskForm dong (du la vi tao xong hay vi huỷ) - yeu cau nguoi dung:
+    // "kéo thả tạo task... thả ra thì không hiện thẻ default trên lịch
+    // luôn". `day` lay THANG tu tham so (khong doc `selectedDate` state -
+    // onSelect(day) vua goi NGAY TRUOC trong CUNG 1 lan mousedown/mouseup,
+    // closure cua ham nay van con gia tri selectedDate CU luc dang render,
+    // doc nham se ra SAI ngay neu keo o 1 cot khac ngay dang chon).
+    setDraftPlaceholder({ date: day, start: minute, duration: duration ?? DEFAULT_DURATION_MINUTES });
   }
 
   // [2026-10-05] Tach rieng 2 moc ngay (khong con 1 chuoi "rangeLabel" gop
@@ -863,13 +885,6 @@ export function PlannerShell({
                 >
                   <CalendarCheck2 size={14} strokeWidth={2} /> Hôm nay
                 </button>
-                <TypeColorSettings
-                  overrides={typeColorOverrides}
-                  onChange={(type, paletteId) => {
-                    setTypeColorOverrides((prev) => ({ ...prev, [type]: paletteId }));
-                    void setPlannerTypeColorAction(type, paletteId).catch(() => {});
-                  }}
-                />
               </div>
             </div>
 
@@ -929,10 +944,13 @@ export function PlannerShell({
                   onSelect={selectDate}
                   onSelectItem={setSelectedItemId}
                   onSlotClick={handleSlotClick}
+                  draftPlaceholder={draftPlaceholder}
                   onUpdateItemTime={handleUpdateItemTime}
                   onUpdateItem={handleUpdateItem}
                   onDelete={handleDelete}
                   onDuplicate={handleDuplicate}
+                  onToggleDone={handleToggleDone}
+                  onAddChild={handleAddChild}
                   typeColorOverrides={typeColorOverrides}
                 />
               </div>
@@ -965,6 +983,7 @@ export function PlannerShell({
               onChangeDay={changeSelectedDay}
               quickAddPrefill={quickAddPrefill}
               onConsumePrefill={() => setQuickAddPrefill(null)}
+              onDraftClose={() => setDraftPlaceholder(null)}
             />
           </div>
         </div>
@@ -1118,6 +1137,8 @@ function TimedItemChip({
   onUpdateItem,
   onDelete,
   onDuplicate,
+  onToggleDone,
+  onAddChild,
   isToday,
   nowMinute,
 }: {
@@ -1156,8 +1177,17 @@ function TimedItemChip({
   // PlannerShell (khong tao API rieng) - chi THEM duong vao MOI (tu luoi
   // tuan) cho CUNG 1 luong du lieu da co san cho DayDetailPanel.
   onUpdateItem: (item: ApiPlannerItem, updates: PlannerItemUpdateInput) => void;
-  onDelete: (item: ApiPlannerItem) => void;
+  // parentId? - dung CHUNG cho CA xoa chinh item (khong truyen) LAN xoa 1
+  // dau viec con trong checklist (truyen kem parentId = item.id, xem
+  // comment khu vuc checklist ben duoi).
+  onDelete: (item: ApiPlannerItem, parentId?: string) => void;
   onDuplicate: (item: ApiPlannerItem) => void;
+  // [2026-10-07] Checklist ("đầu mục việc") - yeu cau nguoi dung: "có thể bổ
+  // sung các đầu mục việc trong task... show nó ra trên thẻ task ở lịch
+  // nữa". Tai dung NGUYEN co che children/parentId da co san (truoc day CHI
+  // dung cho "Lớn"/Subtasks trong Right Panel) - khong tao data model rieng.
+  onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
+  onAddChild: (parentId: string, title: string) => void;
   isToday: boolean;
   nowMinute: number;
 }) {
@@ -1171,6 +1201,7 @@ function TimedItemChip({
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [newChecklistText, setNewChecklistText] = useState("");
   const status = computeItemStatus(item, isToday, nowMinute);
   // [2026-10-05] Keo-tha de doi gio bat dau (keo than the) / keo canh duoi
   // de doi thoi luong (keo tay cam rieng) - yeu cau nguoi dung: "Kéo thả để
@@ -1293,6 +1324,7 @@ function TimedItemChip({
           if (!next) {
             setDetailMode("view");
             setColorPickerOpen(false);
+            setNewChecklistText("");
           }
         }}
       >
@@ -1450,6 +1482,17 @@ function TimedItemChip({
                   co lai duoc du co flex-1), chan truncate hoat dong. */}
               <span className="min-w-0 flex-1 truncate pr-3.5">{timeLabel}</span>
             </span>
+            {/* [2026-10-07] Badge checklist tren CHINH the lich - yeu cau
+                nguoi dung: "bổ sung các đầu mục việc trong task đấy và show
+                nó ra trên thẻ task ở lịch nữa". CHI hien khi co it nhat 1
+                dau muc (khong chiem cho vo ich tren cac the khong dung
+                checklist). */}
+            {item.children && item.children.length > 0 && (
+              <span className="mt-0.5 flex w-full items-center gap-1 truncate text-[10px] font-medium text-[color:var(--planner-text-muted)]">
+                <CheckCircle2 size={10} strokeWidth={2.2} className="shrink-0" aria-hidden="true" />
+                {item.children.filter((c) => c.done).length}/{item.children.length} đầu mục
+              </span>
+            )}
           </>
         )}
       </div>
@@ -1562,7 +1605,18 @@ function TimedItemChip({
         onOpenAutoFocus={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className="relative z-50 w-72 rounded-[12px] bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
+        className={cn(
+          "relative z-50 rounded-[12px] bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.16)]",
+          // [2026-10-07] "Popover rất chật chội... đừng để các element chồng
+          // đè lên nhau" - yeu cau nguoi dung. Che do "edit" nhung het CA bo
+          // truong cua EditItemForm (vd tieu de + TimePickerField tren CUNG 1
+          // hang) - w-72 (288px) qua hep cho hang do, o nhap tieu de bi ep
+          // con vai chuc px (gan nhu khong go duoc gi). Rong hon HAN (23rem)
+          // cho rieng che do edit, gan voi be rong 380px cua Right Panel (noi
+          // CHINH EditItemForm nay von duoc thiet ke vua khit) - che do view
+          // (gon, it truong) giu nguyen w-72 cu.
+          detailMode === "edit" ? "w-[23rem]" : "w-72",
+        )}
       >
         {/* Hang doc 4 icon chuc nang, bam goc tren-phai CUA POPOVER (khac
             voi "bám góc trên bên trái" cua chinh POPOVER so voi the - 2 y
@@ -1609,7 +1663,7 @@ function TimedItemChip({
         </div>
 
         {detailMode === "edit" ? (
-          <div className="pr-7">
+          <div className="pr-8">
             <EditItemForm
               item={item}
               onCancel={() => setDetailMode("view")}
@@ -1652,6 +1706,14 @@ function TimedItemChip({
             <p className={cn("text-[14px] font-semibold text-[color:var(--planner-text-primary)]", item.done && "line-through")}>
               {item.title}
             </p>
+
+            {/* "Nội dung chi tiết" - chi hien THI (sua qua nut Sửa/EditItemForm,
+                khong sua truc tiep o day). */}
+            {item.description && (
+              <p className="text-[12px] leading-snug whitespace-pre-wrap text-[color:var(--planner-text-secondary)]">
+                {item.description}
+              </p>
+            )}
 
             <TimePickerField
               startMinute={item.scheduledMinute}
@@ -1698,6 +1760,63 @@ function TimedItemChip({
               {!item.priority && !item.area && !item.project && !item.deadline && item.tags.length === 0 && (
                 <span className="text-[11px] text-[color:var(--planner-text-muted)]">Chưa có chi tiết khác.</span>
               )}
+            </div>
+
+            {/* [2026-10-07] Checklist ("đầu mục việc") - yeu cau nguoi dung:
+                "bổ sung các đầu mục việc trong task". Tai dung NGUYEN co che
+                children/parentId (truoc day CHI dung cho "Lớn"/Subtasks o
+                Right Panel) - MOI task gio deu them duoc (backend da bo gioi
+                han kind=BIG, xem planner.service.ts). */}
+            <div className="flex flex-col gap-1 border-t border-[color:var(--planner-border-soft)] pt-2">
+              <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">
+                Đầu mục việc
+                {item.children && item.children.length > 0
+                  ? ` (${item.children.filter((c) => c.done).length}/${item.children.length})`
+                  : ""}
+              </p>
+              {(item.children ?? []).map((child) => (
+                <div key={child.id} className="flex items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={child.done}
+                    onChange={() => onToggleDone(child, item.id)}
+                    className="size-3.5 shrink-0 cursor-pointer accent-[color:var(--planner-primary)]"
+                  />
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-[12px] text-[color:var(--planner-text-secondary)]",
+                      child.done && "text-[color:var(--planner-text-muted)] line-through",
+                    )}
+                  >
+                    {child.title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(child, item.id)}
+                    aria-label="Xoá đầu mục"
+                    className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)] hover:text-danger"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              ))}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const t = newChecklistText.trim();
+                  if (!t) return;
+                  onAddChild(item.id, t);
+                  setNewChecklistText("");
+                }}
+                className="flex items-center gap-1"
+              >
+                <input
+                  value={newChecklistText}
+                  onChange={(e) => setNewChecklistText(e.target.value)}
+                  placeholder="+ Thêm đầu mục..."
+                  className="h-7 min-w-0 flex-1 rounded-[7px] border border-[color:var(--planner-border-soft)] bg-white px-2 text-[11.5px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef]"
+                />
+              </form>
             </div>
           </div>
         )}
@@ -1789,10 +1908,13 @@ function WeekTimeGrid({
   onSelect,
   onSelectItem,
   onSlotClick,
+  draftPlaceholder,
   onUpdateItemTime,
   onUpdateItem,
   onDelete,
   onDuplicate,
+  onToggleDone,
+  onAddChild,
   typeColorOverrides,
 }: {
   anchor: string;
@@ -1801,15 +1923,18 @@ function WeekTimeGrid({
   selectedItemId: string | null;
   onSelect: (date: string) => void;
   onSelectItem: (id: string) => void;
-  onSlotClick: (minute: number, duration?: number) => void;
+  onSlotClick: (day: string, minute: number, duration?: number) => void;
+  draftPlaceholder: { date: string; start: number; duration: number } | null;
   onUpdateItemTime: (
     item: ApiPlannerItem,
     newStart: number,
     newDuration: number,
   ) => void;
   onUpdateItem: (item: ApiPlannerItem, updates: PlannerItemUpdateInput) => void;
-  onDelete: (item: ApiPlannerItem) => void;
+  onDelete: (item: ApiPlannerItem, parentId?: string) => void;
   onDuplicate: (item: ApiPlannerItem) => void;
+  onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
+  onAddChild: (parentId: string, title: string) => void;
   typeColorOverrides: Partial<Record<LifeItemType, string>>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1866,9 +1991,9 @@ function WeekTimeGrid({
       // tranh tao 1 "time block" rong/am nghia khi chuot gan nhu khong di
       // chuyen (vd run tay 1-2px luc click thuong).
       if (duration < DRAG_SNAP_MINUTES) {
-        onSlotClick(lo);
+        onSlotClick(final.day, lo);
       } else {
-        onSlotClick(lo, duration);
+        onSlotClick(final.day, lo, duration);
       }
     }
     document.addEventListener("mousemove", onMove);
@@ -2106,6 +2231,29 @@ function WeekTimeGrid({
                     </span>
                   </div>
                 )}
+                {/* [2026-10-07] "Thẻ default" giu CHO tai dung vi tri vua keo
+                    tha/click, trong suot luc AddTaskForm dang mo - yeu cau
+                    nguoi dung: "thả ra thì không hiện thẻ default trên lịch
+                    luôn... để sẵn 1 cái màu nhạt nhạt 80%". Mau primary pha
+                    80% trang (color-mix) - CUNG 1 "họ" mau voi khung net dut
+                    luc keo o tren, tao cam giac lien tuc giua 2 buoc (dang
+                    keo -> da tha, cho nhap tieu de). pointer-events-none -
+                    CHI de xem, khong chan click/keo cua luoi phia duoi. */}
+                {draftPlaceholder && draftPlaceholder.date === d && (
+                  <div
+                    className="pointer-events-none absolute right-1 left-1 z-[1] overflow-hidden rounded-sm border border-dashed px-3 py-2"
+                    style={{
+                      top: (draftPlaceholder.start / 60) * HOUR_ROW_HEIGHT,
+                      height: Math.max((draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT, HOUR_ROW_HEIGHT * 0.4),
+                      borderColor: "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
+                      backgroundColor: "color-mix(in srgb, var(--planner-primary) 20%, white)",
+                    }}
+                  >
+                    <span className="text-[12px] font-medium text-[color:var(--planner-text-muted)] italic">
+                      Chưa có tiêu đề
+                    </span>
+                  </div>
+                )}
                 {laidOut.map(
                   ({
                     item,
@@ -2143,6 +2291,8 @@ function WeekTimeGrid({
                       onUpdateItem={onUpdateItem}
                       onDelete={onDelete}
                       onDuplicate={onDuplicate}
+                      onToggleDone={onToggleDone}
+                      onAddChild={onAddChild}
                       isToday={isToday}
                       nowMinute={nowMinute}
                     />
@@ -2822,69 +2972,12 @@ function EmptyIllustration() {
 // chọn Type"), dung CHUNG cho AddTaskForm + EditItemForm thay vi hang swatch
 // mau tu do cu (PLANNER_COLORS) - mau GIO LA semantic theo Type, khong con
 // chon tung mau rieng cho tung item.
-// [2026-10-06] "User customization" (spec section 21) - popover doi CA 1
-// "color family" cho 1 Type (khong cho chon tung mau rieng le icon/border/
-// tag), luu qua PlannerTypeColor (backend). Trigger la 1 nut Palette nho o
-// sidebar, dat CANH View Switcher.
-function TypeColorSettings({
-  overrides,
-  onChange,
-}: {
-  overrides: Partial<Record<LifeItemType, string>>;
-  onChange: (type: LifeItemType, paletteId: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <PopoverRoot open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          title="Tuỳ chỉnh màu Type"
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[13px] font-medium text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-white hover:text-[color:var(--planner-primary)]"
-        >
-          <Palette size={14} strokeWidth={2} /> Màu sắc
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        open={open}
-        align="start"
-        className="z-50 w-72 rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
-      >
-        <p className="mb-2 text-[13px] font-semibold text-[color:var(--planner-text-primary)]">
-          Tuỳ chỉnh màu theo loại
-        </p>
-        <div className="flex flex-col gap-2.5">
-          {LIFE_ITEM_TYPES.map((t) => {
-            const current = overrides[t.id] ?? t.defaultPaletteId;
-            return (
-              <div key={t.id} className="flex flex-col gap-1">
-                <span className="text-[11.5px] font-medium text-[color:var(--planner-text-secondary)]">
-                  {t.icon} {t.label}
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {LIFE_ITEM_PALETTES.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      title={p.name}
-                      onClick={() => onChange(t.id, p.id)}
-                      style={{ backgroundColor: p.accentStrong }}
-                      className={cn(
-                        "size-5 shrink-0 cursor-pointer rounded-full ring-1 ring-black/10 ring-offset-1 ring-offset-white transition-transform duration-150 ease-out hover:scale-110",
-                        current === p.id && "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </PopoverRoot>
-  );
-}
-
+// [2026-10-07] TypeColorSettings (nut "Màu sắc" + popover doi color family
+// theo Type) DA BI XOA - yeu cau nguoi dung: "Bỏ cái tính năng chọn màu sắc
+// này đi". `typeColorOverrides` (PlannerShell) + cac noi DOC no (TypeLegend/
+// LifeItemPaletteProvider/WeekTimeGrid) VAN GIU NGUYEN - overrides ai do da
+// luu TRUOC DAY (qua PlannerTypeColor) van tiep tuc duoc ap dung dung y cu,
+// chi KHONG CON duong nao de DOI/XOA chung tu UI nua.
 function TypePickerRow({ value, onChange }: { value: LifeItemType; onChange: (t: LifeItemType) => void }) {
   return (
     <div className="grid grid-cols-4 gap-1.5">
@@ -2948,10 +3041,16 @@ function AddTaskForm({
   onAddItem,
   prefillStart,
   onConsumePrefill,
+  onDraftClose,
 }: {
   onAddItem: DayDetailPanelProps["onAddItem"];
   prefillStart: QuickAddPrefill;
   onConsumePrefill: () => void;
+  // [2026-10-07] Bao PlannerShell don "thẻ default" tren luoi (xem
+  // handleSlotClick/draftPlaceholder) MOI khi form nay dong MA KHONG tao
+  // (X/Escape/"Huỷ") - truong hop tao THANH CONG da tu don RIENG trong
+  // handleAddItem (cung luc voi submit(), khong doi den tan day).
+  onDraftClose: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
@@ -3048,7 +3147,10 @@ function AddTaskForm({
         </p>
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            setOpen(false);
+            onDraftClose();
+          }}
           aria-label="Đóng"
           className="flex size-5 cursor-pointer items-center justify-center rounded text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]"
         >
@@ -3062,7 +3164,10 @@ function AddTaskForm({
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") submit();
-          if (e.key === "Escape") setOpen(false);
+          if (e.key === "Escape") {
+            setOpen(false);
+            onDraftClose();
+          }
         }}
         placeholder="Tên việc cần làm..."
         className="h-10 w-full rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-3 text-[14px] font-medium text-[color:var(--planner-text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:bg-white focus:shadow-[0_0_0_3px_rgba(71,120,232,.08)]"
@@ -3147,7 +3252,10 @@ function AddTaskForm({
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              onDraftClose();
+            }}
             className="h-[34px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
           >
             Huỷ
@@ -3318,6 +3426,7 @@ function EditItemForm({
     tags: string[];
     deadline: string | null;
     metadata: Record<string, unknown> | null;
+    description: string | null;
   }) => void;
   onCancel: () => void;
 }) {
@@ -3335,6 +3444,7 @@ function EditItemForm({
   const [tags, setTags] = useState<string[]>(item.tags);
   const [deadline, setDeadline] = useState(item.deadline ?? "");
   const [metadata, setMetadata] = useState<Record<string, unknown>>(item.metadata ?? {});
+  const [description, setDescription] = useState(item.description ?? "");
 
   function save() {
     const t = title.trim();
@@ -3352,6 +3462,7 @@ function EditItemForm({
       tags,
       deadline: deadline || null,
       metadata: Object.keys(metadata).length > 0 ? metadata : null,
+      description: description.trim() || null,
     });
   }
 
@@ -3378,6 +3489,17 @@ function EditItemForm({
           }}
         />
       </div>
+
+      {/* [2026-10-07] "Nội dung chi tiết" - yeu cau nguoi dung: "task cần
+          phải có phần viết nội dung chi tiết của task nữa" (khac title ngan
+          gon o tren - day la textarea tu do, khong gioi han do dai). */}
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Nội dung chi tiết (tuỳ chọn)..."
+        rows={3}
+        className="resize-none rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 py-2 text-[12.5px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef]"
+      />
 
       <TypePickerRow value={itemType} onChange={setItemType} />
       <PriorityPickerRow value={priority} onChange={setPriority} />
@@ -3519,6 +3641,7 @@ type DayDetailPanelProps = {
   onChangeDay: (direction: -1 | 1) => void;
   quickAddPrefill: QuickAddPrefill;
   onConsumePrefill: () => void;
+  onDraftClose: () => void;
 };
 
 function DayDetailPanel({
@@ -3534,6 +3657,7 @@ function DayDetailPanel({
   onChangeDay,
   quickAddPrefill,
   onConsumePrefill,
+  onDraftClose,
 }: DayDetailPanelProps) {
   const [filter, setFilter] = useState<FilterValue>("ALL");
   const [filterOpen, setFilterOpen] = useState(false);
@@ -3621,6 +3745,7 @@ function DayDetailPanel({
             onAddItem={onAddItem}
             prefillStart={quickAddPrefill}
             onConsumePrefill={onConsumePrefill}
+            onDraftClose={onDraftClose}
           />
         </>
       ) : (
@@ -3754,6 +3879,7 @@ function DayDetailPanel({
               onAddItem={onAddItem}
               prefillStart={quickAddPrefill}
               onConsumePrefill={onConsumePrefill}
+              onDraftClose={onDraftClose}
             />
           </div>
         </>

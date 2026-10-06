@@ -316,8 +316,18 @@
    token GOC o :root, khong phai mau rieng nguoi dung vua dua - tranh nham lan
    tuong tu cho khu vuc nay bang cach tach han 1 bo ten MOI, khong trung voi
    bat ky token nao da co. Component trong PlannerShell.tsx dung
-   bg-[var(--planner-bg)] v.v. thay vi hex thang - doi theme = sua 1 cho o day. */
-.planner-scope {
+   bg-[var(--planner-bg)] v.v. thay vi hex thang - doi theme = sua 1 cho o day.
+   [2026-10-07] Doi selector tu ".planner-scope" sang ":root" - bug phat hien
+   qua anh chup thuc te: popover chi tiet task (TimedItemChip) dung Radix
+   Portal, teleport THANG ra document.body - NGOAI pham vi DOM cua div mang
+   class ".planner-scope" (chi la 1 div thuong trong cay, khong phai body),
+   nen MOI var(--planner-*) ben trong popover do deu KHONG resolve duoc
+   (unset), border/text roi ve mac dinh den/trang chat - dung y trieu chung
+   nguoi dung bao "màu quá tương phản trắng đen". Chuyen sang :root (ten da
+   doc dao voi tien to "--planner-", khong co nguy co trung/leak sang khu
+   vuc khac) de moi noi (ke ca noi dung Portal rot ra ngoai body) deu ke
+   thua duoc, khong can threading 1 `container` rieng qua tung PopoverContent. */
+:root {
   --planner-bg: #f7f8fa;
   --planner-surface: #ffffff;
   --planner-surface-soft: #fafbfc;
