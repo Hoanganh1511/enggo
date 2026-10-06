@@ -1034,12 +1034,12 @@ function TimedItemChip({
         // chut dem tren thay vi dinh sat mep).
         // [2026-10-06] pl-4 (truoc px-1.5 + border-l-[3px]) - yeu cau nguoi
         // dung: "Tôi không muốn thanh màu đậm nó là viền nữa, thanh màu đậm
-        // sẽ nằm bên trong thẻ task, nó sẽ cách lề trái của thẻ 6px". Thanh
-        // mau gio la 1 <div> RIENG (xem ben duoi, khong con border-l) neo
-        // tuyet doi cach mep trai 6px (left-1.5) - pl-4 (16px) chua ca phan
-        // 6px do + be rong thanh (3px) + 1 khoang ho nho truoc chu, dam bao
-        // noi dung khong de len thanh mau.
-        "group absolute z-[1] flex flex-col items-start justify-start overflow-hidden rounded-sm pt-1 pr-1.5 pl-4 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        // sẽ nằm bên trong thẻ task" -> [2026-10-06 sua lai] "cách trái 3px
+        // thôi" (truoc do 6px). Thanh mau gio la 1 <div> RIENG (xem ben duoi,
+        // khong con border-l) neo tuyet doi cach mep trai 3px - pl-3 (12px)
+        // chua ca phan 3px do + be rong thanh (3px) + 1 khoang ho nho truoc
+        // chu, dam bao noi dung khong de len thanh mau.
+        "group absolute z-[1] flex flex-col items-start justify-start overflow-hidden rounded-sm pt-1 pr-1.5 pl-3 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
         drag
           ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]"
           : "cursor-grab",
@@ -1047,10 +1047,10 @@ function TimedItemChip({
       )}
     >
       {/* Thanh mau accent - NAM BEN TRONG the (khong con la border), cach le
-          trai 6px. top/bottom 4px - 1 "vien" nho tren/duoi cho thanh khong
+          trai 3px. top/bottom 4px - 1 "vien" nho tren/duoi cho thanh khong
           cham sat mep the, giong 1 vien tron doc dang "status bar" thu nho. */}
       <div
-        className="absolute top-1 bottom-1 left-1.5 w-[3px] rounded-full"
+        className="absolute top-1 bottom-1 left-[3px] w-[3px] rounded-full"
         style={{ backgroundColor: cat.accent }}
         aria-hidden="true"
       />
@@ -1118,13 +1118,15 @@ function TimedItemChip({
           (giu nguyen gio bat dau), khac keo THAN the (doi gio bat dau, giu
           nguyen thoi luong). stopPropagation trong startDrag ngan event
           "chay len" <button> cha (tranh kich hoat CA 2 kieu keo cung luc).
-          opacity-0 + group-hover - CHI hien ro khi di chuot vao ca the (dung
-          `group` da gan tren <button> cha), tranh ri mat 1 thanh mau luc
-          binh thuong. */}
+          [2026-10-06] BO thanh mau hien ra luc hover (opacity-0/group-hover/
+          backgroundColor truoc day) - yeu cau nguoi dung: "Bỏ cái hover thì
+          hiện border bottom đi". Vung keo VAN con (cursor-ns-resize + hit-area
+          cao 6px o canh duoi), chi khong con VE gi len - nguoi dung van resize
+          duoc binh thuong, chi khong thay 1 thanh mau/vien lung linh khi di
+          chuot qua nua. */}
       <div
         onMouseDown={(e) => startDrag(e, "resize")}
-        className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-        style={{ backgroundColor: cat.accent }}
+        className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
         aria-hidden="true"
       />
     </button>
