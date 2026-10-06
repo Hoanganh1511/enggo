@@ -1025,7 +1025,15 @@ function TimedItemChip({
           : undefined,
       }}
       className={cn(
-        "group absolute z-[1] flex flex-col justify-center overflow-hidden rounded-sm border-l-[3px] px-1.5 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        // [2026-10-06] justify-start + items-start (truoc day justify-center,
+        // can GIUA theo chieu doc) - yeu cau nguoi dung: "Thông tin trong thẻ
+        // không để chính giữa như hiện tại. Dồn lên trên, ưu tiên căn lề
+        // trái" (kem anh: the cao - vd viec dai 2.5 tieng - khien gio/tieu de
+        // troi lo lung giua khoang trong, kho doc nhanh so voi dua sat len
+        // mep tren giong cac app lich khac). pt-1 bu lai khoang trong tren
+        // cung (truoc chi dua vao justify-center de can giua, gio can them 1
+        // chut dem tren thay vi dinh sat mep).
+        "group absolute z-[1] flex flex-col items-start justify-start overflow-hidden rounded-sm border-l-[3px] px-1.5 pt-1 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
         drag
           ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]"
           : "cursor-grab",
@@ -1077,6 +1085,9 @@ function TimedItemChip({
                 aria-hidden="true"
               />
             )}
+            {/* Icon dong ho truoc dau thoi gian - yeu cau nguoi dung: "Dấu
+                thời gian bổ sung thêm icon clock". */}
+            <Clock size={10} strokeWidth={2.2} className="shrink-0" aria-hidden="true" />
             <span className="truncate">{timeLabel}</span>
           </span>
           <span
