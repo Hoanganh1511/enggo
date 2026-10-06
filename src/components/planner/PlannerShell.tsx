@@ -1137,6 +1137,29 @@ function WeekTimeGrid({
   ) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // [2026-10-06] Do do rong THANH CUON that - yeu cau nguoi dung: "Phần bên
+  // trên ngày cột cũng lệch không đúng thẳng nhau". Nguyen nhan: hang header
+  // (ten thu/ngay + "Cả ngày") nam trong 1 wrapper KHONG cuon (shrink-0),
+  // con luoi gio (body) nam trong div rieng co overflow-y-auto - tren Windows/
+  // Linux (scrollbar CHIEM CHO THAT, khac macOS overlay), khi body du cao de
+  // hien thanh cuon doc, be rong THAT SU danh cho 7 cot ngay trong body BI
+  // HEP HON be rong 7 cot ngay o header (header KHONG bi thanh cuon an vao),
+  // khien 2 hang header/body lech dan ve phia phai qua tung cot - chinh xac
+  // trieu chung nguoi dung mo ta. Do offsetWidth-clientWidth cua CHINH scroll
+  // container (0 neu trinh duyet dung overlay scrollbar nhu macOS) roi bu lai
+  // bang padding-right TRONG header, dam bao 2 hang LUON cung 1 be rong noi
+  // dung du scrollbar co chiem cho hay khong.
+  const [scrollbarWidth, setScrollbarWidth] = useState(0);
+  useEffect(() => {
+    function measure() {
+      if (scrollRef.current) {
+        setScrollbarWidth(scrollRef.current.offsetWidth - scrollRef.current.clientWidth);
+      }
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  });
   const days = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(anchor), i),
   );
@@ -1154,7 +1177,10 @@ function WeekTimeGrid({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-[color:var(--planner-border-soft)]">
+      <div
+        className="shrink-0 border-b border-[color:var(--planner-border-soft)]"
+        style={{ paddingRight: scrollbarWidth }}
+      >
         <p className="px-3 pt-2.5 pb-1 text-[14px] font-semibold text-[color:var(--planner-text-primary)]">
           {monthYearLabel}
         </p>
@@ -1228,8 +1254,18 @@ function WeekTimeGrid({
                 style={{ height: HOUR_ROW_HEIGHT }}
                 className="relative border-t border-[color:var(--planner-border-soft)]"
               >
+                {/* top-0 + -translate-y-1/2 (KHONG phai -top-2 doan truoc) -
+                    yeu cau nguoi dung: "không được để sai từng giây một".
+                    -top-2 la 1 con so DOAN (8px) co the LECH tuy font-size/
+                    line-height thuc te render - top-0 neo DUNG vao gioi han
+                    tren cua chinh o gio (dung bang border-t cua o ben duoi,
+                    CUNG toa do voi top cua TimedItemChip vi ca 2 deu tinh tu
+                    `h * HOUR_ROW_HEIGHT`), -translate-y-1/2 can giua nhan
+                    text LEN CHINH XAC giua duong ke do - dung toan hoc (50%
+                    chieu cao THAT cua chinh span, khong phai so doan), luon
+                    dung bat ke co chu/line-height the nao. */}
                 {h > 0 && (
-                  <span className="absolute -top-2 right-1.5 text-[11px] font-medium text-[color:var(--planner-text-muted)]">
+                  <span className="absolute top-0 right-1.5 -translate-y-1/2 text-[11px] font-medium text-[color:var(--planner-text-muted)]">
                     {h.toString().padStart(2, "0")}:00
                   </span>
                 )}
