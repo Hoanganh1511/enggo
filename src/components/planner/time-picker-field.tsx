@@ -90,6 +90,27 @@ export function TimePickerField({
   const listRef = useRef<HTMLDivElement>(null);
   const selectedSlotRef = useRef<HTMLButtonElement>(null);
 
+  // [2026-10-07] "Flash" ring tren nut trigger (dang dong) moi khi
+  // startMinute/durationMinutes DOI - yeu cau nguoi dung: "Khi mà tôi click
+  // thay đổi ô trong bảng lịch... cho anim nháy một cái thay đổi rõ ràng để
+  // biết người dùng họ vừa chọn vào 1 ô range time khác". Bao phu CA 2
+  // nguon thay doi: tu prefill click o luoi tuan (AddTaskForm truyen thang
+  // startMinute moi vao prop nay) LAN tu chinh popover nay (commitStart/
+  // commitEnd/quick offset). `flashKey` CHI tang khi gia tri THAT SU khac
+  // gia tri truoc (so sanh qua ref) - khong nhay o lan render dau (mount).
+  const prevTimeRef = useRef<{ start: number | null; duration: number }>({
+    start: startMinute,
+    duration: durationMinutes,
+  });
+  const [flashKey, setFlashKey] = useState(0);
+  useEffect(() => {
+    const prev = prevTimeRef.current;
+    if (prev.start !== startMinute || prev.duration !== durationMinutes) {
+      setFlashKey((k) => k + 1);
+    }
+    prevTimeRef.current = { start: startMinute, duration: durationMinutes };
+  }, [startMinute, durationMinutes]);
+
   // Focus input NGAY luc mo (section 12 "focus input khi mở") + cuon san
   // toi gio DANG CHON (hoac gio gan hien tai neu chua chon) vao GIUA khung
   // list (section 12 "selected time tự scroll vào giữa viewport").
@@ -156,8 +177,12 @@ export function TimePickerField({
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <motion.button
+          key={flashKey}
           type="button"
+          initial={{ boxShadow: "0 0 0 4px rgba(71,120,232,0.38)" }}
+          animate={{ boxShadow: "0 0 0 0px rgba(71,120,232,0)" }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
           className={cn(
             "flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] outline-none transition-colors duration-150 ease-out hover:border-[color:var(--planner-border)]",
             hasTime ? "text-[color:var(--planner-text-primary)]" : "text-[color:var(--planner-text-muted)]",
@@ -187,7 +212,7 @@ export function TimePickerField({
             </span>
           )}
           <ChevronDown size={13} className="ml-auto shrink-0 text-[color:var(--planner-text-muted)]" />
-        </button>
+        </motion.button>
       </PopoverTrigger>
       {/* [2026-10-05] align="end" (truoc day "start") - bug phat hien qua
           test luong tuong tac: nut nay thuong nam SAT CANH PHAI cua 1

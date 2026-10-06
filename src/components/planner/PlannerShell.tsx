@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Circle,
   Clock,
+  Copy,
   Flame,
   ListFilter,
   Palette,
@@ -20,7 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ApiPlannerItem, PlannerItemKind } from "@/lib/api/planner";
+import type { ApiPlannerItem, PlannerItemKind, PlannerItemUpdateInput } from "@/lib/api/planner";
 import {
   listPlannerItemsAction,
   createPlannerItemAction,
@@ -664,6 +665,30 @@ export function PlannerShell({
     await deletePlannerItemAction(item.id).catch(() => {});
   }
 
+  // [2026-10-07] Duplicate 1 item - yeu cau nguoi dung (popover chi tiet tren
+  // luoi tuan): "Sửa / Xóa / Duplicate / Close". Sao chep LAI DUNG cac field
+  // da co san cua item goc (khong bia them field moi) - PlannerItemInput
+  // khong nhan `id`/`orderIndex`/timestamps nen backend tu gan the MOI nhu 1
+  // item hoan toan doc lap, KHONG lien ket gi voi item goc sau khi tao xong.
+  async function handleDuplicate(item: ApiPlannerItem) {
+    const created = await createPlannerItemAction({
+      date: item.date,
+      title: `${item.title} (copy)`,
+      kind: item.kind,
+      itemType: item.itemType,
+      scheduledMinute: item.scheduledMinute ?? undefined,
+      durationMinutes: item.durationMinutes ?? undefined,
+      isFocus: item.isFocus,
+      priority: item.priority ?? undefined,
+      area: item.area ?? undefined,
+      project: item.project ?? undefined,
+      tags: item.tags,
+      deadline: item.deadline ?? undefined,
+      metadata: item.metadata ?? undefined,
+    }).catch(() => null);
+    if (created) patchDate(item.date, (items) => [...items, created]);
+  }
+
   // [2026-10-05] Sua 1 item SAU KHI DA TAO - yeu cau nguoi dung: "hiện KHÔNG
   // có cách nào sửa lại tiêu đề/giờ/màu sau khi tạo, chỉ tick done hoặc
   // xoá". Dung CHUNG cho 2 cho: (1) form sua inline trong SCHEDULE (TimelineRow/
@@ -915,6 +940,9 @@ export function PlannerShell({
                 onSelectItem={setSelectedItemId}
                 onSlotClick={handleSlotClick}
                 onUpdateItemTime={handleUpdateItemTime}
+                onUpdateItem={handleUpdateItem}
+                onDelete={handleDelete}
+                onDuplicate={handleDuplicate}
                 typeColorOverrides={typeColorOverrides}
               />
             </div>
@@ -1087,6 +1115,9 @@ function TimedItemChip({
   selected,
   onSelect,
   onUpdateTime,
+  onUpdateItem,
+  onDelete,
+  onDuplicate,
   isToday,
   nowMinute,
 }: {
@@ -1119,10 +1150,27 @@ function TimedItemChip({
   selected: boolean;
   onSelect: () => void;
   onUpdateTime: (newStart: number, newDuration: number) => void;
+  // [2026-10-07] "Popover chi tiết" khi click the - yeu cau nguoi dung: "Khi
+  // click thẻ task thì mở popover chi tiết của nó... Sửa / Xóa / Duplicate /
+  // Close". Dung LAI y het signature cua handleUpdateItem/handleDelete o
+  // PlannerShell (khong tao API rieng) - chi THEM duong vao MOI (tu luoi
+  // tuan) cho CUNG 1 luong du lieu da co san cho DayDetailPanel.
+  onUpdateItem: (item: ApiPlannerItem, updates: PlannerItemUpdateInput) => void;
+  onDelete: (item: ApiPlannerItem) => void;
+  onDuplicate: (item: ApiPlannerItem) => void;
   isToday: boolean;
   nowMinute: number;
 }) {
   const cat = useLifeItemPalette(item.itemType);
+  const typeCfg = getLifeItemTypeConfig(item.itemType);
+  // Popover "chi tiết" (khac `conflictOpen` ben duoi - popover canh bao trung
+  // lich) - mo khi click THAN the (khong phai luc keo-tha, xem preventDefault
+  // trong onClick cua <button> ben duoi). `detailMode`: "view" = xem nhanh +
+  // doi mau/gio truc tiep, "edit" = thay THE bang EditItemForm day du (tai
+  // dung y het 1 component, khong xay UI rieng).
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const status = computeItemStatus(item, isToday, nowMinute);
   // [2026-10-05] Keo-tha de doi gio bat dau (keo than the) / keo canh duoi
   // de doi thoi luong (keo tay cam rieng) - yeu cau nguoi dung: "Kéo thả để
@@ -1238,12 +1286,29 @@ function TimedItemChip({
           {minutesToLabel(liveStart)}
         </div>
       )}
+      <PopoverRoot
+        open={detailOpen}
+        onOpenChange={(next) => {
+          setDetailOpen(next);
+          if (!next) {
+            setDetailMode("view");
+            setColorPickerOpen(false);
+          }
+        }}
+      >
+      <PopoverTrigger asChild>
       <button
       type="button"
       onMouseDown={(e) => startDrag(e, "move")}
-      onClick={() => {
+      onClick={(e) => {
         if (suppressClickRef.current) {
           suppressClickRef.current = false;
+          // [2026-10-07] preventDefault - chan LUON ca hanh vi toggle-mo
+          // popover mac dinh cua PopoverTrigger (Radix chi bo qua
+          // onOpenToggle() cua no neu child onClick goi preventDefault,
+          // xem composeEventHandlers) - tranh popover chi tiet TU DUNG BAT
+          // MO ngay sau 1 thao tac keo-tha (nguoi dung khong co y dinh click).
+          e.preventDefault();
           return;
         }
         onSelect();
@@ -1479,6 +1544,165 @@ function TimedItemChip({
         aria-hidden="true"
       />
       </button>
+      </PopoverTrigger>
+      {/* [2026-10-07] Popover chi tiết - yeu cau nguoi dung: "Khi click thẻ
+          task thì mở popover chi tiết của nó, bám theo góc trên bên trái...
+          Nội dung... thiết kế sao cho hợp concept của web mình". side="right"
+          align="start" - bam DUNG canh TREN cua the (trung voi goc tren-trai
+          cua chinh the, "mọc" sang phai tu do), cung tinh than cac popover
+          lich kieu Google Calendar - tranh che mat chinh the vua click (khac
+          che do "overlay dung giua" cua modal). Radix tu dong collision-flip
+          sang trai neu khong du cho ben phai (cung co che da dung cho
+          ConflictPopover o tren), khong can tu xu ly tran man hinh. */}
+      <PopoverContent
+        open={detailOpen}
+        side="right"
+        align="start"
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="relative z-50 w-72 rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.14)]"
+      >
+        {/* Hang doc 4 icon chuc nang, bam goc tren-phai CUA POPOVER (khac
+            voi "bám góc trên bên trái" cua chinh POPOVER so voi the - 2 y
+            khac nhau: vi tri POPOVER so voi the = tren-trai, con vi tri
+            CAC NUT so voi POPOVER = tren-phai, giong moi toolbar/menu khac
+            trong app nay, vd EditItemForm's nut Dong o header). */}
+        <div className="absolute top-2 right-2 flex flex-col items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setDetailMode((m) => (m === "edit" ? "view" : "edit"))}
+            aria-label="Sửa"
+            title="Sửa"
+            className={cn(
+              "flex size-6 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out",
+              detailMode === "edit"
+                ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
+                : "text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]",
+            )}
+          >
+            <Pencil size={12} />
+          </button>
+          <DeleteConfirmButton label={item.title} onConfirm={() => onDelete(item)} />
+          <button
+            type="button"
+            onClick={() => {
+              onDuplicate(item);
+              setDetailOpen(false);
+            }}
+            aria-label="Duplicate"
+            title="Duplicate"
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]"
+          >
+            <Copy size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDetailOpen(false)}
+            aria-label="Đóng"
+            title="Đóng"
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]"
+          >
+            <X size={12} />
+          </button>
+        </div>
+
+        {detailMode === "edit" ? (
+          <div className="pr-7">
+            <EditItemForm
+              item={item}
+              onCancel={() => setDetailMode("view")}
+              onSave={(updates) => {
+                onUpdateItem(item, updates);
+                setDetailMode("view");
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5 pr-7">
+            {/* Ô màu - yeu cau nguoi dung: "ô màu của task (có thể click chọn
+                lại màu khác)". Mau la semantic theo Type (xem comment
+                color field o planner.ts - truong hex CU khong con dung) nen
+                "đổi màu" o day = doi Type, tai dung NGUYEN TypePickerRow da
+                co san (AddTaskForm/EditItemForm), KHONG tao bang mau rieng. */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setColorPickerOpen((v) => !v)}
+                aria-label="Đổi màu / loại việc"
+                title="Đổi màu / loại việc"
+                className="size-6 shrink-0 cursor-pointer rounded-full shadow-[0_0_0_1px_rgba(0,0,0,.08)] ring-2 ring-white transition-transform duration-150 ease-out hover:scale-110"
+                style={{ backgroundColor: cat.accentStrong }}
+              />
+              <span className="text-[11.5px] font-semibold" style={{ color: cat.accentText }}>
+                {typeCfg.icon} {typeCfg.label}
+              </span>
+            </div>
+            {colorPickerOpen && (
+              <TypePickerRow
+                value={item.itemType}
+                onChange={(t) => {
+                  onUpdateItem(item, { itemType: t });
+                  setColorPickerOpen(false);
+                }}
+              />
+            )}
+
+            <p className={cn("text-[14px] font-semibold text-[color:var(--planner-text-primary)]", item.done && "line-through")}>
+              {item.title}
+            </p>
+
+            <TimePickerField
+              startMinute={item.scheduledMinute}
+              durationMinutes={item.durationMinutes ?? DEFAULT_DURATION_MINUTES}
+              onChange={(start, duration) =>
+                onUpdateItem(item, {
+                  scheduledMinute: start,
+                  durationMinutes: start !== null ? duration : null,
+                })
+              }
+            />
+
+            {/* "chi tiết task" - tom tat cac field CO SAN (khong bia them
+                field moi), bam ngay tinh than "don't fabricate data". */}
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-[color:var(--planner-border-soft)] pt-2">
+              {item.priority && (
+                <span
+                  className="flex items-center gap-1 rounded-full border border-[color:var(--planner-border-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--planner-text-secondary)]"
+                >
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: PRIORITY_CONFIG[item.priority].color }} />
+                  {PRIORITY_CONFIG[item.priority].label}
+                </span>
+              )}
+              {item.area && (
+                <span className="rounded-full bg-[var(--planner-surface-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--planner-text-secondary)]">
+                  📍 {item.area}
+                </span>
+              )}
+              {item.project && (
+                <span className="rounded-full bg-[var(--planner-surface-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--planner-text-secondary)]">
+                  📁 {item.project}
+                </span>
+              )}
+              {item.deadline && (
+                <span className="rounded-full bg-[var(--planner-surface-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--planner-text-secondary)]">
+                  ⏳ {new Date(item.deadline).toLocaleDateString("vi-VN")}
+                </span>
+              )}
+              {item.tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-[var(--planner-surface-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--planner-text-secondary)]">
+                  #{tag}
+                </span>
+              ))}
+              {!item.priority && !item.area && !item.project && !item.deadline && item.tags.length === 0 && (
+                <span className="text-[11px] text-[color:var(--planner-text-muted)]">Chưa có chi tiết khác.</span>
+              )}
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+      </PopoverRoot>
     </>
   );
 }
@@ -1566,6 +1790,9 @@ function WeekTimeGrid({
   onSelectItem,
   onSlotClick,
   onUpdateItemTime,
+  onUpdateItem,
+  onDelete,
+  onDuplicate,
   typeColorOverrides,
 }: {
   anchor: string;
@@ -1580,6 +1807,9 @@ function WeekTimeGrid({
     newStart: number,
     newDuration: number,
   ) => void;
+  onUpdateItem: (item: ApiPlannerItem, updates: PlannerItemUpdateInput) => void;
+  onDelete: (item: ApiPlannerItem) => void;
+  onDuplicate: (item: ApiPlannerItem) => void;
   typeColorOverrides: Partial<Record<LifeItemType, string>>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1815,6 +2045,9 @@ function WeekTimeGrid({
                       onUpdateTime={(newStart, newDuration) =>
                         onUpdateItemTime(item, newStart, newDuration)
                       }
+                      onUpdateItem={onUpdateItem}
+                      onDelete={onDelete}
+                      onDuplicate={onDuplicate}
                       isToday={isToday}
                       nowMinute={nowMinute}
                     />
