@@ -3,19 +3,108 @@
 import { useState } from "react";
 import { NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { Link2, Plus, Search, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { RepeaterField, RemoveRowButton } from "@/components/series/RepeaterField";
 import { BlockActionsMenu } from "./BlockActionsMenu";
 import { PostLinkPickerModal } from "./PostLinkPickerModal";
+import { CARD_PALETTES, resolveCardPalette, type CardPalette } from "./card-palettes";
 import {
   CARD_GRID_STATUS_COLORS,
   cardGridStatusColor,
-  isValidCssColor,
   normalizeCardGridItem,
   type CardGridItem,
   type CardGridKeyInfoItem,
   type CardGridStatus,
 } from "./post-extensions";
+
+// Gan 7 token cua 1 palette thanh CSS custom properties (style object) - cac
+// class card-grid-item-* (POST_PROSE_CLASS) doc lai qua var(--card-accent-*),
+// xem comment day du o card-palettes.ts. Giu rieng o day (khong o
+// card-palettes.ts) de file do khong phu thuoc kieu React.CSSProperties -
+// dung CHUNG duoc cho ca nhanh render chuoi HTML (post-extensions.ts).
+function paletteStyle(palette: CardPalette): React.CSSProperties {
+  return {
+    "--card-accent": palette.accent,
+    "--card-accent-strong": palette.accentStrong,
+    "--card-accent-soft": palette.accentSoft,
+    "--card-accent-light": palette.accentLight,
+    "--card-accent-border": palette.accentBorder,
+    "--card-accent-text": palette.accentText,
+    "--card-accent-glow": palette.accentGlow,
+  } as React.CSSProperties;
+}
+
+// "Card appearance" - popover chon 1 PALETTE (khong phai tung mau rieng le) -
+// yeu cau nguoi dung: "không cho user chọn từng màu riêng lẻ. Hãy cho chọn
+// một Color Theme / Palette" + "Đừng bắt user phải chọn màu cho tất cả card"
+// (co san lua chon Auto - xem resolveCardPalette() o card-palettes.ts cho
+// logic xoay vong theo vi tri, KHONG ngau nhien). Trigger la 1 cham tron +
+// ten palette (hover moi hien ten day du, giong UX de xuat cua nguoi dung).
+function PalettePicker({
+  paletteId,
+  resolved,
+  onChange,
+}: {
+  paletteId: string | null;
+  resolved: CardPalette;
+  onChange: (paletteId: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <PopoverRoot open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title={`Màu thẻ: ${paletteId ? resolved.name : `Auto (${resolved.name})`}`}
+          className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-border bg-surface px-2 py-1 text-[11px] font-medium text-ink-muted transition-transform duration-150 ease-out hover:scale-[1.03] hover:text-ink"
+        >
+          <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: resolved.accent }} />
+          {paletteId ? resolved.name : "Auto"}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent open={open} align="start" sideOffset={6} className="z-50 w-64 rounded-lg border border-border bg-surface p-2.5 shadow-dropdown">
+        <label className="mb-1 block text-[11px] font-medium text-ink-faint">Card appearance</label>
+        <button
+          type="button"
+          onClick={() => {
+            onChange(null);
+            setOpen(false);
+          }}
+          className={cn(
+            "mb-2 flex w-full cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 text-left text-[12.5px] font-medium",
+            paletteId === null ? "border-primary text-ink" : "border-border text-ink-muted hover:bg-hover-bg hover:text-ink",
+          )}
+        >
+          <span className="flex size-4 shrink-0 items-center justify-center rounded-full border border-dashed border-ink-faint text-[9px]">
+            A
+          </span>
+          Auto (tự xoay vòng theo thứ tự thẻ)
+        </button>
+        <div className="grid grid-cols-5 gap-1.5">
+          {CARD_PALETTES.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              title={p.name}
+              onClick={() => {
+                onChange(p.id);
+                setOpen(false);
+              }}
+              className={cn(
+                "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform duration-150 ease-out hover:scale-110",
+                paletteId === p.id
+                  ? "ring-2 ring-primary ring-offset-2 ring-offset-surface"
+                  : "ring-1 ring-black/10 ring-offset-2 ring-offset-surface",
+              )}
+              style={{ backgroundColor: p.accent }}
+            />
+          ))}
+        </div>
+      </PopoverContent>
+    </PopoverRoot>
+  );
+}
 
 // linkLabel mac dinh "Tìm hiểu thêm" - xem comment day du o DEFAULT_CARD_GRID_ITEMS
 // (post-extensions.ts): chi dat mac dinh o CHO TAO MOI (day va insertCardGrid),
@@ -24,49 +113,21 @@ const EMPTY_ITEM: CardGridItem = normalizeCardGridItem({ linkLabel: "Tìm hiểu
 
 // Popover chon icon (van ban ngan, toi da ~2 ky tu - khong gioi han vao 1 bo
 // icon Lucide co san, dung y "biến tấu theo nhiều mục đích" - nguoi dung co
-// the go 1 ky tu/emoji bat ky) + mau nen, dung CHUNG 1 popover cho gon (2
-// truong lien quan chat che, tach rieng 2 nut se rom).
-function IconPicker({
-  icon,
-  iconBg,
-  onChange,
-}: {
-  icon: string;
-  iconBg: string;
-  onChange: (patch: Partial<CardGridItem>) => void;
-}) {
+// the go 1 ky tu/emoji bat ky). [2026-10-06] BO rieng o chon "màu nền" tu do -
+// mau nen icon gio LUON theo accentStrong cua palette (Card Color System,
+// xem PalettePicker/paletteStyle o tren) - yeu cau nguoi dung: "không cho
+// user chọn từng màu riêng lẻ... một màu gốc tự động ràng buộc toàn bộ các
+// element liên quan", tranh tinh trang icon/tag/border moi noi 1 mau rieng.
+function IconPicker({ icon, iconColor, onChange }: { icon: string; iconColor: string; onChange: (patch: Partial<CardGridItem>) => void }) {
   const [open, setOpen] = useState(false);
-  const [draftColor, setDraftColor] = useState(iconBg);
-  const [error, setError] = useState<string | null>(null);
-
-  function commitColor(value: string) {
-    const trimmed = value.trim();
-    if (trimmed === "") return;
-    if (isValidCssColor(trimmed)) {
-      onChange({ iconBg: trimmed });
-      setError(null);
-    } else {
-      setError("Không hợp lệ - dùng hex hoặc rgba(...)");
-    }
-  }
-
   return (
-    <PopoverRoot
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (o) {
-          setDraftColor(iconBg);
-          setError(null);
-        }
-      }}
-    >
+    <PopoverRoot open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
-          title="Icon + màu nền"
+          title="Icon"
           className="flex size-13 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[22px] font-bold text-white"
-          style={{ backgroundColor: iconBg || "#6366f1" }}
+          style={{ backgroundColor: iconColor }}
         >
           {icon || "★"}
         </button>
@@ -78,29 +139,8 @@ function IconPicker({
           maxLength={2}
           onChange={(e) => onChange({ icon: e.target.value })}
           placeholder="★"
-          className="mb-2 w-full rounded-md border border-border bg-transparent px-2 py-1.5 text-center text-[14px] outline-none focus:border-primary"
+          className="w-full rounded-md border border-border bg-transparent px-2 py-1.5 text-center text-[14px] outline-none focus:border-primary"
         />
-        <label className="mb-1 block text-[11px] font-medium text-ink-faint">Màu nền</label>
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={/^#([0-9a-f]{6})$/i.test(draftColor.trim()) ? draftColor.trim() : "#6366f1"}
-            onChange={(e) => {
-              setDraftColor(e.target.value);
-              setError(null);
-              onChange({ iconBg: e.target.value });
-            }}
-            className="size-8 shrink-0 cursor-pointer rounded border border-border bg-transparent p-0"
-          />
-          <input
-            value={draftColor}
-            onChange={(e) => setDraftColor(e.target.value)}
-            onBlur={(e) => commitColor(e.target.value)}
-            placeholder="#RRGGBB hoặc rgba(...)"
-            className="min-w-0 flex-1 rounded-md border border-border bg-transparent px-2 py-1.5 text-[12.5px] outline-none focus:border-primary"
-          />
-        </div>
-        {error && <p className="mt-1.5 text-[11px] text-danger">{error}</p>}
       </PopoverContent>
     </PopoverRoot>
   );
@@ -182,12 +222,14 @@ function newKeyInfoItem(): CardGridKeyInfoItem {
 // ngan cach boi 1 duong ke), Footer (CTA + ghi chu phu).
 function CardGridItemView({
   item,
+  index,
   editable,
   onChange,
   onRemove,
   canRemove,
 }: {
   item: CardGridItem;
+  index: number;
   editable: boolean;
   onChange: (patch: Partial<CardGridItem>) => void;
   onRemove: () => void;
@@ -203,11 +245,13 @@ function CardGridItemView({
   // tag). Tach draft (hien thi/go tu do) khoi tags THAT (chi parse khi commit).
   const [tagsDraft, setTagsDraft] = useState(() => item.tags.join(", "));
   const dotColor = cardGridStatusColor(item.status);
+  const palette = resolveCardPalette(item.paletteId, index);
+  const cssVars = paletteStyle(palette);
   const Wrapper = editable ? "div" : item.linkHref ? "a" : "div";
 
   if (!editable) {
     return (
-      <Wrapper href={item.linkHref || undefined} className="card-grid-item">
+      <Wrapper href={item.linkHref || undefined} className="card-grid-item" style={cssVars}>
         <div className="card-grid-item-glow" aria-hidden="true" />
         {(dotColor || item.utilityIcon) && (
           <div className="card-grid-item-topbar">
@@ -216,9 +260,7 @@ function CardGridItemView({
           </div>
         )}
         <div className="card-grid-item-head">
-          <span className="card-grid-item-icon" style={{ backgroundColor: item.iconBg || "#6366f1" }}>
-            {item.icon}
-          </span>
+          <span className="card-grid-item-icon">{item.icon}</span>
           <div className="card-grid-item-headtext">
             <span className="card-grid-item-title">{item.title}</span>
             {item.subtitle && <span className="card-grid-item-subtitle">{item.subtitle}</span>}
@@ -268,7 +310,7 @@ function CardGridItemView({
   }
 
   return (
-    <div className="group card-grid-item relative flex flex-col">
+    <div className="group card-grid-item relative flex flex-col" style={cssVars}>
       <div className="card-grid-item-glow" aria-hidden="true" />
       {canRemove && (
         <button
@@ -281,9 +323,15 @@ function CardGridItemView({
         </button>
       )}
 
-      {/* Header: trang thai (trai) + icon tien ich (phai) */}
+      {/* Header: trang thai + "Card appearance" (palette) ben trai, icon tien
+          ich ben phai - group trai boc trong 1 flex rieng (thay vi de
+          justify-between tu dan deu 3 phan tu) de StatusPicker/PalettePicker
+          dung sat nhau, giu dung bo cuc 2 dau cu. */}
       <div className="card-grid-item-topbar">
-        <StatusPicker status={item.status} onChange={(status) => onChange({ status })} open={statusOpen} onOpenChange={setStatusOpen} />
+        <div className="flex min-w-0 items-center gap-1.5">
+          <StatusPicker status={item.status} onChange={(status) => onChange({ status })} open={statusOpen} onOpenChange={setStatusOpen} />
+          <PalettePicker paletteId={item.paletteId} resolved={palette} onChange={(paletteId) => onChange({ paletteId })} />
+        </div>
         <input
           value={item.utilityIcon}
           onChange={(e) => onChange({ utilityIcon: e.target.value })}
@@ -295,7 +343,7 @@ function CardGridItemView({
       </div>
 
       <div className="card-grid-item-head">
-        <IconPicker icon={item.icon} iconBg={item.iconBg} onChange={onChange} />
+        <IconPicker icon={item.icon} iconColor={palette.accentStrong} onChange={onChange} />
         <div className="min-w-0 flex-1">
           <input
             value={item.title}
@@ -455,6 +503,7 @@ export function CardGridView({ node, updateAttributes, editor, getPos }: ReactNo
           <CardGridItemView
             key={i}
             item={item}
+            index={i}
             editable={canEdit}
             onChange={(patch) => updateItem(i, patch)}
             onRemove={() => removeItem(i)}

@@ -26,6 +26,7 @@ import { StatsBarView } from "./stats-bar-view";
 import { GridView } from "./grid-view";
 import { GridCellView } from "./grid-cell-view";
 import { CardGridView } from "./card-grid-view";
+import { resolveCardPalette, cardPaletteCssVars } from "./card-palettes";
 import { ProfileBlockView } from "./profile-block-view";
 import { SplitBlockView } from "./split-block-view";
 import { PromoCardView } from "./promo-card-view";
@@ -1590,7 +1591,13 @@ export type CardGridKeyInfoItem = { label: string; value: string };
 
 export type CardGridItem = {
   icon: string;
-  iconBg: string;
+  // paletteId null = "Auto" (tu gan theo vi tri, xoay vong - xem
+  // resolveCardPalette() trong card-palettes.ts). THAY the iconBg (hex tu do
+  // cu) - yeu cau nguoi dung: "không cho user chọn từng màu riêng lẻ. Hãy
+  // cho chọn một Color Theme / Palette, trong đó một màu gốc tự động ràng
+  // buộc toàn bộ các element liên quan" (icon/tag/border/background cung 1
+  // palette, tranh "rainbow UI").
+  paletteId: string | null;
   title: string;
   subtitle: string;
   status: CardGridStatus;
@@ -1633,7 +1640,11 @@ export function cardGridStatusColor(status: CardGridStatus | undefined): string 
 export function normalizeCardGridItem(raw: Partial<CardGridItem>): CardGridItem {
   return {
     icon: raw.icon ?? "★",
-    iconBg: raw.iconBg ?? "#6366f1",
+    // Du lieu CU (truoc Card Color System) co the con `iconBg` hex rieng -
+    // khong co gi de "vá" sang paletteId (mau tu do khong khop san 1 trong 20
+    // palette) nen de ve Auto, cham nhat chi doi tu mau tu chon -> auto-rotate
+    // thay vi crash/mat du lieu.
+    paletteId: raw.paletteId ?? null,
     title: raw.title ?? "",
     subtitle: raw.subtitle ?? "",
     status: raw.status ?? "none",
@@ -1660,21 +1671,22 @@ const DEFAULT_CARD_GRID_ITEMS: CardGridItem[] = [normalizeCardGridItem({ title: 
 // Xay 1 the - dung CHUNG logic/cau truc cho ca renderHTML (mang DOMOutputSpec)
 // LAN markdown serialize (chuoi HTML tho, xem cardGridItemHtml duoi) - CHI
 // khac dinh dang tra ve.
-function cardGridItemNode(item: CardGridItem): unknown[] {
+function cardGridItemNode(item: CardGridItem, index: number): unknown[] {
   const dotColor = cardGridStatusColor(item.status);
+  const palette = resolveCardPalette(item.paletteId, index);
   const topbarChildren = [
     ...(dotColor ? [["span", { class: "card-grid-item-dot", style: `background-color:${dotColor}` }]] : []),
     ...(item.utilityIcon ? [["span", { class: "card-grid-item-utility" }, item.utilityIcon]] : []),
   ];
   return [
     item.linkHref ? "a" : "div",
-    { class: "card-grid-item", ...(item.linkHref ? { href: item.linkHref } : {}) },
+    { class: "card-grid-item", style: cardPaletteCssVars(palette), ...(item.linkHref ? { href: item.linkHref } : {}) },
     ["div", { class: "card-grid-item-glow", "aria-hidden": "true" }],
     ...(topbarChildren.length ? [["div", { class: "card-grid-item-topbar" }, ...topbarChildren]] : []),
     [
       "div",
       { class: "card-grid-item-head" },
-      ["span", { class: "card-grid-item-icon", style: `background-color:${item.iconBg || "#6366f1"}` }, item.icon],
+      ["span", { class: "card-grid-item-icon" }, item.icon],
       [
         "div",
         { class: "card-grid-item-headtext" },
@@ -1719,9 +1731,10 @@ function cardGridItemNode(item: CardGridItem): unknown[] {
   ];
 }
 
-function cardGridItemHtml(item: CardGridItem): string {
+function cardGridItemHtml(item: CardGridItem, index: number): string {
   const esc = escapeHtmlAttr;
   const dotColor = cardGridStatusColor(item.status);
+  const palette = resolveCardPalette(item.paletteId, index);
   const topbarHtml =
     dotColor || item.utilityIcon
       ? `<div class="card-grid-item-topbar">${dotColor ? `<span class="card-grid-item-dot" style="background-color:${dotColor}"></span>` : ""}${
@@ -1730,7 +1743,7 @@ function cardGridItemHtml(item: CardGridItem): string {
       : "";
   const subtitleHtml = item.subtitle ? `<span class="card-grid-item-subtitle">${esc(item.subtitle)}</span>` : "";
   const headHtml =
-    `<div class="card-grid-item-head"><span class="card-grid-item-icon" style="background-color:${esc(item.iconBg || "#6366f1")}">${esc(item.icon)}</span>` +
+    `<div class="card-grid-item-head"><span class="card-grid-item-icon">${esc(item.icon)}</span>` +
     `<div class="card-grid-item-headtext"><span class="card-grid-item-title">${esc(item.title)}</span>${subtitleHtml}</div></div>`;
   const tagsHtml = item.tags.length
     ? `<div class="card-grid-item-tags">${item.tags.map((t) => `<span class="card-grid-item-tag">${esc(t)}</span>`).join("")}</div>`
@@ -1752,7 +1765,7 @@ function cardGridItemHtml(item: CardGridItem): string {
   const tag = item.linkHref ? "a" : "div";
   const hrefAttr = item.linkHref ? ` href="${esc(item.linkHref)}"` : "";
   return (
-    `<${tag} class="card-grid-item"${hrefAttr}><div class="card-grid-item-glow"></div>${topbarHtml}${headHtml}${tagsHtml}${descHtml}${keyInfoHtml}${footerHtml}</${tag}>`
+    `<${tag} class="card-grid-item" style="${esc(cardPaletteCssVars(palette))}"${hrefAttr}><div class="card-grid-item-glow"></div>${topbarHtml}${headHtml}${tagsHtml}${descHtml}${keyInfoHtml}${footerHtml}</${tag}>`
   );
 }
 
@@ -3364,7 +3377,7 @@ export const POST_PROSE_CLASS =
   // lg: chi biet be rong CUA SO trinh duyet nen van ep nhieu cot vao 1 vung
   // qua hep (bug da tung xay ra, xem "Làm thì phải test chứ?").
   "[&_[data-card-grid]]:my-4 [&_[data-card-grid]]:grid [&_[data-card-grid]]:gap-3 [&_[data-card-grid]]:[grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] " +
-  "[&_.card-grid-item]:relative [&_.card-grid-item]:flex [&_.card-grid-item]:flex-col [&_.card-grid-item]:overflow-hidden [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-border [&_.card-grid-item]:bg-surface [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline [&_.card-grid-item]:shadow-xs " +
+  "[&_.card-grid-item]:relative [&_.card-grid-item]:flex [&_.card-grid-item]:flex-col [&_.card-grid-item]:overflow-hidden [&_.card-grid-item]:rounded-lg [&_.card-grid-item]:border [&_.card-grid-item]:border-[var(--card-accent-border)] [&_.card-grid-item]:bg-[var(--card-accent-light)] [&_.card-grid-item]:p-4 [&_.card-grid-item]:no-underline [&_.card-grid-item]:shadow-xs " +
   // Hieu ung hover "glow" - yeu cau nguoi dung (kem 2 anh truoc/sau, tham
   // khao card Series ngoai trang) - [2026-09-20 fix] LAN DAU co them
   // -translate-y-0.5 (the nang len) - nguoi dung yeu cau BO di: "Đừng làm
@@ -3381,27 +3394,27 @@ export const POST_PROSE_CLASS =
   // <a>) - hover preview gio chay dung y het luc dang soan VA luc da xuat
   // ban, khong con phu thuoc co linkHref hay khong; rieng cursor-pointer van
   // GIU RIENG cho <a> (chi the THAT SU bam duoc moi hien con tro tay).
-  "[&_a.card-grid-item]:cursor-pointer [&_.card-grid-item]:transition-shadow [&_.card-grid-item]:duration-200 [&_.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--primary)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--primary)_45%,transparent)] " +
+  "[&_a.card-grid-item]:cursor-pointer [&_.card-grid-item]:transition-shadow [&_.card-grid-item]:duration-200 [&_.card-grid-item:hover]:[box-shadow:0_0_0_1px_color-mix(in_srgb,var(--card-accent)_30%,transparent),0_16px_32px_-8px_color-mix(in_srgb,var(--card-accent)_45%,transparent)] " +
   // Khoi trang tri goc tren-phai ("Small soft gradient/geometric decorative
   // element") - 1 vong tron mo suy tu --primary (KHONG gan cung 1 mau/linh
   // vuc cu the), dat SAU noi dung (z-index am voi cac vung khac + pointer-
   // events-none), rat nhe (opacity thap) - "avoid excessive gradients or
   // visual noise".
-  "[&_.card-grid-item-glow]:pointer-events-none [&_.card-grid-item-glow]:absolute [&_.card-grid-item-glow]:-top-8 [&_.card-grid-item-glow]:-right-8 [&_.card-grid-item-glow]:size-32 [&_.card-grid-item-glow]:rounded-full [&_.card-grid-item-glow]:opacity-[0.06] [&_.card-grid-item-glow]:[background:radial-gradient(circle,var(--primary)_0%,transparent_70%)] " +
+  "[&_.card-grid-item-glow]:pointer-events-none [&_.card-grid-item-glow]:absolute [&_.card-grid-item-glow]:-top-8 [&_.card-grid-item-glow]:-right-8 [&_.card-grid-item-glow]:size-32 [&_.card-grid-item-glow]:rounded-full [&_.card-grid-item-glow]:opacity-60 [&_.card-grid-item-glow]:[background:radial-gradient(circle,var(--card-accent-glow)_0%,transparent_70%)] " +
   // Header - hang tren cung: trang thai (trai) + icon tien ich (phai).
   "[&_.card-grid-item-topbar]:relative [&_.card-grid-item-topbar]:z-10 [&_.card-grid-item-topbar]:mb-2.5 [&_.card-grid-item-topbar]:flex [&_.card-grid-item-topbar]:items-center [&_.card-grid-item-topbar]:justify-between " +
   "[&_.card-grid-item-dot]:size-2.5 [&_.card-grid-item-dot]:shrink-0 [&_.card-grid-item-dot]:rounded-full " +
   "[&_.card-grid-item-utility]:ml-auto [&_.card-grid-item-utility]:text-[14px] [&_.card-grid-item-utility]:leading-none [&_.card-grid-item-utility]:text-ink-faint " +
   // Icon chinh + tieu de/phu de.
   "[&_.card-grid-item-head]:relative [&_.card-grid-item-head]:z-10 [&_.card-grid-item-head]:flex [&_.card-grid-item-head]:items-center [&_.card-grid-item-head]:gap-3 " +
-  "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-13 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-lg [&_.card-grid-item-icon]:text-[22px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
+  "[&_.card-grid-item-icon]:flex [&_.card-grid-item-icon]:size-13 [&_.card-grid-item-icon]:shrink-0 [&_.card-grid-item-icon]:items-center [&_.card-grid-item-icon]:justify-center [&_.card-grid-item-icon]:rounded-lg [&_.card-grid-item-icon]:bg-[var(--card-accent-strong)] [&_.card-grid-item-icon]:text-[22px] [&_.card-grid-item-icon]:font-bold [&_.card-grid-item-icon]:text-white " +
   "[&_.card-grid-item-headtext]:min-w-0 [&_.card-grid-item-headtext]:flex-1 " +
   "[&_.card-grid-item-title]:block [&_.card-grid-item-title]:truncate [&_.card-grid-item-title]:text-[16px] [&_.card-grid-item-title]:font-bold [&_.card-grid-item-title]:leading-tight [&_.card-grid-item-title]:text-ink " +
-  "[&_.card-grid-item-subtitle]:mt-0.5 [&_.card-grid-item-subtitle]:block [&_.card-grid-item-subtitle]:truncate [&_.card-grid-item-subtitle]:text-[12px] [&_.card-grid-item-subtitle]:font-medium [&_.card-grid-item-subtitle]:text-ink-faint " +
+  "[&_.card-grid-item-subtitle]:mt-0.5 [&_.card-grid-item-subtitle]:block [&_.card-grid-item-subtitle]:truncate [&_.card-grid-item-subtitle]:text-[12px] [&_.card-grid-item-subtitle]:font-medium [&_.card-grid-item-subtitle]:text-[var(--card-accent)] " +
   // Metadata - hang tag pill (yeu cau: "Tags should be optional and should
   // not dominate the card" - chu nho, nen mo, khong vien).
   "[&_.card-grid-item-tags]:relative [&_.card-grid-item-tags]:z-10 [&_.card-grid-item-tags]:mt-3 [&_.card-grid-item-tags]:flex [&_.card-grid-item-tags]:flex-wrap [&_.card-grid-item-tags]:gap-1.5 " +
-  "[&_.card-grid-item-tag]:rounded-full [&_.card-grid-item-tag]:bg-surface-muted [&_.card-grid-item-tag]:px-2.5 [&_.card-grid-item-tag]:py-1 [&_.card-grid-item-tag]:text-[11px] [&_.card-grid-item-tag]:font-medium [&_.card-grid-item-tag]:text-ink-muted " +
+  "[&_.card-grid-item-tag]:rounded-full [&_.card-grid-item-tag]:bg-[var(--card-accent-soft)] [&_.card-grid-item-tag]:px-2.5 [&_.card-grid-item-tag]:py-1 [&_.card-grid-item-tag]:text-[11px] [&_.card-grid-item-tag]:font-medium [&_.card-grid-item-tag]:text-[var(--card-accent-text)] " +
   // Description - "comfortable line-height", KHONG tao khoang trang lon.
   "[&_.card-grid-item-desc]:relative [&_.card-grid-item-desc]:z-10 [&_.card-grid-item-desc]:mt-3 [&_.card-grid-item-desc]:text-[13.5px] [&_.card-grid-item-desc]:leading-relaxed [&_.card-grid-item-desc]:text-ink-muted " +
   // Key info - duong ke mong + danh sach hang label/value gon gang.

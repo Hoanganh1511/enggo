@@ -179,12 +179,23 @@ export function SeriesEntryForm({
         // nguoi dung: "Lưu chỉnh sửa bài viết xong thì ở nguyên đấy báo
         // thành công chứ mắc gì điều hướng về quản lý series") - truoc do
         // tu dong router.push ve trang Quan ly, cat ngang luc dang sua tiep.
-        // router.refresh() de dong bo lai du lieu server (vd readTimeMinutes
-        // tu tinh lai) ma KHONG doi URL.
+        // [2026-10-06] BO router.refresh() - yeu cau nguoi dung: "lưu bài
+        // viết xong lại f5 lại vậy? Không f5 có được không?". Nguyen nhan:
+        // route nay co loading.tsx (Suspense fallback) - goi router.refresh()
+        // lam no CHOP skeleton do ngay giua luc dang soan (unmount/remount
+        // toan bo form, KE CA editor, mat vi tri con tro/cuon trang), dung het
+        // cam giac F5 that. MA router.refresh() o day KHONG MANG LAI LOI ICH
+        // GI CA: moi field cua form (title/slug/contentMarkdown/...) chi doc
+        // `initial` MOT LAN duy nhat qua useState(initial?.x) luc mount (xem
+        // cac dong useState o dau file) - React BO QUA prop `initial` moi tu
+        // lan render sau, nen du co "dong bo lai du lieu server" that, form
+        // cung khong doc duoc gia tri do (tru khi remount, chinh la cai gay
+        // "f5"). readTimeMinutes hien thi cung da co fallback estimateReadTime()
+        // tinh NGAY tren client (dong duoi, "Read time: ..."), khong can cho
+        // server tra ve.
         await updateContentSeriesEntryAction(seriesSlug, initial.id, payload);
         toast.success("Đã lưu Entry");
         setIsDirty(false);
-        router.refresh();
       } else {
         await createContentSeriesEntryAction(seriesSlug, payload);
         toast.success("Đã tạo Entry");
