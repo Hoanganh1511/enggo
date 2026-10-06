@@ -1220,8 +1220,14 @@ function TimedItemChip({
       }}
       title={conflict ? `⚠ Trùng lịch · ${timeLabel} · ${item.title}` : `${timeLabel} · ${item.title}`}
       style={{
-        top: displayTop,
-        height: Math.max(displayHeight, 20),
+        // [2026-10-06] +1/-2 - chua 1 khoang cach nho (~2px) giua 2 task SAT
+        // GIO nhau (vd task A ket thuc 11:00, task B bat dau 11:00) - yeu
+        // cau nguoi dung: "vị trí các task sát giờ nhau cả trên và dưới cũng
+        // nên có khoảng cách một chút". Khong anh huong logic tinh gio that
+        // (displayTop/displayHeight goc van dung de tinh liveStart/liveDuration
+        // o tren) - chi la 1 khoang hut nho THUAN VISUAL luc ve.
+        top: displayTop + 1,
+        height: Math.max(displayHeight - 2, 18),
         left,
         width,
         // [2026-10-06] clipPath - "Example 2" (Overlapping Event Layout):
