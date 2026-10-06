@@ -1217,7 +1217,11 @@ function TimedItemChip({
 // "Người dùng không cần đọc toàn bộ text").
 function TypeLegend({ overrides }: { overrides: Partial<Record<LifeItemType, string>> }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+    // [2026-10-06] grid-cols-2 (truoc flex-wrap - 4 muc vua du 1 hang nen
+    // KHONG BAO GIO tu xuong hang) - yeu cau nguoi dung: "phần chú thích để
+    // thành 2 hàng đi, tăng gap thêm cho thưa ra hơn chút". ep CHINH XAC 2
+    // cot x 2 hang, gap tang len (gap-x-6/gap-y-2.5, truoc gap-x-4/gap-y-1.5).
+    <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
       {LIFE_ITEM_TYPES.map((t) => {
         const palette = resolveLifeItemPalette(t.id, overrides);
         return (
@@ -1225,9 +1229,10 @@ function TypeLegend({ overrides }: { overrides: Partial<Record<LifeItemType, str
             {/* [2026-10-06] Vien mau (khong phai cham DAC) - yeu cau nguoi
                 dung: "Chú thích màu không để vòng tròn đặc, chỉ có viền màu
                 thôi". border-2 + background transparent (khong con
-                backgroundColor dac). */}
+                backgroundColor dac). size-3.5 (truoc size-2.5) - yeu cau
+                nguoi dung: "size vòng tròn để 3.5 nhé". */}
             <span
-              className="size-2.5 shrink-0 rounded-full border-2"
+              className="size-3.5 shrink-0 rounded-full border-2"
               style={{ borderColor: palette.accentStrong }}
               aria-hidden="true"
             />
