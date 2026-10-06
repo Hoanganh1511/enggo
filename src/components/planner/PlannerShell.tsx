@@ -503,7 +503,7 @@ export function PlannerShell({
   // binh thuong) - DayDetailPanel/AddTaskForm doc gia tri nay de TU MO form
   // + dien san gio, roi "tieu thu" (dat ve null) de khong mo lai lan nua neu
   // component re-render vi ly do khac.
-  const [quickAddPrefill, setQuickAddPrefill] = useState<number | null>(null);
+  const [quickAddPrefill, setQuickAddPrefill] = useState<QuickAddPrefill>(null);
   // [2026-10-06] "User customization" (spec section 21) - tai 1 LAN luc mo
   // Planner, dua xuong CA cay qua LifeItemPaletteProvider (xem
   // life-item-palette-context.tsx) de moi noi doc mau Type (TimedItemChip/
@@ -752,8 +752,8 @@ export function PlannerShell({
   // "Click vào khoảng trống... hệ thống tự hiểu Date/Start, mở Add Task".
   // CHI luu lai PHUT - ngay da duoc chinh CHINH `onSelect(d)` (goi kem luc
   // click, xem WeekTimeGrid) tu dong chuyen selectedDate dung ngay cot do roi.
-  function handleSlotClick(minute: number) {
-    setQuickAddPrefill(minute);
+  function handleSlotClick(minute: number, duration?: number) {
+    setQuickAddPrefill({ start: minute, duration });
   }
 
   // [2026-10-05] Tach rieng 2 moc ngay (khong con 1 chuoi "rangeLabel" gop
@@ -818,100 +818,90 @@ export function PlannerShell({
             du rong hon han, dong thoi duoi xl van giu bo cuc xep CHONG DOC
             (grid-cols-1) von da kiem chung la hien thi TOT (lich chiem TRON
             chieu rong, khong bi 2 cot kia chia xe). */}
-        <div className="grid grid-cols-1 items-start gap-5 xl:h-[calc(100dvh-112px)] xl:grid-cols-[208px_1fr_380px] xl:items-stretch">
-          <div className="flex h-fit flex-col gap-4 rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] xl:sticky xl:top-7">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-[20px] font-bold tracking-[-0.4px] text-[color:var(--planner-text-primary)]">
+        {/* [2026-10-07] Sidebar trai (208px, cao bang het 3 cot) GOP thanh 1
+            THANH NGANG mong phia tren - yeu cau nguoi dung: "Cột bên trái
+            giờ bỏ đi, chuyển nó lên thành 1 thanh ngang bên trên cùng, chia
+            ra between 2 bên sao cho không để nó cao quá". Chia 2 nua qua
+            justify-between: TRAI = danh tinh + thao tac (Planner/Tuần-Tháng/
+            Hôm nay/Màu sắc), PHAI = dieu huong ngay (prev/next + khoang
+            ngay/thang). flex-wrap de KHONG vo bo cuc o man hinh hep (duoi
+            xl van xep chong doc nhu luoi/panel ben duoi, khong ep 1 hang).
+            Chieu cao vung noi dung (xl:h-[calc(100dvh-112px)], truoc day gan
+            THANG tren grid 3 cot) nay chuyen sang BOC NGOAI (flex-col), con
+            grid 2 cot ben duoi dung flex-1 min-h-0 de TU CHIA PHAN CAO CON
+            LAI SAU thanh ngang - dam bao TONG chieu cao (thanh + grid) van
+            khop dung 100dvh-112px nhu truoc, khong tran/thieu. */}
+        <div className="flex flex-col gap-4 xl:h-[calc(100dvh-112px)]">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] px-3.5 py-2 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="shrink-0 text-[16px] font-bold tracking-[-0.3px] text-[color:var(--planner-text-primary)]">
                 Planner
               </h1>
-              <p className="text-[12px] text-[color:var(--planner-text-secondary)]">
-                Plan your week, focus on what matters.
-              </p>
+              <div className="h-5 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
+              {/* View Switcher (section 5) - gio xep NGANG (truoc day doc,
+                  khi con la 1 sidebar hep). */}
+              <div className="flex items-center gap-0.5 rounded-xl border border-[color:var(--planner-border-soft)] bg-white/70 p-1">
+                {(["week", "month"] as ViewMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => switchMode(mode)}
+                    className={cn(
+                      "cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
+                      viewMode === mode
+                        ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_2px_8px_rgba(20,30,50,0.06)]"
+                        : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                    )}
+                  >
+                    {mode === "week" ? "Tuần" : "Tháng"}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={goToToday}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium whitespace-nowrap text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-white hover:text-[color:var(--planner-primary)]"
+                >
+                  <CalendarCheck2 size={14} strokeWidth={2} /> Hôm nay
+                </button>
+                <TypeColorSettings
+                  overrides={typeColorOverrides}
+                  onChange={(type, paletteId) => {
+                    setTypeColorOverrides((prev) => ({ ...prev, [type]: paletteId }));
+                    void setPlannerTypeColorAction(type, paletteId).catch(() => {});
+                  }}
+                />
+              </div>
             </div>
 
-            <div className="border-t border-[color:var(--planner-border-soft)]" />
-
-            {/* View Switcher (section 5) - xep DOC (truoc day ngang) de vua
-                be rong hep cua sidebar. */}
-            <div className="flex flex-col gap-0.5 rounded-xl border border-[color:var(--planner-border-soft)] bg-white/70 p-1">
-              {(["week", "month"] as ViewMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => switchMode(mode)}
-                  className={cn(
-                    "cursor-pointer rounded-lg px-3 py-1.5 text-left text-[13px] font-medium transition-colors duration-150 ease-out",
-                    viewMode === mode
-                      ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_2px_8px_rgba(20,30,50,0.06)]"
-                      : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
-                  )}
-                >
-                  {mode === "week" ? "Tuần" : "Tháng"}
-                </button>
-              ))}
+            {/* Date Navigation (section 6) - gio xep NGANG, prev/next canh
+                nhau roi den nhan khoang ngay/thang, thay vi 2 hang doc. */}
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={goToToday}
-                className={cn(
-                  "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-left text-[13px] font-medium text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-white hover:text-[color:var(--planner-primary)]",
-                )}
+                onClick={() => changeAnchor(-1)}
+                className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
               >
-                <CalendarCheck2 size={14} strokeWidth={2} /> Hôm nay
+                <ChevronLeft size={15} className="text-[color:var(--planner-text-secondary)]" />
               </button>
-              <TypeColorSettings
-                overrides={typeColorOverrides}
-                onChange={(type, paletteId) => {
-                  setTypeColorOverrides((prev) => ({ ...prev, [type]: paletteId }));
-                  void setPlannerTypeColorAction(type, paletteId).catch(() => {});
-                }}
-              />
-            </div>
-
-            <div className="border-t border-[color:var(--planner-border-soft)]" />
-
-            {/* Date Navigation (section 6) - xep DOC, nut prev/next canh
-                nhau phia tren, nhan khoang ngay/thang phia duoi. */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => changeAnchor(-1)}
-                  className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-                >
-                  <ChevronLeft
-                    size={15}
-                    className="text-[color:var(--planner-text-secondary)]"
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeAnchor(1)}
-                  className="flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-                >
-                  <ChevronRight
-                    size={15}
-                    className="text-[color:var(--planner-text-secondary)]"
-                  />
-                </button>
-              </div>
-              <div className="flex items-start gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2 py-2">
-                <CalendarDays
-                  size={13}
-                  className="mt-0.5 shrink-0 text-[color:var(--planner-text-muted)]"
-                />
+              <button
+                type="button"
+                onClick={() => changeAnchor(1)}
+                className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+              >
+                <ChevronRight size={15} className="text-[color:var(--planner-text-secondary)]" />
+              </button>
+              <div className="flex items-center gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2.5 py-1.5">
+                <CalendarDays size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
                 {viewMode === "week" ? (
-                  <span className="flex flex-wrap items-baseline gap-x-1 text-[12.5px] leading-[1.4] font-semibold text-[color:var(--planner-text-primary)]">
+                  <span className="flex flex-wrap items-baseline gap-x-1 text-[12.5px] leading-[1.4] font-semibold whitespace-nowrap text-[color:var(--planner-text-primary)]">
                     <span className="whitespace-nowrap">{rangeStart}</span>
-                    <span
-                      className="shrink-0 text-[color:var(--planner-text-muted)]"
-                      aria-hidden="true"
-                    >
+                    <span className="shrink-0 text-[color:var(--planner-text-muted)]" aria-hidden="true">
                       →
                     </span>
                     <span className="whitespace-nowrap">{rangeEnd}</span>
                   </span>
                 ) : (
-                  <span className="text-[12.5px] leading-[1.4] font-semibold text-[color:var(--planner-text-primary)]">
+                  <span className="text-[12.5px] leading-[1.4] font-semibold whitespace-nowrap text-[color:var(--planner-text-primary)]">
                     {monthLabel}
                   </span>
                 )}
@@ -919,63 +909,64 @@ export function PlannerShell({
             </div>
           </div>
 
-          {/* Calendar Main Card (section 7). h-full + overflow-hidden - cho
-              phep card GIAN HET chieu cao hang luoi (lg:h-[calc(100dvh-112px)]
-              o the cha), than luoi gio (WeekTimeGrid) tu cuon RIENG BEN
-              TRONG (flex-1, xem ben duoi) thay vi ca card phinh to qua
-              chieu cao cho phep. */}
-          {viewMode === "week" ? (
-            <div
-              className={cn(
-                "flex h-full flex-col overflow-hidden rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
-                isLoading && "opacity-60",
-              )}
-            >
-              <WeekTimeGrid
-                anchor={anchor}
-                selectedDate={selectedDate}
-                itemsByDate={itemsByDate}
-                selectedItemId={selectedItemId}
-                onSelect={selectDate}
-                onSelectItem={setSelectedItemId}
-                onSlotClick={handleSlotClick}
-                onUpdateItemTime={handleUpdateItemTime}
-                onUpdateItem={handleUpdateItem}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-                typeColorOverrides={typeColorOverrides}
-              />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "h-full overflow-y-auto rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
-                isLoading && "opacity-60",
-              )}
-            >
-              <MonthGrid
-                anchor={anchor}
-                selectedDate={selectedDate}
-                itemsByDate={itemsByDate}
-                onSelect={selectDate}
-              />
-            </div>
-          )}
+          <div className="grid grid-cols-1 items-start gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_380px] xl:items-stretch">
+            {/* Calendar Main Card (section 7). h-full + overflow-hidden - cho
+                phep card GIAN HET chieu cao hang luoi, than luoi gio
+                (WeekTimeGrid) tu cuon RIENG BEN TRONG (flex-1, xem ben duoi)
+                thay vi ca card phinh to qua chieu cao cho phep. */}
+            {viewMode === "week" ? (
+              <div
+                className={cn(
+                  "flex h-full flex-col overflow-hidden rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
+                  isLoading && "opacity-60",
+                )}
+              >
+                <WeekTimeGrid
+                  anchor={anchor}
+                  selectedDate={selectedDate}
+                  itemsByDate={itemsByDate}
+                  selectedItemId={selectedItemId}
+                  onSelect={selectDate}
+                  onSelectItem={setSelectedItemId}
+                  onSlotClick={handleSlotClick}
+                  onUpdateItemTime={handleUpdateItemTime}
+                  onUpdateItem={handleUpdateItem}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  typeColorOverrides={typeColorOverrides}
+                />
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "h-full overflow-y-auto rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
+                  isLoading && "opacity-60",
+                )}
+              >
+                <MonthGrid
+                  anchor={anchor}
+                  selectedDate={selectedDate}
+                  itemsByDate={itemsByDate}
+                  onSelect={selectDate}
+                />
+              </div>
+            )}
 
-          <DayDetailPanel
-            date={selectedDate}
-            items={itemsByDate[selectedDate] ?? []}
-            selectedItemId={selectedItemId}
-            onSelectItem={setSelectedItemId}
-            onAddItem={handleAddItem}
-            onAddChild={handleAddChild}
-            onToggleDone={handleToggleDone}
-            onDelete={handleDelete}
-            onUpdateItem={handleUpdateItem}
-            onChangeDay={changeSelectedDay}
-            quickAddPrefill={quickAddPrefill}
-            onConsumePrefill={() => setQuickAddPrefill(null)}
-          />
+            <DayDetailPanel
+              date={selectedDate}
+              items={itemsByDate[selectedDate] ?? []}
+              selectedItemId={selectedItemId}
+              onSelectItem={setSelectedItemId}
+              onAddItem={handleAddItem}
+              onAddChild={handleAddChild}
+              onToggleDone={handleToggleDone}
+              onDelete={handleDelete}
+              onUpdateItem={handleUpdateItem}
+              onChangeDay={changeSelectedDay}
+              quickAddPrefill={quickAddPrefill}
+              onConsumePrefill={() => setQuickAddPrefill(null)}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -1100,6 +1091,15 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
 // de khong "run tay" bam trung dung phut le vo nghia.
 const DRAG_SNAP_MINUTES = 15;
 const DRAG_SNAP_PX = (HOUR_ROW_HEIGHT * DRAG_SNAP_MINUTES) / 60;
+
+// [2026-10-07] "Giữ kéo thả để tạo task có thời gian bắt đầu và kết thúc ở
+// điểm kéo thả tương ứng" - yeu cau nguoi dung mo rong tu "click 1 o gio"
+// (state #6, CHI co start, duration luon mac dinh DEFAULT_DURATION_MINUTES)
+// thanh "keo tha" THAT (start LAN duration deu lay tu khoang da keo). `null`
+// = chua co prefill nao (giu nguyen hanh vi cu). `duration` OPTIONAL - click
+// 1 cai (khong keo) van di qua CUNG 1 co che nay nhung KHONG kem duration,
+// AddTaskForm tu fallback ve DEFAULT_DURATION_MINUTES y het truoc day.
+type QuickAddPrefill = { start: number; duration?: number } | null;
 
 function TimedItemChip({
   item,
@@ -1801,7 +1801,7 @@ function WeekTimeGrid({
   selectedItemId: string | null;
   onSelect: (date: string) => void;
   onSelectItem: (id: string) => void;
-  onSlotClick: (minute: number) => void;
+  onSlotClick: (minute: number, duration?: number) => void;
   onUpdateItemTime: (
     item: ApiPlannerItem,
     newStart: number,
@@ -1813,6 +1813,68 @@ function WeekTimeGrid({
   typeColorOverrides: Partial<Record<LifeItemType, string>>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  // [2026-10-07] "Giữ kéo thả để tạo task có thời gian bắt đầu và kết thúc ở
+  // điểm kéo thả tương ứng" - mo rong tu "click 1 o gio" (CHI co start) sang
+  // "keo tha THAT" tren vung TRONG cua 1 cot ngay (khong phai tren 1
+  // TimedItemChip co san - the do tu stopPropagation luc mousedown, xem
+  // startDrag trong TimedItemChip). `slotDrag` = preview HIEN TAI (ve o
+  // highlight + nhan gio khi dang keo); `slotDragRef` doc gia tri CUOI CUNG
+  // dong bo trong onUp (cung ly do voi dragRef trong TimedItemChip: updater
+  // function cua setState khong duoc goi setState KHAC o giua).
+  const [slotDrag, setSlotDrag] = useState<{
+    day: string;
+    startMinute: number;
+    currentMinute: number;
+  } | null>(null);
+  const slotDragRef = useRef<typeof slotDrag>(null);
+
+  function startSlotDrag(e: React.MouseEvent<HTMLDivElement>, day: string) {
+    if (e.button !== 0) return; // chi chuot trai
+    const rect = e.currentTarget.getBoundingClientRect();
+    function minuteFromClientY(clientY: number): number {
+      const raw = ((clientY - rect.top) / HOUR_ROW_HEIGHT) * 60;
+      const snapped = Math.round(raw / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES;
+      return Math.min(Math.max(snapped, 0), 24 * 60);
+    }
+    const startMinute = minuteFromClientY(e.clientY);
+    const initial = { day, startMinute, currentMinute: startMinute };
+    slotDragRef.current = initial;
+    setSlotDrag(initial);
+
+    function onMove(ev: MouseEvent) {
+      const next = {
+        day,
+        startMinute,
+        currentMinute: minuteFromClientY(ev.clientY),
+      };
+      slotDragRef.current = next;
+      setSlotDrag(next);
+    }
+    function onUp() {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      const final = slotDragRef.current;
+      slotDragRef.current = null;
+      setSlotDrag(null);
+      if (!final) return;
+      onSelect(final.day);
+      const lo = Math.min(final.startMinute, final.currentMinute);
+      const hi = Math.max(final.startMinute, final.currentMinute);
+      const duration = hi - lo;
+      // Duoi 1 moc snap (15') = coi nhu CHI click (khong keo) - giu nguyen
+      // hanh vi cu (AddTaskForm tu fallback ve DEFAULT_DURATION_MINUTES),
+      // tranh tao 1 "time block" rong/am nghia khi chuot gan nhu khong di
+      // chuyen (vd run tay 1-2px luc click thuong).
+      if (duration < DRAG_SNAP_MINUTES) {
+        onSlotClick(lo);
+      } else {
+        onSlotClick(lo, duration);
+      }
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
+
   // [2026-10-06] Do do rong THANH CUON that - yeu cau nguoi dung: "Phần bên
   // trên ngày cột cũng lệch không đúng thẳng nhau". Nguyen nhan: hang header
   // (ten thu/ngay + "Cả ngày") nam trong 1 wrapper KHONG cuon (shrink-0),
@@ -1968,7 +2030,8 @@ function WeekTimeGrid({
             return (
               <div
                 key={d}
-                className="relative border-l border-[color:var(--planner-grid-line)]"
+                onMouseDown={(e) => startSlotDrag(e, d)}
+                className="relative cursor-pointer border-l border-[color:var(--planner-grid-line)]"
                 style={
                   isToday
                     ? {
@@ -1982,10 +2045,17 @@ function WeekTimeGrid({
                     : { height: HOUR_ROW_HEIGHT * 24 }
                 }
               >
-                {/* [2026-10-05] Click 1 o gio TRONG - yeu cau nguoi dung
-                    (state #6): "Click vào khoảng trống → mở Add Task, giờ
-                    điền sẵn". onSlotClick CHI luu phut (h*60) - ngay da duoc
-                    chon dung qua onSelect(d) o CUNG 1 lan click. */}
+                {/* [2026-10-07] Keo tha TREN vung trong - yeu cau nguoi dung:
+                    "giữ kéo thả để tạo task có thời gian bắt đầu và kết thúc
+                    ở điểm kéo thả tương ứng". onMouseDown dat tren CHINH cot
+                    ngay (ben tren, khong phai tung o gio rieng le nhu truoc) -
+                    startSlotDrag() tu tinh phut tu toa do Y bat ky (khong
+                    gioi han boc theo tung gio tron), click DON GIAN (khong
+                    keo, xem nguong 15' trong onUp) van hoat dong y het cu qua
+                    CUNG 1 co che (onSlotClick(lo) khong kem duration). Cac o
+                    gio ben duoi gio CHI con thuan VISUAL (caro + border), het
+                    onClick rieng - tranh tao TRUNG 2 lan khi mousedown+click
+                    deu kich hoat. */}
                 {/* [2026-10-06] Nen caro (ban co) - yeu cau nguoi dung: "Nền
                     của lịch để dạng caro đi" -> xac nhan kieu "caro bàn cờ (ô
                     xen kẽ)" qua AskUserQuestion: (h + dayIndex) le/chan XOR
@@ -1997,20 +2067,45 @@ function WeekTimeGrid({
                   return (
                     <div
                       key={h}
-                      className="cursor-pointer border-t border-[color:var(--planner-grid-line)] hover:bg-[var(--planner-surface-soft)]"
+                      className="pointer-events-none border-t border-[color:var(--planner-grid-line)]"
                       style={{
                         height: HOUR_ROW_HEIGHT,
                         backgroundColor: checker
                           ? "color-mix(in srgb, var(--planner-surface-soft) 60%, transparent)"
                           : undefined,
                       }}
-                      onClick={() => {
-                        onSelect(d);
-                        onSlotClick(h * 60);
-                      }}
                     />
                   );
                 })}
+                {/* Preview dang keo (section tuong tu nhan gio "bay" luc keo
+                    TimedItemChip o tren) - hop highlight + nhan gio BAT ĐẦU →
+                    KẾT THÚC, cap nhat THEO TUNG KHUNG HINH (state, khong phai
+                    ref) de "theo" chuot that su. pointer-events-none - khong
+                    duoc chan chinh onMouseMove/onMouseUp dang gan tren
+                    document cua chinh thao tac keo nay. */}
+                {slotDrag && slotDrag.day === d && (
+                  <div
+                    className="pointer-events-none absolute right-1 left-1 z-[2] rounded-[6px] border-2 border-dashed"
+                    style={{
+                      top: (Math.min(slotDrag.startMinute, slotDrag.currentMinute) / 60) * HOUR_ROW_HEIGHT,
+                      height: Math.max(
+                        ((Math.abs(slotDrag.currentMinute - slotDrag.startMinute)) / 60) * HOUR_ROW_HEIGHT,
+                        4,
+                      ),
+                      borderColor: "var(--planner-primary)",
+                      backgroundColor: "color-mix(in srgb, var(--planner-primary) 12%, transparent)",
+                    }}
+                  >
+                    <span
+                      className="absolute top-0.5 left-1 rounded-[4px] px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white"
+                      style={{ backgroundColor: "var(--planner-primary)" }}
+                    >
+                      {minutesToLabel(Math.min(slotDrag.startMinute, slotDrag.currentMinute))}
+                      {" — "}
+                      {minutesToLabel(Math.max(slotDrag.startMinute, slotDrag.currentMinute))}
+                    </span>
+                  </div>
+                )}
                 {laidOut.map(
                   ({
                     item,
@@ -2855,7 +2950,7 @@ function AddTaskForm({
   onConsumePrefill,
 }: {
   onAddItem: DayDetailPanelProps["onAddItem"];
-  prefillStart: number | null;
+  prefillStart: QuickAddPrefill;
   onConsumePrefill: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -2879,7 +2974,11 @@ function AddTaskForm({
     if (prefillStart === null) return;
     const t = setTimeout(() => {
       setOpen(true);
-      setDraftStart(prefillStart);
+      setDraftStart(prefillStart.start);
+      // [2026-10-07] Keo tha de chon CA khoang (start+duration) - dien san
+      // duration THAT SU khach keo ra khi co (`duration` undefined = CHI
+      // click, khong keo => giu nguyen draftDuration mac dinh nhu truoc).
+      if (prefillStart.duration !== undefined) setDraftDuration(prefillStart.duration);
       onConsumePrefill();
     }, 0);
     return () => clearTimeout(t);
@@ -3418,7 +3517,7 @@ type DayDetailPanelProps = {
     parentId?: string,
   ) => void;
   onChangeDay: (direction: -1 | 1) => void;
-  quickAddPrefill: number | null;
+  quickAddPrefill: QuickAddPrefill;
   onConsumePrefill: () => void;
 };
 
