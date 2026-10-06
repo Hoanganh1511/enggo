@@ -768,6 +768,7 @@ export function PlannerShell({
                 onSelectItem={setSelectedItemId}
                 onSlotClick={handleSlotClick}
                 onUpdateItemTime={handleUpdateItemTime}
+                typeColorOverrides={typeColorOverrides}
               />
             </div>
           ) : (
@@ -1196,6 +1197,37 @@ function TimedItemChip({
 //
 // [2026-10-05] + Xep cot cho su kien trung gio (layoutTimedItems, section
 // II.15) + dong bo selectedItemId voi Right Panel.
+// [2026-10-06] Chu thich vong mau Type - yeu cau nguoi dung: "nó ở ngay dưới
+// phần head của lịch... khi scroll lịch thì nó sticky ở đầu" - nam NGAY
+// TRONG header cua WeekTimeGrid (duoi hang "Cả ngày", xem noi goi), KHONG
+// con la 1 the rieng dung ben ngoai calendar card nhu ban dau - vi vay o day
+// CHI con la 1 hang flex THUAN (khong tu ve border/bg/shadow rieng nua, de
+// wrapper cha o WeekTimeGrid lo phan border-t/padding, tranh "the long trong
+// the"). 4 vong tron mau accentStrong (cung 1 mau dung lam thanh/cham trong
+// TimedItemChip/TimelineRow) + nhan Type - giup nguoi dung "ngam" dan mau
+// nao la Type nao MA KHONG CAN doc het chu (dung y section 19 cua spec
+// "Người dùng không cần đọc toàn bộ text").
+function TypeLegend({ overrides }: { overrides: Partial<Record<LifeItemType, string>> }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      {LIFE_ITEM_TYPES.map((t) => {
+        const palette = resolveLifeItemPalette(t.id, overrides);
+        return (
+          <span key={t.id} className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--planner-text-secondary)]">
+            <span
+              className="size-2.5 shrink-0 rounded-full ring-1 ring-black/5"
+              style={{ backgroundColor: palette.accentStrong }}
+              aria-hidden="true"
+            />
+            {t.label}
+            <span className="text-[color:var(--planner-text-muted)]">· {t.verb}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function WeekTimeGrid({
   anchor,
   selectedDate,
@@ -1205,6 +1237,7 @@ function WeekTimeGrid({
   onSelectItem,
   onSlotClick,
   onUpdateItemTime,
+  typeColorOverrides,
 }: {
   anchor: string;
   selectedDate: string;
@@ -1218,6 +1251,7 @@ function WeekTimeGrid({
     newStart: number,
     newDuration: number,
   ) => void;
+  typeColorOverrides: Partial<Record<LifeItemType, string>>;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   // [2026-10-06] Do do rong THANH CUON that - yeu cau nguoi dung: "Phần bên
@@ -1317,6 +1351,16 @@ function WeekTimeGrid({
               </div>
             );
           })}
+        </div>
+        {/* [2026-10-06] Chu thich vong mau Type - yeu cau nguoi dung: "nó ở
+            ngay dưới phần head của lịch... khi scroll lịch thì nó sticky ở
+            đầu". Dat NGAY TRONG wrapper header `shrink-0` o tren (KHONG phai
+            trong vung overflow-y-auto ben duoi) - header nay von da KHONG
+            cuon theo luoi gio (scrollRef chi boc rieng phan luoi gio), nen
+            chi can nam trong day la TU DONG "dinh" o tren khi cuon, khong
+            can them CSS `sticky` nao ca. */}
+        <div className="border-t border-[color:var(--planner-border-soft)] px-3 py-2">
+          <TypeLegend overrides={typeColorOverrides} />
         </div>
       </div>
 
