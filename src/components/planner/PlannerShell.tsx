@@ -380,17 +380,28 @@ function layoutTimedItems(
 
       let clipPath: string | undefined;
       if (segments.length > 1) {
+        // Ve VIEN PHAI tu TREN xuong DUOI (thu tu doan tu nhien: 1..n), roi
+        // VIEN TRAI tu DUOI len TREN (phai duyet doan theo thu tu NGUOC n..1
+        // - trong MOI doan van la bottom->top vi dang di LEN) de duong vien
+        // lien tuc, KHONG tu cat chinh no (loi cu: leftEdge day theo thu tu
+        // XUOI roi .reverse() ca mang => xen ke dinh sai thu tu, polygon tu
+        // giao nhau, hien thanh hinh "tam giac/nem" meo thay vi bac thang).
         const rightEdge: ClipPoint[] = [];
-        const leftEdge: ClipPoint[] = [];
         for (const seg of segments) {
           const yTop = ((seg.startMin - entry.start) / totalMinutes) * 100;
           const yBottom = ((seg.endMin - entry.start) / totalMinutes) * 100;
-          const localLeft = ((seg.leftPercent - outerLeft) / outerWidth) * 100;
           const localRight = ((seg.leftPercent + seg.widthPercent - outerLeft) / outerWidth) * 100;
           rightEdge.push([localRight, yTop], [localRight, yBottom]);
+        }
+        const leftEdge: ClipPoint[] = [];
+        for (let i = segments.length - 1; i >= 0; i--) {
+          const seg = segments[i];
+          const yTop = ((seg.startMin - entry.start) / totalMinutes) * 100;
+          const yBottom = ((seg.endMin - entry.start) / totalMinutes) * 100;
+          const localLeft = ((seg.leftPercent - outerLeft) / outerWidth) * 100;
           leftEdge.push([localLeft, yBottom], [localLeft, yTop]);
         }
-        const polygon = [...rightEdge, ...leftEdge.reverse()];
+        const polygon = [...rightEdge, ...leftEdge];
         clipPath = `polygon(${polygon.map(([x, y]) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(", ")})`;
       }
 
