@@ -155,6 +155,19 @@ const HOURS = Array.from({ length: 24 }, (_, h) => h);
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
+// [2026-10-07] RIENG cho "hom nay la ngay nao" (Date hien tai co GIO-PHUT
+// that, khong phai 1 dateStr da neo UTC-midnight nhu moi noi khac dung
+// toISODate() o duoi) - PHAI doc theo gio DIA PHUONG (getFullYear/getMonth/
+// getDate), KHONG duoc qua toISOString() (quy ve UTC): VN la UTC+7 nen tu
+// 00:00-06:59 gio dia phuong, toISOString() tra ve NGAY HOM TRUOC - lam cot
+// "today" tren luoi tuan sang nham ngay (bug: active column lech 1 ngay vao
+// buoi sang som).
+function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
@@ -546,7 +559,7 @@ export function PlannerShell({
   // Nut lich o View Switcher (section 5, "📅") - nhay thang ve HOM NAY, ca
   // anchor (tuan/thang dang xem) lan ngay dang chon.
   function goToToday() {
-    const t = toISODate(new Date());
+    const t = toLocalISODate(new Date());
     setAnchor(t);
     setSelectedDate(t);
     void reload(rangeForMode(viewMode, t));
@@ -1596,7 +1609,7 @@ function WeekTimeGrid({
   const days = Array.from({ length: 7 }, (_, i) =>
     addDays(startOfWeek(anchor), i),
   );
-  const today = toISODate(new Date());
+  const today = toLocalISODate(new Date());
   const weekStart = new Date(startOfWeek(anchor));
   const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
   const now = new Date();
@@ -1831,7 +1844,7 @@ function MonthGrid({
   const monthEnd = endOfMonth(anchor);
   const leadingBlank = (new Date(monthStart).getDay() + 6) % 7; // 0 = Thu hai
   const totalDaysInMonth = Number(monthEnd.slice(8, 10));
-  const today = toISODate(new Date());
+  const today = toLocalISODate(new Date());
   const cells: (string | null)[] = [
     ...Array.from({ length: leadingBlank }, () => null),
     ...Array.from({ length: totalDaysInMonth }, (_, i) =>
@@ -3200,7 +3213,7 @@ function DayDetailPanel({
   const sorted = [...items].sort((a, b) => a.orderIndex - b.orderIndex);
   const isEmpty = sorted.length === 0;
   const focusItem = sorted.find((i) => i.isFocus) ?? null;
-  const isToday = date === toISODate(new Date());
+  const isToday = date === toLocalISODate(new Date());
   const now = new Date();
   const nowMinute = now.getHours() * 60 + now.getMinutes();
 
