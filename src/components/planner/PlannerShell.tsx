@@ -100,13 +100,36 @@ const MONTH_LABELS_EN = [
 // `pastel` la ban rat nhat cua accent (nen the, xem Part II spec: "Pastel
 // Background... phải muted, không neon").
 type CategoryMeta = { label: string; accent: string; pastel: string };
+// Tron 1 mau hex VE PHIA mau trang theo ty le `amount` (0 = giu nguyen mau
+// goc, 1 = trang tuyet doi) - dung tinh pastel (nen the) TU DUY NHAT 1 mau
+// chu dao, thay vi phai tu khai bao tay 2 hex rieng cho moi category (de
+// sai so/lech tong mau giua cac the khi co 10 mau nhu bang nguoi dung gui).
+function tintWithWhite(hex: string, amount: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  return `#${[r, g, b].map((c) => mix(c).toString(16).padStart(2, "0")).join("")}`;
+}
+// [2026-10-06] Bo 10 mau "muted/dusty" nguoi dung gui (bang tham khao day
+// du, thay the HOAN TOAN 6 mau neon/saturated cu) - `accent` LA DUNG hex
+// nguoi dung dua (dung lam thanh mau/cham/chu nhan manh), `pastel` (nen the)
+// tu TINH qua tintWithWhite() thay vi hardcode, dam bao TOAN BO 10 the co
+// cung 1 "cong thuc" do nhat nhu nhau (82% ve phia trang). LUU Y: day/key la
+// chinh gia tri hex, item cu da luu theo 6 hex CU se khong khop key nao nua,
+// tu dong roi ve DEFAULT_CATEGORY (xam "Khác") - khong mat du lieu (item.color
+// trong DB khong doi), chi can nguoi dung chon lai mau MOI cho cac task cu.
 const CATEGORY_BY_COLOR: Record<string, CategoryMeta> = {
-  "#ef4444": { label: "Cá nhân", accent: "#ef4444", pastel: "#fdecef" },
-  "#f97316": { label: "Nội dung", accent: "#f97316", pastel: "#fff1e6" },
-  "#eab308": { label: "Học tập", accent: "#eab308", pastel: "#fff5d9" },
-  "#22c55e": { label: "Sức khoẻ", accent: "#22c55e", pastel: "#eaf8f2" },
-  "#3b82f6": { label: "Công việc", accent: "#3b82f6", pastel: "#eaf2ff" },
-  "#a855f7": { label: "Dự án", accent: "#a855f7", pastel: "#f0eaff" },
+  "#8DBFCB": { label: "Cyan / Sky", accent: "#8DBFCB", pastel: tintWithWhite("#8DBFCB", 0.82) },
+  "#B4C5D2": { label: "Powder Blue", accent: "#B4C5D2", pastel: tintWithWhite("#B4C5D2", 0.82) },
+  "#ACB0CB": { label: "Lavender", accent: "#ACB0CB", pastel: tintWithWhite("#ACB0CB", 0.82) },
+  "#BDB5C9": { label: "Soft Purple", accent: "#BDB5C9", pastel: tintWithWhite("#BDB5C9", 0.82) },
+  "#D7B0B1": { label: "Dusty Pink", accent: "#D7B0B1", pastel: tintWithWhite("#D7B0B1", 0.82) },
+  "#D8B49C": { label: "Soft Peach", accent: "#D8B49C", pastel: tintWithWhite("#D8B49C", 0.82) },
+  "#A9C0B6": { label: "Sage", accent: "#A9C0B6", pastel: tintWithWhite("#A9C0B6", 0.82) },
+  "#D7C58E": { label: "Muted Yellow", accent: "#D7C58E", pastel: tintWithWhite("#D7C58E", 0.82) },
+  "#F4F1EB": { label: "Warm White", accent: "#F4F1EB", pastel: tintWithWhite("#F4F1EB", 0.82) },
+  "#B4BEC5": { label: "Cool Gray", accent: "#B4BEC5", pastel: tintWithWhite("#B4BEC5", 0.82) },
 };
 const DEFAULT_CATEGORY: CategoryMeta = {
   label: "Khác",
@@ -1089,7 +1112,7 @@ function TimedItemChip({
               o day dam bao NEU khong du cho thi cat gon + "…" o CUOI, khong
               bao gio cat GIUA 1 con so/tu nhu truoc. */}
           <span
-            className="flex items-center gap-1 truncate text-[10px] font-medium"
+            className="flex w-full items-center gap-1 truncate text-[10px] font-medium"
             style={{ color: cat.accent }}
           >
             {status === "current" && (
@@ -1102,11 +1125,35 @@ function TimedItemChip({
             {/* Icon dong ho truoc dau thoi gian - yeu cau nguoi dung: "Dấu
                 thời gian bổ sung thêm icon clock". */}
             <Clock size={10} strokeWidth={2.2} className="shrink-0" aria-hidden="true" />
-            <span className="truncate">{timeLabel}</span>
+            {/* min-w-0 + flex-1 (KHONG phai w-full) - day la 1 hang flex
+                CHUNG voi icon Clock (shrink-0), flex-1 moi la cach dung de
+                "chiem het khong gian CON LAI sau icon roi tu co lai cho
+                truncate", w-full se bi tinh sai (100% ca hang, cong them be
+                rong icon se TRAN hang). min-w-0 can thiet vi flex item mac
+                dinh co min-width:auto (= rong bang NOI DUNG, khong bao gio
+                co lai duoc du co flex-1), chan truncate hoat dong. */}
+            <span className="min-w-0 flex-1 truncate pr-3.5">{timeLabel}</span>
           </span>
+          {/* [2026-10-06] w-full + pr-3.5 - yeu cau nguoi dung: "tên task
+              không để full, để cách lề phải 20px và dùng ...". 2 bug lien
+              quan: (1) truoc day KHONG co w-full - tu luc doi parent sang
+              items-start (thay stretch mac dinh) de can noi dung LEN TREN,
+              span nay mat luon rang buoc chieu rong, chu tran het ra ngoai
+              roi bi <button> overflow-hidden CAT CUNG (khong co dau "...").
+              w-full ep span lai LUON rong = het hang, de truncate (da co san)
+              hoat dong dung (ellipsis that). (2) pr-3.5 (14px) CONG them
+              pr-1.5 (6px) co san tren <button> cha = dung 20px cach le phai
+              THAT cua the. Ap dung CA cho dong gio phia tren (cung vi tri,
+              cung ly do) de 2 dong thang hang canh phai voi nhau. */}
+          {/* [2026-10-06] text-black/75 (truoc day 1 mau co dinh
+              --planner-text-primary) - yeu cau nguoi dung: "tên task để
+              black 75% để ăn được một chút màu chủ đạo của task ở nền". Chu
+              KHONG con 100% den tuyet doi - nen (cat.pastel) lo qua duoc 25%
+              con lai, chu tu "nhuom" nhe theo dung mau chu dao cua tung task,
+              khong can tinh rieng 1 mau chu cho tung category. */}
           <span
             className={cn(
-              "truncate text-[12px] font-semibold text-[color:var(--planner-text-primary)]",
+              "w-full truncate pr-3.5 text-[12px] font-semibold text-black/75",
               item.done && "line-through",
             )}
           >
@@ -2104,7 +2151,10 @@ function AddTaskForm({
         />
       </div>
 
-      <div className="flex items-center gap-1.5">
+      {/* flex-wrap (truoc khong co) - 10 mau moi (CATEGORY_BY_COLOR) + "Khác"
+          = 11 cham, nhieu hon han 7 cham cu (6 mau + Khác), de tran ngang
+          trong sidebar hep (380px) neu khong cho xuong hang. */}
+      <div className="flex flex-wrap items-center gap-1.5">
         {PLANNER_COLORS.map((c) => (
           <button
             key={c.label}
@@ -2260,7 +2310,10 @@ function EditItemForm({
         />
       </div>
 
-      <div className="flex items-center gap-1.5">
+      {/* flex-wrap (truoc khong co) - 10 mau moi (CATEGORY_BY_COLOR) + "Khác"
+          = 11 cham, nhieu hon han 7 cham cu (6 mau + Khác), de tran ngang
+          trong sidebar hep (380px) neu khong cho xuong hang. */}
+      <div className="flex flex-wrap items-center gap-1.5">
         {PLANNER_COLORS.map((c) => (
           <button
             key={c.label}
