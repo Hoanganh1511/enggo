@@ -647,7 +647,7 @@ export function PlannerShell({
             (grid-cols-1) von da kiem chung la hien thi TOT (lich chiem TRON
             chieu rong, khong bi 2 cot kia chia xe). */}
         <div className="grid grid-cols-1 items-start gap-5 xl:h-[calc(100dvh-112px)] xl:grid-cols-[208px_1fr_380px] xl:items-stretch">
-          <div className="flex h-fit flex-col gap-4 rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] xl:sticky xl:top-7">
+          <div className="flex h-fit flex-col gap-4 rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)] xl:sticky xl:top-7">
             <div className="flex flex-col gap-1">
               <h1 className="text-[20px] font-bold tracking-[-0.4px] text-[color:var(--planner-text-primary)]">
                 Planner
@@ -755,7 +755,7 @@ export function PlannerShell({
           {viewMode === "week" ? (
             <div
               className={cn(
-                "flex h-full flex-col overflow-hidden rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
+                "flex h-full flex-col overflow-hidden rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
                 isLoading && "opacity-60",
               )}
             >
@@ -774,7 +774,7 @@ export function PlannerShell({
           ) : (
             <div
               className={cn(
-                "h-full overflow-y-auto rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
+                "h-full overflow-y-auto rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
                 isLoading && "opacity-60",
               )}
             >
@@ -2831,7 +2831,7 @@ function DayDetailPanel({
     // thay vi day ca trang cao them (khop yeu cau "ưu tiên diện tích cho
     // phần lịch, sao cho hiển thị được nhiều nhất" - lich luon giu DUNG 1
     // khung cao co dinh, khong bi panh ben canh keo gian).
-    <div className="flex h-full flex-col gap-4 overflow-y-auto rounded-[14px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
+    <div className="flex h-full flex-col gap-4 overflow-y-auto rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-4 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
       {/* Day Header (section 1) - MONDAY / October 5, 2026 / Thứ Hai... +
           nav ngay. */}
       <div className="flex items-start justify-between gap-2">
