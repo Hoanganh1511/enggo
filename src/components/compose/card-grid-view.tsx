@@ -195,6 +195,13 @@ function CardGridItemView({
 }) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [linkPickerOpen, setLinkPickerOpen] = useState(false);
+  // Draft rieng cho o Tags (text tho nguoi dung dang go) - KHONG dung thang
+  // item.tags.join(", ") lam value (bug cu: onChange split-trim-filter RONG
+  // tags bi `.filter(Boolean)` bo di NGAY khi go dau "," cuoi cung, khien
+  // value hien thi "nhay nguoc" ve khong co dau phay vua go - go lien tiep
+  // "Compute," roi go tiep ten tag ke bi mat dau phay nen dinh lai thanh 1
+  // tag). Tach draft (hien thi/go tu do) khoi tags THAT (chi parse khi commit).
+  const [tagsDraft, setTagsDraft] = useState(() => item.tags.join(", "));
   const dotColor = cardGridStatusColor(item.status);
   const Wrapper = editable ? "div" : item.linkHref ? "a" : "div";
 
@@ -305,12 +312,14 @@ function CardGridItemView({
         </div>
       </div>
 
-      {/* Metadata: tags - go cach nhau boi dau phay, tach thanh mang luc luu */}
+      {/* Metadata: tags - go cach nhau boi dau phay, tach thanh mang LUC BLUR
+          (khong parse tren tung ky tu nua - xem comment tagsDraft o tren) */}
       <input
-        value={item.tags.join(", ")}
-        onChange={(e) =>
+        value={tagsDraft}
+        onChange={(e) => setTagsDraft(e.target.value)}
+        onBlur={() =>
           onChange({
-            tags: e.target.value
+            tags: tagsDraft
               .split(",")
               .map((t) => t.trim())
               .filter(Boolean),

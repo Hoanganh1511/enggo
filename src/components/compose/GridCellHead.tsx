@@ -105,9 +105,9 @@ export function GridCellHead({
   if (!editable) {
     return (
       <div className="grid-cell-head flex h-11 items-center gap-2 px-3" style={color ? { backgroundColor: color } : undefined}>
-        {badgeColor && (
+        {(badgeColor || badgeLabel) && (
           <span className="grid-cell-badge" title={badgeLabel || undefined}>
-            <span className="grid-cell-badge-dot" style={{ backgroundColor: badgeColor }} />
+            <span className="grid-cell-badge-dot" style={badgeColor ? { backgroundColor: badgeColor } : undefined} />
             {badgeLabel && <span className="grid-cell-badge-label">{badgeLabel}</span>}
           </span>
         )}
