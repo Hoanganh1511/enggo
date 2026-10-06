@@ -74,6 +74,17 @@ export function TimePickerField({
 }) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  // [2026-10-06] "Bắt đầu"/"Kết thúc" - yeu cau nguoi dung: "điều chỉnh lại
+  // sao cho UI/UX rõ ràng nhận biết về lựa chọn thời gian bắt đầu tới thời
+  // gian kết thúc". Truoc day CHI co 1 danh sach chon GIO BAT DAU + rieng 1
+  // hang chip THOI LUONG co dinh (30/60/90/120p) - khong co cach nao chon
+  // TRUC TIEP gio KET THUC, nguoi dung phai tu quy doi nham trong dau. Them
+  // 2 "tab" Bắt đầu/Kết thúc chuyen doi muc tieu cho CHINH 1 danh sach gio +
+  // o nhap tay + nut nhanh hien co (tai su dung, khong tao UI rieng trung
+  // lap) - "Kết thúc" tinh nguoc lai durationMinutes = end - start thay vi
+  // luu truc tiep (khop dung data model scheduledMinute+durationMinutes san
+  // co, khong doi schema).
+  const [mode, setMode] = useState<"start" | "end">("start");
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const selectedSlotRef = useRef<HTMLButtonElement>(null);
@@ -85,28 +96,53 @@ export function TimePickerField({
     if (!open) return;
     const t = setTimeout(() => {
       setInputValue("");
+      setMode("start");
       inputRef.current?.focus();
       selectedSlotRef.current?.scrollIntoView({ block: "center" });
     }, 0);
     return () => clearTimeout(t);
   }, [open]);
 
+  // Doi tab Bắt đầu/Kết thúc (khong dong/mo lai popover) - cuon list toi
+  // dung gia tri DANG duoc chon cua tab MOI, tranh nguoi dung phai tu cuon
+  // tim lai moi lan chuyen tab.
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => {
+      selectedSlotRef.current?.scrollIntoView({ block: "center" });
+    }, 0);
+    return () => clearTimeout(t);
+  }, [mode, open]);
+
+  const hasTime = startMinute !== null;
+  const endMinute = startMinute !== null ? startMinute + durationMinutes : null;
+
   function commitStart(minutes: number) {
     onChange(minutes, durationMinutes);
   }
+  // Toi thieu 15 phut - tranh tao 1 "time block" rong/am khi nguoi dung chon
+  // gio ket thuc SOM HON hoac TRUNG gio bat dau.
+  function commitEnd(minutes: number) {
+    const base = startMinute ?? nowRoundedMinutes();
+    onChange(base, Math.max(15, minutes - base));
+  }
   function applyQuickOffset(offset: number) {
+    if (mode === "end" && hasTime) {
+      onChange(startMinute, Math.max(15, durationMinutes + offset));
+      return;
+    }
     const base = startMinute ?? nowRoundedMinutes();
     commitStart(Math.max(0, Math.min(23 * 60 + 59, base + offset)));
   }
   function commitManualInput() {
     const parsed = parseTimeInput(inputValue);
     if (parsed === null) return;
-    commitStart(parsed);
+    if (mode === "end") commitEnd(parsed);
+    else commitStart(parsed);
     setInputValue("");
   }
 
   const filteredSlots = filterSlots(inputValue, QUICK_SLOTS);
-  const hasTime = startMinute !== null;
 
   return (
     <PopoverRoot open={open} onOpenChange={setOpen}>
@@ -119,10 +155,10 @@ export function TimePickerField({
           )}
         >
           <Clock size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
-          {hasTime ? (
+          {hasTime && endMinute !== null ? (
             <span className="font-medium whitespace-nowrap">
               {formatHM(startMinute)} <span className="text-[color:var(--planner-text-muted)]">→</span>{" "}
-              {formatHM(startMinute + durationMinutes)}
+              {formatHM(endMinute)}
             </span>
           ) : (
             <span className="whitespace-nowrap">Đặt giờ</span>
@@ -154,7 +190,7 @@ export function TimePickerField({
       <PopoverContent
         open={open}
         align="end"
-        className="z-50 w-[250px] rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
+        className="z-50 w-[270px] rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
       >
         <div className="flex items-center justify-between gap-2">
           <p className="text-[14px] font-semibold text-[color:var(--planner-text-primary)]">Chọn thời gian</p>
@@ -163,8 +199,83 @@ export function TimePickerField({
           </PopoverClose>
         </div>
 
+        {/* [2026-10-06] "Bắt đầu"/"Kết thúc" dang 2 tab co the bam - yeu cau
+            nguoi dung: "UI/UX rõ ràng nhận biết về lựa chọn thời gian bắt
+            đầu tới thời gian kết thúc". La TRUNG TAM cua redesign nay: 1 cap
+            nut hien SONG SONG ca 2 moc gio + mui ten noi giua, bam vao tab
+            nao thi danh sach/o nhap/nut nhanh ben duoi chuyen sang CHINH SUA
+            dung moc do (xem `mode`) - thay vi truoc day CHI co the chon gio
+            BAT DAU, gio KET THUC la "an so" suy ra tu 1 hang chip thoi luong
+            tach roi, de nham. Tab "Kết thúc" khoa (disabled) khi CHUA chon
+            gio bat dau - khong co y nghia gi neu chua co diem xuat phat. */}
+        <div className="mt-2.5 flex items-stretch gap-1">
+          <button
+            type="button"
+            onClick={() => setMode("start")}
+            className={cn(
+              "flex flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-[8px] border px-2.5 py-1.5 text-left transition-colors duration-150 ease-out",
+              mode === "start"
+                ? "border-[color:var(--planner-primary)] bg-[color:var(--planner-primary-soft)]"
+                : "border-[color:var(--planner-border-soft)] hover:bg-[var(--planner-surface-soft)]",
+            )}
+          >
+            <span className="text-[10.5px] font-medium tracking-wide text-[color:var(--planner-text-muted)] uppercase">
+              Bắt đầu
+            </span>
+            <span
+              className={cn(
+                "text-[14px] font-semibold tabular-nums",
+                mode === "start" ? "text-[color:var(--planner-primary)]" : "text-[color:var(--planner-text-primary)]",
+              )}
+            >
+              {hasTime ? formatHM(startMinute) : "--:--"}
+            </span>
+          </button>
+          <div className="flex shrink-0 items-center text-[color:var(--planner-text-muted)]">→</div>
+          <button
+            type="button"
+            disabled={!hasTime}
+            onClick={() => setMode("end")}
+            className={cn(
+              "flex flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-[8px] border px-2.5 py-1.5 text-left transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+              mode === "end"
+                ? "border-[color:var(--planner-primary)] bg-[color:var(--planner-primary-soft)]"
+                : "border-[color:var(--planner-border-soft)] hover:bg-[var(--planner-surface-soft)]",
+            )}
+          >
+            <span className="text-[10.5px] font-medium tracking-wide text-[color:var(--planner-text-muted)] uppercase">
+              Kết thúc
+            </span>
+            <span
+              className={cn(
+                "text-[14px] font-semibold tabular-nums",
+                mode === "end" ? "text-[color:var(--planner-primary)]" : "text-[color:var(--planner-text-primary)]",
+              )}
+            >
+              {hasTime && endMinute !== null ? formatHM(endMinute) : "--:--"}
+            </span>
+          </button>
+        </div>
+
+        {/* Dai 24h thu nho - khoi mau the hien TRUC QUAN vi tri + do dai cua
+            "time block" dang chon trong ca 1 ngay, cung tinh than voi chinh
+            luoi gio o WeekTimeGrid (nhan manh 1 NGON NGU THI GIAC xuyen suot
+            app, khong phai chi la con so). */}
+        {hasTime && endMinute !== null && (
+          <div className="relative mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--planner-surface-soft)]">
+            <div
+              className="absolute inset-y-0 rounded-full bg-[color:var(--planner-primary)]"
+              style={{
+                left: `${(startMinute / 1440) * 100}%`,
+                width: `${Math.max(1, (durationMinutes / 1440) * 100)}%`,
+              }}
+            />
+          </div>
+        )}
+
         {/* Go tay (#7) - go gio LE bat ky (vd "09:17"), Enter de chon. Danh
-            sach ben duoi tu LOC theo tung chu so da go. */}
+            sach ben duoi tu LOC theo tung chu so da go. Placeholder/gia tri
+            commit THEO DUNG tab dang mo (Bắt đầu/Kết thúc, xem `mode`). */}
         <input
           ref={inputRef}
           value={inputValue}
@@ -172,18 +283,21 @@ export function TimePickerField({
           onKeyDown={(e) => {
             if (e.key === "Enter") commitManualInput();
           }}
-          placeholder="vd: 09:30"
+          placeholder={mode === "end" ? "Giờ kết thúc, vd: 11:00" : "Giờ bắt đầu, vd: 09:30"}
           className="mt-2 h-8 w-full rounded-[8px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none focus:border-[#b9c9ef] focus:bg-white"
         />
 
-        {/* Thoi gian nhanh (section 11) - offset tu gio dang chon (hoac hien
-            tai neu chua chon). */}
+        {/* Thoi gian nhanh (section 11) - offset tu moc GIO DANG CHINH SUA
+            (Bắt đầu hoac Kết thúc tuy `mode`, hoac hien tai neu chua chon
+            gio nao). */}
         <div className="mt-2.5 flex flex-col gap-1">
-          <p className="text-[11px] font-medium text-[color:var(--planner-text-muted)]">Thời gian nhanh</p>
+          <p className="text-[11px] font-medium text-[color:var(--planner-text-muted)]">
+            {mode === "end" ? "Kết thúc nhanh" : "Bắt đầu nhanh"}
+          </p>
           <div className="flex flex-wrap gap-1">
             <button
               type="button"
-              onClick={() => commitStart(nowRoundedMinutes())}
+              onClick={() => (mode === "end" ? commitEnd(nowRoundedMinutes()) : commitStart(nowRoundedMinutes()))}
               className="cursor-pointer rounded-full border border-[color:var(--planner-border-soft)] px-2 py-1 text-[11.5px] font-medium text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
             >
               Bây giờ
@@ -201,21 +315,26 @@ export function TimePickerField({
           </div>
         </div>
 
-        {/* Danh sach gio (#1) - 2 cot, cach 30 phut, cuon rieng. */}
-        <div ref={listRef} className="mt-2.5 grid max-h-[180px] grid-cols-2 gap-x-1.5 gap-y-0.5 overflow-y-auto">
+        {/* Danh sach gio (#1) - 2 cot, cach 30 phut, cuon rieng. Chon slot
+            nao se gan cho moc DANG MO (Bắt đầu/Kết thúc, xem `mode` + tab o
+            tren) - selected/onClick deu doc theo dung moc do. */}
+        <p className="mt-2.5 text-[11px] font-medium text-[color:var(--planner-text-muted)]">
+          {mode === "end" ? "Chọn giờ kết thúc" : "Chọn giờ bắt đầu"}
+        </p>
+        <div ref={listRef} className="mt-1 grid max-h-[180px] grid-cols-2 gap-x-1.5 gap-y-0.5 overflow-y-auto">
           {filteredSlots.length === 0 ? (
             <p className="col-span-2 py-3 text-center text-[12px] text-[color:var(--planner-text-muted)]">
               Không có gợi ý khớp
             </p>
           ) : (
             filteredSlots.map((slot) => {
-              const selected = startMinute === slot;
+              const selected = mode === "end" ? endMinute === slot : startMinute === slot;
               return (
                 <button
                   key={slot}
                   ref={selected ? selectedSlotRef : undefined}
                   type="button"
-                  onClick={() => commitStart(slot)}
+                  onClick={() => (mode === "end" ? commitEnd(slot) : commitStart(slot))}
                   className={cn(
                     "flex cursor-pointer items-center justify-between rounded-[7px] px-2 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out",
                     selected
@@ -231,12 +350,14 @@ export function TimePickerField({
           )}
         </div>
 
-        {/* Thoi luong (#5, "time block" thay vi 1 moc gio don) - CHI co y
-            nghia khi da chon gio bat dau. */}
+        {/* Thoi luong (#5, "time block" thay vi 1 moc gio don) - loi tat CHINH
+            "Kết thúc" theo do dai thay vi theo 1 moc gio cu the (tuong duong
+            ve ket qua, chi khac cach nghi) - CHI co y nghia khi da chon gio
+            bat dau. */}
         {hasTime && (
           <div className="mt-2.5 flex flex-col gap-1 border-t border-[color:var(--planner-border-soft)] pt-2.5">
             <p className="text-[11px] font-medium text-[color:var(--planner-text-muted)]">
-              Thời lượng · {formatDuration(durationMinutes)}
+              Hoặc chọn nhanh thời lượng · {formatDuration(durationMinutes)}
             </p>
             <div className="flex flex-wrap gap-1">
               {QUICK_DURATIONS.map((d) => (
