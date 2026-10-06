@@ -4,7 +4,30 @@ import { useState } from "react";
 import { Hash, Palette, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { getRecentColors, addRecentColor } from "@/lib/recent-colors";
 import { GRID_BADGE_PRESETS, isValidCssColor } from "./post-extensions";
+
+// Hang swatch "mau gan day" - dung CHUNG cho ca 2 popover (badge + nen head)
+// trong file nay, doc lap voi GRID_BADGE_PRESETS (preset CO DINH, khac voi
+// danh sach nay la DONG theo lich su chon that cua nguoi dung).
+function RecentColorSwatches({ colors, onPick }: { colors: string[]; onPick: (color: string) => void }) {
+  if (colors.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <span className="w-full text-[11px] font-medium text-ink-faint">Màu gần đây</span>
+      {colors.map((c) => (
+        <button
+          key={c}
+          type="button"
+          title={c}
+          onClick={() => onPick(c)}
+          className="size-5 shrink-0 cursor-pointer rounded-full ring-1 ring-border ring-offset-1 ring-offset-surface"
+          style={{ backgroundColor: c }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // [2026-09-19] "Phần head" tach thanh 1 COMPONENT DOC LAP (khong import gi
 // tu Tiptap/editor) - yeu cau nguoi dung: "tôi muốn xây dựng toàn bộ phần
@@ -41,6 +64,11 @@ export function GridCellHead({
   const [error, setError] = useState<string | null>(null);
   const [badgeDraft, setBadgeDraft] = useState(badgeColor ?? "");
   const [badgeError, setBadgeError] = useState<string | null>(null);
+  const [recentColors, setRecentColors] = useState<string[]>([]);
+
+  function rememberColor(value: string) {
+    setRecentColors(addRecentColor(value));
+  }
 
   function commitDraft(value: string) {
     const trimmed = value.trim();
@@ -52,6 +80,7 @@ export function GridCellHead({
     if (isValidCssColor(trimmed)) {
       onColorChange(trimmed);
       setError(null);
+      rememberColor(trimmed);
     } else {
       setError("Không hợp lệ - dùng hex (#RRGGBB) hoặc rgba(...)");
     }
@@ -67,6 +96,7 @@ export function GridCellHead({
     if (isValidCssColor(trimmed)) {
       onBadgeChange({ badgeColor: trimmed });
       setBadgeError(null);
+      rememberColor(trimmed);
     } else {
       setBadgeError("Không hợp lệ - dùng hex (#RRGGBB) hoặc rgba(...)");
     }
@@ -107,6 +137,9 @@ export function GridCellHead({
           if (o) {
             setBadgeDraft(badgeColor ?? "");
             setBadgeError(null);
+            setRecentColors(getRecentColors());
+          } else if (badgeColor) {
+            rememberColor(badgeColor);
           }
         }}
       >
@@ -123,7 +156,7 @@ export function GridCellHead({
               className={cn("size-2 shrink-0 rounded-full", !badgeColor && "border border-dashed border-ink-faint")}
               style={badgeColor ? { backgroundColor: badgeColor } : undefined}
             />
-            <span className="max-w-22 truncate text-[11px] font-medium text-ink">
+            <span className="max-w-40 truncate text-[11px] font-medium text-ink">
               {badgeLabel || (badgeColor ? "Badge" : "+ Badge")}
             </span>
           </button>
@@ -173,6 +206,14 @@ export function GridCellHead({
               />
             ))}
           </div>
+          <RecentColorSwatches
+            colors={recentColors}
+            onPick={(c) => {
+              setBadgeDraft(c);
+              setBadgeError(null);
+              onBadgeChange({ badgeColor: c });
+            }}
+          />
           {badgeColor && (
             <button
               type="button"
@@ -223,6 +264,9 @@ export function GridCellHead({
           if (o) {
             setDraft(color ?? "");
             setError(null);
+            setRecentColors(getRecentColors());
+          } else if (color) {
+            rememberColor(color);
           }
         }}
       >
@@ -257,6 +301,14 @@ export function GridCellHead({
             />
           </div>
           {error && <p className="mt-1.5 text-[11px] text-danger">{error}</p>}
+          <RecentColorSwatches
+            colors={recentColors}
+            onPick={(c) => {
+              setDraft(c);
+              setError(null);
+              onColorChange(c);
+            }}
+          />
           {color && (
             <button
               type="button"
