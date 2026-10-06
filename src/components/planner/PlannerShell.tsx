@@ -1220,14 +1220,13 @@ function TimedItemChip({
       }}
       title={conflict ? `⚠ Trùng lịch · ${timeLabel} · ${item.title}` : `${timeLabel} · ${item.title}`}
       style={{
-        // [2026-10-06] +1/-2 - chua 1 khoang cach nho (~2px) giua 2 task SAT
-        // GIO nhau (vd task A ket thuc 11:00, task B bat dau 11:00) - yeu
-        // cau nguoi dung: "vị trí các task sát giờ nhau cả trên và dưới cũng
-        // nên có khoảng cách một chút". Khong anh huong logic tinh gio that
-        // (displayTop/displayHeight goc van dung de tinh liveStart/liveDuration
-        // o tren) - chi la 1 khoang hut nho THUAN VISUAL luc ve.
-        top: displayTop + 1,
-        height: Math.max(displayHeight - 2, 18),
+        // [2026-10-06] +3/-6 (truoc +1/-2, nguoi dung yeu cau "tăng thêm 2px"
+        // nua) - chua khoang cach giua 2 task SAT GIO nhau (vd task A ket
+        // thuc 11:00, task B bat dau 11:00). Khong anh huong logic tinh gio
+        // that (displayTop/displayHeight goc van dung de tinh liveStart/
+        // liveDuration o tren) - chi la 1 khoang hut nho THUAN VISUAL luc ve.
+        top: displayTop + 3,
+        height: Math.max(displayHeight - 6, 16),
         left,
         width,
         // [2026-10-06] clipPath - "Example 2" (Overlapping Event Layout):
@@ -1713,8 +1712,11 @@ function WeekTimeGrid({
                   isToday
                     ? {
                         height: HOUR_ROW_HEIGHT * 24,
+                        // [2026-10-06] Nhat hon 30% (color-mix pha them 30%
+                        // trang) - yeu cau nguoi dung: "nền của cột today nên
+                        // nhạt hơn thêm 30%".
                         backgroundImage:
-                          "linear-gradient(180deg, #f7f9ff 0%, #fbfcff 100%)",
+                          "linear-gradient(180deg, color-mix(in srgb, #f7f9ff 70%, white) 0%, color-mix(in srgb, #fbfcff 70%, white) 100%)",
                       }
                     : { height: HOUR_ROW_HEIGHT * 24 }
                 }
@@ -1753,8 +1755,8 @@ function WeekTimeGrid({
                         ((itemEndMinute(item) - item.scheduledMinute) / 60) *
                         HOUR_ROW_HEIGHT
                       }
-                      left={`calc(${leftPercent}% + 2px)`}
-                      width={`calc(${widthPercent}% - 4px)`}
+                      left={`calc(${leftPercent}% + 4px)`}
+                      width={`calc(${widthPercent}% - 8px)`}
                       clipPath={clipPath}
                       contentLeftPercent={contentLeftPercent}
                       contentWidthPercent={contentWidthPercent}
