@@ -1697,7 +1697,7 @@ function WeekTimeGrid({
               </div>
             ))}
           </div>
-          {days.map((d) => {
+          {days.map((d, dayIndex) => {
             const timed = (itemsByDate[d] ?? []).filter(
               (it): it is ApiPlannerItem & { scheduledMinute: number } =>
                 it.scheduledMinute !== null,
@@ -1725,17 +1725,31 @@ function WeekTimeGrid({
                     (state #6): "Click vào khoảng trống → mở Add Task, giờ
                     điền sẵn". onSlotClick CHI luu phut (h*60) - ngay da duoc
                     chon dung qua onSelect(d) o CUNG 1 lan click. */}
-                {HOURS.map((h) => (
-                  <div
-                    key={h}
-                    className="cursor-pointer border-t border-[color:var(--planner-grid-line)] hover:bg-[var(--planner-surface-soft)]"
-                    style={{ height: HOUR_ROW_HEIGHT }}
-                    onClick={() => {
-                      onSelect(d);
-                      onSlotClick(h * 60);
-                    }}
-                  />
-                ))}
+                {/* [2026-10-06] Nen caro (ban co) - yeu cau nguoi dung: "Nền
+                    của lịch để dạng caro đi" -> xac nhan kieu "caro bàn cờ (ô
+                    xen kẽ)" qua AskUserQuestion: (h + dayIndex) le/chan XOR
+                    nhau quyet dinh to hay khong, giong ban co vua. Mau to rat
+                    nhat + color-mix pha trong suot de VAN layer dung len tren
+                    gradient rieng cua cot today (khong "de" mat tint today). */}
+                {HOURS.map((h) => {
+                  const checker = (h + dayIndex) % 2 === 0;
+                  return (
+                    <div
+                      key={h}
+                      className="cursor-pointer border-t border-[color:var(--planner-grid-line)] hover:bg-[var(--planner-surface-soft)]"
+                      style={{
+                        height: HOUR_ROW_HEIGHT,
+                        backgroundColor: checker
+                          ? "color-mix(in srgb, var(--planner-surface-soft) 60%, transparent)"
+                          : undefined,
+                      }}
+                      onClick={() => {
+                        onSelect(d);
+                        onSlotClick(h * 60);
+                      }}
+                    />
+                  );
+                })}
                 {laidOut.map(
                   ({
                     item,
