@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Clock, ChevronDown, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Clock, ChevronDown, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PopoverRoot, PopoverTrigger, PopoverContent, PopoverClose } from "@/components/ui/popover";
 
@@ -117,8 +118,16 @@ export function TimePickerField({
   const hasTime = startMinute !== null;
   const endMinute = startMinute !== null ? startMinute + durationMinutes : null;
 
+  // [2026-10-06] Tu dong TRUOT sang buoc "Kết thúc" NGAY sau khi chon xong
+  // "Bắt đầu" - yeu cau nguoi dung: "animation ban đầu sẽ màu active ở giờ
+  // bắt đầu, sau khi chọn thời gian bắt đầu thì animation slide trượt sang
+  // giờ kết thúc rồi chọn time kết thúc" (truoc day nguoi dung phai TU bam
+  // tab "Kết thúc", khong co luong dan dat). commitStart la noi DUY NHAT ca
+  // 3 duong chon gio bat dau (click slot/go tay Enter/nut nhanh +15'/.../
+  // "Bây giờ") deu di qua, nen chi can doi 1 cho nay la bao phu CA 3.
   function commitStart(minutes: number) {
     onChange(minutes, durationMinutes);
+    if (mode === "start") setMode("end");
   }
   // Toi thieu 15 phut - tranh tao 1 "time block" rong/am khi nguoi dung chon
   // gio ket thuc SOM HON hoac TRUNG gio bat dau.
@@ -231,7 +240,9 @@ export function TimePickerField({
               {hasTime ? formatHM(startMinute) : "--:--"}
             </span>
           </button>
-          <div className="flex shrink-0 items-center text-[color:var(--planner-text-muted)]">→</div>
+          <div className="flex shrink-0 items-center text-[color:var(--planner-text-muted)]">
+            <ChevronRight size={14} />
+          </div>
           <button
             type="button"
             disabled={!hasTime}
@@ -273,82 +284,102 @@ export function TimePickerField({
           </div>
         )}
 
-        {/* Go tay (#7) - go gio LE bat ky (vd "09:17"), Enter de chon. Danh
-            sach ben duoi tu LOC theo tung chu so da go. Placeholder/gia tri
-            commit THEO DUNG tab dang mo (Bắt đầu/Kết thúc, xem `mode`). */}
-        <input
-          ref={inputRef}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commitManualInput();
-          }}
-          placeholder={mode === "end" ? "Giờ kết thúc, vd: 11:00" : "Giờ bắt đầu, vd: 09:30"}
-          className="mt-2 h-8 w-full rounded-[8px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none focus:border-[#b9c9ef] focus:bg-white"
-        />
+        {/* [2026-10-06] AnimatePresence mode="wait" + key={mode} - "slide"
+            TRUOT ngang khi chuyen buoc (tu dong SAU khi chon xong Bắt đầu,
+            xem commitStart(), hoac bam tay vao tab) - yeu cau nguoi dung:
+            "animation slide trượt sang giờ kết thúc". Huong truot theo DUNG
+            chieu luong (sang buoc "end" thi noi dung MOI truot TU PHAI vao,
+            noi dung CU truot ra TRAI; quay lai "start" thi NGUOC LAI) -
+            cung 1 bo gia tri duration/easing voi quy uoc dropdown chung cua
+            app (CLAUDE.md: 0.15-0.2s, easeOut), chi them truc x rieng cho
+            hieu ung truot ngang nay. */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={mode}
+            initial={{ x: mode === "end" ? 24 : -24, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: mode === "end" ? -24 : 24, opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+          >
+            {/* Go tay (#7) - go gio LE bat ky (vd "09:17"), Enter de chon.
+                Danh sach ben duoi tu LOC theo tung chu so da go. Placeholder/
+                gia tri commit THEO DUNG buoc dang mo (Bắt đầu/Kết thúc, xem
+                `mode`). */}
+            <input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitManualInput();
+              }}
+              placeholder={mode === "end" ? "Giờ kết thúc, vd: 11:00" : "Giờ bắt đầu, vd: 09:30"}
+              className="mt-2 h-8 w-full rounded-[8px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none focus:border-[#b9c9ef] focus:bg-white"
+            />
 
-        {/* Thoi gian nhanh (section 11) - offset tu moc GIO DANG CHINH SUA
-            (Bắt đầu hoac Kết thúc tuy `mode`, hoac hien tai neu chua chon
-            gio nao). */}
-        <div className="mt-2.5 flex flex-col gap-1">
-          <p className="text-[11px] font-medium text-[color:var(--planner-text-muted)]">
-            {mode === "end" ? "Kết thúc nhanh" : "Bắt đầu nhanh"}
-          </p>
-          <div className="flex flex-wrap gap-1">
-            <button
-              type="button"
-              onClick={() => (mode === "end" ? commitEnd(nowRoundedMinutes()) : commitStart(nowRoundedMinutes()))}
-              className="cursor-pointer rounded-full border border-[color:var(--planner-border-soft)] px-2 py-1 text-[11.5px] font-medium text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
-            >
-              Bây giờ
-            </button>
-            {[15, 30, 60].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => applyQuickOffset(m)}
-                className="cursor-pointer rounded-full border border-[color:var(--planner-border-soft)] px-2 py-1 text-[11.5px] font-medium text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
-              >
-                +{m < 60 ? `${m} phút` : "1 giờ"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Danh sach gio (#1) - 2 cot, cach 30 phut, cuon rieng. Chon slot
-            nao se gan cho moc DANG MO (Bắt đầu/Kết thúc, xem `mode` + tab o
-            tren) - selected/onClick deu doc theo dung moc do. */}
-        <p className="mt-2.5 text-[11px] font-medium text-[color:var(--planner-text-muted)]">
-          {mode === "end" ? "Chọn giờ kết thúc" : "Chọn giờ bắt đầu"}
-        </p>
-        <div ref={listRef} className="mt-1 grid max-h-[180px] grid-cols-2 gap-x-1.5 gap-y-0.5 overflow-y-auto">
-          {filteredSlots.length === 0 ? (
-            <p className="col-span-2 py-3 text-center text-[12px] text-[color:var(--planner-text-muted)]">
-              Không có gợi ý khớp
-            </p>
-          ) : (
-            filteredSlots.map((slot) => {
-              const selected = mode === "end" ? endMinute === slot : startMinute === slot;
-              return (
+            {/* Thoi gian nhanh (section 11) - offset tu moc GIO DANG CHINH
+                SUA (Bắt đầu hoac Kết thúc tuy `mode`, hoac hien tai neu chua
+                chon gio nao). */}
+            <div className="mt-2.5 flex flex-col gap-1">
+              <p className="text-[11px] font-medium text-[color:var(--planner-text-muted)]">
+                {mode === "end" ? "Kết thúc nhanh" : "Bắt đầu nhanh"}
+              </p>
+              <div className="flex flex-wrap gap-1">
                 <button
-                  key={slot}
-                  ref={selected ? selectedSlotRef : undefined}
                   type="button"
-                  onClick={() => (mode === "end" ? commitEnd(slot) : commitStart(slot))}
-                  className={cn(
-                    "flex cursor-pointer items-center justify-between rounded-[7px] px-2 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out",
-                    selected
-                      ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
-                      : "text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]",
-                  )}
+                  onClick={() => (mode === "end" ? commitEnd(nowRoundedMinutes()) : commitStart(nowRoundedMinutes()))}
+                  className="cursor-pointer rounded-full border border-[color:var(--planner-border-soft)] px-2 py-1 text-[11.5px] font-medium text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
                 >
-                  {formatHM(slot)}
-                  {selected && <Check size={13} />}
+                  Bây giờ
                 </button>
-              );
-            })
-          )}
-        </div>
+                {[15, 30, 60].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => applyQuickOffset(m)}
+                    className="cursor-pointer rounded-full border border-[color:var(--planner-border-soft)] px-2 py-1 text-[11.5px] font-medium text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
+                  >
+                    +{m < 60 ? `${m} phút` : "1 giờ"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Danh sach gio (#1) - 2 cot, cach 30 phut, cuon rieng. Chon
+                slot nao se gan cho moc DANG MO (Bắt đầu/Kết thúc, xem `mode`
+                + tab o tren) - selected/onClick deu doc theo dung moc do. */}
+            <p className="mt-2.5 text-[11px] font-medium text-[color:var(--planner-text-muted)]">
+              {mode === "end" ? "Chọn giờ kết thúc" : "Chọn giờ bắt đầu"}
+            </p>
+            <div ref={listRef} className="mt-1 grid max-h-[180px] grid-cols-2 gap-x-1.5 gap-y-0.5 overflow-y-auto">
+              {filteredSlots.length === 0 ? (
+                <p className="col-span-2 py-3 text-center text-[12px] text-[color:var(--planner-text-muted)]">
+                  Không có gợi ý khớp
+                </p>
+              ) : (
+                filteredSlots.map((slot) => {
+                  const selected = mode === "end" ? endMinute === slot : startMinute === slot;
+                  return (
+                    <button
+                      key={slot}
+                      ref={selected ? selectedSlotRef : undefined}
+                      type="button"
+                      onClick={() => (mode === "end" ? commitEnd(slot) : commitStart(slot))}
+                      className={cn(
+                        "flex cursor-pointer items-center justify-between rounded-[7px] px-2 py-1.5 text-[13px] font-medium transition-colors duration-150 ease-out",
+                        selected
+                          ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
+                          : "text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]",
+                      )}
+                    >
+                      {formatHM(slot)}
+                      {selected && <Check size={13} />}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Thoi luong (#5, "time block" thay vi 1 moc gio don) - loi tat CHINH
             "Kết thúc" theo do dai thay vi theo 1 moc gio cu the (tuong duong
