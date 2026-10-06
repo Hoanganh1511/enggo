@@ -1019,7 +1019,6 @@ function TimedItemChip({
         left,
         width,
         backgroundColor: cat.pastel,
-        borderLeftColor: cat.accent,
         boxShadow: selected
           ? `0 0 0 2px white, 0 0 0 3px ${cat.accent}`
           : undefined,
@@ -1033,13 +1032,28 @@ function TimedItemChip({
         // mep tren giong cac app lich khac). pt-1 bu lai khoang trong tren
         // cung (truoc chi dua vao justify-center de can giua, gio can them 1
         // chut dem tren thay vi dinh sat mep).
-        "group absolute z-[1] flex flex-col items-start justify-start overflow-hidden rounded-sm border-l-[3px] px-1.5 pt-1 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
+        // [2026-10-06] pl-4 (truoc px-1.5 + border-l-[3px]) - yeu cau nguoi
+        // dung: "Tôi không muốn thanh màu đậm nó là viền nữa, thanh màu đậm
+        // sẽ nằm bên trong thẻ task, nó sẽ cách lề trái của thẻ 6px". Thanh
+        // mau gio la 1 <div> RIENG (xem ben duoi, khong con border-l) neo
+        // tuyet doi cach mep trai 6px (left-1.5) - pl-4 (16px) chua ca phan
+        // 6px do + be rong thanh (3px) + 1 khoang ho nho truoc chu, dam bao
+        // noi dung khong de len thanh mau.
+        "group absolute z-[1] flex flex-col items-start justify-start overflow-hidden rounded-sm pt-1 pr-1.5 pl-4 text-left transition-[filter,box-shadow] duration-150 ease-out hover:z-[2] hover:brightness-95 hover:shadow-[0_2px_6px_rgba(20,30,50,.08)]",
         drag
           ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]"
           : "cursor-grab",
         item.done && "opacity-55",
       )}
     >
+      {/* Thanh mau accent - NAM BEN TRONG the (khong con la border), cach le
+          trai 6px. top/bottom 4px - 1 "vien" nho tren/duoi cho thanh khong
+          cham sat mep the, giong 1 vien tron doc dang "status bar" thu nho. */}
+      <div
+        className="absolute top-1 bottom-1 left-1.5 w-[3px] rounded-full"
+        style={{ backgroundColor: cat.accent }}
+        aria-hidden="true"
+      />
       {compact ? (
         <span className="flex items-center gap-1 truncate">
           {status === "current" && (
