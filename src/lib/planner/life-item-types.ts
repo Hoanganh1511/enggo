@@ -164,21 +164,43 @@ const DEFAULT_PALETTES: LifeItemPalette[] = [
   },
 ];
 
-// 10 bo mau MO RONG (section 22: "Ngoài 4 màu semantic mặc định, user có
-// thể chọn") - sinh tu derivePalette(), 1 mau "strong" goc rieng cho tung
-// ten, phan biet ro voi 4 mau mac dinh o tren (vd Sky khac Blue, Purple khac
-// Lavender, Yellow khac Sand).
+// [2026-10-06] 10 bo mau MO RONG (section 22: "Ngoài 4 màu semantic mặc
+// định, user có thể chọn") - yeu cau nguoi dung: "Cái bảng màu này tự giảm
+// màu làm màu nền kết hợp với logic cơ mà" - dung LAI DUNG 10 hex CHINH
+// nguoi dung da dua truoc do (bang "Nhóm/Màu gần đúng/HEX tham khảo" - truoc
+// day dung lam CATEGORY_BY_COLOR cua Planner, nay tai dung lam goc cho
+// derivePalette()) THAY VI 10 mau tu nghi truoc do - dua qua CUNG 1 "logic"
+// derivePalette() (tint/shade tu 1 mau goc DUY NHAT) de tu dong sinh ca
+// accent/soft/background/border/text, dam bao dung mau nguoi dung chon LAN
+// day la mau "strong" (goc, đậm nhất) cua tung family, KHONG PHAI mau da
+// giam dam con lai (pastel) - id rieng de KHONG trung voi 4 mau mac dinh o
+// tren (Lavender/Sage da la ten mac dinh, o day gan them hau to "-dusty" du
+// TEN hien thi van giu dung chu "Lavender"/"Sage" nguoi dung dat).
 const EXTENDED_PALETTES: LifeItemPalette[] = [
-  derivePalette("cyan", "Pastel Cyan", "#2E9AAE"),
-  derivePalette("purple", "Pastel Purple", "#9360C4"),
-  derivePalette("pink", "Pastel Pink", "#CC5B94"),
-  derivePalette("rose", "Pastel Rose", "#D16B7A"),
-  derivePalette("peach", "Pastel Peach", "#DB8C5E"),
-  derivePalette("apricot", "Pastel Apricot", "#D9A24C"),
-  derivePalette("yellow", "Pastel Yellow", "#C7A83A"),
-  derivePalette("mint", "Pastel Mint", "#45A98F"),
-  derivePalette("green", "Pastel Green", "#4E9B5A"),
-  derivePalette("sky", "Pastel Sky", "#4596C9"),
+  derivePalette("cyan-sky", "Cyan / Sky", "#8DBFCB"),
+  derivePalette("powder-blue", "Powder Blue", "#B4C5D2"),
+  derivePalette("lavender-dusty", "Lavender", "#ACB0CB"),
+  derivePalette("soft-purple", "Soft Purple", "#BDB5C9"),
+  derivePalette("dusty-pink", "Dusty Pink", "#D7B0B1"),
+  derivePalette("soft-peach", "Soft Peach", "#D8B49C"),
+  derivePalette("sage-dusty", "Sage", "#A9C0B6"),
+  derivePalette("muted-yellow", "Muted Yellow", "#D7C58E"),
+  // [2026-10-06] Warm White la 1 TRUONG HOP DAC BIET trong 10 mau tren - cac
+  // row khac deu la 1 mau "dam vua" ma nguoi dung mo ta (vd "xanh cyan nhạt")
+  // dung LAM GOC (accentStrong) roi derivePalette() TINT SANG NHAT HON de ra
+  // accent/soft/background. Rieng "Warm White" (#F4F1EB) nguoi dung TU GOI
+  // THANG la "nền trắng ấm" - tuc hex nay von da dung y lam BACKGROUND (mau
+  // NHAT NHAT), khong phai mau GOC. Neu dua thang hex nay vao derivePalette()
+  // nhu 13 mau con lai, accentStrong se TRUNG chinh no (gan trang tuyet
+  // doi) - vo hieu luc vai tro "icon/checkbox/active state can du tuong
+  // phan" cua token do (xem comment derivePalette() ve nguyen tac Pastel
+  // collection: "giữ accentStrong đủ đậm để text/icon vẫn có contrast").
+  // Sua: derivePalette() tu 1 mau GOC đậm HON (shade 55% tu chinh hex do -
+  // 1 xam am da trung tinh, cung "than" voi #F4F1EB) de accentStrong that
+  // su nhin thay duoc, SAU DO ghi de accentLight = DUNG hex nguoi dung dua
+  // (dam bao nen the van la "nền trắng ấm" chinh xac tung ky tu).
+  { ...derivePalette("warm-white", "Warm White", shade("#F4F1EB", 0.55)), accentLight: "#F4F1EB" },
+  derivePalette("cool-gray", "Cool Gray", "#B4BEC5"),
 ];
 
 export const LIFE_ITEM_PALETTES: LifeItemPalette[] = [...DEFAULT_PALETTES, ...EXTENDED_PALETTES];

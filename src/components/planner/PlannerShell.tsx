@@ -883,7 +883,13 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
   return (
     <span
       title={item.title}
-      style={{ backgroundColor: cat.accentLight, borderLeftColor: cat.accentStrong }}
+      // [2026-10-06] accentSoft (truoc accentLight) - yeu cau nguoi dung:
+      // "sao không có màu nền của task?". accentLight dung DUNG hex spec dua
+      // (vd Action #F8FBFE) nhung mau do GAN NHU TRANG TUYET DOI, mat tac
+      // dung "glanceable" (section 19: nhin mau la biet Type, khong can doc
+      // chu) - accentSoft la 1 bac dam hon (vd #EAF3FB), van la pastel nhe
+      // nhung MAT NGUOI THAT SU PHAN BIET duoc tren man hinh.
+      style={{ backgroundColor: cat.accentSoft, borderLeftColor: cat.accentStrong }}
       className={cn(
         "block w-full truncate rounded-[7px] border-l-[3px] px-1.5 py-0.5 text-[11px] leading-[1.3] font-medium",
         item.done
@@ -1050,7 +1056,9 @@ function TimedItemChip({
         height: Math.max(displayHeight, 20),
         left,
         width,
-        backgroundColor: cat.accentLight,
+        // accentSoft (truoc accentLight) - xem comment day du o AllDayItemChip,
+        // cung ly do: accentLight qua nhat, nhin gan nhu trang tren luoi gio.
+        backgroundColor: cat.accentSoft,
         boxShadow: selected
           ? `0 0 0 2px white, 0 0 0 3px ${cat.accentStrong}`
           : undefined,
@@ -1214,9 +1222,13 @@ function TypeLegend({ overrides }: { overrides: Partial<Record<LifeItemType, str
         const palette = resolveLifeItemPalette(t.id, overrides);
         return (
           <span key={t.id} className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--planner-text-secondary)]">
+            {/* [2026-10-06] Vien mau (khong phai cham DAC) - yeu cau nguoi
+                dung: "Chú thích màu không để vòng tròn đặc, chỉ có viền màu
+                thôi". border-2 + background transparent (khong con
+                backgroundColor dac). */}
             <span
-              className="size-2.5 shrink-0 rounded-full ring-1 ring-black/5"
-              style={{ backgroundColor: palette.accentStrong }}
+              className="size-2.5 shrink-0 rounded-full border-2"
+              style={{ borderColor: palette.accentStrong }}
               aria-hidden="true"
             />
             {t.label}
@@ -1666,7 +1678,7 @@ function TodayFocusCard({
         Today&apos;s focus
       </p>
       <div
-        style={{ backgroundColor: cat.accentLight, borderColor: cat.accentStrong + "40" }}
+        style={{ backgroundColor: cat.accentSoft, borderColor: cat.accentStrong + "40" }}
         className="flex flex-col gap-2 rounded-[12px] border p-3"
       >
         <div className="flex items-center justify-between gap-2">
