@@ -1208,7 +1208,24 @@ function TimedItemChip({
   }
 
   return (
-    <button
+    <>
+      {/* [2026-10-06] Nhan gio noi "bay" luc keo tha - yeu cau nguoi dung:
+          "Khi giữ kéo thả task đến vị trí thời gian nào, hãy thiết kế thêm
+          phần hiển thị số giờ bắt đầu ở vị trí đang ở đó". La SIBLING cua
+          <button> (khong phai con BEN TRONG) de KHONG bi cat boi
+          overflow-hidden cua chinh button - cot ngay cha (relative, khong
+          overflow-hidden) la noi neo dung. Chi hien luc dang keo (drag khac
+          null), bam theo displayTop/left MOI KHUNG HINH nen "di theo" chuot
+          that su, khong doi den khi tha tay. */}
+      {drag && (
+        <div
+          className="pointer-events-none absolute z-[4] -translate-y-full rounded-md px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-white shadow-[0_3px_8px_rgba(20,30,50,.2)]"
+          style={{ top: displayTop - 4, left, backgroundColor: cat.accentStrong }}
+        >
+          {minutesToLabel(liveStart)}
+        </div>
+      )}
+      <button
       type="button"
       onMouseDown={(e) => startDrag(e, "move")}
       onClick={() => {
@@ -1448,7 +1465,8 @@ function TimedItemChip({
         className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
         aria-hidden="true"
       />
-    </button>
+      </button>
+    </>
   );
 }
 
