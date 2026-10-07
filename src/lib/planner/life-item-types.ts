@@ -265,6 +265,14 @@ export type HabitMetadata = {
   preferredDays?: string[]; // "MON".."SUN"
   preferredTime?: number; // phut tinh tu 0h, cung don vi voi scheduledMinute
   target?: string;
+  // [2026-10-07] "Chủ đề quan tâm" (vd đọc tài chính/tâm lý mỗi ngày) - yeu
+  // cau nguoi dung: "set tối thiểu 1 ngày phải đọc bao nhiêu bài". So
+  // luong (dailyTargetCount) + don vi tu do (dailyTargetUnit, vd "bài",
+  // "đầu kiến thức") - tach khoi `target` (text tu do o tren, dung de MO TA
+  // muc tieu) vi can 1 SO THAT de tinh tien do "X/Y hôm nay" (xem
+  // "Hôm nay đã học gì" trong DayDetailPanel), text tu do khong tinh duoc.
+  dailyTargetCount?: number;
+  dailyTargetUnit?: string;
 };
 export type ReflectionPrompt = { label: string; answer: string };
 export type ReflectionMetadata = {

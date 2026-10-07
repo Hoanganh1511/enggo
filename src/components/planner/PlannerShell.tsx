@@ -2522,6 +2522,80 @@ function TodayProgress({ items }: { items: ApiPlannerItem[] }) {
   );
 }
 
+// [2026-10-07] "Hôm nay đã học được gì" - yeu cau nguoi dung: "tôi sẽ có thể
+// tạo thêm tính năng để phục vụ nhu cầu... có cả phần nào trong planner để
+// bật lên xem những thứ mà tôi muốn xem hôm nay đã học thêm được những gì về
+// các chủ đề đó". Moi "chu de quan tam" = 1 Habit (vd "Đọc tài chính"),
+// moi "dau kien thuc" da note = 1 dau muc (children) cua chinh Habit do -
+// tai dung NGUYEN co che children/dailyTargetCount da co (xem
+// HabitFieldsSection/BigTimelineItem), KHONG tao data model rieng. CHI liet
+// ke Habit co it nhat 1 dau muc HOAC co dat dailyTargetCount (tranh hien
+// trong luc toan bo ngay khong co Habit nao thuoc dang nay).
+function LearningDigestCard({ items }: { items: ApiPlannerItem[] }) {
+  const habits = items.filter(
+    (i) =>
+      i.itemType === "HABIT" &&
+      ((i.children && i.children.length > 0) || typeof i.metadata?.dailyTargetCount === "number"),
+  );
+  if (habits.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[10px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] p-3">
+      <p className="text-[11px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+        Hôm nay đã học được gì
+      </p>
+      <div className="flex flex-col gap-2.5">
+        {habits.map((habit) => (
+          <LearningDigestRow key={habit.id} item={habit} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LearningDigestRow({ item }: { item: ApiPlannerItem }) {
+  const cat = useLifeItemPalette(item.itemType);
+  const children = item.children ?? [];
+  const doneChildren = children.filter((c) => c.done);
+  const dailyTarget = typeof item.metadata?.dailyTargetCount === "number" ? (item.metadata.dailyTargetCount as number) : null;
+  const dailyTargetUnit = typeof item.metadata?.dailyTargetUnit === "string" ? (item.metadata.dailyTargetUnit as string) : "mục";
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
+        <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: cat.accentStrong }} aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-[color:var(--planner-text-primary)]">
+          {item.title}
+        </span>
+        {dailyTarget !== null && (
+          <span
+            className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+            style={
+              doneChildren.length >= dailyTarget
+                ? { color: "var(--success)", backgroundColor: "color-mix(in srgb, var(--success) 14%, transparent)" }
+                : { color: cat.accentText, backgroundColor: cat.accentSoft }
+            }
+          >
+            {doneChildren.length}/{dailyTarget} {dailyTargetUnit}
+          </span>
+        )}
+      </div>
+      {doneChildren.length > 0 ? (
+        <ul className="ml-3 flex flex-col gap-0.5">
+          {doneChildren.map((c) => (
+            <li key={c.id} className="flex items-start gap-1 text-[11.5px] text-[color:var(--planner-text-secondary)]">
+              <CheckCircle2 size={11} className="mt-0.5 shrink-0 text-[color:var(--planner-primary)]" />
+              <span className="min-w-0 flex-1">{c.title}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="ml-3 text-[11.5px] text-[color:var(--planner-text-muted)]">Chưa ghi gì hôm nay.</p>
+      )}
+    </div>
+  );
+}
+
 // "Today's Focus" (section 4/5) - 1 viec DUY NHAT duoc nguoi dung tu danh
 // dau isFocus=true (xem checkbox trong form them viec) duoc "elevate" len
 // dau panel. CHI lay item DAU TIEN co co nay (khong rang buoc unique o DB,
@@ -2843,6 +2917,17 @@ function BigTimelineItem({
   const children = item.children ?? [];
   const cat = useLifeItemPalette(item.itemType);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
+  // [2026-10-07] "Chỉ tiêu/ngày" cua Habit (vd "đọc tối thiểu 2 bài/ngày") -
+  // xem comment dailyTargetCount trong life-item-types.ts. doneCount dung
+  // SO DAU MUC DA XONG lam proxy cho "hom nay" (don gian hoa - children
+  // khong co truong ngay rieng de loc chinh xac THEO NGAY, xem gioi han da
+  // neu voi nguoi dung).
+  const dailyTarget =
+    item.itemType === "HABIT" && typeof item.metadata?.dailyTargetCount === "number"
+      ? (item.metadata.dailyTargetCount as number)
+      : null;
+  const dailyTargetUnit = typeof item.metadata?.dailyTargetUnit === "string" ? (item.metadata.dailyTargetUnit as string) : "mục";
+  const doneCount = children.filter((c) => c.done).length;
 
   function submitChild() {
     const title = childDraft.trim();
@@ -2918,10 +3003,26 @@ function BigTimelineItem({
           >
             {item.title}
           </span>
-          {children.length > 0 && (
-            <span className="shrink-0 text-[11px] text-[color:var(--planner-text-muted)]">
-              {children.filter((c) => c.done).length}/{children.length}
+          {/* [2026-10-07] Uu tien hien "chi tieu/ngay" (vd "2/3 bài") neu
+              Habit co dat dailyTargetCount - cu the hon so voi "X/Y đầu mục"
+              chung chung, mau xanh (--success) khi DA DAT du chi tieu. */}
+          {dailyTarget !== null ? (
+            <span
+              className="shrink-0 rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold"
+              style={
+                doneCount >= dailyTarget
+                  ? { color: "var(--success)", backgroundColor: "color-mix(in srgb, var(--success) 14%, transparent)" }
+                  : { color: cat.accentText, backgroundColor: cat.accentSoft }
+              }
+            >
+              {doneCount}/{dailyTarget} {dailyTargetUnit}
             </span>
+          ) : (
+            children.length > 0 && (
+              <span className="shrink-0 text-[11px] text-[color:var(--planner-text-muted)]">
+                {doneCount}/{children.length}
+              </span>
+            )
           )}
           <button
             type="button"
@@ -3463,6 +3564,28 @@ function HabitFieldsSection({
         placeholder="🎯 Mục tiêu (vd: Maintain 3 workouts/week)"
         className="h-8 rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[12.5px] outline-none focus:border-[#b9c9ef]"
       />
+      {/* [2026-10-07] Chi tieu SO/ngay - yeu cau nguoi dung: "set tối thiểu 1
+          ngày phải đọc bao nhiêu bài" - tach khoi `target` (text tu do o
+          tren) vi can 1 SO THAT de tinh tien do "X/Y" (xem comment
+          dailyTargetCount trong life-item-types.ts). */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-medium text-[color:var(--planner-text-muted)]">Chỉ tiêu/ngày</span>
+        <input
+          type="number"
+          min={1}
+          value={metadata.dailyTargetCount ?? ""}
+          onChange={(e) =>
+            onChange({ ...metadata, dailyTargetCount: Number(e.target.value) || undefined })
+          }
+          className="h-7 w-14 rounded-[7px] border border-[color:var(--planner-border-soft)] bg-white px-2 text-[12.5px] outline-none focus:border-[#b9c9ef]"
+        />
+        <input
+          value={metadata.dailyTargetUnit ?? ""}
+          onChange={(e) => onChange({ ...metadata, dailyTargetUnit: e.target.value })}
+          placeholder="đơn vị (vd: bài, đầu kiến thức)"
+          className="h-7 min-w-0 flex-1 rounded-[7px] border border-[color:var(--planner-border-soft)] bg-white px-2 text-[12px] outline-none focus:border-[#b9c9ef]"
+        />
+      </div>
     </div>
   );
 }
@@ -3846,6 +3969,8 @@ function DayDetailPanel({
           <div className="border-t border-[color:var(--planner-border-soft)]" />
 
           <TodayProgress items={sorted} />
+
+          <LearningDigestCard items={sorted} />
 
           {focusItem && (
             <>
