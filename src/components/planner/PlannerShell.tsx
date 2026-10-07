@@ -1004,6 +1004,7 @@ export function PlannerShell({
                     onClick={() => setSettingsOpen(true)}
                     aria-label="Cài đặt"
                     title="Cài đặt"
+                    
                     className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
                   >
                     <Settings
