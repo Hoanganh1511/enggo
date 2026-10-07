@@ -2398,25 +2398,20 @@ function WeekTimeGrid({
   const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
   const now = new Date();
   const nowMinute = now.getHours() * 60 + now.getMinutes();
-  // [2026-10-08] Doi tu inline style (gridTemplateColumns dung chuoi template
-  // tu dong, vd "48px repeat(7, calc(1fr + 30px))") SANG LAI class Tailwind
-  // TINH - bug phat hien thuc te tren production: 3 hang grid (header ngay/
-  // "Cả ngày"/luoi gio) dung CHUNG 1 bien `style={{ gridTemplateColumns }}`
-  // bi "vo" thanh 1 COT DUY NHAT (moi ngay/moi gio XEP DOC thay vi 7 cot
-  // NGANG) - Inspect Element xac nhan phan tu grid KHONG CO inline style
-  // "grid-template-columns" nao duoc ap dung thuc te (trong khi code van
-  // truyen `style` object day du), nghia la gia tri style object bang cach
-  // nao do KHONG toi duoc DOM luc hydrate/render tren production (co the do
-  // 1 bundler/minify edge-case voi object computed tu template string dong,
-  // chua xac dinh chac chan nguyen nhan sau). Chuyen han sang class TINH (chi
-  // 2 gia tri co the: 5 hoac 7 cot, ung voi showWeekends false/true) loai bo
-  // HOAN TOAN phu thuoc vao inline style cho CHINH xep cot - Tailwind bien
-  // dich san thanh CSS that trong file .css, khong con la "object co tinh
-  // toan luc render" nua nen khong co dang bug nay xay ra duoc.
+  // [2026-10-08] BUG THAT SU (xac nhan qua DevTools Styles panel: trinh
+  // duyet gach bo + canh bao tam giac vang ngay tai dong
+  // "grid-template-columns: 48px repeat(7,calc(1fr + 30px))") - tron don vi
+  // "fr" voi "px" trong 1 bieu thuc calc() cho grid-template-columns KHONG
+  // duoc trinh duyet nay chap nhan, ca khai bao bi LOAI BO HOAN TOAN (khong
+  // phai bug build/deploy/cache nhu nghi truoc do - CSS bien dich dung,
+  // nhung trinh duyet tu choi ap dung gia tri). Thieu grid-template-columns
+  // -> moi ngay/gio roi vao 1 cot DUY NHAT, xep DOC thay vi 7 cot NGANG.
+  // Bo HAN "+30px/cot" (calc(1fr + 30px)) - dung 1fr THUAN (repeat(N,1fr)),
+  // KHONG con calc() nao tron don vi nua, dam bao moi trinh duyet deu hieu.
   const gridColsClass =
     days.length === 5
-      ? "grid-cols-[48px_repeat(5,calc(1fr_+_30px))]"
-      : "grid-cols-[48px_repeat(7,calc(1fr_+_30px))]";
+      ? "grid-cols-[48px_repeat(5,1fr)]"
+      : "grid-cols-[48px_repeat(7,1fr)]";
 
   // Cuon san toi ~7h sang (hoac gio dau tien con thay duoc, neu First visible
   // hour > 7) luc mo/doi tuan - tranh nguoi dung luon phai tu keo tu dau
