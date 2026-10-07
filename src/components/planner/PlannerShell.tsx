@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Bell,
   CalendarDays,
@@ -292,25 +293,14 @@ function computeItemStatus(
   return "upcoming";
 }
 
-// Diem goc 1 polygon CSS clip-path - [x%, y%] tinh theo % cua CHINH hop
-// chu nhat dang ap dung clip-path (khong phai % cua ca cot ngay).
-type ClipPoint = [number, number];
 export type TimedLayoutEntry = {
   item: ApiPlannerItem & { scheduledMinute: number };
+  // [2026-10-07] CO DINH suot ca thoi luong cua item (khong con "bac thang"/
+  // clip-path reclaim width - xem comment day du o layoutTimedItems(), yeu
+  // cau nguoi dung: "cột nào ngắn cứ để nó ngắn... không đè lấn màu sang
+  // nhau").
   leftPercent: number;
   widthPercent: number;
-  // undefined = hinh chu nhat don gian (KHONG can clip) - truong hop pho
-  // bien nhat (khong trung gio voi ai, hoac trung gio ON DINH suot thoi
-  // luong - khong co "bac thang" nao ca).
-  clipPath?: string;
-  // Vi tri/do rong vung THAT SU hien noi dung (icon/gio/tieu de) - tinh theo
-  // DOAN DAU TIEN (tren cung) cua chinh item, % cua hop chu nhat NGOAI (nhu
-  // leftPercent/widthPercent o tren) - CAN THIET vi khi co clip-path, hop
-  // chu nhat ngoai co the RONG HON doan tren cung (vd item hep luc dau, no
-  // rong ra sau), noi dung (dong len dau) PHAI nam DUNG trong doan hep do,
-  // khong phai dan ra het ca hop ngoai.
-  contentLeftPercent: number;
-  contentWidthPercent: number;
   conflict: boolean;
   // [2026-10-06] Cac item KHAC (khong tinh chinh no) nam trong BAT KY nhom
   // gay ra `conflict` - de hien "⚠ Trùng lịch" liet ke RO dang trung voi
@@ -410,42 +400,22 @@ function layoutTimedItems(
       }
       if (segments.length === 0) continue;
 
-      // Buoc 4: hop bao (union) - vi tri/be rong CSS that su.
-      const outerLeft = Math.min(...segments.map((s) => s.leftPercent));
-      const outerRight = Math.max(...segments.map((s) => s.leftPercent + s.widthPercent));
-      const outerWidth = outerRight - outerLeft;
-      const totalMinutes = entry.end - entry.start;
-
-      let clipPath: string | undefined;
-      if (segments.length > 1) {
-        // Ve VIEN PHAI tu TREN xuong DUOI (thu tu doan tu nhien: 1..n), roi
-        // VIEN TRAI tu DUOI len TREN (phai duyet doan theo thu tu NGUOC n..1
-        // - trong MOI doan van la bottom->top vi dang di LEN) de duong vien
-        // lien tuc, KHONG tu cat chinh no (loi cu: leftEdge day theo thu tu
-        // XUOI roi .reverse() ca mang => xen ke dinh sai thu tu, polygon tu
-        // giao nhau, hien thanh hinh "tam giac/nem" meo thay vi bac thang).
-        const rightEdge: ClipPoint[] = [];
-        for (const seg of segments) {
-          const yTop = ((seg.startMin - entry.start) / totalMinutes) * 100;
-          const yBottom = ((seg.endMin - entry.start) / totalMinutes) * 100;
-          const localRight = ((seg.leftPercent + seg.widthPercent - outerLeft) / outerWidth) * 100;
-          rightEdge.push([localRight, yTop], [localRight, yBottom]);
-        }
-        const leftEdge: ClipPoint[] = [];
-        for (let i = segments.length - 1; i >= 0; i--) {
-          const seg = segments[i];
-          const yTop = ((seg.startMin - entry.start) / totalMinutes) * 100;
-          const yBottom = ((seg.endMin - entry.start) / totalMinutes) * 100;
-          const localLeft = ((seg.leftPercent - outerLeft) / outerWidth) * 100;
-          leftEdge.push([localLeft, yBottom], [localLeft, yTop]);
-        }
-        const polygon = [...rightEdge, ...leftEdge];
-        clipPath = `polygon(${polygon.map(([x, y]) => `${x.toFixed(2)}% ${y.toFixed(2)}%`).join(", ")})`;
+      // [2026-10-07] Bo "Example 2" (clip-path bac thang/reclaim width) -
+      // yeu cau nguoi dung: "cột nào ngắn cứ để nó ngắn, vẫn phải giữ chia
+      // đôi, chia ba,... không đè lấn màu sang nhau như này" (kem anh: 2 the
+      // trung gio, 1 the "no rong ra" lan qua vung cua the kia trong doan no
+      // KHONG con trung, gay cam giac 2 mau de len nhau). Thay vi chia BE
+      // RONG theo TUNG doan rieng le, lay DUY NHAT 1 "doan dinh" (active
+      // nhieu item nhat trong suot doi song cua entry) lam left/width CO
+      // DINH cho CA entry - 1 hinh chu nhat don gian, khong reclaim, khong
+      // the chong len the khac tai BAT KY thoi diem nao trong doi song no.
+      let peak = segments[0];
+      for (const seg of segments) {
+        if (seg.active.length > peak.active.length) peak = seg;
       }
+      const leftPercent = peak.leftPercent;
+      const widthPercent = peak.widthPercent;
 
-      const first = segments[0];
-      const contentLeftPercent = ((first.leftPercent - outerLeft) / outerWidth) * 100;
-      const contentWidthPercent = (first.widthPercent / outerWidth) * 100;
       const conflictingSegments = segments.filter(
         (s) => s.active.length > 1 && !s.active.some((e) => e.it.itemType === "EVENT"),
       );
@@ -463,11 +433,8 @@ function layoutTimedItems(
 
       result.push({
         item: entry.it,
-        leftPercent: outerLeft,
-        widthPercent: outerWidth,
-        clipPath,
-        contentLeftPercent,
-        contentWidthPercent,
+        leftPercent,
+        widthPercent,
         conflict,
         conflictWith,
       });
@@ -631,6 +598,7 @@ export function PlannerShell({
     title: string;
     kind: PlannerItemKind;
     itemType: LifeItemType;
+    colorPaletteId?: string;
     scheduledMinute?: number;
     durationMinutes?: number;
     isFocus?: boolean;
@@ -1121,8 +1089,13 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
 function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
   const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   return (
-    <span
+    <motion.span
       title={item.title}
+      // [2026-10-07] Animation xuat hien khi MOI tao - cung tinh than
+      // TimedItemChip (xem comment day du o do).
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       // [2026-10-06] accentSoft (truoc accentLight) - yeu cau nguoi dung:
       // "sao không có màu nền của task?". accentLight dung DUNG hex spec dua
       // (vd Action #F8FBFE) nhung mau do GAN NHU TRANG TUYET DOI, mat tac
@@ -1138,7 +1111,7 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
       )}
     >
       {item.title}
-    </span>
+    </motion.span>
   );
 }
 
@@ -1181,9 +1154,6 @@ function TimedItemChip({
   height,
   left,
   width,
-  clipPath,
-  contentLeftPercent,
-  contentWidthPercent,
   conflict,
   conflictWith,
   selected,
@@ -1202,17 +1172,6 @@ function TimedItemChip({
   height: number;
   left: string;
   width: string;
-  // [2026-10-06] "Example 2" (spec Overlapping Event Layout) - item co nhieu
-  // "doan" be rong khac nhau theo tung khoang thoi gian (full width luc
-  // khong ai chen, hep lai dung luc bi chen) - xem comment day du o
-  // layoutTimedItems()/TimedLayoutEntry. undefined = hinh chu nhat don
-  // gian, khong can clip.
-  clipPath: string | undefined;
-  // Vi tri/do rong vung THAT SU hien noi dung (doan DAU TIEN/tren cung cua
-  // item) - % cua CHINH hop ngoai (left/width o tren), KHAC voi 0%/100% mac
-  // dinh khi hop ngoai RONG HON doan dau (item hep luc dau, no rong ra sau).
-  contentLeftPercent: number;
-  contentWidthPercent: number;
   // [2026-10-06] True khi item nay BI CHIA COT (that su trung gio voi item
   // khac) VA khong co Event nao trong nhom trung gio do - xem comment day du
   // o layoutTimedItems(). Event trung gio la BINH THUONG (lich hen, hien
@@ -1400,8 +1359,20 @@ function TimedItemChip({
         }}
       >
       <PopoverTrigger asChild>
-      <button
+      <motion.button
       type="button"
+      // [2026-10-07] Animation XUAT HIEN khi the MOI duoc tao - yeu cau nguoi
+      // dung: "Ấn thêm việc không có trạng thái gì cho biết đang tạo việc
+      // trong lịch, UX gây rối người dùng. Tạo animation cho card được tạo
+      // trong lịch". initial/animate CHI chay 1 LAN luc component MOUNT (vd
+      // item.id MOI xuat hien trong mang `laidOut` - React tao DOM moi vi
+      // key={item.id} chua tung ton tai truoc do), KHONG replay lai moi lan
+      // re-render binh thuong (keo-tha, doi settings...) vi component KHONG
+      // unmount/remount trong cac truong hop do. Cung duration/easing voi quy
+      // uoc dropdown/popover toan app (CLAUDE.md: 0.15-0.2s, easeOut).
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       onMouseDown={(e) => startDrag(e, "move")}
       onClick={(e) => {
         if (suppressClickRef.current) {
@@ -1427,14 +1398,6 @@ function TimedItemChip({
         height: Math.max(displayHeight - 6, 16),
         left,
         width,
-        // [2026-10-06] clipPath - "Example 2" (Overlapping Event Layout):
-        // hop chu nhat NGOAI CUNG (left/width o tren) la hop BAO cua tat ca
-        // "doan" cua item (xem TimedLayoutEntry) - clip-path "khoet" bot cac
-        // doan HEP HON hop bao, tao hinh "bac thang" (full width luc khong
-        // ai chen, hep lai dung luc bi chen) thay vi 1 be rong CO DINH suot
-        // thoi luong. undefined (truong hop pho bien - khong trung gio, hoac
-        // trung gio ON DINH) = khong clip, 1 hinh chu nhat don gian nhu cu.
-        clipPath,
         // accentSoft (truoc accentLight) - xem comment day du o AllDayItemChip,
         // cung ly do: accentLight qua nhat, nhin gan nhu trang tren luoi gio.
         // [2026-10-07] Settings: "Completed task style" - CHECK_COLOR tinh
@@ -1467,16 +1430,12 @@ function TimedItemChip({
       )}
     >
       {/* [2026-10-06] Wrapper noi dung RIENG (truoc day padding/flex nam
-          thang tren <button> cha) - yeu cau nguoi dung: trien khai tiep
-          "Example 2". Khi co clip-path, hop NGOAI CUNG co the RONG HON
-          doan DAU TIEN (tren cung) cua item - noi dung (icon/gio/tieu de)
-          PHAI dinh vi THEO DUNG doan dau do (contentLeftPercent/Width, xem
-          TimedLayoutEntry), khong phai dan ra het ca hop ngoai, neu khong
-          se "nhay" sang vung da bi clip khoet mat o doan sau. left/width
-          mac dinh 0%/100% (truong hop khong clip) = y het hanh vi cu. */}
+          thang tren <button> cha) - gio la 1 hinh chu nhat CO DINH suot thoi
+          luong (bo "Example 2" reclaim-width, xem comment layoutTimedItems())
+          nen content luon lap DAY DU 100% hop ngoai, khong can dinh vi rieng
+          theo tung doan nua. */}
       <div
-        className="absolute inset-y-0 flex flex-col items-start justify-start overflow-hidden pt-1 pr-1.5 pl-3"
-        style={{ left: `${contentLeftPercent}%`, width: `${contentWidthPercent}%` }}
+        className="absolute inset-y-0 inset-x-0 flex flex-col items-start justify-start overflow-hidden pt-1 pr-1.5 pl-3"
       >
         {/* Thanh mau accent - NAM BEN TRONG the (khong con la border), cach le
             trai 3px. top/bottom 4px - 1 "vien" nho tren/duoi cho thanh khong
@@ -1520,7 +1479,10 @@ function TimedItemChip({
                 black 75% để ăn được một chút màu chủ đạo của task ở nền". Chu
                 KHONG con 100% den tuyet doi - nen (cat.pastel) lo qua duoc 25%
                 con lai, chu tu "nhuom" nhe theo dung mau chu dao cua tung task,
-                khong can tinh rieng 1 mau chu cho tung category. */}
+                khong can tinh rieng 1 mau chu cho tung category.
+                [2026-10-07] /75 -> /50 (yeu cau nguoi dung: "cho màu giảm
+                black 50") - mau nen (cat.accentSoft) lo qua duoc NHIEU HON
+                (50%), chu "nhuom" mau chu dao ro hon nua. */}
             {/* w-full + pr-3.5 - yeu cau nguoi dung: "tên task không để full,
                 để cách lề phải 20px và dùng ...". 2 bug lien quan: (1) truoc
                 day KHONG co w-full - tu luc doi parent sang items-start (thay
@@ -1532,7 +1494,7 @@ function TimedItemChip({
                 co san tren <button> cha = dung 20px cach le phai THAT cua the. */}
             <span
               className={cn(
-                "w-full truncate pr-3.5 text-[12px] font-semibold text-black/75",
+                "w-full truncate pr-3.5 text-[12px] font-semibold text-black/50",
                 item.done && "line-through",
               )}
             >
@@ -1616,7 +1578,7 @@ function TimedItemChip({
         className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
         aria-hidden="true"
       />
-      </button>
+      </motion.button>
       </PopoverTrigger>
       {/* [2026-10-07] Popover chi tiết - yeu cau nguoi dung: "Khi click thẻ
           task thì mở popover chi tiết của nó, bám theo góc trên bên trái...
@@ -2392,9 +2354,6 @@ function WeekTimeGrid({
                     item,
                     leftPercent,
                     widthPercent,
-                    clipPath,
-                    contentLeftPercent,
-                    contentWidthPercent,
                     conflict,
                     conflictWith,
                   }) => (
@@ -2408,9 +2367,6 @@ function WeekTimeGrid({
                       }
                       left={`calc(${leftPercent}% + 4px)`}
                       width={`calc(${widthPercent}% - 8px)`}
-                      clipPath={clipPath}
-                      contentLeftPercent={contentLeftPercent}
-                      contentWidthPercent={contentWidthPercent}
                       conflict={conflict}
                       conflictWith={conflictWith}
                       selected={selectedItemId === item.id}
@@ -3349,6 +3305,11 @@ function AddTaskForm({
   const [draft, setDraft] = useState("");
   const [draftKind, setDraftKind] = useState<PlannerItemKind>("SIMPLE");
   const [draftType, setDraftType] = useState<LifeItemType>("ACTION");
+  // [2026-10-07] Mau RIENG cho task sap tao (DOC LAP voi Type) - yeu cau
+  // nguoi dung: "Chỗ thêm việc không có chọn màu luôn à?" - null = chua tu
+  // chon, se tu fallback ve mau theo Type nhu truoc (xem resolveLifeItemPalette).
+  const [draftColorPaletteId, setDraftColorPaletteId] = useState<string | null>(null);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [draftStart, setDraftStart] = useState<number | null>(null);
   const [draftDuration, setDraftDuration] = useState(DEFAULT_DURATION_MINUTES);
   const [draftPriority, setDraftPriority] = useState<LifeItemPriority | null>(null);
@@ -3421,6 +3382,7 @@ function AddTaskForm({
       title,
       kind: draftKind,
       itemType: draftType,
+      colorPaletteId: draftColorPaletteId ?? undefined,
       scheduledMinute: draftStart ?? undefined,
       durationMinutes: draftStart !== null ? draftDuration : undefined,
       isFocus: draftFocus || undefined,
@@ -3428,6 +3390,7 @@ function AddTaskForm({
       area: draftArea.trim() || undefined,
     });
     setDraft("");
+    setDraftColorPaletteId(null);
     setDraftStart(null);
     setDraftFocus(false);
     setDraftPriority(null);
@@ -3509,6 +3472,62 @@ function AddTaskForm({
         {/* [2026-10-06] Chon Type (section 2/18) - THAY THE hang swatch mau tu
             do cu, mau gio la semantic theo Type (xem TypePickerRow). */}
         <TypePickerRow value={draftType} onChange={setDraftType} />
+      </div>
+
+      {/* [2026-10-07] Màu sắc (tuỳ chọn) - yeu cau nguoi dung: "Chỗ thêm việc
+          không có chọn màu luôn à?". DOC LAP voi Loại việc o tren (field
+          rieng colorPaletteId, xem comment day du o TimedItemChip). Khong
+          chon gi = fallback ve mau theo Type nhu truoc. */}
+      <div className="flex flex-col gap-1">
+        <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">Màu sắc (tuỳ chọn)</p>
+        <button
+          type="button"
+          onClick={() => setColorPickerOpen((v) => !v)}
+          className="flex cursor-pointer items-center gap-2 self-start rounded-[9px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 py-1.5 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+        >
+          <span
+            className="size-5 shrink-0 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,.08)] ring-2 ring-white"
+            style={{ backgroundColor: draftColorPaletteId ? (LIFE_ITEM_PALETTES.find((p) => p.id === draftColorPaletteId)?.accentStrong ?? typePalette.accentStrong) : typePalette.accentStrong }}
+            aria-hidden="true"
+          />
+          <span className="text-[12px] font-semibold" style={{ color: typePalette.accentText }}>
+            {draftColorPaletteId ? (LIFE_ITEM_PALETTES.find((p) => p.id === draftColorPaletteId)?.name ?? typePalette.name) : `${typeCfg.icon} Mặc định theo loại`}
+          </span>
+        </button>
+        {colorPickerOpen && (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              title="Mặc định theo loại"
+              onClick={() => {
+                setDraftColorPaletteId(null);
+                setColorPickerOpen(false);
+              }}
+              className={cn(
+                "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-[color:var(--planner-border)] bg-white text-[9px] font-bold text-[color:var(--planner-text-muted)] transition-transform duration-150 ease-out hover:scale-110",
+                !draftColorPaletteId && "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
+              )}
+            >
+              {typeCfg.icon}
+            </button>
+            {LIFE_ITEM_PALETTES.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                title={p.name}
+                onClick={() => {
+                  setDraftColorPaletteId(p.id);
+                  setColorPickerOpen(false);
+                }}
+                style={{ backgroundColor: p.accentStrong }}
+                className={cn(
+                  "size-6 shrink-0 cursor-pointer rounded-full ring-1 ring-black/10 ring-offset-1 ring-offset-white transition-transform duration-150 ease-out hover:scale-110",
+                  draftColorPaletteId === p.id && "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
+                )}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -3959,6 +3978,7 @@ type DayDetailPanelProps = {
     title: string;
     kind: PlannerItemKind;
     itemType: LifeItemType;
+    colorPaletteId?: string;
     scheduledMinute?: number;
     durationMinutes?: number;
     isFocus?: boolean;
