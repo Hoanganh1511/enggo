@@ -2398,16 +2398,25 @@ function WeekTimeGrid({
   const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
   const now = new Date();
   const nowMinute = now.getHours() * 60 + now.getMinutes();
-  // 48px (cot nhan gio) + N cot ngay deu nhau - thay the Tailwind arbitrary
-  // class CO DINH repeat(7,1fr) truoc day, vi `days.length` gio co the la 5
-  // (an weekend) hoac 7 (hien weekend), khong con la hang so.
-  // [2026-10-07] calc(1fr + 30px) (truoc chi "1fr" tron) - yeu cau nguoi
-  // dung: "Tăng chiều rộng mỗi cột thêm 30px". 1fr van tu chia deu phan
-  // KHONG GIAN CON (nhu cu), +30px CONG THEM vao MOI cot ngay - tong be rong
-  // ca luoi vi vay VUOT QUA be rong THAT cua card (vuot dung N*30px), can
-  // overflow-x-auto o div goc (xem ben duoi) de hien thanh cuon ngang thay
-  // vi bi card cha (overflow-hidden) cat mat.
-  const gridTemplateColumns = `48px repeat(${days.length}, calc(1fr + 30px))`;
+  // [2026-10-08] Doi tu inline style (gridTemplateColumns dung chuoi template
+  // tu dong, vd "48px repeat(7, calc(1fr + 30px))") SANG LAI class Tailwind
+  // TINH - bug phat hien thuc te tren production: 3 hang grid (header ngay/
+  // "Cả ngày"/luoi gio) dung CHUNG 1 bien `style={{ gridTemplateColumns }}`
+  // bi "vo" thanh 1 COT DUY NHAT (moi ngay/moi gio XEP DOC thay vi 7 cot
+  // NGANG) - Inspect Element xac nhan phan tu grid KHONG CO inline style
+  // "grid-template-columns" nao duoc ap dung thuc te (trong khi code van
+  // truyen `style` object day du), nghia la gia tri style object bang cach
+  // nao do KHONG toi duoc DOM luc hydrate/render tren production (co the do
+  // 1 bundler/minify edge-case voi object computed tu template string dong,
+  // chua xac dinh chac chan nguyen nhan sau). Chuyen han sang class TINH (chi
+  // 2 gia tri co the: 5 hoac 7 cot, ung voi showWeekends false/true) loai bo
+  // HOAN TOAN phu thuoc vao inline style cho CHINH xep cot - Tailwind bien
+  // dich san thanh CSS that trong file .css, khong con la "object co tinh
+  // toan luc render" nua nen khong co dang bug nay xay ra duoc.
+  const gridColsClass =
+    days.length === 5
+      ? "grid-cols-[48px_repeat(5,calc(1fr_+_30px))]"
+      : "grid-cols-[48px_repeat(7,calc(1fr_+_30px))]";
 
   // Cuon san toi ~7h sang (hoac gio dau tien con thay duoc, neu First visible
   // hour > 7) luc mo/doi tuan - tranh nguoi dung luon phai tu keo tu dau
@@ -2444,7 +2453,7 @@ function WeekTimeGrid({
         <p className="px-3 pt-2.5 pb-1 text-[14px] font-semibold text-[color:var(--planner-text-primary)]">
           {monthYearLabel}
         </p>
-        <div className="grid" style={{ gridTemplateColumns }}>
+        <div className={cn("grid", gridColsClass)}>
           <div />
           {days.map((d) => (
             <button
@@ -2478,8 +2487,7 @@ function WeekTimeGrid({
             (khong chi an noi dung ben trong) khi tat. */}
         {settings.showAllDaySection && (
           <div
-            className="grid border-t border-[color:var(--planner-border-soft)] bg-[#fafbfc]"
-            style={{ gridTemplateColumns }}
+            className={cn("grid border-t border-[color:var(--planner-border-soft)] bg-[#fafbfc]", gridColsClass)}
           >
             <div className="py-1.5 text-center text-[10px] font-semibold text-[color:var(--planner-text-muted)]">
               Cả ngày
@@ -2522,7 +2530,7 @@ function WeekTimeGrid({
           theo flex-1, se day card PHINH TO qua chieu cao cho phep thay vi
           chiu cat/cuon dung cho. */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid" style={{ gridTemplateColumns }}>
+        <div className={cn("grid", gridColsClass)}>
           <div className="flex flex-col">
             {HOURS.map((h) => (
               <div
