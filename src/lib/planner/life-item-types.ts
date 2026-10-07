@@ -278,6 +278,26 @@ export const DEFAULT_REFLECTION_PROMPTS: ReflectionPrompt[] = [
   { label: "What matters next?", answer: "" },
 ];
 
+// [2026-10-07] "Cảnh báo nhắc nhở" (reminder) - yeu cau nguoi dung trong
+// popover "Chi tiết sự kiện": "Không có, nhắc vào lúc diễn ra, trước
+// 5/10/15/30/1h/2h/1d/2d/1week". Luu trong `item.metadata.reminderMinutesBefore`
+// (field DA CO SAN tren EventMetadata, nay dung CHUNG cho MOI Type - khong
+// can migration backend vi `metadata` von la Json? tu do). null = "Không
+// có"; 0 = "nhắc vào lúc diễn ra"; con lai = so PHUT truoc gio bat dau.
+export const REMINDER_OPTIONS: { value: number | null; label: string }[] = [
+  { value: null, label: "Không có" },
+  { value: 0, label: "Nhắc vào lúc diễn ra" },
+  { value: 5, label: "Trước 5 phút" },
+  { value: 10, label: "Trước 10 phút" },
+  { value: 15, label: "Trước 15 phút" },
+  { value: 30, label: "Trước 30 phút" },
+  { value: 60, label: "Trước 1 giờ" },
+  { value: 120, label: "Trước 2 giờ" },
+  { value: 1440, label: "Trước 1 ngày" },
+  { value: 2880, label: "Trước 2 ngày" },
+  { value: 10080, label: "Trước 1 tuần" },
+];
+
 export const WEEKDAY_SHORT_IDS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 export const WEEKDAY_SHORT_LABELS: Record<(typeof WEEKDAY_SHORT_IDS)[number], string> = {
   MON: "Mon",
