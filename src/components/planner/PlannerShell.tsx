@@ -3087,16 +3087,32 @@ function AddTaskForm({
   // ref - form nay nho, re-dang-ky mousedown listener moi phim go khong dang
   // ke. CHI tu dong dong khi draft CON TRONG (giu nguyen y dinh "bỏ đi luôn"
   // CHI danh cho truong hop chua nhap gi, tranh mat du lieu nguoi dung da go).
+  // [2026-10-07] { capture: true } (truoc day bubble mac dinh) + e.stopPropagation()
+  // - yeu cau nguoi dung: "Lúc mà nhấn ra ngoài để bỏ cái default vừa tạo,
+  // nó hiện cùng lúc cái nét đứt của 1 cái kéo thả mới... Đóng cái cũ xong
+  // mới được cho phép kéo thả cái mới". Bug goc: cung 1 cu mousedown VUA
+  // kich hoat listener dong form nay (gan tren `document`, CHAY SAU vi React
+  // onMouseDown cua luoi gio - WeekTimeGrid's startSlotDrag - gan qua co che
+  // delegation cua React, mac dinh BUBBLE len goc TRUOC khi bubble tiep len
+  // toi `document`), VUA lot qua startSlotDrag() cua chinh o luoi dang duoc
+  // click (vi no nam "ngoai" form) - ca 2 cung chay trong CUNG 1 mousedown,
+  // tao cam giac "vua dong vua mo keo moi" nhu nguoi dung mo ta. Capture
+  // phase tren `document` luon chay TRUOC moi handler bubble (ke ca cua
+  // target, du o tang nao) - goi stopPropagation() ngay o day chan HAN event
+  // tiep tuc lan xuong toi phan tu luoi/startSlotDrag, dam bao click-ra-ngoai
+  // NAY chi lam 1 viec duy nhat (dong form cu), nguoi dung phai bam THEM 1
+  // lan nua (mousedown moi, rieng biet) moi bat dau keo tha duoc.
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e: MouseEvent) {
       if (formRef.current && !formRef.current.contains(e.target as Node) && !draft.trim()) {
         setOpen(false);
         onDraftClose();
+        e.stopPropagation();
       }
     }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
+    document.addEventListener("mousedown", onPointerDown, true);
+    return () => document.removeEventListener("mousedown", onPointerDown, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, draft]);
 
