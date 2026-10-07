@@ -3063,6 +3063,27 @@ function AddTaskForm({
   const [draftArea, setDraftArea] = useState("");
   const typeCfg = getLifeItemTypeConfig(draftType);
   const typePalette = resolveLifeItemPalette(draftType);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // [2026-10-07] Click RA NGOAI form luc con trong tieu de - yeu cau nguoi
+  // dung: "Nếu mà chưa nhập tiêu đề thì click ra ngoài khỏi nó sẽ bỏ đi
+  // luôn". Dung mousedown (khong phai click) de kip chan TRUOC blur/click
+  // cua phan tu khac. Dang ky lai moi lan `draft` doi (deps) thay vi dung
+  // ref - form nay nho, re-dang-ky mousedown listener moi phim go khong dang
+  // ke. CHI tu dong dong khi draft CON TRONG (giu nguyen y dinh "bỏ đi luôn"
+  // CHI danh cho truong hop chua nhap gi, tranh mat du lieu nguoi dung da go).
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (formRef.current && !formRef.current.contains(e.target as Node) && !draft.trim()) {
+        setOpen(false);
+        onDraftClose();
+      }
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, draft]);
 
   // [2026-10-05] Click 1 o gio TRONG tren luoi tuan (state #6) - tu MO form
   // nay + dien san gio da click, thay vi nguoi dung phai tu bam "+ Thêm
@@ -3137,6 +3158,7 @@ function AddTaskForm({
     // + cac nhan section (uppercase, xam nhat) phan tach ro tung nhom, cung
     // tinh than AddNoteForm.tsx (Notes feature) da lam.
     <div
+      ref={formRef}
       className="flex flex-col gap-3 rounded-[12px] border bg-white p-3 shadow-[0_6px_20px_rgba(20,30,50,.08)]"
       style={{ borderColor: typePalette.accentBorder }}
     >
