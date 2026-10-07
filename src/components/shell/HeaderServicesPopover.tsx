@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   LayoutGrid,
@@ -53,7 +54,36 @@ export function HeaderServicesPopover() {
         className="z-50 w-100 origin-top overflow-hidden rounded-2xl border border-border bg-surface p-2 shadow-dropdown"
       >
         <div className="flex flex-col gap-0.5">
-          {HOME_FEATURES.map(
+          {/* [2026-10-07] "Planner" - yeu cau nguoi dung: "Planner đưa vào
+              Services nhé". KHONG nam trong HOME_FEATURES (du lieu CHUNG voi
+              HomeFeatureGrid.tsx/ServicesShell.tsx - Planner la 1 muc nav
+              CHINH rieng /planner, khong phai 1 "dich vu" the 3D o trang
+              chu), nen khai bao RIENG tai day thay vi them vao mang chung. */}
+          <Link
+            href="/planner"
+            onClick={() => setOpen(false)}
+            className="group flex items-center gap-3 rounded-lg p-2.5 text-left transition-colors duration-150 ease-out hover:bg-primary-soft"
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-white shadow-md transition-colors duration-150 ease-out group-hover:border-transparent group-hover:bg-linear-to-r group-hover:from-violet-100 group-hover:to-pink-100">
+              <CalendarDays size={17} className="text-primary" strokeWidth={2} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-ink">Planner</span>
+              <span className="mt-0.5 block text-xs text-ink-muted">
+                Lên kế hoạch, quản lý việc theo tuần/tháng
+              </span>
+            </span>
+            <ChevronRight
+              size={16}
+              className="mt-1 shrink-0 -translate-x-2.5 text-ink-faint opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
+            />
+          </Link>
+          {/* [2026-10-07] Loc bot badge "Sắp ra mắt" - yeu cau nguoi dung:
+              "bỏ 2 cái Sắp ra mắt cũ kia đi" (GL Life Book/GL Daily Diary) -
+              CHI an khoi popover Services nay, KHONG xoa khoi HOME_FEATURES
+              (van con hien o HomeFeatureGrid.tsx trang chu + /services, chi
+              dropdown nay gon lai, khong hien dich vu CHUA ra mat). */}
+          {HOME_FEATURES.filter((f) => !f.badge).map(
             ({ title, description, icon: Icon, iconColor, badge }) => (
               <Link
                 key={title}

@@ -16,6 +16,7 @@ import {
   ListFilter,
   Pencil,
   Plus,
+  Settings,
   Sparkles,
   Trash2,
   X,
@@ -28,12 +29,12 @@ import {
   updatePlannerItemAction,
   deletePlannerItemAction,
   listPlannerTypeColorsAction,
+  setPlannerTypeColorAction,
 } from "@/actions/planner/planner";
 import {
   PopoverRoot,
   PopoverTrigger,
   PopoverContent,
-  PopoverClose,
 } from "@/components/ui/popover";
 import { TimePickerField } from "./time-picker-field";
 import {
@@ -59,6 +60,8 @@ import {
   useLifeItemPalette,
   useTypeColorOverrides,
 } from "./life-item-palette-context";
+import { PlannerSettingsProvider, usePlannerSettings } from "./planner-settings-context";
+import { PlannerSettingsModal } from "./PlannerSettingsModal";
 
 type ViewMode = "week" | "month";
 type ItemsByDate = Record<string, ApiPlannerItem[]>;
@@ -69,7 +72,11 @@ const WEEKDAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 // [2026-10-02] Rieng head WeekTimeGrid - yeu cau nguoi dung: "các ngày trong
 // tuần theo tiếng anh". Thu 2 (index 0, T2) la dau tuan theo startOfWeek() da
 // dung xuyen suot file nay (ISO 8601, tuan bat dau Thu Hai).
-const WEEKDAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// [2026-10-07] Tra nhan thu truc tiep tu CHINH ngay (Date.getDay(), 0=Sun) -
+// thay vi mang co dinh gia dinh tuan luon bat dau Thu Hai - KHONG can "xoay"
+// gi them du `days` bat dau tu Monday hay Sunday (Settings: weekStartsOn),
+// luon dung bat ke thu tu mang `days` the nao.
+const WEEKDAY_SHORT_BY_JS_DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAY_FULL_EN = [
   "MONDAY",
   "TUESDAY",
@@ -150,12 +157,12 @@ const DEFAULT_DURATION_MINUTES = 60;
 // tu 56px) - yeu cau nguoi dung: "Nên tăng khoảng cách giữa các mốc... Hour
 // height khoảng 64px". 24 gio x 64px = 1536px, cuon rieng trong 1 khung cao
 // co dinh thay vi day dai ca trang.
-// [2026-10-07] Giam 10% (64 -> 58, lam tron tu 57.6) - yeu cau nguoi dung:
-// "Giảm chiều cao mỗi hàng tương ứng 1 tiếng đi, cao quá". Moi phep tinh
-// khac (DRAG_SNAP_PX, top/height cua TimedItemChip, cuon san 7h sang...) deu
-// suy ra TU hang so nay nen tu dong khop theo, khong can sua rieng tung cho.
-const HOUR_ROW_HEIGHT = 58;
-const HOURS = Array.from({ length: 24 }, (_, h) => h);
+// [2026-10-07] HOUR_ROW_HEIGHT/HOURS/DRAG_SNAP_MINUTES/DRAG_SNAP_PX KHONG
+// CON la hang so CO DINH o day - Settings modal (section View "Compact/
+// Comfortable", Calendar "First/Last visible hour"/"Time slot") can gia tri
+// THAY DOI duoc theo tung user. Moi hang nay gio duoc KHAI BAO LAI (shadow)
+// ngay trong than WeekTimeGrid/TimedItemChip - 2 component THAT SU dung
+// chung, tinh TU usePlannerSettings() - xem comment day du tai noi khai bao.
 
 function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -183,11 +190,15 @@ function addMonths(dateStr: string, months: number): string {
   d.setMonth(d.getMonth() + months, 1);
   return toISODate(d);
 }
-function startOfWeek(dateStr: string): string {
+// [2026-10-07] weekStartsOn - yeu cau nguoi dung (Settings modal, section
+// View): "Week starts on: Monday/Sunday". Mac dinh "MONDAY" (hanh vi CU,
+// ISO 8601) de moi call site CHUA cap nhat (truoc khi settings tai xong)
+// khong doi hanh vi.
+function startOfWeek(dateStr: string, weekStartsOn: "MONDAY" | "SUNDAY" = "MONDAY"): string {
   const d = new Date(dateStr);
   const day = d.getDay(); // 0 = Chu nhat
-  const diffToMonday = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diffToMonday);
+  const diffToStart = weekStartsOn === "SUNDAY" ? -day : day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diffToStart);
   return toISODate(d);
 }
 function startOfMonth(dateStr: string): string {
@@ -200,9 +211,17 @@ function endOfMonth(dateStr: string): string {
   d.setMonth(d.getMonth() + 1, 0);
   return toISODate(d);
 }
-function minutesToLabel(m: number): string {
+// [2026-10-07] format - yeu cau nguoi dung (Settings modal, section View):
+// "Time format: 24-hour/12-hour". Mac dinh "24H" (hanh vi CU) - cho MOI call
+// site chua truyen settings.timeFormat van giu nguyen dang hien.
+function minutesToLabel(m: number, format: "24H" | "12H" = "24H"): string {
   const h = Math.floor(m / 60) % 24;
   const mm = m % 60;
+  if (format === "12H") {
+    const h12 = h % 12 || 12;
+    const suffix = h < 12 ? "AM" : "PM";
+    return `${h12}:${mm.toString().padStart(2, "0")} ${suffix}`;
+  }
   return `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
 function groupByDate(items: ApiPlannerItem[]): ItemsByDate {
@@ -531,6 +550,9 @@ export function PlannerShell({
       })
       .catch(() => {});
   }, []);
+  // [2026-10-07] Settings modal (icon moi cuoi toolbar tren cung) - xem
+  // PlannerSettingsModal.tsx.
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   async function reload(range: { from: string; to: string }) {
     setIsLoading(true);
@@ -706,6 +728,15 @@ export function PlannerShell({
     if (created) patchDate(item.date, (items) => [...items, created]);
   }
 
+  // [2026-10-07] "Customize palette" trong Settings modal - phuc hoi lai
+  // duong goi (UI cu TypeColorSettings da bi xoa truoc do, xem comment
+  // PlannerSettingsModal.tsx) toi plumbing VAN con nguyen (typeColorOverrides/
+  // setPlannerTypeColorAction). Cap nhat LAC QUAN truoc, API ngam sau.
+  function handleTypeColorChange(type: LifeItemType, paletteId: string) {
+    setTypeColorOverrides((prev) => ({ ...prev, [type]: paletteId }));
+    setPlannerTypeColorAction(type, paletteId).catch(() => {});
+  }
+
   // [2026-10-05] Sua 1 item SAU KHI DA TAO - yeu cau nguoi dung: "hiện KHÔNG
   // có cách nào sửa lại tiêu đề/giờ/màu sau khi tạo, chỉ tick done hoặc
   // xoá". Dung CHUNG cho 2 cho: (1) form sua inline trong SCHEDULE (TimelineRow/
@@ -794,6 +825,7 @@ export function PlannerShell({
   const monthLabel = `${MONTH_LABELS[new Date(anchor).getMonth()]} ${new Date(anchor).getFullYear()}`;
 
   return (
+    <PlannerSettingsProvider>
     <LifeItemPaletteProvider overrides={typeColorOverrides}>
     {/* planner-scope - nap bo CSS var rieng (xem globals.css). "-mx-4 sm:-mx-6
         lg:-mx-10 -my-6" HUY padding cua FeedMainArea.tsx (to tien dung CHUNG
@@ -924,6 +956,19 @@ export function PlannerShell({
                   </span>
                 )}
               </div>
+              {/* [2026-10-07] Icon Settings - yeu cau nguoi dung: "Icon
+                  setting bổ sung vào cuối thanh toolbar trên cùng, phía bên
+                  phải đăng sau bộ chọn range day". Cung style size-8 voi 2
+                  nut prev/next chevron ben tren de dong bo. */}
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Cài đặt"
+                title="Cài đặt"
+                className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+              >
+                <Settings size={15} className="text-[color:var(--planner-text-secondary)]" />
+              </button>
             </div>
           </div>
 
@@ -992,7 +1037,13 @@ export function PlannerShell({
         </div>
       </div>
     </div>
+    <PlannerSettingsModal
+      open={settingsOpen}
+      onOpenChange={setSettingsOpen}
+      onChangeTypeColor={handleTypeColorChange}
+    />
     </LifeItemPaletteProvider>
+    </PlannerSettingsProvider>
   );
 }
 
@@ -1109,10 +1160,10 @@ function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
 //   len hien 2 dong rieng (gio/tieu de).
 // - Hoan thanh (section II.11): KHONG xam toan bo, chi gach ngang + opacity
 //   .55, nen pastel VAN GIU de con nhan ra chu de.
-// Snap keo-tha/keo-gian ve moc 15 phut - vua du nho de linh hoat, vua du lon
-// de khong "run tay" bam trung dung phut le vo nghia.
-const DRAG_SNAP_MINUTES = 15;
-const DRAG_SNAP_PX = (HOUR_ROW_HEIGHT * DRAG_SNAP_MINUTES) / 60;
+// Snap keo-tha/keo-gian ve moc (Settings: Time slot, 15/30/60') - vua du nho
+// de linh hoat, vua du lon de khong "run tay" bam trung dung phut le vo
+// nghia. DRAG_SNAP_MINUTES/DRAG_SNAP_PX gio khai bao LOCAL trong TimedItemChip
+// (xem usePlannerSettings() dau ham), khong con la hang so o day nua.
 
 // [2026-10-07] "Giữ kéo thả để tạo task có thời gian bắt đầu và kết thúc ở
 // điểm kéo thả tương ứng" - yeu cau nguoi dung mo rong tu "click 1 o gio"
@@ -1196,6 +1247,16 @@ function TimedItemChip({
 }) {
   const cat = useLifeItemPalette(item.itemType);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
+  const { settings } = usePlannerSettings();
+  // Phai TINH Y HET cong thuc WeekTimeGrid dung (cung doc chung 1
+  // usePlannerSettings(), 2 noi GOI RIENG nhung CUNG settings nen ra CUNG gia
+  // tri) - top/height truyen xuong TU WeekTimeGrid da theo dung HOUR_ROW_HEIGHT
+  // nay, displayTop/liveStart... o duoi PHAI dung KHOP, neu khong se "nhay"
+  // sai vi tri khi keo/resize.
+  const HOUR_ROW_HEIGHT = settings.density === "COMPACT" ? 40 : 58;
+  const DRAG_SNAP_MINUTES = settings.timeSlotMinutes;
+  const DRAG_SNAP_PX = (HOUR_ROW_HEIGHT * DRAG_SNAP_MINUTES) / 60;
+  const firstVisibleMinute = settings.firstVisibleHour * 60;
   // Popover "chi tiết" (khac `conflictOpen` ben duoi - popover canh bao trung
   // lich) - mo khi click THAN the (khong phai luc keo-tha, xem preventDefault
   // trong onClick cua <button> ben duoi). `detailMode`: "view" = xem nhanh +
@@ -1223,14 +1284,6 @@ function TimedItemChip({
     mode: "move" | "resize";
     deltaPx: number;
   } | null>(null);
-  // [2026-10-06] Popover canh bao trung lich - yeu cau nguoi dung: trien
-  // khai tiep "[Keep both] [Reschedule]" trong spec goc. "Giữ cả hai" chi
-  // dong popover (2 viec van hien thi canh nhau nhu binh thuong, khong can
-  // hanh dong gi them). "Đổi giờ" goi THANG `onSelect()` (CUNG callback nut
-  // chinh dang dung) - chon + chuyen panel ben phai sang dung ngay nay, noi
-  // nguoi dung co the bam but chi/sua gio ngay tai do (tai dung luong "Sửa
-  // ngay trong dòng" da co san, khong mo 1 modal rieng).
-  const [conflictOpen, setConflictOpen] = useState(false);
   // Ban SONG SONG voi `drag` state (doc duoc NGAY lap tuc trong onUp, khong
   // can qua updater function cua setState - xem comment chi tiet trong
   // startDrag ben duoi).
@@ -1244,12 +1297,20 @@ function TimedItemChip({
     drag?.mode === "resize"
       ? Math.max(DRAG_SNAP_PX, height + drag.deltaPx)
       : height;
-  const liveStart = Math.round((displayTop / HOUR_ROW_HEIGHT) * 60);
+  // [2026-10-07] + firstVisibleMinute - "top" truyen tu WeekTimeGrid gio tinh
+  // TU GOC firstVisibleHour (khong con la 0h/nua dem nhu truoc, xem Settings
+  // "First visible hour") - phai CONG lai dung gia tri goc nay khi quy doi
+  // nguoc tu pixel VE phut TUYET DOI, neu khong moi vi tri/gio hien thi se
+  // lech dung bang firstVisibleHour*60 phut.
+  const liveStart = Math.round((displayTop / HOUR_ROW_HEIGHT) * 60) + firstVisibleMinute;
   const liveDuration = Math.round((displayHeight / HOUR_ROW_HEIGHT) * 60);
-  const compact = displayHeight < 40;
+  // [2026-10-07] Settings: "Completed tasks" = Collapse -> EP compact du
+  // chieu cao that su con lon (chi ap dung cho viec DA XONG) - "thu gon"
+  // thanh 1 dong gon giong cac the ngan khac.
+  const compact = displayHeight < 40 || (item.done && settings.completedTaskDisplay === "COLLAPSE");
   const timeLabel = drag
-    ? `${minutesToLabel(liveStart)} — ${minutesToLabel(liveStart + liveDuration)}`
-    : `${minutesToLabel(item.scheduledMinute ?? 0)} — ${minutesToLabel(itemEndMinute(item))}`;
+    ? `${minutesToLabel(liveStart, settings.timeFormat)} — ${minutesToLabel(liveStart + liveDuration, settings.timeFormat)}`
+    : `${minutesToLabel(item.scheduledMinute ?? 0, settings.timeFormat)} — ${minutesToLabel(itemEndMinute(item), settings.timeFormat)}`;
 
   function startDrag(e: React.MouseEvent, mode: "move" | "resize") {
     if (e.button !== 0) return; // chi chuot trai
@@ -1323,7 +1384,7 @@ function TimedItemChip({
           className="pointer-events-none absolute z-[4] -translate-y-full rounded-md px-2 py-1 text-[11px] font-semibold whitespace-nowrap text-white shadow-[0_3px_8px_rgba(20,30,50,.2)]"
           style={{ top: displayTop - 4, left, backgroundColor: cat.accentStrong }}
         >
-          {minutesToLabel(liveStart)}
+          {minutesToLabel(liveStart, settings.timeFormat)}
         </div>
       )}
       <PopoverRoot
@@ -1354,7 +1415,7 @@ function TimedItemChip({
         }
         onSelect();
       }}
-      title={conflict ? `⚠ Trùng lịch · ${timeLabel} · ${item.title}` : `${timeLabel} · ${item.title}`}
+      title={`${timeLabel} · ${item.title}`}
       style={{
         // [2026-10-06] +3/-6 (truoc +1/-2, nguoi dung yeu cau "tăng thêm 2px"
         // nua) - chua khoang cach giua 2 task SAT GIO nhau (vd task A ket
@@ -1375,7 +1436,19 @@ function TimedItemChip({
         clipPath,
         // accentSoft (truoc accentLight) - xem comment day du o AllDayItemChip,
         // cung ly do: accentLight qua nhat, nhin gan nhu trang tren luoi gio.
-        backgroundColor: cat.accentSoft,
+        // [2026-10-07] Settings: "Completed task style" - CHECK_COLOR tinh
+        // them mau --success vao nen (thay vi chi gach ngang + mo nhat);
+        // PATTERN thay nen phang bang soc cheo lap lai (repeating-linear-
+        // gradient) - ca 2 CHI ap dung khi item.done, con lai (CHECK_ICON/
+        // DONE_BADGE) giu nguyen nen accentSoft phang nhu truoc.
+        backgroundColor:
+          item.done && settings.completedTaskStyle === "CHECK_COLOR"
+            ? `color-mix(in srgb, var(--success) 20%, ${cat.accentSoft})`
+            : cat.accentSoft,
+        backgroundImage:
+          item.done && settings.completedTaskStyle === "PATTERN"
+            ? `repeating-linear-gradient(135deg, transparent, transparent 6px, color-mix(in srgb, ${cat.accentStrong} 22%, transparent) 6px, color-mix(in srgb, ${cat.accentStrong} 22%, transparent) 12px)`
+            : undefined,
         boxShadow: selected
           ? `0 0 0 2px white, 0 0 0 3px ${cat.accentStrong}`
           : undefined,
@@ -1385,7 +1458,11 @@ function TimedItemChip({
         drag
           ? "z-[3] cursor-grabbing shadow-[0_4px_12px_rgba(20,30,50,.15)]"
           : "cursor-grab",
-        item.done && "opacity-55",
+        // [2026-10-07] opacity-55 CHI con ap dung cho bien the "Check icon"
+        // (mac dinh/CU) - 3 bien the con lai (CHECK_COLOR/DONE_BADGE/PATTERN)
+        // da co cach rieng de bao hieu "da xong" (mau/badge/hoa tiet), khong
+        // can lam mo nhat chong lan nua.
+        item.done && settings.completedTaskStyle === "CHECK_ICON" && "opacity-55",
       )}
     >
       {/* [2026-10-06] Wrapper noi dung RIENG (truoc day padding/flex nam
@@ -1421,7 +1498,7 @@ function TimedItemChip({
               className="shrink-0 text-[10px] font-medium"
               style={{ color: cat.accentStrong }}
             >
-              {minutesToLabel(drag ? liveStart : (item.scheduledMinute ?? 0))}
+              {minutesToLabel(drag ? liveStart : (item.scheduledMinute ?? 0), settings.timeFormat)}
             </span>
             <span
               className={cn(
@@ -1505,81 +1582,24 @@ function TimedItemChip({
           </>
         )}
       </div>
-      {/* [2026-10-06] Dau "⚠" trung lich - xem comment prop `conflict` o tren
-          (chi hien khi THAT SU bi chia cot VA khong co Event nao trong nhom
-          trung gio - "cảnh báo conflict thay vì âm thầm chia đôi"). Goc tren-
-          phai, khong chiem cho noi dung ben trong.
-          [2026-10-06] Nang cap thanh popover tuong tac theo yeu cau nguoi
-          dung (spec goc: nut "[Keep both] [Reschedule]") - dung <span
-          role="button"> (khong phai <button>) vi the NGOAI CUNG da la
-          <button>, long button trong button la HTML khong hop le. stopPro-
-          pagation ca onClick VA onMouseDown de khong "chay len" kich hoat
-          onSelect/keo-tha cua the cha. */}
-      {conflict && (
-        <PopoverRoot open={conflictOpen} onOpenChange={setConflictOpen}>
-          <PopoverTrigger asChild>
-            <span
-              role="button"
-              tabIndex={0}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") e.stopPropagation();
-              }}
-              className="absolute top-0.5 right-0.5 z-[2] cursor-pointer text-[10px] leading-none"
-              title="Trùng lịch với việc khác"
-            >
-              ⚠
-            </span>
-          </PopoverTrigger>
-          <PopoverContent
-            open={conflictOpen}
-            align="end"
-            onOpenAutoFocus={(e) => e.preventDefault()}
-            className="z-50 w-64 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.12)]"
-          >
-            <p className="mb-1.5 flex items-center gap-1 text-[12.5px] font-semibold text-[color:var(--planner-text-primary)]">
-              <span aria-hidden="true">⚠</span> Trùng lịch
-            </p>
-            <p className="mb-2 text-[12px] leading-snug text-[color:var(--planner-text-secondary)]">
-              Việc này trùng giờ với:
-            </p>
-            <ul className="mb-3 flex flex-col gap-1.5">
-              {conflictWith.map((other) => (
-                <li
-                  key={other.id}
-                  className="truncate rounded-[6px] bg-[color:var(--planner-surface-muted)] px-2 py-1 text-[12px] text-[color:var(--planner-text-primary)]"
-                >
-                  <span className="font-medium">{other.title}</span>{" "}
-                  <span className="text-[color:var(--planner-text-muted)]">
-                    · {minutesToLabel(other.scheduledMinute)} — {minutesToLabel(itemEndMinute(other))}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="flex gap-2">
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex-1 cursor-pointer rounded-[6px] border border-[color:var(--planner-border)] px-2 py-1.5 text-[12px] font-medium text-[color:var(--planner-text-secondary)] transition-colors duration-150 ease-out hover:bg-[color:var(--planner-surface-muted)]"
-                >
-                  Giữ cả hai
-                </button>
-              </PopoverClose>
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  onClick={() => onSelect()}
-                  className="flex-1 cursor-pointer rounded-[6px] px-2 py-1.5 text-[12px] font-medium text-white transition-colors duration-150 ease-out"
-                  style={{ backgroundColor: cat.accentStrong }}
-                >
-                  Đổi giờ
-                </button>
-              </PopoverClose>
-            </div>
-          </PopoverContent>
-        </PopoverRoot>
+      {/* [2026-10-07] Settings: "Completed task style" = Done badge - 1 pill
+          nho goc duoi-trai, CHI hien khi item.done VA dang chon dung bien
+          the nay (3 bien the con lai khong ve gi them o day). */}
+      {item.done && settings.completedTaskStyle === "DONE_BADGE" && (
+        <span
+          className="absolute bottom-0.5 left-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
+          style={{ backgroundColor: cat.accentStrong }}
+        >
+          Done
+        </span>
       )}
+      {/* [2026-10-07] Dau "⚠" trung lich + popover canh bao - DA BO theo yeu
+          cau nguoi dung: "Bỏ cái dấu chấm than cảnh báo 2 cột đi". Hanh vi
+          chia cot khi THAT SU trung gio (xem layoutTimedItems/`conflict`
+          prop) VAN GIU NGUYEN - chi khong con ve dau hieu "⚠" tren the nua.
+          `conflict`/`conflictWith` props VAN con trong signature (phia duoi,
+          khong dung o day nua) - WeekTimeGrid van tinh/truyen xuong vi logic
+          chia cot phu thuoc chung, chi component nay khong con doc de ve gi. */}
       {/* [2026-10-05] Tay cam resize - keo rieng canh nay de doi THOI LUONG
           (giu nguyen gio bat dau), khac keo THAN the (doi gio bat dau, giu
           nguyen thoi luong). stopPropagation trong startDrag ngan event
@@ -1959,6 +1979,21 @@ function WeekTimeGrid({
   onAddChild: (parentId: string, title: string) => void;
   typeColorOverrides: Partial<Record<LifeItemType, string>>;
 }) {
+  const { settings } = usePlannerSettings();
+  // [2026-10-07] Dan xuat tu Settings (Density/Time slot/First-Last visible
+  // hour) - SHADOW ten hang module-level cu (HOUR_ROW_HEIGHT/DRAG_SNAP_MINUTES/
+  // DRAG_SNAP_PX/HOURS da bi xoa khoi scope module, xem comment o do) de MOI
+  // cho DANG DUNG cac ten nay trong than ham (con lai nguyen van, khong doi
+  // tung dong) tu dong nhan gia tri DUNG theo Settings hien tai.
+  const HOUR_ROW_HEIGHT = settings.density === "COMPACT" ? 40 : 58;
+  const DRAG_SNAP_MINUTES = settings.timeSlotMinutes;
+  const DRAG_SNAP_PX = (HOUR_ROW_HEIGHT * DRAG_SNAP_MINUTES) / 60;
+  const HOURS = Array.from(
+    { length: Math.max(settings.lastVisibleHour - settings.firstVisibleHour, 1) },
+    (_, i) => settings.firstVisibleHour + i,
+  );
+  const firstVisibleMinute = settings.firstVisibleHour * 60;
+  const lastVisibleMinute = settings.lastVisibleHour * 60;
   const scrollRef = useRef<HTMLDivElement>(null);
   // [2026-10-07] "Giữ kéo thả để tạo task có thời gian bắt đầu và kết thúc ở
   // điểm kéo thả tương ứng" - mo rong tu "click 1 o gio" (CHI co start) sang
@@ -1980,8 +2015,8 @@ function WeekTimeGrid({
     const rect = e.currentTarget.getBoundingClientRect();
     function minuteFromClientY(clientY: number): number {
       const raw = ((clientY - rect.top) / HOUR_ROW_HEIGHT) * 60;
-      const snapped = Math.round(raw / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES;
-      return Math.min(Math.max(snapped, 0), 24 * 60);
+      const snapped = Math.round(raw / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES + firstVisibleMinute;
+      return Math.min(Math.max(snapped, firstVisibleMinute), lastVisibleMinute);
     }
     const startMinute = minuteFromClientY(e.clientY);
     const initial = { day, startMinute, currentMinute: startMinute };
@@ -2057,20 +2092,31 @@ function WeekTimeGrid({
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   });
+  // [2026-10-07] weekStartsOn (Settings) truyen xuong startOfWeek(). Show
+  // weekends=false loc bot T7/CN SAU KHI da dung tuan (van can tinh DU 7 ngay
+  // de startOfWeek/weekStart dung, chi AN bot cot luc render).
   const days = Array.from({ length: 7 }, (_, i) =>
-    addDays(startOfWeek(anchor), i),
-  );
+    addDays(startOfWeek(anchor, settings.weekStartsOn), i),
+  ).filter((d) => settings.showWeekends || ![0, 6].includes(new Date(d).getDay()));
   const today = toLocalISODate(new Date());
-  const weekStart = new Date(startOfWeek(anchor));
+  const weekStart = new Date(startOfWeek(anchor, settings.weekStartsOn));
   const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
   const now = new Date();
   const nowMinute = now.getHours() * 60 + now.getMinutes();
+  // 48px (cot nhan gio) + N cot ngay deu nhau - thay the Tailwind arbitrary
+  // class CO DINH repeat(7,1fr) truoc day, vi `days.length` gio co the la 5
+  // (an weekend) hoac 7 (hien weekend), khong con la hang so.
+  const gridTemplateColumns = `48px repeat(${days.length}, 1fr)`;
 
-  // Cuon san toi ~7h sang luc mo/doi tuan - tranh nguoi dung luon phai tu keo
-  // tu 00:00 (gio it ai len lich) moi thay noi dung ban ngay.
+  // Cuon san toi ~7h sang (hoac gio dau tien con thay duoc, neu First visible
+  // hour > 7) luc mo/doi tuan - tranh nguoi dung luon phai tu keo tu dau
+  // khung gio moi thay noi dung ban ngay.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 7 * HOUR_ROW_HEIGHT - 24 });
-  }, [anchor]);
+    const target = Math.max(settings.firstVisibleHour, Math.min(7, settings.lastVisibleHour - 1));
+    scrollRef.current?.scrollTo({
+      top: (target - settings.firstVisibleHour) * HOUR_ROW_HEIGHT - 24,
+    });
+  }, [anchor, settings.firstVisibleHour, settings.lastVisibleHour, HOUR_ROW_HEIGHT]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -2081,9 +2127,9 @@ function WeekTimeGrid({
         <p className="px-3 pt-2.5 pb-1 text-[14px] font-semibold text-[color:var(--planner-text-primary)]">
           {monthYearLabel}
         </p>
-        <div className="grid grid-cols-[48px_repeat(7,1fr)]">
+        <div className="grid" style={{ gridTemplateColumns }}>
           <div />
-          {days.map((d, i) => (
+          {days.map((d) => (
             <button
               key={d}
               type="button"
@@ -2094,7 +2140,7 @@ function WeekTimeGrid({
               )}
             >
               <span className="text-[11px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
-                {WEEKDAY_LABELS_EN[i]}
+                {WEEKDAY_SHORT_BY_JS_DAY[new Date(d).getDay()]}
               </span>
               <span
                 className={cn(
@@ -2111,27 +2157,30 @@ function WeekTimeGrid({
             </button>
           ))}
         </div>
-        {/* Hang "ca ngay" (section 14) - viec KHONG dat gio, xem AllDayItemChip. */}
-        <div className="grid grid-cols-[48px_repeat(7,1fr)] border-t border-[color:var(--planner-border-soft)] bg-[#fafbfc]">
-          <div className="py-1.5 text-center text-[10px] font-semibold text-[color:var(--planner-text-muted)]">
-            Cả ngày
+        {/* [2026-10-07] Settings: "Show all-day section" - an han ca hang
+            (khong chi an noi dung ben trong) khi tat. */}
+        {settings.showAllDaySection && (
+          <div className="grid border-t border-[color:var(--planner-border-soft)] bg-[#fafbfc]" style={{ gridTemplateColumns }}>
+            <div className="py-1.5 text-center text-[10px] font-semibold text-[color:var(--planner-text-muted)]">
+              Cả ngày
+            </div>
+            {days.map((d) => {
+              const allDay = (itemsByDate[d] ?? []).filter(
+                (it) => it.scheduledMinute === null,
+              );
+              return (
+                <div
+                  key={d}
+                  className="flex min-h-7 flex-col gap-0.5 border-l border-[color:var(--planner-border-soft)] px-1 py-1"
+                >
+                  {allDay.map((item) => (
+                    <AllDayItemChip key={item.id} item={item} />
+                  ))}
+                </div>
+              );
+            })}
           </div>
-          {days.map((d) => {
-            const allDay = (itemsByDate[d] ?? []).filter(
-              (it) => it.scheduledMinute === null,
-            );
-            return (
-              <div
-                key={d}
-                className="flex min-h-7 flex-col gap-0.5 border-l border-[color:var(--planner-border-soft)] px-1 py-1"
-              >
-                {allDay.map((item) => (
-                  <AllDayItemChip key={item.id} item={item} />
-                ))}
-              </div>
-            );
-          })}
-        </div>
+        )}
         {/* [2026-10-06] Chu thich vong mau Type - yeu cau nguoi dung: "nó ở
             ngay dưới phần head của lịch... khi scroll lịch thì nó sticky ở
             đầu". Dat NGAY TRONG wrapper header `shrink-0` o tren (KHONG phai
@@ -2153,7 +2202,7 @@ function WeekTimeGrid({
           theo flex-1, se day card PHINH TO qua chieu cao cho phep thay vi
           chiu cat/cuon dung cho. */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-[48px_repeat(7,1fr)]">
+        <div className="grid" style={{ gridTemplateColumns }}>
           <div className="flex flex-col">
             {HOURS.map((h) => (
               <div
@@ -2180,9 +2229,17 @@ function WeekTimeGrid({
             ))}
           </div>
           {days.map((d, dayIndex) => {
+            // [2026-10-07] Settings: "Completed tasks" = Hide -> loc BOT
+            // viec da xong TRUOC KHI dua vao layoutTimedItems() (khong chi
+            // an sau khi render) - dam bao viec con lai KHONG BI chia cot
+            // oan uong vi 1 viec da xong "vo hinh" nhung van chiem logic
+            // trung gio. Keep visible/Collapse van giu NGUYEN trong layout
+            // (Collapse chi doi VISUAL nho lai trong TimedItemChip, xem
+            // completedTaskDisplay o do).
             const timed = (itemsByDate[d] ?? []).filter(
               (it): it is ApiPlannerItem & { scheduledMinute: number } =>
-                it.scheduledMinute !== null,
+                it.scheduledMinute !== null &&
+                !(settings.completedTaskDisplay === "HIDE" && it.done),
             );
             const laidOut = layoutTimedItems(timed);
             const isToday = d === today;
@@ -2194,14 +2251,14 @@ function WeekTimeGrid({
                 style={
                   isToday
                     ? {
-                        height: HOUR_ROW_HEIGHT * 24,
+                        height: HOUR_ROW_HEIGHT * HOURS.length,
                         // [2026-10-06] Nhat hon 30% (color-mix pha them 30%
                         // trang) - yeu cau nguoi dung: "nền của cột today nên
                         // nhạt hơn thêm 30%".
                         backgroundImage:
                           "linear-gradient(180deg, color-mix(in srgb, #f7f9ff 70%, white) 0%, color-mix(in srgb, #fbfcff 70%, white) 100%)",
                       }
-                    : { height: HOUR_ROW_HEIGHT * 24 }
+                    : { height: HOUR_ROW_HEIGHT * HOURS.length }
                 }
               >
                 {/* [2026-10-07] Keo tha TREN vung trong - yeu cau nguoi dung:
@@ -2226,15 +2283,23 @@ function WeekTimeGrid({
                     gradient rieng cua cot today (khong "de" mat tint today). */}
                 {HOURS.map((h) => {
                   const checker = (h + dayIndex) % 2 === 0;
+                  // [2026-10-07] Settings: "Working hours" - gio NGOAI khung
+                  // lam viec (vd truoc 08:00/sau 22:00) to nhat hon han, DE
+                  // nguoi dung phan biet nhanh khung "nen lam viec" ma khong
+                  // can doc so - thay the checker binh thuong tai dung hang
+                  // gio do (checker van giu nguyen cho gio TRONG khung).
+                  const isWorkingHour = h * 60 < settings.workingHoursEnd && h * 60 + 60 > settings.workingHoursStart;
                   return (
                     <div
                       key={h}
                       className="pointer-events-none border-t border-[color:var(--planner-grid-line)]"
                       style={{
                         height: HOUR_ROW_HEIGHT,
-                        backgroundColor: checker
-                          ? "color-mix(in srgb, var(--planner-surface-soft) 60%, transparent)"
-                          : undefined,
+                        backgroundColor: !isWorkingHour
+                          ? "color-mix(in srgb, var(--planner-border-soft) 55%, transparent)"
+                          : checker
+                            ? "color-mix(in srgb, var(--planner-surface-soft) 60%, transparent)"
+                            : undefined,
                       }}
                     />
                   );
@@ -2249,7 +2314,7 @@ function WeekTimeGrid({
                   <div
                     className="pointer-events-none absolute right-1 left-1 z-[2] rounded-[6px] border-2 border-dashed"
                     style={{
-                      top: (Math.min(slotDrag.startMinute, slotDrag.currentMinute) / 60) * HOUR_ROW_HEIGHT,
+                      top: ((Math.min(slotDrag.startMinute, slotDrag.currentMinute) - firstVisibleMinute) / 60) * HOUR_ROW_HEIGHT,
                       height: Math.max(
                         ((Math.abs(slotDrag.currentMinute - slotDrag.startMinute)) / 60) * HOUR_ROW_HEIGHT,
                         4,
@@ -2262,9 +2327,9 @@ function WeekTimeGrid({
                       className="absolute top-0.5 left-1 rounded-[4px] px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-white"
                       style={{ backgroundColor: "var(--planner-primary)" }}
                     >
-                      {minutesToLabel(Math.min(slotDrag.startMinute, slotDrag.currentMinute))}
+                      {minutesToLabel(Math.min(slotDrag.startMinute, slotDrag.currentMinute), settings.timeFormat)}
                       {" — "}
-                      {minutesToLabel(Math.max(slotDrag.startMinute, slotDrag.currentMinute))}
+                      {minutesToLabel(Math.max(slotDrag.startMinute, slotDrag.currentMinute), settings.timeFormat)}
                     </span>
                   </div>
                 )}
@@ -2280,7 +2345,7 @@ function WeekTimeGrid({
                   <div
                     className="pointer-events-none absolute right-1 left-1 z-[1] overflow-hidden rounded-sm border border-dashed px-3 py-2"
                     style={{
-                      top: (draftPlaceholder.start / 60) * HOUR_ROW_HEIGHT,
+                      top: ((draftPlaceholder.start - firstVisibleMinute) / 60) * HOUR_ROW_HEIGHT,
                       height: Math.max((draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT, HOUR_ROW_HEIGHT * 0.4),
                       borderColor: "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
                       backgroundColor: "color-mix(in srgb, var(--planner-primary) 20%, white)",
@@ -2305,7 +2370,7 @@ function WeekTimeGrid({
                     <TimedItemChip
                       key={item.id}
                       item={item}
-                      top={(item.scheduledMinute / 60) * HOUR_ROW_HEIGHT}
+                      top={((item.scheduledMinute - firstVisibleMinute) / 60) * HOUR_ROW_HEIGHT}
                       height={
                         ((itemEndMinute(item) - item.scheduledMinute) / 60) *
                         HOUR_ROW_HEIGHT
@@ -2611,6 +2676,7 @@ function TodayFocusCard({
 }) {
   const cat = useLifeItemPalette(item.itemType);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
+  const { settings } = usePlannerSettings();
   return (
     <div className="flex flex-col gap-1">
       <p className="text-[11px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
@@ -2641,8 +2707,8 @@ function TodayFocusCard({
         </p>
         {item.scheduledMinute !== null && (
           <p className="text-[12px] font-medium" style={{ color: cat.accentStrong }}>
-            {minutesToLabel(item.scheduledMinute)} —{" "}
-            {minutesToLabel(itemEndMinute(item))}
+            {minutesToLabel(item.scheduledMinute, settings.timeFormat)} —{" "}
+            {minutesToLabel(itemEndMinute(item), settings.timeFormat)}
           </p>
         )}
         <button
@@ -2680,6 +2746,7 @@ function TimelineRow({
 }) {
   const cat = useLifeItemPalette(item.itemType);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
+  const { settings } = usePlannerSettings();
   return (
     <div className="relative flex gap-2.5 pl-0.5">
       {/* Dot trang thai - noi voi duong connector cua ca danh sach (border-l
@@ -2734,25 +2801,63 @@ function TimelineRow({
         )}
       >
         <div className="flex min-w-0 flex-col gap-0.5">
-          {item.scheduledMinute !== null && (
+          {/* [2026-10-07] Settings: "Show duration" - gio bat dau→ket thuc
+              CHINH la cach the hien thoi luong trong SCHEDULE list nay (khong
+              co 1 the "Xh Ym" rieng o dau khac) - an ca hang khi tat. */}
+          {item.scheduledMinute !== null && settings.showDuration && (
             <span
               className="text-[11px] font-medium"
               style={{ color: cat.accentStrong }}
             >
-              {minutesToLabel(item.scheduledMinute)} —{" "}
-              {minutesToLabel(itemEndMinute(item))}
+              {minutesToLabel(item.scheduledMinute, settings.timeFormat)} —{" "}
+              {minutesToLabel(itemEndMinute(item), settings.timeFormat)}
             </span>
           )}
-          <span
-            className={cn(
-              "truncate text-[13px] font-medium",
-              item.done
-                ? "text-[color:var(--planner-text-muted)] line-through"
-                : "text-[color:var(--planner-text-primary)]",
+          <span className="flex min-w-0 items-center gap-1">
+            {/* [2026-10-07] Settings: "Show task type" - nhan chu Type (icon
+                dot o ben trai von da co san, day la PHAN CHU rieng, an duoc
+                doc lap). */}
+            {settings.showTaskType && (
+              <span className="shrink-0 text-[10px] font-semibold" style={{ color: cat.accentStrong }}>
+                {typeCfg.label}
+              </span>
             )}
-          >
-            {item.title}
+            <span
+              className={cn(
+                "min-w-0 truncate text-[13px] font-medium",
+                item.done
+                  ? "text-[color:var(--planner-text-muted)] line-through"
+                  : "text-[color:var(--planner-text-primary)]",
+              )}
+            >
+              {item.title}
+            </span>
           </span>
+          {/* [2026-10-07] Settings: "Show Area/Project/Priority" - hang badge
+              nho, CHI hien khi item THAT SU co gia tri VA setting tuong ung
+              dang bat (an toan ca hang neu khong con badge nao de hien). */}
+          {((settings.showPriority && item.priority) ||
+            (settings.showArea && item.area) ||
+            (settings.showProject && item.project)) && (
+            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+              {settings.showPriority && item.priority && (
+                <span className="flex items-center gap-1 rounded-full border border-[color:var(--planner-border-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--planner-text-secondary)]">
+                  <span className="size-1.5 rounded-full" style={{ backgroundColor: PRIORITY_CONFIG[item.priority].color }} />
+                  {PRIORITY_CONFIG[item.priority].label}
+                </span>
+              )}
+              {settings.showArea && item.area && (
+                <span className="rounded-full bg-[var(--planner-surface-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--planner-text-secondary)]">
+                  📍 {item.area}
+                </span>
+              )}
+              {settings.showProject && item.project && (
+                <span className="rounded-full bg-[var(--planner-surface-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--planner-text-secondary)]">
+                  📁 {item.project}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {/* Checkbox CHI cho Action (hasCheckbox) - Event/Habit/Reflection
@@ -2859,6 +2964,7 @@ function ItemRow({
   onToggleDone: (item: ApiPlannerItem, parentId?: string) => void;
   onDelete: (item: ApiPlannerItem, parentId?: string) => void;
 }) {
+  const { settings } = usePlannerSettings();
   return (
     <div className="flex items-center gap-2 rounded-md border border-[color:var(--planner-border-soft)] bg-white px-2 py-1.5">
       <input
@@ -2869,7 +2975,7 @@ function ItemRow({
       />
       {item.scheduledMinute !== null && (
         <span className="flex shrink-0 items-center gap-0.5 text-[11px] text-[color:var(--planner-text-muted)]">
-          <Clock size={10} /> {minutesToLabel(item.scheduledMinute)}
+          <Clock size={10} /> {minutesToLabel(item.scheduledMinute, settings.timeFormat)}
         </span>
       )}
       <span
@@ -3875,6 +3981,7 @@ function DayDetailPanel({
   onConsumePrefill,
   onDraftClose,
 }: DayDetailPanelProps) {
+  const { settings } = usePlannerSettings();
   const [filter, setFilter] = useState<FilterValue>("ALL");
   const [filterOpen, setFilterOpen] = useState(false);
   // [2026-10-05] "Sửa ngay trong dòng" - id item DANG duoc sua (null = khong
@@ -3890,6 +3997,11 @@ function DayDetailPanel({
   const nowMinute = now.getHours() * 60 + now.getMinutes();
 
   const filtered = sorted.filter((item) => {
+    // [2026-10-07] Settings: "Completed tasks" = Hide - an viec da xong KHOI
+    // Schedule list luon (tru khi nguoi dung dang CHU DONG loc "Done" qua bo
+    // loc rieng - filter DONE van phai thay duoc viec da xong, khong mau
+    // thuan voi y dinh ro rang cua chinh bo loc do).
+    if (settings.completedTaskDisplay === "HIDE" && item.done && filter !== "DONE") return false;
     if (filter === "ALL") return true;
     if (filter === "DONE") return item.done;
     if (filter === "TODO") return !item.done;

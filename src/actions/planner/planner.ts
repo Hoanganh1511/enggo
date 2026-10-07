@@ -8,8 +8,11 @@ import {
   listPlannerTypeColors,
   setPlannerTypeColor,
   resetPlannerTypeColor,
+  getPlannerSettings,
+  updatePlannerSettings,
   type PlannerItemInput,
   type PlannerItemUpdateInput,
+  type PlannerSettingsPatch,
 } from "@/lib/api/planner";
 import type { LifeItemType } from "@/lib/planner/life-item-types";
 
@@ -34,4 +37,11 @@ export async function setPlannerTypeColorAction(type: LifeItemType, paletteId: s
 }
 export async function resetPlannerTypeColorAction(type: LifeItemType) {
   return resetPlannerTypeColor(type);
+}
+
+export async function getPlannerSettingsAction() {
+  return getPlannerSettings();
+}
+export async function updatePlannerSettingsAction(patch: PlannerSettingsPatch) {
+  return updatePlannerSettings(patch);
 }

@@ -123,3 +123,39 @@ export function setPlannerTypeColor(type: LifeItemType, paletteId: string): Prom
 export function resetPlannerTypeColor(type: LifeItemType): Promise<void> {
   return apiFetch<void>(`/planner/type-colors/${type}`, { method: "DELETE" });
 }
+
+// [2026-10-07] Settings modal (toolbar icon moi) - 1 object DUY NHAT/user,
+// khac PlannerTypeColor o tren (nhieu dong, 1 dong/Type). Giu NGUYEN VAN
+// gia tri khop 1-1 voi model PlannerSettings ben backend (schema.prisma) +
+// UpdatePlannerSettingsDto.
+export type PlannerSettings = {
+  userId: string;
+  weekStartsOn: "MONDAY" | "SUNDAY";
+  timeFormat: "24H" | "12H";
+  showWeekends: boolean;
+  showAllDaySection: boolean;
+  density: "COMPACT" | "COMFORTABLE";
+  workingHoursStart: number;
+  workingHoursEnd: number;
+  firstVisibleHour: number;
+  lastVisibleHour: number;
+  timeSlotMinutes: 15 | 30 | 60;
+  showTaskType: boolean;
+  showDuration: boolean;
+  showArea: boolean;
+  showProject: boolean;
+  showPriority: boolean;
+  completedTaskDisplay: "KEEP_VISIBLE" | "COLLAPSE" | "HIDE";
+  completedTaskStyle: "CHECK_ICON" | "CHECK_COLOR" | "DONE_BADGE" | "PATTERN";
+};
+export type PlannerSettingsPatch = Partial<Omit<PlannerSettings, "userId">>;
+
+export function getPlannerSettings(): Promise<PlannerSettings> {
+  return apiFetch<PlannerSettings>("/planner/settings");
+}
+export function updatePlannerSettings(patch: PlannerSettingsPatch): Promise<PlannerSettings> {
+  return apiFetch<PlannerSettings>("/planner/settings", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
