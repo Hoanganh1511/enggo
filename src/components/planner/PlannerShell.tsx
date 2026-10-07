@@ -1986,13 +1986,14 @@ function WeekTimeGrid({
       const lo = Math.min(final.startMinute, final.currentMinute);
       const hi = Math.max(final.startMinute, final.currentMinute);
       const duration = hi - lo;
-      // Duoi 1 moc snap (15') = coi nhu CHI click (khong keo) - giu nguyen
-      // hanh vi cu (AddTaskForm tu fallback ve DEFAULT_DURATION_MINUTES),
-      // tranh tao 1 "time block" rong/am nghia khi chuot gan nhu khong di
-      // chuyen (vd run tay 1-2px luc click thuong).
-      if (duration < DRAG_SNAP_MINUTES) {
-        onSlotClick(final.day, lo);
-      } else {
+      // [2026-10-07] Duoi 1 moc snap (15') = CHI click (khong keo that su) -
+      // yeu cau nguoi dung: "không phải cứ click là cho ra card task như thế,
+      // phải kéo thả ít nhất đi được 1 quãng 15 or 30 phút" -> KHONG mo
+      // AddTaskForm nua trong truong hop nay (truoc day van goi onSlotClick
+      // khong kem duration, tu dong mo form voi DEFAULT_DURATION_MINUTES).
+      // onSelect(final.day) o tren VAN giu - click don gian van chon ngay do
+      // o Right Panel nhu binh thuong, chi KHONG tu mo the tao viec nua.
+      if (duration >= DRAG_SNAP_MINUTES) {
         onSlotClick(final.day, lo, duration);
       }
     }
@@ -2175,11 +2176,14 @@ function WeekTimeGrid({
                     ở điểm kéo thả tương ứng". onMouseDown dat tren CHINH cot
                     ngay (ben tren, khong phai tung o gio rieng le nhu truoc) -
                     startSlotDrag() tu tinh phut tu toa do Y bat ky (khong
-                    gioi han boc theo tung gio tron), click DON GIAN (khong
-                    keo, xem nguong 15' trong onUp) van hoat dong y het cu qua
-                    CUNG 1 co che (onSlotClick(lo) khong kem duration). Cac o
-                    gio ben duoi gio CHI con thuan VISUAL (caro + border), het
-                    onClick rieng - tranh tao TRUNG 2 lan khi mousedown+click
+                    gioi han boc theo tung gio tron). [2026-10-07] Click DON
+                    GIAN (khong keo du 1 moc snap 15') CHI con onSelect(day),
+                    KHONG con tu mo AddTaskForm nua - yeu cau nguoi dung:
+                    "không phải cứ click là cho ra card task như thế, phải kéo
+                    thả ít nhất đi được 1 quãng 15 or 30 phút" (xem nguong
+                    DRAG_SNAP_MINUTES trong onUp). Cac o gio ben duoi gio CHI
+                    con thuan VISUAL (caro + border), het onClick rieng -
+                    tranh tao TRUNG 2 lan khi mousedown+click
                     deu kich hoat. */}
                 {/* [2026-10-06] Nen caro (ban co) - yeu cau nguoi dung: "Nền
                     của lịch để dạng caro đi" -> xac nhan kieu "caro bàn cờ (ô
