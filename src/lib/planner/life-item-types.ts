@@ -203,7 +203,29 @@ const EXTENDED_PALETTES: LifeItemPalette[] = [
   derivePalette("cool-gray", "Cool Gray", "#B4BEC5"),
 ];
 
-export const LIFE_ITEM_PALETTES: LifeItemPalette[] = [...DEFAULT_PALETTES, ...EXTENDED_PALETTES];
+// [2026-10-07] 7 mau preset cua chinh app Calendar macOS (yeu cau nguoi dung:
+// "research app calendar của macOS xem những màu gì" -> "áp dụng") - hex
+// CHINH XAC tung mau macOS dung (Red/Orange/Yellow/Green/Blue/Purple/Brown),
+// qua CUNG 1 derivePalette() nhu EXTENDED_PALETTES de ra accentSoft/border/
+// text nhat hon, giu dung "ngon ngu" the hien (nen nhat + cham dam) cua toan
+// bo he thong thay vi dan thang mau VIVID nguyen ban cua macOS vao nen. Day
+// la bo THEM (cong voi 14 mau pastel co san), KHONG thay the - "giờ cho chọn
+// màu thoải mái" = cang nhieu lua chon cang tot, khong rut bot bo cu.
+const MACOS_CALENDAR_PALETTES: LifeItemPalette[] = [
+  derivePalette("macos-red", "Red", "#FB0055"),
+  derivePalette("macos-orange", "Orange", "#FB8208"),
+  derivePalette("macos-yellow", "Yellow", "#FEC309"),
+  derivePalette("macos-green", "Green", "#56D72B"),
+  derivePalette("macos-blue", "Blue", "#1D9BF6"),
+  derivePalette("macos-purple", "Purple", "#BF57DA"),
+  derivePalette("macos-brown", "Brown", "#90714C"),
+];
+
+export const LIFE_ITEM_PALETTES: LifeItemPalette[] = [
+  ...DEFAULT_PALETTES,
+  ...EXTENDED_PALETTES,
+  ...MACOS_CALENDAR_PALETTES,
+];
 const PALETTE_BY_ID = new Map(LIFE_ITEM_PALETTES.map((p) => [p.id, p] as const));
 
 // userOverrides: tu PlannerTypeColor (backend, section 21 "User customization")
