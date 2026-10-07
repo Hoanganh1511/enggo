@@ -40,6 +40,7 @@ import {
   PopoverRoot,
   PopoverTrigger,
   PopoverContent,
+  PopoverAnchor,
 } from "@/components/ui/popover";
 import { TimePickerField } from "./time-picker-field";
 import {
@@ -819,6 +820,52 @@ export function PlannerShell({
       start: minute,
       duration: duration ?? DEFAULT_DURATION_MINUTES,
     });
+    quickAddHandledRef.current = false;
+  }
+
+  // [2026-10-07] "Bỏ Right panel... chỉ còn tạo task bằng kéo-thả trực tiếp
+  // trên lịch (cần giữ form nhỏ hiện ngay tại vị trí kéo-thả)" - yeu cau
+  // nguoi dung. Thay the AddTaskForm (song trong DayDetailPanel, gio da bo)
+  // bang 1 o nhap TRUC TIEP ngay tren "thẻ default" (xem draftPlaceholder/
+  // WeekTimeGrid) - submit tao task THANG voi date/start/duration da luu san
+  // trong chinh draftPlaceholder, khong can qua form/panel rieng nao nua.
+  // [2026-10-07] quickAddHandledRef - BAT BUOC vi o nhap nay bi UNMOUNT ngay
+  // sau khi setDraftPlaceholder(null) (dieu kien render `draftPlaceholder &&
+  // ...`) - xoa 1 phan tu DANG CO FOCUS khoi DOM khien trinh duyet tu dong
+  // ban hanh 1 su kien "blur" THEM (ngoai Enter/Escape nguoi dung vua bam),
+  // goi lai HANDLER CU (closure cua lan render TRUOC, `draftPlaceholder` luc
+  // do VAN con gia tri CU) -> neu khong co guard se TAO TRUNG 1 task nua khi
+  // Enter, hoac "hoi sinh" lai task khi Escape (blur chay TRUOC dong code ke
+  // tiep). Dat true NGAY luc xu ly (khong doi den sau setState) + reset ve
+  // false moi lan mo placeholder MOI (handleSlotClick o tren) dam bao CHI
+  // dung 1 trong 3 nguon goi (Enter/Escape/blur that) duoc xu ly.
+  const quickAddHandledRef = useRef(false);
+  function handleQuickAddSubmit(fields: {
+    title: string;
+    itemType: LifeItemType;
+    priority: LifeItemPriority | null;
+  }) {
+    if (quickAddHandledRef.current || !draftPlaceholder) return;
+    quickAddHandledRef.current = true;
+    const t = fields.title.trim();
+    if (!t) {
+      setDraftPlaceholder(null);
+      return;
+    }
+    void handleAddItem({
+      title: t,
+      kind: "SIMPLE",
+      itemType: fields.itemType,
+      priority: fields.priority ?? undefined,
+      scheduledMinute: draftPlaceholder.start,
+      durationMinutes: draftPlaceholder.duration,
+    });
+    setDraftPlaceholder(null);
+  }
+  function handleQuickAddCancel() {
+    if (quickAddHandledRef.current) return;
+    quickAddHandledRef.current = true;
+    setDraftPlaceholder(null);
   }
 
   // [2026-10-05] Tach rieng 2 moc ngay (khong con 1 chuoi "rangeLabel" gop
@@ -1015,7 +1062,15 @@ export function PlannerShell({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 items-start gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_380px] xl:items-stretch">
+              {/* [2026-10-07] Bo Right panel (DayDetailPanel) - yeu cau nguoi
+                  dung: "ẩn Right panel đi" -> "bỏ hẳn, bỏ luôn khỏi layout".
+                  Grid 2 cot [1fr_380px] truoc day gio CHI con 1 khoi lich
+                  DUY NHAT, chiem TRON phan con lai (khong can grid nua, flex
+                  don gian). "+ Thêm việc" (AddTaskForm) tung song trong
+                  DayDetailPanel CUNG mat theo - tao task gio CHI con qua keo
+                  tha truc tiep tren luoi (xem handleQuickAddSubmit, o nhap
+                  nam NGAY trong "thẻ default" luc keo). */}
+              <div className="flex min-h-0 flex-1 flex-col">
                 {/* Calendar Main Card (section 7). h-full + overflow-hidden - cho
                 phep card GIAN HET chieu cao hang luoi, than luoi gio
                 (WeekTimeGrid) tu cuon RIENG BEN TRONG (flex-1, xem ben duoi)
@@ -1036,6 +1091,8 @@ export function PlannerShell({
                       onSelectItem={setSelectedItemId}
                       onSlotClick={handleSlotClick}
                       draftPlaceholder={draftPlaceholder}
+                      onQuickAddSubmit={handleQuickAddSubmit}
+                      onQuickAddCancel={handleQuickAddCancel}
                       onUpdateItemTime={handleUpdateItemTime}
                       onUpdateItem={handleUpdateItem}
                       onDelete={handleDelete}
@@ -1060,22 +1117,6 @@ export function PlannerShell({
                     />
                   </div>
                 )}
-
-                <DayDetailPanel
-                  date={selectedDate}
-                  items={itemsByDate[selectedDate] ?? []}
-                  selectedItemId={selectedItemId}
-                  onSelectItem={setSelectedItemId}
-                  onAddItem={handleAddItem}
-                  onAddChild={handleAddChild}
-                  onToggleDone={handleToggleDone}
-                  onDelete={handleDelete}
-                  onUpdateItem={handleUpdateItem}
-                  onChangeDay={changeSelectedDay}
-                  quickAddPrefill={quickAddPrefill}
-                  onConsumePrefill={() => setQuickAddPrefill(null)}
-                  onDraftClose={() => setDraftPlaceholder(null)}
-                />
               </div>
             </div>
           </div>
@@ -2082,6 +2123,101 @@ function TypeLegend({
   );
 }
 
+// [2026-10-07] Popover tao viec NHANH, bam TRUC TIEP vao vi tri vua chon/keo
+// tha tren luoi gio - yeu cau nguoi dung: "Tạo task giờ sẽ hiện popover ngay
+// nơi chọn hoặc kéo thả trên lịch" (thay AddTaskForm cu song trong
+// DayDetailPanel, da bo theo yeu cau truoc do "ẩn Right panel đi"). Gio/thoi
+// luong DA CO SAN tu chinh vi tri keo (top/height truyen vao, hien qua khung
+// net dut mau primary) - popover CHI con hoi Tieu de/Loai viec/Uu tien, gon
+// hon AddTaskForm day du (Mau sac/Khu vuc/Trong tam... van chinh duoc SAU
+// qua popover "Chi tiết sự kiện" cua chinh the vua tao).
+function QuickAddPopover({
+  top,
+  height,
+  onSubmit,
+  onCancel,
+}: {
+  top: number;
+  height: number;
+  onSubmit: (fields: {
+    title: string;
+    itemType: LifeItemType;
+    priority: LifeItemPriority | null;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [itemType, setItemType] = useState<LifeItemType>("ACTION");
+  const [priority, setPriority] = useState<LifeItemPriority | null>(null);
+  const typePalette = resolveLifeItemPalette(itemType);
+
+  function submit() {
+    onSubmit({ title, itemType, priority });
+  }
+
+  return (
+    <PopoverRoot open onOpenChange={(next) => !next && onCancel()}>
+      <PopoverAnchor asChild>
+        {/* [2026-10-07] Khung net dut - giu NGUYEN hinh dang/mau "thẻ default"
+            cu (yeu cau truoc do: "để sẵn 1 cái màu nhạt nhạt 80%") lam MOC
+            dinh vi cho popover, KHONG con chua o nhap truc tiep ben trong nua
+            (da chuyen het vao PopoverContent ben duoi). */}
+        <div
+          className="pointer-events-none absolute right-1 left-1 z-[2] overflow-hidden rounded-sm border border-dashed"
+          style={{
+            top,
+            height,
+            borderColor: "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
+            backgroundColor: "color-mix(in srgb, var(--planner-primary) 20%, white)",
+          }}
+        />
+      </PopoverAnchor>
+      <PopoverContent
+        open
+        side="right"
+        align="start"
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="z-50 flex w-72 flex-col gap-2.5 rounded-[12px] border bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
+        style={{ borderColor: typePalette.accentBorder }}
+      >
+        <input
+          autoFocus
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") onCancel();
+          }}
+          placeholder="Tên việc cần làm..."
+          className="h-9 w-full rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] font-medium text-[color:var(--planner-text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:bg-white"
+        />
+        <TypePickerRow value={itemType} onChange={setItemType} />
+        <PriorityPickerRow value={priority} onChange={setPriority} />
+        <div className="flex items-center justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-[32px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+          >
+            Huỷ
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!title.trim()}
+            className="h-[32px] cursor-pointer rounded-[9px] bg-[color:var(--planner-primary)] px-3 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+          >
+            Tạo việc
+          </button>
+        </div>
+      </PopoverContent>
+    </PopoverRoot>
+  );
+}
+
 function WeekTimeGrid({
   anchor,
   selectedDate,
@@ -2091,6 +2227,8 @@ function WeekTimeGrid({
   onSelectItem,
   onSlotClick,
   draftPlaceholder,
+  onQuickAddSubmit,
+  onQuickAddCancel,
   onUpdateItemTime,
   onUpdateItem,
   onDelete,
@@ -2107,6 +2245,15 @@ function WeekTimeGrid({
   onSelectItem: (id: string) => void;
   onSlotClick: (day: string, minute: number, duration?: number) => void;
   draftPlaceholder: { date: string; start: number; duration: number } | null;
+  // [2026-10-07] Thay AddTaskForm (song trong DayDetailPanel, da bo - xem
+  // comment o noi goi WeekTimeGrid) - o nhap NGAY TREN "thẻ default" luc keo
+  // tha, submit = title khong rong (Enter/blur), cancel = Escape/blur rong.
+  onQuickAddSubmit: (fields: {
+    title: string;
+    itemType: LifeItemType;
+    priority: LifeItemPriority | null;
+  }) => void;
+  onQuickAddCancel: () => void;
   onUpdateItemTime: (
     item: ApiPlannerItem,
     newStart: number,
@@ -2254,7 +2401,13 @@ function WeekTimeGrid({
   // 48px (cot nhan gio) + N cot ngay deu nhau - thay the Tailwind arbitrary
   // class CO DINH repeat(7,1fr) truoc day, vi `days.length` gio co the la 5
   // (an weekend) hoac 7 (hien weekend), khong con la hang so.
-  const gridTemplateColumns = `48px repeat(${days.length}, 1fr)`;
+  // [2026-10-07] calc(1fr + 30px) (truoc chi "1fr" tron) - yeu cau nguoi
+  // dung: "Tăng chiều rộng mỗi cột thêm 30px". 1fr van tu chia deu phan
+  // KHONG GIAN CON (nhu cu), +30px CONG THEM vao MOI cot ngay - tong be rong
+  // ca luoi vi vay VUOT QUA be rong THAT cua card (vuot dung N*30px), can
+  // overflow-x-auto o div goc (xem ben duoi) de hien thanh cuon ngang thay
+  // vi bi card cha (overflow-hidden) cat mat.
+  const gridTemplateColumns = `48px repeat(${days.length}, calc(1fr + 30px))`;
 
   // Cuon san toi ~7h sang (hoac gio dau tien con thay duoc, neu First visible
   // hour > 7) luc mo/doi tuan - tranh nguoi dung luon phai tu keo tu dau
@@ -2275,7 +2428,15 @@ function WeekTimeGrid({
   ]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    // [2026-10-07] overflow-x-auto - BAT BUOC them cung luc voi
+    // calc(1fr + 30px) o tren (xem comment gridTemplateColumns): luoi gio
+    // gio RONG HON be rong THAT cua card, can 1 thanh cuon NGANG de xem het,
+    // thay vi bi overflow-hidden cua card cha (xem noi goi WeekTimeGrid) cat
+    // cut phan thua. Dat o CHINH div goc nay (bao ca header "shrink-0" LAN
+    // than luoi "overflow-y-auto" ben duoi) de header+body CUNG di chuyen
+    // dong bo khi cuon ngang (khong bi lech 2 thanh cuon rieng) - cuon doc
+    // VAN tach rieng, chi o than luoi ben trong nhu cu.
+    <div className="flex h-full min-h-0 flex-col overflow-x-auto">
       <div
         className="shrink-0 border-b border-[color:var(--planner-border-soft)]"
         style={{ paddingRight: scrollbarWidth }}
@@ -2512,35 +2673,17 @@ function WeekTimeGrid({
                     </span>
                   </div>
                 )}
-                {/* [2026-10-07] "Thẻ default" giu CHO tai dung vi tri vua keo
-                    tha/click, trong suot luc AddTaskForm dang mo - yeu cau
-                    nguoi dung: "thả ra thì không hiện thẻ default trên lịch
-                    luôn... để sẵn 1 cái màu nhạt nhạt 80%". Mau primary pha
-                    80% trang (color-mix) - CUNG 1 "họ" mau voi khung net dut
-                    luc keo o tren, tao cam giac lien tuc giua 2 buoc (dang
-                    keo -> da tha, cho nhap tieu de). pointer-events-none -
-                    CHI de xem, khong chan click/keo cua luoi phia duoi. */}
+                {/* [2026-10-07] Popover tao viec NGAY tai vi tri chon/keo tha -
+                    yeu cau nguoi dung: "Tạo task giờ sẽ hiện popover ngay nơi
+                    chọn hoặc kéo thả trên lịch" (thay AddTaskForm cu song
+                    trong DayDetailPanel, da bo). Xem QuickAddPopover duoi. */}
                 {draftPlaceholder && draftPlaceholder.date === d && (
-                  <div
-                    className="pointer-events-none absolute right-1 left-1 z-[1] overflow-hidden rounded-sm border border-dashed px-3 py-2"
-                    style={{
-                      top:
-                        ((draftPlaceholder.start - firstVisibleMinute) / 60) *
-                        HOUR_ROW_HEIGHT,
-                      height: Math.max(
-                        (draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT,
-                        HOUR_ROW_HEIGHT * 0.4,
-                      ),
-                      borderColor:
-                        "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
-                      backgroundColor:
-                        "color-mix(in srgb, var(--planner-primary) 20%, white)",
-                    }}
-                  >
-                    <span className="text-[12px] font-medium text-[color:var(--planner-text-muted)] italic">
-                      Chưa có tiêu đề
-                    </span>
-                  </div>
+                  <QuickAddPopover
+                    top={((draftPlaceholder.start - firstVisibleMinute) / 60) * HOUR_ROW_HEIGHT}
+                    height={Math.max((draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT, HOUR_ROW_HEIGHT * 0.4)}
+                    onSubmit={onQuickAddSubmit}
+                    onCancel={onQuickAddCancel}
+                  />
                 )}
                 {laidOut.map(
                   ({
