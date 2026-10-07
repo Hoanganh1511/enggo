@@ -39,6 +39,7 @@ import {
 import { TimePickerField } from "./time-picker-field";
 import {
   LIFE_ITEM_TYPES,
+  LIFE_ITEM_PALETTES,
   getLifeItemTypeConfig,
   resolveLifeItemPalette,
   PRIORITY_CONFIG,
@@ -1079,7 +1080,7 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
   return (
     <div className="mt-0.5 flex min-w-0 flex-1 flex-col gap-px overflow-hidden">
       {visible.map((item) => {
-        const cat = resolveLifeItemPalette(item.itemType, overrides);
+        const cat = resolveLifeItemPalette(item.itemType, overrides, item.colorPaletteId);
         return (
           <div key={item.id} className="flex min-w-0 items-center gap-1">
             <span
@@ -1118,7 +1119,7 @@ function DayItemsPreview({ items }: { items: ApiPlannerItem[] }) {
 // (Part II): nen pastel CUA CATEGORY + vien trai accent 3px, KHONG con border
 // 4 canh + border-top nhu truoc.
 function AllDayItemChip({ item }: { item: ApiPlannerItem }) {
-  const cat = useLifeItemPalette(item.itemType);
+  const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   return (
     <span
       title={item.title}
@@ -1245,7 +1246,7 @@ function TimedItemChip({
   isToday: boolean;
   nowMinute: number;
 }) {
-  const cat = useLifeItemPalette(item.itemType);
+  const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
   const { settings } = usePlannerSettings();
   // Phai TINH Y HET cong thuc WeekTimeGrid dung (cung doc chung 1
@@ -1711,10 +1712,13 @@ function TimedItemChip({
                 nguoi dung. Xem MiniTimelinePreview ben duoi. */}
             <MiniTimelinePreview item={item} palette={cat} />
 
-            {/* Chọn màu - mau la semantic theo Type (xem comment field
-                `color` cu trong planner.ts - khong con dung) nen "đổi màu" o
-                day = doi Type, tai dung NGUYEN TypePickerRow da co san
-                (AddTaskForm/EditItemForm), KHONG tao bang mau rieng. */}
+            {/* [2026-10-07] Chọn màu - yeu cau nguoi dung: "chọn màu này sẽ
+                là màu của card, không liên quan tới loại của card". TRUOC DAY
+                "đổi màu" = doi itemType (dung TypePickerRow) - SAI vi lam
+                task doi LUON ca phan loai. Gio dung field RIENG
+                `colorPaletteId` (DOC LAP voi itemType) - luoi DAY DU
+                LIFE_ITEM_PALETTES (21 mau: 4 mac dinh + 10 pastel + 7
+                macOS Calendar), khong gioi han theo Type nua. */}
             <div className="flex flex-col gap-1.5 border-t border-[color:var(--planner-border-soft)] pt-2.5">
               <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">
                 Chọn màu
@@ -1730,17 +1734,44 @@ function TimedItemChip({
                   aria-hidden="true"
                 />
                 <span className="text-[12px] font-semibold" style={{ color: cat.accentText }}>
-                  {typeCfg.icon} {typeCfg.label}
+                  {cat.name}
                 </span>
               </button>
               {colorPickerOpen && (
-                <TypePickerRow
-                  value={item.itemType}
-                  onChange={(t) => {
-                    onUpdateItem(item, { itemType: t });
-                    setColorPickerOpen(false);
-                  }}
-                />
+                <div className="flex flex-wrap gap-1.5">
+                  {/* "Mặc định" - quay lai mau THEO TYPE (xoa colorPaletteId
+                      rieng, khac han voi chon 1 mau cu the trong luoi duoi). */}
+                  <button
+                    type="button"
+                    title="Mặc định theo loại"
+                    onClick={() => {
+                      onUpdateItem(item, { colorPaletteId: null });
+                      setColorPickerOpen(false);
+                    }}
+                    className={cn(
+                      "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-[color:var(--planner-border)] bg-white text-[9px] font-bold text-[color:var(--planner-text-muted)] transition-transform duration-150 ease-out hover:scale-110",
+                      !item.colorPaletteId && "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
+                    )}
+                  >
+                    {typeCfg.icon}
+                  </button>
+                  {LIFE_ITEM_PALETTES.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      title={p.name}
+                      onClick={() => {
+                        onUpdateItem(item, { colorPaletteId: p.id });
+                        setColorPickerOpen(false);
+                      }}
+                      style={{ backgroundColor: p.accentStrong }}
+                      className={cn(
+                        "size-6 shrink-0 cursor-pointer rounded-full ring-1 ring-black/10 ring-offset-1 ring-offset-white transition-transform duration-150 ease-out hover:scale-110",
+                        item.colorPaletteId === p.id && "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
+                      )}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 
@@ -2619,7 +2650,7 @@ function LearningDigestCard({ items }: { items: ApiPlannerItem[] }) {
 }
 
 function LearningDigestRow({ item }: { item: ApiPlannerItem }) {
-  const cat = useLifeItemPalette(item.itemType);
+  const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   const children = item.children ?? [];
   const doneChildren = children.filter((c) => c.done);
   const dailyTarget = typeof item.metadata?.dailyTargetCount === "number" ? (item.metadata.dailyTargetCount as number) : null;
@@ -2674,7 +2705,7 @@ function TodayFocusCard({
   item: ApiPlannerItem;
   onContinue: () => void;
 }) {
-  const cat = useLifeItemPalette(item.itemType);
+  const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
   const { settings } = usePlannerSettings();
   return (
@@ -2744,7 +2775,7 @@ function TimelineRow({
   onDelete: () => void;
   onEdit: () => void;
 }) {
-  const cat = useLifeItemPalette(item.itemType);
+  const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
   const { settings } = usePlannerSettings();
   return (
@@ -3021,7 +3052,7 @@ function BigTimelineItem({
   const [expanded, setExpanded] = useState(true);
   const [childDraft, setChildDraft] = useState("");
   const children = item.children ?? [];
-  const cat = useLifeItemPalette(item.itemType);
+  const cat = useLifeItemPalette(item.itemType, item.colorPaletteId);
   const typeCfg = getLifeItemTypeConfig(item.itemType);
   // [2026-10-07] "Chỉ tiêu/ngày" cua Habit (vd "đọc tối thiểu 2 bài/ngày") -
   // xem comment dailyTargetCount trong life-item-types.ts. doneCount dung

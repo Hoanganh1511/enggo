@@ -26,9 +26,14 @@ export function LifeItemPaletteProvider({
   );
 }
 
-export function useLifeItemPalette(type: LifeItemType): LifeItemPalette {
+// [2026-10-07] itemColorPaletteId - mau RIENG cua 1 item CU THE (optional),
+// uu tien CAO NHAT khi co gia tri - xem comment day du o resolveLifeItemPalette().
+export function useLifeItemPalette(
+  type: LifeItemType,
+  itemColorPaletteId?: string | null,
+): LifeItemPalette {
   const overrides = useContext(TypeColorOverridesContext);
-  return resolveLifeItemPalette(type, overrides);
+  return resolveLifeItemPalette(type, overrides, itemColorPaletteId);
 }
 
 // Ban THO cua override (khong tu resolve san 1 Type CU THE) - dung khi can

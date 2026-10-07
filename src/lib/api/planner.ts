@@ -17,6 +17,12 @@ export type ApiPlannerItem = {
   // (mau gio la semantic theo itemType, xem resolveLifeItemPalette()) - giu
   // lai field o day CHI de khop kieu API, khong dung o dau trong UI nua.
   color: string | null;
+  // [2026-10-07] Mau RIENG cho item nay, DOC LAP voi itemType - yeu cau
+  // nguoi dung: "chọn màu này sẽ là màu của card, không liên quan tới loại
+  // của card". 1 id trong LIFE_ITEM_PALETTES (life-item-types.ts) hoac null
+  // (chua tu chon rieng - fallback ve mau theo Type nhu truoc, xem
+  // resolveLifeItemPalette()).
+  colorPaletteId: string | null;
   // Thoi luong (phut) - null = chua dat, FE tu fallback ve 1 gia tri mac
   // dinh khi can ve UI (xem DEFAULT_DURATION_MINUTES trong PlannerShell.tsx).
   durationMinutes: number | null;
@@ -52,6 +58,7 @@ export type PlannerItemInput = {
   itemType?: LifeItemType;
   scheduledMinute?: number;
   color?: string;
+  colorPaletteId?: string;
   durationMinutes?: number;
   isFocus?: boolean;
   // Truyen de chen 1 DAU VIEC CON vao duoi 1 planner "lớn" da co san thay vi
@@ -75,6 +82,7 @@ export type PlannerItemUpdateInput = Partial<{
   // status/area/project/deadline/metadata), khong rieng scheduledMinute/color.
   scheduledMinute: number | null;
   color: string | null;
+  colorPaletteId: string | null;
   durationMinutes: number | null;
   isFocus: boolean;
   orderIndex: number;

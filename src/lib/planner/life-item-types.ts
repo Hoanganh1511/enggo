@@ -231,10 +231,22 @@ const PALETTE_BY_ID = new Map(LIFE_ITEM_PALETTES.map((p) => [p.id, p] as const))
 // userOverrides: tu PlannerTypeColor (backend, section 21 "User customization")
 // - map { [LifeItemType]: paletteId }, vang mat = dung defaultPaletteId cua
 // chinh Type do.
+// [2026-10-07] itemColorPaletteId (MOI) - mau RIENG cua 1 item CU THE
+// (PlannerItem.colorPaletteId, DOC LAP voi itemType) - yeu cau nguoi dung:
+// "chọn màu này sẽ là màu của card, không liên quan tới loại của card".
+// Uu tien CAO NHAT khi co gia tri (thang qua ca userOverrides THEO TYPE) -
+// 1 the da tu chon mau rieng thi LUON giu dung mau do bat ke Type/override
+// cua Type la gi. null/undefined (chua tu chon) = fallback nguyen ban ve
+// chuoi uu tien cu (override theo Type -> default cua Type).
 export function resolveLifeItemPalette(
   type: LifeItemType,
   userOverrides?: Partial<Record<LifeItemType, string>>,
+  itemColorPaletteId?: string | null,
 ): LifeItemPalette {
+  if (itemColorPaletteId) {
+    const direct = PALETTE_BY_ID.get(itemColorPaletteId);
+    if (direct) return direct;
+  }
   const cfg = getLifeItemTypeConfig(type);
   const paletteId = userOverrides?.[type] ?? cfg.defaultPaletteId;
   return PALETTE_BY_ID.get(paletteId) ?? PALETTE_BY_ID.get(cfg.defaultPaletteId)!;
