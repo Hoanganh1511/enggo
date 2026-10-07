@@ -1965,8 +1965,15 @@ function WeekTimeGrid({
     const initial = { day, startMinute, currentMinute: startMinute };
     slotDragRef.current = initial;
     setSlotDrag(initial);
+    // [2026-10-07] Theo doi THEM pixel THO (chua snap) rieng - xem ly do day
+    // du trong onUp: so sanh = PHUT da snap bi "lung lay" ranh gioi (click
+    // run tay vai px co the nhay vong qua 1 moc 15' neu diem bat dau nam gan
+    // ranh gioi snap, khien click thuong bi tinh nham la keo that).
+    let lastClientY = e.clientY;
+    const startClientY = e.clientY;
 
     function onMove(ev: MouseEvent) {
+      lastClientY = ev.clientY;
       const next = {
         day,
         startMinute,
@@ -1986,14 +1993,18 @@ function WeekTimeGrid({
       const lo = Math.min(final.startMinute, final.currentMinute);
       const hi = Math.max(final.startMinute, final.currentMinute);
       const duration = hi - lo;
-      // [2026-10-07] Duoi 1 moc snap (15') = CHI click (khong keo that su) -
+      // [2026-10-07] Dieu kien THAT SU la keo (khong phai click run tay) -
       // yeu cau nguoi dung: "không phải cứ click là cho ra card task như thế,
-      // phải kéo thả ít nhất đi được 1 quãng 15 or 30 phút" -> KHONG mo
-      // AddTaskForm nua trong truong hop nay (truoc day van goi onSlotClick
-      // khong kem duration, tu dong mo form voi DEFAULT_DURATION_MINUTES).
-      // onSelect(final.day) o tren VAN giu - click don gian van chon ngay do
-      // o Right Panel nhu binh thuong, chi KHONG tu mo the tao viec nua.
-      if (duration >= DRAG_SNAP_MINUTES) {
+      // phải kéo thả ít nhất đi được 1 quãng 15 or 30 phút". Dung PIXEL THO
+      // (lastClientY - startClientY, CHUA snap) thay vi so 2 moc PHUT DA
+      // SNAP nhu ban dau - ban dau gay bug: diem bat dau nam gan 1 ranh gioi
+      // snap thi chi can run tay vai px luc click cung du lam phut SAU khi
+      // snap nhay qua ranh gioi ke tiep, khien `duration` tinh ra >= 15 du
+      // nguoi dung chi CLICK chu khong keo that su. rawDeltaPx phan anh DUNG
+      // khoang cach chuot DA DI CHUYEN that, khong bi "khuech dai" boi lam
+      // tron snap.
+      const rawDeltaPx = Math.abs(lastClientY - startClientY);
+      if (rawDeltaPx >= DRAG_SNAP_PX && duration >= DRAG_SNAP_MINUTES) {
         onSlotClick(final.day, lo, duration);
       }
     }
