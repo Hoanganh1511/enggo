@@ -2598,6 +2598,22 @@ function WeekTimeGrid({
 
   function startSlotDrag(e: React.MouseEvent<HTMLDivElement>, day: string) {
     if (e.button !== 0) return; // chi chuot trai
+    // [2026-10-08 fix] Chan NGAY neu da co 1 form dang mo (draftPlaceholder
+    // khac null) - yeu cau nguoi dung: "Bật New Event mà click vào modal lại
+    // nhảy thành New Reminder". Root cause: EventForm/ReminderForm la
+    // Dialog.Portal (Radix) - DOM-wise no nam NGOAI cot ngay (portal thang
+    // ra document.body), nhung REACT van coi no la CON LOGIC cua cot ngay
+    // (Portal giu nguyen vi tri trong CAY REACT, chi khac vi tri trong CAY
+    // DOM - xem React docs ve Portals: event vAN BUBBLE theo cay React).
+    // Ket qua: bam BAT KY dau trong modal (vd 1 input) cung bubble
+    // onMouseDown NAY tren CHINH cot ngay dang "giu" draftPlaceholder do -
+    // kich hoat 1 LUOT keo-tha MOI, roi onUp() coi la "click don" (khong du
+    // nguong keo) -> goi onSlotClick(..., isDrag=false) -> TAO draftPlaceholder
+    // MOI voi isDrag=false, GHI DE cai cu -> modal tu doi tu EventForm sang
+    // ReminderForm ngay truoc mat, du nguoi dung khong he dong form cu. Chan
+    // tai day (khong cho bat dau 1 luot keo MOI khi DA co 1 form dang mo) la
+    // diem chung DUY NHAT moi nguon click-bubble-tu-portal deu di qua.
+    if (draftPlaceholder) return;
     // [2026-10-08 fix] Giu lai CHINH phan tu cot ngay (khong phai rect CHUP 1
     // LAN) - yeu cau nguoi dung: "Nếu giữ kéo thả thì khi ra ngoài view lịch
     // cũng vẫn phải cuộn lên theo... không được tự ngắt khi chuột ra ngoài".
