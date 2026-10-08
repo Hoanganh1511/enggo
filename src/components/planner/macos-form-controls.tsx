@@ -61,7 +61,15 @@ export function FormInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
     <input
       {...props}
       className={cn(
-        "h-9 w-full rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-[color:var(--planner-text-muted)] focus:border-[color:var(--planner-primary)] focus:shadow-[0_0_0_3px_rgba(0,122,255,.12)]",
+        // [2026-10-08 fix] BO han-10 CO DINH, dung py-2.5 (padding doc) de
+        // tu quyet dinh chieu cao - yeu cau nguoi dung: "vẫn thấy input
+        // title bé tí sát 2 viền trên dưới nội dung" SAU KHI da doi h-9->h-10
+        // (van chua du, vi 1 chieu cao CO DINH ep boi h-* khong dam bao
+        // khoang cach THAT giua chu va vien tren/duoi - phu thuoc line-height
+        // that cua font, co the "an" mat phan padding du da tang). py-2.5
+        // (10px tren + 10px duoi) dam bao khoang cach THAT SU, bat ke
+        // line-height cua font the nao.
+        "w-full rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-3.5 py-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-[color:var(--planner-text-muted)] focus:border-[color:var(--planner-primary)] focus:shadow-[0_0_0_3px_rgba(0,122,255,.12)]",
         props.className,
       )}
     />

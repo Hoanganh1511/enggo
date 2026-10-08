@@ -2,10 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import TiptapUnderline from "@tiptap/extension-underline";
-import Placeholder from "@tiptap/extension-placeholder";
+import { useSession } from "next-auth/react";
 import {
   Bell,
   CalendarDays,
@@ -19,23 +16,14 @@ import {
   Flame,
   ListFilter,
   Loader2,
-  MapPin,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
   Plus,
-  Repeat,
   Settings,
   Sparkles,
   Trash2,
   X,
-  Bold as BoldIcon,
-  Italic as ItalicIcon,
-  Underline as UnderlineIcon,
-  List as BulletListIcon,
-  ListOrdered as OrderedListIcon,
-  Paperclip,
-  Smile,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -51,19 +39,7 @@ import {
   listPlannerTypeColorsAction,
   setPlannerTypeColorAction,
 } from "@/actions/planner/planner";
-import { uploadChatAttachmentAction } from "@/actions/chat/upload-attachment";
-import {
-  PopoverRoot,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverAnchor,
-} from "@/components/ui/popover";
-import {
-  DropdownMenuRoot,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { TimePickerField } from "./time-picker-field";
 import {
   LIFE_ITEM_TYPES,
@@ -75,8 +51,6 @@ import {
   REMINDER_OPTIONS,
   WEEKDAY_SHORT_IDS,
   WEEKDAY_SHORT_LABELS,
-  WEEKDAY_FULL_VI,
-  RECURRENCE_FREQ_OPTIONS,
   DEFAULT_REFLECTION_PROMPTS,
   type LifeItemType,
   type LifeItemPriority,
@@ -84,9 +58,23 @@ import {
   type EventMetadata,
   type HabitMetadata,
   type ReflectionMetadata,
-  type RecurrenceRule,
 } from "@/lib/planner/life-item-types";
 import { TagChipInput } from "@/components/series/notes/TagChipInput";
+import { TaskTypePicker, type TaskType } from "./TaskTypePicker";
+import { EventForm } from "./EventForm";
+import { ReminderForm } from "./ReminderForm";
+import { SharedCalendarForm } from "./SharedCalendarForm";
+import type { CalendarEvent, Reminder } from "./calendar-types";
+import {
+  PLANNER_CALENDAR_NAMES,
+  PLANNER_REMINDER_LISTS,
+  apiItemToCalendarEvent,
+  calendarEventToAddInput,
+  calendarEventToUpdateInput,
+  apiItemToReminder,
+  reminderToAddInput,
+  reminderToUpdateInput,
+} from "./calendar-model-bridge";
 import {
   LifeItemPaletteProvider,
   useLifeItemPalette,
@@ -280,109 +268,6 @@ function minutesToLabel(m: number, format: "24H" | "12H" = "24H"): string {
   }
   return `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
-// [2026-10-08] "date" (YYYY-MM-DD) + "minute" (phut tinh tu 0h) -> 1 chuoi
-// ISO datetime dung lam gia tri cho `deadline` (string, xem ApiPlannerItem) -
-// dung cho QuickAddPopover khi nguoi dung chon gio qua "+ Thêm hạn chót".
-function dateAndMinuteToISO(date: string, minute: number): string {
-  const h = Math.floor(minute / 60) % 24;
-  const mm = minute % 60;
-  return `${date}T${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}:00`;
-}
-// [2026-10-08] So thu VN (khong co "Thứ") dung cho preview recurrence CUSTOM
-// (vd "Thứ 2, 4, 6 hàng tuần") - khop Date.getDay() (0=CN).
-const DOW_VI_NUM: Record<number, string> = {
-  0: "CN",
-  1: "2",
-  2: "3",
-  3: "4",
-  4: "5",
-  5: "6",
-  6: "7",
-};
-// [2026-10-08] Dong chu preview DUOI select box "lặp lại" trong
-// QuickAddPopover - yeu cau nguoi dung dua vi du CU THE cho tung tan suat
-// ("Không lặp lại → chỉ diễn ra ví dụ: ngày 8/10", "Mỗi tuần → 9:00 thứ Năm
-// hàng tuần"...). `minute` la gio dang chon (scheduledMinute luc keo, hoac
-// deadlineMinute luc click) - null neu chua chon gio nao, cau se bo phan gio.
-function describeRecurrence(
-  rule: RecurrenceRule,
-  date: string,
-  minute: number | null,
-  timeFormat: "24H" | "12H",
-): string {
-  const d = new Date(date);
-  const dayNum = d.getDate();
-  const monthNum = d.getMonth() + 1;
-  const timeStr = minute !== null ? minutesToLabel(minute, timeFormat) : null;
-  switch (rule.freq) {
-    case "DAILY":
-      return timeStr ? `${timeStr} mỗi ngày` : "Mỗi ngày";
-    case "WEEKLY": {
-      const weekday = WEEKDAY_FULL_VI[d.getDay()];
-      return timeStr
-        ? `${timeStr} ${weekday.charAt(0).toLowerCase()}${weekday.slice(1)} hàng tuần`
-        : `${weekday} hàng tuần`;
-    }
-    case "MONTHLY":
-      return `Ngày ${dayNum} hàng tháng`;
-    case "YEARLY":
-      return `Ngày ${dayNum}/${monthNum} hàng năm`;
-    case "CUSTOM": {
-      const days = rule.customWeekdays ?? [];
-      if (days.length === 0) return "Tùy chỉnh — chọn ngày lặp lại";
-      const names = [...days].sort().map((i) => DOW_VI_NUM[i]);
-      return `Thứ ${names.join(", ")} hàng tuần`;
-    }
-    case "NONE":
-    default:
-      return `Chỉ diễn ra ngày ${dayNum}/${monthNum}`;
-  }
-}
-// Emoji pho bien, mang cung - KHONG them thu vien emoji-picker moi (repo
-// chua co san, xem docs/planner-macos-design-system.md) de tranh tang
-// bundle/dependency moi chi cho 1 popover nho; du dung cho task nay.
-const QUICK_EMOJIS = [
-  "😀",
-  "😂",
-  "😍",
-  "🤔",
-  "😅",
-  "😎",
-  "🥳",
-  "😴",
-  "👍",
-  "👎",
-  "🙏",
-  "👏",
-  "💪",
-  "✌️",
-  "🤝",
-  "👀",
-  "❤️",
-  "🔥",
-  "✨",
-  "⭐",
-  "🎉",
-  "✅",
-  "❌",
-  "⚠️",
-  "📌",
-  "📎",
-  "📅",
-  "⏰",
-  "💡",
-  "🚀",
-  "🎯",
-  "📝",
-  "☕",
-  "🍕",
-  "🏠",
-  "💼",
-  "📚",
-  "🎵",
-  "🏃",
-  "😢",
-];
 function groupByDate(items: ApiPlannerItem[]): ItemsByDate {
   const map: ItemsByDate = {};
   for (const item of items) {
@@ -644,6 +529,13 @@ export function PlannerShell({
   initialDate: string;
   initialItems: ApiPlannerItem[];
 }) {
+  // [2026-10-08] "currentUserId" cho SharedCalendarForm - danh tinh nguoi
+  // dung hien tai (Apple ID theo spec goc cua form, o day la username/email
+  // trong session that cua app). Fallback "me" neu session chua tai xong
+  // (SharedCalendarForm chi dung id nay de xac dinh "ai la owner" trong
+  // danh sach participants mau - khong anh huong luong tao/sua task chinh).
+  const { data: session } = useSession();
+  const currentUserId = session?.username ?? session?.user?.email ?? "me";
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(initialDate);
   const [selectedDate, setSelectedDate] = useState(initialDate);
@@ -700,6 +592,10 @@ export function PlannerShell({
   // [2026-10-07] Settings modal (icon moi cuoi toolbar tren cung) - xem
   // PlannerSettingsModal.tsx.
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // [2026-10-08] "Shared Calendar" (TaskTypePicker) - component SharedCalendarForm
+  // DOC LAP, khong gan vao draftPlaceholder (khong can 1 vi tri/ngay tren
+  // luoi, chi la 1 man hinh quan ly "calendar" doc lap).
+  const [sharedCalendarFormOpen, setSharedCalendarFormOpen] = useState(false);
   // [2026-10-08] Sidebar trai - yeu cau nguoi dung: "bỏ Tabs, Chỉ giữ lại
   // view của Lịch như hiện tại" (tab "Draft" chua co noi dung that, placeholder
   // tam thoi tu truoc, nay bo han theo yeu cau moi) + "hàng đầu tiên: Nút
@@ -1024,96 +920,53 @@ export function PlannerShell({
       duration: duration ?? DEFAULT_DURATION_MINUTES,
       isDrag,
     });
-    quickAddHandledRef.current = false;
   }
 
   // [2026-10-08] Nut "+" o hang dau sidebar - yeu cau nguoi dung: "hàng đầu
-  // tiên: Nút collapse sidebar, Nút +". Tai dung HOAN TOAN co che
-  // draftPlaceholder/QuickAddPopover co san (xem handleSlotClick ngay tren),
-  // KHONG tao luong tao viec rieng thu 2 - mo popover tai "gio hien tai" cua
-  // ngay dang chon (selectedDate), cung isDrag=false (ghost "+ Thêm hạn chót")
-  // giong 1 cu click don tren luoi. Neu dang o che do Tháng, chuyen sang Tuần
-  // truoc (QuickAddPopover CHI render o dung cot ngay dang hien tren luoi
-  // Tuần, xem `draftPlaceholder.date === d` trong WeekTimeGrid) - truong hop
-  // selectedDate nam ngoai han tuan dang tai (hiem, vd vua chuyen Tháng xa)
-  // se can nguoi dung bam lai sau khi luoi Tuần tai xong, chap nhan duoc.
-  function handleSidebarQuickAdd() {
-    if (viewMode !== "week") switchMode("week");
-    const now = new Date();
-    const nowMinute =
-      now.getHours() * 60 + Math.round(now.getMinutes() / 15) * 15;
-    handleSlotClick(
-      selectedDate,
-      Math.min(nowMinute, 23 * 60 + 45),
-      undefined,
-      false,
-    );
-  }
-
-  // [2026-10-07] "Bỏ Right panel... chỉ còn tạo task bằng kéo-thả trực tiếp
-  // trên lịch (cần giữ form nhỏ hiện ngay tại vị trí kéo-thả)" - yeu cau
-  // nguoi dung. Thay the AddTaskForm (song trong DayDetailPanel, gio da bo)
-  // bang 1 o nhap TRUC TIEP ngay tren "thẻ default" (xem draftPlaceholder/
-  // WeekTimeGrid) - submit tao task THANG voi date/start/duration da luu san
-  // trong chinh draftPlaceholder, khong can qua form/panel rieng nao nua.
-  // [2026-10-07] quickAddHandledRef - BAT BUOC vi o nhap nay bi UNMOUNT ngay
-  // sau khi setDraftPlaceholder(null) (dieu kien render `draftPlaceholder &&
-  // ...`) - xoa 1 phan tu DANG CO FOCUS khoi DOM khien trinh duyet tu dong
-  // ban hanh 1 su kien "blur" THEM (ngoai Enter/Escape nguoi dung vua bam),
-  // goi lai HANDLER CU (closure cua lan render TRUOC, `draftPlaceholder` luc
-  // do VAN con gia tri CU) -> neu khong co guard se TAO TRUNG 1 task nua khi
-  // Enter, hoac "hoi sinh" lai task khi Escape (blur chay TRUOC dong code ke
-  // tiep). Dat true NGAY luc xu ly (khong doi den sau setState) + reset ve
-  // false moi lan mo placeholder MOI (handleSlotClick o tren) dam bao CHI
-  // dung 1 trong 3 nguon goi (Enter/Escape/blur that) duoc xu ly.
-  const quickAddHandledRef = useRef(false);
-  // [2026-10-08] Fields mo rong HAN - redesign form tao viec theo spec macOS
-  // (xem docs/planner-macos-design-system.md): location/description/
-  // recurrence moi, + scheduledMinute/durationMinutes/deadlineMinute gio LA
-  // GIA TRI NOI BO cua chinh popover (co the da duoc nguoi dung CHINH LAI
-  // qua TimePickerField trong form, KHONG con lay thang tu draftPlaceholder
-  // nhu truoc nua - popover la nguon THAT SU cho thoi gian).
-  function handleQuickAddSubmit(fields: {
-    title: string;
-    itemType: LifeItemType;
-    priority: LifeItemPriority | null;
-    location: string;
-    description: string;
-    recurrence: RecurrenceRule;
-    scheduledMinute: number | null;
-    durationMinutes: number | null;
-    deadlineMinute: number | null;
-  }) {
-    if (quickAddHandledRef.current || !draftPlaceholder) return;
-    quickAddHandledRef.current = true;
-    const t = fields.title.trim();
-    if (!t) {
-      setDraftPlaceholder(null);
+  // tiên: Nút collapse sidebar, Nút +". [2026-10-08] Thay HAN bang
+  // TaskTypePicker (component code rieng truoc do) - cho nguoi dung CHON ro
+  // Event/Reminder/Recurring/Shared Calendar thay vi luon tao 1 "reminder"
+  // mac dinh nhu truoc. "recurring" tam thoi dan ve CUNG duong voi "event"
+  // (ca 2 mo EventForm) - EventForm/ReminderForm CHUA gan RecurrenceEditor
+  // ben trong (xem calendar-model-bridge.ts, muc gioi han), nen "Recurring"
+  // hien KHONG co duong dat lich lap lai that qua day.
+  function handleTaskTypeSelect(type: TaskType) {
+    if (type === "shared") {
+      setSharedCalendarFormOpen(true);
       return;
     }
-    const metadata: Record<string, unknown> = {};
-    if (fields.location.trim()) metadata.location = fields.location.trim();
-    if (fields.recurrence.freq !== "NONE")
-      metadata.recurrence = fields.recurrence;
-    void handleAddItem({
-      title: t,
-      kind: "SIMPLE",
-      itemType: fields.itemType,
-      priority: fields.priority ?? undefined,
-      scheduledMinute: fields.scheduledMinute ?? undefined,
-      durationMinutes: fields.durationMinutes ?? undefined,
-      deadline:
-        fields.deadlineMinute !== null
-          ? dateAndMinuteToISO(draftPlaceholder.date, fields.deadlineMinute)
-          : undefined,
-      metadata: Object.keys(metadata).length ? metadata : undefined,
-      description: fields.description.trim() ? fields.description : undefined,
-    });
+    if (viewMode !== "week") switchMode("week");
+    const now = new Date();
+    const nowMinute = Math.min(
+      now.getHours() * 60 + Math.round(now.getMinutes() / 15) * 15,
+      23 * 60 + 45,
+    );
+    handleSlotClick(selectedDate, nowMinute, undefined, type !== "reminder");
+  }
+
+  // [2026-10-08] "thay nguyên những tính năng đã prompt chuyên nghiệp gần
+  // đây" - yeu cau nguoi dung: THAY THE HOAN TOAN QuickAddPopover (form tao
+  // viec rieng cua Planner, dua tren LifeItemType Action/Event/Habit/
+  // Reflection) bang EventForm/ReminderForm (component macOS-style code
+  // RIENG truoc do, model du lieu CalendarEvent/Reminder DOC LAP) lam luong
+  // TAO VIEC CHINH. Xem calendar-model-bridge.ts cho toan bo gioi han/quy
+  // uoc anh xa 2 model nay vao nhau (itemType co dinh theo form, "calendar"/
+  // "list" muon tu field `area` co san, cac field khong co cot backend rieng
+  // (alerts/invitees/tags-subtask/...) luu trong `metadata`).
+  //
+  // Khong con can quickAddHandledRef (guard chong double-submit tu blur) -
+  // do la van de RIENG cua o nhap INLINE cu (unmount luc dang focus -> trinh
+  // duyet tu ban hanh blur). EventForm/ReminderForm la Dialog that voi nut
+  // Huỷ/Save tuong minh, khong co duong blur nao tu dong goi submit.
+  function handleDraftEventSubmit(ev: CalendarEvent) {
+    void handleAddItem(calendarEventToAddInput(ev));
     setDraftPlaceholder(null);
   }
-  function handleQuickAddCancel() {
-    if (quickAddHandledRef.current) return;
-    quickAddHandledRef.current = true;
+  function handleDraftReminderSubmit(r: Reminder) {
+    void handleAddItem(reminderToAddInput(r));
+    setDraftPlaceholder(null);
+  }
+  function handleDraftCancel() {
     setDraftPlaceholder(null);
   }
 
@@ -1205,15 +1058,7 @@ export function PlannerShell({
                   )}
                 </button>
                 {!sidebarCollapsed && (
-                  <button
-                    type="button"
-                    onClick={handleSidebarQuickAdd}
-                    aria-label="Thêm việc mới"
-                    title="Thêm việc mới"
-                    className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-primary)]"
-                  >
-                    <Plus size={20} />
-                  </button>
+                  <TaskTypePicker onSelect={handleTaskTypeSelect} position="bottom-start" />
                 )}
               </div>
 
@@ -1449,8 +1294,9 @@ export function PlannerShell({
                         onSelectItem={setSelectedItemId}
                         onSlotClick={handleSlotClick}
                         draftPlaceholder={draftPlaceholder}
-                        onQuickAddSubmit={handleQuickAddSubmit}
-                        onQuickAddCancel={handleQuickAddCancel}
+                        onDraftEventSubmit={handleDraftEventSubmit}
+                        onDraftReminderSubmit={handleDraftReminderSubmit}
+                        onDraftCancel={handleDraftCancel}
                         onUpdateItemTime={handleUpdateItemTime}
                         onUpdateItem={handleUpdateItem}
                         onDelete={handleDelete}
@@ -1480,6 +1326,19 @@ export function PlannerShell({
           onOpenChange={setSettingsOpen}
           onChangeTypeColor={handleTypeColorChange}
         />
+        {sharedCalendarFormOpen && (
+          <SharedCalendarForm
+            currentUserId={currentUserId}
+            onSubmit={() => {
+              // [2026-10-08] Chua co "danh sach calendar that" nao luu lai -
+              // xem comment dau calendar-model-bridge.ts (PLANNER_CALENDAR_NAMES
+              // la danh sach GOI Y co dinh, khong co SharedCalendar nao duoc
+              // CRUD that qua backend). Dong form, khong luu gi them.
+              setSharedCalendarFormOpen(false);
+            }}
+            onCancel={() => setSharedCalendarFormOpen(false)}
+          />
+        )}
       </LifeItemPaletteProvider>
     </PlannerSettingsProvider>
   );
@@ -1697,11 +1556,14 @@ function TimedItemChip({
   const firstVisibleMinute = settings.firstVisibleHour * 60;
   // Popover "chi tiết" (khac `conflictOpen` ben duoi - popover canh bao trung
   // lich) - mo khi click THAN the (khong phai luc keo-tha, xem preventDefault
-  // trong onClick cua <button> ben duoi). `detailMode`: "view" = xem nhanh +
-  // doi mau/gio truc tiep, "edit" = thay THE bang EditItemForm day du (tai
-  // dung y het 1 component, khong xay UI rieng).
+  // trong onClick cua <button> ben duoi).
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
+  // [2026-10-08] "thay nguyên những tính năng đã prompt chuyên nghiệp gần
+  // đây" - yeu cau nguoi dung: bam "Sửa" gio MO HAN EventForm/ReminderForm
+  // (Dialog rieng, DOC LAP voi popover "chi tiết" nay) thay vi thay THE noi
+  // dung ben trong popover bang EditItemForm nhu truoc (detailMode cu da bo -
+  // popover view gio LUON chi hien view, khong con "edit mode" rieng nua).
+  const [editFormOpen, setEditFormOpen] = useState(false);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
   const status = computeItemStatus(item, isToday, nowMinute);
@@ -1838,7 +1700,6 @@ function TimedItemChip({
         onOpenChange={(next) => {
           setDetailOpen(next);
           if (!next) {
-            setDetailMode("view");
             setColorPickerOpen(false);
             setReminderOpen(false);
           }
@@ -2101,17 +1962,7 @@ function TimedItemChip({
           onMouseDown={(e) => e.stopPropagation()}
           style={{ fontFamily: "var(--planner-font-family)" }}
           className={cn(
-            "relative z-50 overflow-hidden rounded-[12px] bg-white shadow-[0_10px_28px_rgba(20,30,50,.16)]",
-            // [2026-10-07] "Popover rất chật chội... đừng để các element chồng
-            // đè lên nhau" - yeu cau nguoi dung. Che do "edit" nhung het CA bo
-            // truong cua EditItemForm (vd tieu de + TimePickerField tren CUNG 1
-            // hang) - w-72 (288px) qua hep cho hang do, o nhap tieu de bi ep
-            // con vai chuc px (gan nhu khong go duoc gi). Rong hon HAN (23rem)
-            // cho rieng che do edit, gan voi be rong 380px cua Right Panel (noi
-            // CHINH EditItemForm nay von duoc thiet ke vua khit). Che do view
-            // [2026-10-07] w-80 (truoc w-72) - than them MiniTimelinePreview +
-            // Reminder picker can ro hon mot chut.
-            detailMode === "edit" ? "w-[23rem]" : "w-80",
+            "relative z-50 w-80 overflow-hidden rounded-[12px] bg-white shadow-[0_10px_28px_rgba(20,30,50,.16)]",
           )}
         >
           {/* [2026-10-08] Header 3 cot CO DINH (trai/giua/phai) - yeu cau
@@ -2126,32 +1977,26 @@ function TimedItemChip({
             <div className="flex items-center gap-0.5">
               <button
                 type="button"
-                onClick={() =>
-                  setDetailMode((m) => (m === "edit" ? "view" : "edit"))
-                }
-                aria-label={detailMode === "edit" ? "Huỷ sửa" : "Sửa"}
-                title={detailMode === "edit" ? "Huỷ sửa" : "Sửa"}
-                className={cn(
-                  "flex size-6 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out",
-                  detailMode === "edit"
-                    ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
-                    : "text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]",
-                )}
+                onClick={() => {
+                  setDetailOpen(false);
+                  setEditFormOpen(true);
+                }}
+                aria-label="Sửa"
+                title="Sửa"
+                className="flex size-6 cursor-pointer items-center justify-center rounded-md text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
               >
                 <Pencil size={13} />
               </button>
-              {detailMode === "view" && (
-                <DeleteConfirmButton
-                  label={item.title}
-                  onConfirm={() => {
-                    onDelete(item);
-                    setDetailOpen(false);
-                  }}
-                />
-              )}
+              <DeleteConfirmButton
+                label={item.title}
+                onConfirm={() => {
+                  onDelete(item);
+                  setDetailOpen(false);
+                }}
+              />
             </div>
             <p className="text-[13px] font-semibold text-[color:var(--planner-text-primary)]">
-              {detailMode === "edit" ? "Chỉnh sửa" : "Chi tiết sự kiện"}
+              Chi tiết sự kiện
             </p>
             <button
               type="button"
@@ -2164,19 +2009,7 @@ function TimedItemChip({
             </button>
           </div>
 
-          {detailMode === "edit" ? (
-            <div className="p-3">
-              <EditItemForm
-                item={item}
-                onCancel={() => setDetailMode("view")}
-                onSave={(updates) => {
-                  onUpdateItem(item, updates);
-                  setDetailMode("view");
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 p-3">
+          <div className="flex flex-col gap-3 p-3">
               {/* Ten su kien. */}
               <p
                 className={cn(
@@ -2335,9 +2168,45 @@ function TimedItemChip({
                 </PopoverRoot>
               </div>
             </div>
-          )}
         </PopoverContent>
       </PopoverRoot>
+      {/* [2026-10-08] "thay nguyên những tính năng đã prompt chuyên nghiệp
+          gần đây" - yeu cau nguoi dung: "Sửa" gio mo EventForm (itemType
+          EVENT) hoac ReminderForm (moi itemType khac - ACTION/HABIT/
+          REFLECTION, xem calendar-model-bridge.ts muc gioi han: cac Type
+          nay khong con form rieng, dung ReminderForm lam form chung gan
+          nhat, field rieng cua Habit/Reflection KHONG hien/sua duoc qua day
+          nhung VAN con nguyen trong metadata, khong bi mat). */}
+      {editFormOpen &&
+        (item.itemType === "EVENT" ? (
+          <EventForm
+            event={apiItemToCalendarEvent(item)}
+            calendars={PLANNER_CALENDAR_NAMES}
+            onSubmit={(ev) => {
+              onUpdateItem(item, calendarEventToUpdateInput(ev));
+              setEditFormOpen(false);
+            }}
+            onCancel={() => setEditFormOpen(false)}
+            onDelete={() => {
+              onDelete(item);
+              setEditFormOpen(false);
+            }}
+          />
+        ) : (
+          <ReminderForm
+            reminder={apiItemToReminder(item)}
+            lists={PLANNER_REMINDER_LISTS}
+            onSubmit={(r) => {
+              onUpdateItem(item, reminderToUpdateInput(r));
+              setEditFormOpen(false);
+            }}
+            onCancel={() => setEditFormOpen(false)}
+            onDelete={() => {
+              onDelete(item);
+              setEditFormOpen(false);
+            }}
+          />
+        ))}
     </>
   );
 }
@@ -2494,564 +2363,6 @@ function TypeLegend({
   );
 }
 
-// Nut nho trong toolbar editor mo ta (Bold/Italic/Underline/list/dinh
-// kem/emoji) - cung tinh than voi ToolbarButton cua CommunityComposer.tsx
-// (component rieng, khong dung chung file de tranh phu thuoc cheo module
-// community/planner khong lien quan).
-function EditorToolbarButton({
-  label,
-  active,
-  disabled,
-  onClick,
-  icon: Icon,
-}: {
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  icon: typeof BoldIcon;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-[6px] transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
-        active
-          ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
-          : "text-[color:var(--planner-text-muted)] hover:bg-white hover:text-[color:var(--planner-text-secondary)]",
-      )}
-    >
-      <Icon size={13} strokeWidth={2} />
-    </button>
-  );
-}
-
-// Luoi emoji CO DINH (khong goi API/thu vien ngoai) - xem QUICK_EMOJIS.
-function EmojiPickerGrid({
-  onPick,
-  onClose,
-}: {
-  onPick: (emoji: string) => void;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="absolute top-full left-0 z-50 mt-1 grid w-48 grid-cols-8 gap-0.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white p-1.5 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
-      onMouseDown={(e) => e.stopPropagation()}
-    >
-      {QUICK_EMOJIS.map((em) => (
-        <button
-          key={em}
-          type="button"
-          onClick={() => {
-            onPick(em);
-            onClose();
-          }}
-          className="flex size-5 cursor-pointer items-center justify-center rounded text-[13px] hover:bg-[var(--planner-surface-soft)]"
-        >
-          {em}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// [2026-10-07/08] Popover tao viec NHANH, bam TRUC TIEP vao vi tri vua
-// chon/keo tha tren luoi gio - yeu cau nguoi dung: "Tạo task giờ sẽ hiện
-// popover ngay nơi chọn hoặc kéo thả trên lịch". [2026-10-08] REDESIGN HOAN
-// TOAN theo spec chi tiet nguoi dung gui (xem
-// docs/planner-macos-design-system.md section "QuickAddPopover"): tieu de +
-// dia diem (icon -> input, an khi rong) + thoi gian (keo tha = TimePickerField
-// dien san NGAY; click don = ghost "+ Thêm hạn chót", chi hien TimePickerField
-// sau khi bam) + "lặp lại" (dropdown khong native, 6 tan suat, dong preview
-// doi theo lua chon) + mo ta chi tiet (Tiptap mini-editor: Bold/Italic/
-// Underline/list cham/list so/dinh kem file/emoji) + Loai viec/Uu tien (giu
-// nguyen tu ban truoc) + Huỷ/Tạo việc.
-function QuickAddPopover({
-  top,
-  height,
-  date,
-  isDrag,
-  initialStartMinute,
-  initialDurationMinutes,
-  onSubmit,
-  onCancel,
-}: {
-  top: number;
-  height: number;
-  date: string;
-  isDrag: boolean;
-  initialStartMinute: number;
-  initialDurationMinutes: number;
-  onSubmit: (fields: {
-    title: string;
-    itemType: LifeItemType;
-    priority: LifeItemPriority | null;
-    location: string;
-    description: string;
-    recurrence: RecurrenceRule;
-    scheduledMinute: number | null;
-    durationMinutes: number | null;
-    deadlineMinute: number | null;
-  }) => void;
-  onCancel: () => void;
-}) {
-  const { settings } = usePlannerSettings();
-  const [title, setTitle] = useState("");
-  const [itemType, setItemType] = useState<LifeItemType>("ACTION");
-  const [priority, setPriority] = useState<LifeItemPriority | null>(null);
-  const typePalette = resolveLifeItemPalette(itemType);
-
-  // [2026-10-08] Click RA NGOAI popover -> DONG (khong tao luon 1 draft moi
-  // tai vi tri vua click) - yeu cau nguoi dung: "Chưa xử lý việc click out ra
-  // khỏi popover tạo công việc thì đóng lại. Nó phải đóng, lần sau click
-  // tiếp mới hiện pop ở vị trí khác". Cung 1 nguyen nhan/cach fix nhu bug
-  // tuong tu da gap voi AddTaskForm cu (xem comment o DayDetailPanel, gio da
-  // bo): cu mousedown "ra ngoai" nay CHAY QUA CA 2 duong - (1) Radix
-  // DismissableLayer cua chinh Popover nay (dong qua onOpenChange) VA (2)
-  // onMouseDown cua CHINH cot ngay (startSlotDrag, gan qua React tren CUNG
-  // phan tu DOM dang bi click) - vi khong co draft CU nao dang "chan" no, no
-  // tu hieu la 1 click MOI -> mo NGAY 1 draftPlaceholder khac, tao cam giac
-  // "popover nhay sang vi tri khac" thay vi "dong lai". Fix: nghe mousedown
-  // o CAPTURE phase tren `document` (luon chay TRUOC moi handler bubble, ke
-  // ca onMouseDown cua cot ngay) - neu target nam NGOAI noi dung popover
-  // (contentRef), goi onCancel() + stopPropagation() NGAY de chan HAN event
-  // tiep tuc lan xuong toi startSlotDrag - dam bao click-ra-ngoai nay CHI
-  // lam 1 viec (dong popover), nguoi dung phai bam THEM 1 lan nua moi mo
-  // duoc popover khac o vi tri moi.
-  const contentRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function onPointerDownCapture(e: MouseEvent) {
-      if (
-        contentRef.current &&
-        !contentRef.current.contains(e.target as Node)
-      ) {
-        e.stopPropagation();
-        onCancel();
-      }
-    }
-    document.addEventListener("mousedown", onPointerDownCapture, {
-      capture: true,
-    });
-    return () =>
-      document.removeEventListener("mousedown", onPointerDownCapture, {
-        capture: true,
-      });
-  }, [onCancel]);
-
-  // Dia diem - icon + "+ Thêm địa điểm" cho den khi bam, chuyen thanh input.
-  const [locationOpen, setLocationOpen] = useState(false);
-  const [location, setLocation] = useState("");
-
-  // Thoi gian - xem comment field `isDrag` o draftPlaceholder (PlannerShell):
-  // keo tha -> TimePickerField LUON hien, dien san gia tri da chon; click don
-  // -> ghost "+ Thêm hạn chót" cho den khi nguoi dung chu dong bam.
-  const [scheduledStart, setScheduledStart] = useState<number | null>(
-    isDrag ? initialStartMinute : null,
-  );
-  const [scheduledDuration, setScheduledDuration] = useState(
-    initialDurationMinutes,
-  );
-  const [deadlineOpen, setDeadlineOpen] = useState(false);
-  const [deadlineMinute, setDeadlineMinute] = useState<number | null>(null);
-
-  // Lap lai.
-  const [recurrence, setRecurrence] = useState<RecurrenceRule>({
-    freq: "NONE",
-  });
-  const [recurrenceMenuOpen, setRecurrenceMenuOpen] = useState(false);
-
-  // Mo ta chi tiet - Tiptap (da dung san cho Composer/CommunityComposer,
-  // xem docs/planner-macos-design-system.md "Mo ta chi tiet") thay vi
-  // textarea thuan nhu EditItemForm cu, de co Bold/Italic/Underline/list
-  // THAT su theo dung spec. Luu lai thanh HTML (editor.getHTML()) vao field
-  // `description` co san - EditItemForm (sua task) hien VAN dung textarea
-  // thuan, nen task tao qua day se hien THO ca the HTML khi mo lai o do; day
-  // la danh doi CO Y THUC (uu tien co dinh dang THAT khi TAO moi) thay vi
-  // nang cap ca EditItemForm trong cung 1 task - flag ro khi bao cao.
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TiptapUnderline,
-      Placeholder.configure({ placeholder: "Mô tả chi tiết công việc..." }),
-    ],
-    content: "",
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class:
-          "min-h-14 text-[12.5px] text-[color:var(--planner-text-primary)] leading-relaxed focus:outline-none " +
-          "[&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 " +
-          "[&_a]:text-[color:var(--planner-primary)] [&_a]:underline " +
-          "[&_p.is-editor-empty:first-child::before]:text-[color:var(--planner-text-muted)] [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none",
-      },
-    },
-  });
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [emojiOpen, setEmojiOpen] = useState(false);
-
-  // [2026-10-08] Dinh kem file - tai qua pipeline upload CO SAN cua Chat
-  // (uploadChatAttachmentAction, xem src/actions/chat/upload-attachment.ts) -
-  // Planner CHUA co field `attachments[]` rieng trong data model, nen chen
-  // THANG link file vao NOI DUNG mo ta (Tiptap) thay vi them 1 cot/migration
-  // backend moi chi cho task nay - lua chon it xam lan nhat, tai dung dung
-  // pipeline da chay that.
-  async function handleFilePick(files: FileList | null) {
-    const file = files?.[0];
-    if (!file || !editor) return;
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("kind", "file");
-    const result = await uploadChatAttachmentAction(formData).catch(() => null);
-    setUploading(false);
-    if (result) {
-      editor
-        .chain()
-        .focus()
-        .insertContent(
-          `<a href="${result.url}" target="_blank" rel="noopener noreferrer">📎 ${result.name}</a> `,
-        )
-        .run();
-    }
-  }
-
-  function submit() {
-    onSubmit({
-      title,
-      itemType,
-      priority,
-      location: location.trim(),
-      description: editor && !editor.isEmpty ? editor.getHTML() : "",
-      recurrence,
-      scheduledMinute: isDrag ? scheduledStart : null,
-      durationMinutes: isDrag ? scheduledDuration : null,
-      deadlineMinute: isDrag ? null : deadlineMinute,
-    });
-  }
-
-  const recurrencePreview = describeRecurrence(
-    recurrence,
-    date,
-    isDrag ? scheduledStart : deadlineMinute,
-    settings.timeFormat,
-  );
-
-  return (
-    <PopoverRoot open onOpenChange={(next) => !next && onCancel()}>
-      <PopoverAnchor asChild>
-        {/* [2026-10-07] Khung net dut - giu NGUYEN hinh dang/mau "thẻ default"
-            cu (yeu cau truoc do: "để sẵn 1 cái màu nhạt nhạt 80%") lam MOC
-            dinh vi cho popover, KHONG con chua o nhap truc tiep ben trong nua
-            (da chuyen het vao PopoverContent ben duoi). */}
-        <div
-          className="pointer-events-none absolute right-1 left-1 z-[2] overflow-hidden rounded-sm border border-dashed"
-          style={{
-            top,
-            height,
-            borderColor:
-              "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
-            backgroundColor:
-              "color-mix(in srgb, var(--planner-primary) 20%, white)",
-          }}
-        />
-      </PopoverAnchor>
-      <PopoverContent
-        open
-        side="right"
-        align="start"
-        sideOffset={8}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="z-50 flex max-h-[min(640px,80vh)] w-[360px] flex-col gap-2.5 overflow-y-auto rounded-[12px] border bg-white p-4 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
-        style={{
-          borderColor: typePalette.accentBorder,
-          fontFamily: "var(--planner-font-family)",
-        }}
-      >
-        {/* [2026-10-08] Wrapper CHI de gan contentRef (dung check "click co
-            nam trong popover hay khong" o useEffect tren) - "contents" =
-            KHONG tao box rieng, khong anh huong flex layout cua chinh
-            PopoverContent (van la cha flex truc tiep cua cac phan tu ben
-            trong). PopoverContent (ui/popover.tsx) la function component
-            thuong (khong forwardRef) nen khong the gan ref THANG len no. */}
-        <div ref={contentRef} className="contents">
-          <input
-            autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submit();
-              if (e.key === "Escape") onCancel();
-            }}
-            placeholder="Tên việc cần làm..."
-            className="h-9 w-full rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] font-medium text-[color:var(--planner-text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:bg-white"
-          />
-
-          {/* Dia diem */}
-          {location || locationOpen ? (
-            <div className="flex items-center gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] px-2">
-              <MapPin
-                size={13}
-                className="shrink-0 text-[color:var(--planner-text-muted)]"
-              />
-              <input
-                autoFocus={locationOpen}
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                onBlur={() => {
-                  if (!location.trim()) setLocationOpen(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setLocation("");
-                    setLocationOpen(false);
-                  }
-                }}
-                placeholder="Địa điểm..."
-                className="h-8 flex-1 bg-transparent text-[12.5px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)]"
-              />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setLocationOpen(true)}
-              className="flex w-fit cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
-            >
-              <MapPin size={13} /> Thêm địa điểm
-            </button>
-          )}
-
-          {/* Thoi gian - xem comment `isDrag` o tren. */}
-          {isDrag ? (
-            <TimePickerField
-              startMinute={scheduledStart}
-              durationMinutes={scheduledDuration}
-              onChange={(s, d) => {
-                setScheduledStart(s);
-                setScheduledDuration(d);
-              }}
-            />
-          ) : deadlineOpen || deadlineMinute !== null ? (
-            <TimePickerField
-              startMinute={deadlineMinute}
-              durationMinutes={30}
-              onChange={(s) => setDeadlineMinute(s)}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setDeadlineOpen(true)}
-              className="flex w-fit cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
-            >
-              <Clock size={13} /> Thêm hạn chót
-            </button>
-          )}
-
-          {/* Lap lai - dropdown KHONG native (quy uoc chung toan app), preview
-            dong doi theo tan suat + ngay/gio dang chon. */}
-          <div className="flex flex-col gap-1.5">
-            <DropdownMenuRoot
-              open={recurrenceMenuOpen}
-              onOpenChange={setRecurrenceMenuOpen}
-            >
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex h-8 cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-secondary)] outline-none hover:border-[color:var(--planner-border)]"
-                >
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <Repeat
-                      size={13}
-                      className="shrink-0 text-[color:var(--planner-text-muted)]"
-                    />
-                    <span className="truncate">{recurrencePreview}</span>
-                  </span>
-                  <ChevronDown
-                    size={12}
-                    className="shrink-0 text-[color:var(--planner-text-muted)]"
-                  />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                open={recurrenceMenuOpen}
-                align="start"
-                className="z-50 w-56 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
-                style={{ fontFamily: "var(--planner-font-family)" }}
-              >
-                {RECURRENCE_FREQ_OPTIONS.map((opt) => (
-                  <DropdownMenuItem
-                    key={opt.value}
-                    onSelect={() =>
-                      setRecurrence({
-                        freq: opt.value,
-                        customWeekdays:
-                          opt.value === "CUSTOM"
-                            ? (recurrence.customWeekdays ?? [
-                                new Date(date).getDay(),
-                              ])
-                            : undefined,
-                      })
-                    }
-                    className="flex cursor-pointer items-center justify-between rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-secondary)] outline-none hover:bg-[var(--planner-surface-soft)]"
-                  >
-                    {opt.label}
-                    {recurrence.freq === opt.value && (
-                      <Check
-                        size={13}
-                        className="text-[color:var(--planner-primary)]"
-                      />
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenuRoot>
-            {recurrence.freq === "CUSTOM" && (
-              <div className="flex flex-wrap gap-1 pl-0.5">
-                {WEEKDAY_SHORT_IDS.map((id, idx) => {
-                  // WEEKDAY_SHORT_IDS[0]="MON" -> Date.getDay()=1, ..[6]="SUN" -> 0.
-                  const dow = (idx + 1) % 7;
-                  const selected =
-                    recurrence.customWeekdays?.includes(dow) ?? false;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      title={WEEKDAY_FULL_VI[dow]}
-                      onClick={() =>
-                        setRecurrence((r) => {
-                          const cur = new Set(r.customWeekdays ?? []);
-                          if (cur.has(dow)) cur.delete(dow);
-                          else cur.add(dow);
-                          return {
-                            ...r,
-                            customWeekdays: Array.from(cur).sort(),
-                          };
-                        })
-                      }
-                      className={cn(
-                        "flex size-6 cursor-pointer items-center justify-center rounded-full border text-[10.5px] font-semibold transition-colors duration-150 ease-out",
-                        selected
-                          ? "border-[color:var(--planner-primary)] bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
-                          : "border-[color:var(--planner-border-soft)] text-[color:var(--planner-text-muted)] hover:border-[color:var(--planner-border)]",
-                      )}
-                    >
-                      {DOW_VI_NUM[dow]}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <TypePickerRow value={itemType} onChange={setItemType} />
-          <PriorityPickerRow value={priority} onChange={setPriority} />
-
-          {/* Mo ta chi tiet - Tiptap mini-editor, xem comment field `editor`. */}
-          <div className="rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] p-2">
-            <div className="mb-1.5 flex items-center gap-0.5 border-b border-[color:var(--planner-border-soft)] pb-1.5">
-              <EditorToolbarButton
-                label="Đậm"
-                icon={BoldIcon}
-                active={editor?.isActive("bold")}
-                onClick={() => editor?.chain().focus().toggleBold().run()}
-              />
-              <EditorToolbarButton
-                label="Nghiêng"
-                icon={ItalicIcon}
-                active={editor?.isActive("italic")}
-                onClick={() => editor?.chain().focus().toggleItalic().run()}
-              />
-              <EditorToolbarButton
-                label="Gạch chân"
-                icon={UnderlineIcon}
-                active={editor?.isActive("underline")}
-                onClick={() => editor?.chain().focus().toggleUnderline().run()}
-              />
-              <div className="mx-0.5 h-4 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
-              <EditorToolbarButton
-                label="Danh sách chấm"
-                icon={BulletListIcon}
-                active={editor?.isActive("bulletList")}
-                onClick={() => editor?.chain().focus().toggleBulletList().run()}
-              />
-              <EditorToolbarButton
-                label="Danh sách số"
-                icon={OrderedListIcon}
-                active={editor?.isActive("orderedList")}
-                onClick={() =>
-                  editor?.chain().focus().toggleOrderedList().run()
-                }
-              />
-              <div className="mx-0.5 h-4 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
-              <EditorToolbarButton
-                label="Đính kèm tệp"
-                icon={Paperclip}
-                disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
-              />
-              <div className="relative">
-                <EditorToolbarButton
-                  label="Emoji"
-                  icon={Smile}
-                  active={emojiOpen}
-                  onClick={() => setEmojiOpen((v) => !v)}
-                />
-                {emojiOpen && (
-                  <EmojiPickerGrid
-                    onPick={(em) =>
-                      editor?.chain().focus().insertContent(em).run()
-                    }
-                    onClose={() => setEmojiOpen(false)}
-                  />
-                )}
-              </div>
-              {uploading && (
-                <span className="ml-1 text-[10.5px] font-medium text-[color:var(--planner-text-muted)]">
-                  Đang tải lên...
-                </span>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              onChange={(e) => {
-                void handleFilePick(e.target.files);
-                e.target.value = "";
-              }}
-            />
-            <EditorContent editor={editor} />
-          </div>
-
-          <div className="flex items-center justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="h-[32px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
-            >
-              Huỷ
-            </button>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!title.trim()}
-              className="h-[32px] cursor-pointer rounded-[9px] bg-[color:var(--planner-primary)] px-3 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-            >
-              Tạo việc
-            </button>
-          </div>
-        </div>
-      </PopoverContent>
-    </PopoverRoot>
-  );
-}
-
 // [2026-10-08] Checkbox TU VE (khong dung <input type="checkbox"> mac dinh
 // cua trinh duyet) - yeu cau nguoi dung: "Mỗi ô checkbox một màu, icon tick
 // trắng. custom ô checkbox, không để mặc định của web". Checked = to DAC
@@ -3198,8 +2509,9 @@ function WeekTimeGrid({
   onSelectItem,
   onSlotClick,
   draftPlaceholder,
-  onQuickAddSubmit,
-  onQuickAddCancel,
+  onDraftEventSubmit,
+  onDraftReminderSubmit,
+  onDraftCancel,
   onUpdateItemTime,
   onUpdateItem,
   onDelete,
@@ -3226,21 +2538,12 @@ function WeekTimeGrid({
     duration: number;
     isDrag: boolean;
   } | null;
-  // [2026-10-07] Thay AddTaskForm (song trong DayDetailPanel, da bo - xem
-  // comment o noi goi WeekTimeGrid) - o nhap NGAY TREN "thẻ default" luc keo
-  // tha, submit = title khong rong (Enter/blur), cancel = Escape/blur rong.
-  onQuickAddSubmit: (fields: {
-    title: string;
-    itemType: LifeItemType;
-    priority: LifeItemPriority | null;
-    location: string;
-    description: string;
-    recurrence: RecurrenceRule;
-    scheduledMinute: number | null;
-    durationMinutes: number | null;
-    deadlineMinute: number | null;
-  }) => void;
-  onQuickAddCancel: () => void;
+  // [2026-10-08] Thay AddTaskForm/QuickAddPopover cu (da bo) - gio mo THANG
+  // EventForm (keo tha) hoac ReminderForm (click don) tai dung draftPlaceholder
+  // lam tin hieu kich hoat (xem comment o noi goi WeekTimeGrid + calendar-model-bridge.ts).
+  onDraftEventSubmit: (event: CalendarEvent) => void;
+  onDraftReminderSubmit: (reminder: Reminder) => void;
+  onDraftCancel: () => void;
   onUpdateItemTime: (
     item: ApiPlannerItem,
     newStart: number,
@@ -3808,25 +3111,41 @@ function WeekTimeGrid({
                 {/* [2026-10-07] Popover tao viec NGAY tai vi tri chon/keo tha -
                     yeu cau nguoi dung: "Tạo task giờ sẽ hiện popover ngay nơi
                     chọn hoặc kéo thả trên lịch" (thay AddTaskForm cu song
-                    trong DayDetailPanel, da bo). Xem QuickAddPopover duoi. */}
-                {draftPlaceholder && draftPlaceholder.date === d && (
-                  <QuickAddPopover
-                    top={
-                      ((draftPlaceholder.start - firstVisibleMinute) / 60) *
-                      HOUR_ROW_HEIGHT
-                    }
-                    height={Math.max(
-                      (draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT,
-                      HOUR_ROW_HEIGHT * 0.4,
-                    )}
-                    date={draftPlaceholder.date}
-                    isDrag={draftPlaceholder.isDrag}
-                    initialStartMinute={draftPlaceholder.start}
-                    initialDurationMinutes={draftPlaceholder.duration}
-                    onSubmit={onQuickAddSubmit}
-                    onCancel={onQuickAddCancel}
-                  />
-                )}
+                    trong DayDetailPanel, da bo). [2026-10-08] "thay nguyên
+                    những tính năng đã prompt chuyên nghiệp gần đây" - QuickAddPopover
+                    (popover nho, neo theo vi tri keo) THAY HAN bang EventForm
+                    (keo tha)/ReminderForm (click don) - 2 Dialog day du, KHONG
+                    con neo theo top/height cua "thẻ default" nua (chi con
+                    dung draftPlaceholder lam TIN HIEU kich hoat + gieo san
+                    gio qua `initialDraft`, xem calendar-model-bridge.ts). */}
+                {draftPlaceholder &&
+                  draftPlaceholder.date === d &&
+                  (draftPlaceholder.isDrag ? (
+                    <EventForm
+                      calendars={PLANNER_CALENDAR_NAMES}
+                      initialDraft={{
+                        startDate: draftPlaceholder.date,
+                        startTime: minutesToLabel(draftPlaceholder.start, "24H"),
+                        endDate: draftPlaceholder.date,
+                        endTime: minutesToLabel(
+                          draftPlaceholder.start + draftPlaceholder.duration,
+                          "24H",
+                        ),
+                      }}
+                      onSubmit={onDraftEventSubmit}
+                      onCancel={onDraftCancel}
+                    />
+                  ) : (
+                    <ReminderForm
+                      lists={PLANNER_REMINDER_LISTS}
+                      initialDraft={{
+                        dueDate: draftPlaceholder.date,
+                        dueTime: minutesToLabel(draftPlaceholder.start, "24H"),
+                      }}
+                      onSubmit={onDraftReminderSubmit}
+                      onCancel={onDraftCancel}
+                    />
+                  ))}
                 {laidOut.map(
                   ({
                     item,

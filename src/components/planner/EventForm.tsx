@@ -149,12 +149,18 @@ function AttachmentRow({ file, onRemove }: { file: EventAttachment; onRemove: ()
 
 export function EventForm({
   event,
+  initialDraft,
   calendars,
   onSubmit,
   onCancel,
   onDelete,
 }: {
   event?: CalendarEvent;
+  // [2026-10-08] Gieo san gia tri (vd gio vua KEO THA tren luoi) khi TAO MOI
+  // (khong co `event`) - KHAC voi truyen 1 `event` day du, prop nay KHONG
+  // bat `isEdit` (van la "New Event", KHONG hien nut Delete). Chi doc luc
+  // KHOI TAO state (khong dong bo lai sau, giong dung cach `event` hoat dong).
+  initialDraft?: Partial<Pick<CalendarEvent, "startDate" | "startTime" | "endDate" | "endTime" | "calendar">>;
   calendars: string[];
   onSubmit: (event: CalendarEvent) => void;
   onCancel: () => void;
@@ -162,12 +168,16 @@ export function EventForm({
 }) {
   const isEdit = !!event;
   const [title, setTitle] = useState(event?.title ?? "");
-  const [calendar, setCalendar] = useState(event?.calendar ?? calendars[0] ?? "");
+  const [calendar, setCalendar] = useState(event?.calendar ?? initialDraft?.calendar ?? calendars[0] ?? "");
   const [allDay, setAllDay] = useState(event?.allDay ?? false);
-  const [startDate, setStartDate] = useState(event?.startDate ?? todayISO());
-  const [startTime, setStartTime] = useState(event?.startTime ?? roundedNowHM());
-  const [endDate, setEndDate] = useState(event?.endDate ?? event?.startDate ?? todayISO());
-  const [endTime, setEndTime] = useState(event?.endTime ?? addHourHM(event?.startTime ?? roundedNowHM()));
+  const [startDate, setStartDate] = useState(event?.startDate ?? initialDraft?.startDate ?? todayISO());
+  const [startTime, setStartTime] = useState(event?.startTime ?? initialDraft?.startTime ?? roundedNowHM());
+  const [endDate, setEndDate] = useState(
+    event?.endDate ?? event?.startDate ?? initialDraft?.endDate ?? initialDraft?.startDate ?? todayISO(),
+  );
+  const [endTime, setEndTime] = useState(
+    event?.endTime ?? initialDraft?.endTime ?? addHourHM(event?.startTime ?? initialDraft?.startTime ?? roundedNowHM()),
+  );
   const [locationOpen, setLocationOpen] = useState(!!event?.location);
   const [location, setLocation] = useState(event?.location ?? "");
   const [alerts, setAlerts] = useState<AlertOffset[]>(event?.alerts ?? []);
@@ -363,7 +373,7 @@ export function EventForm({
                 </Dialog.Title>
 
                 {/* Body - scroll rieng, khong keo theo header/footer. */}
-                <div className="mset-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+                <div className="mset-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
                   <FormInput
                     autoFocus
                     value={title}
@@ -373,7 +383,7 @@ export function EventForm({
                   />
 
                   {/* Date & Time. */}
-                  <div className="flex flex-col gap-2 rounded-[10px] border border-[color:var(--planner-border-soft)] p-2.5">
+                  <div className="flex flex-col gap-3 rounded-[10px] border border-[color:var(--planner-border-soft)] p-3.5">
                     <div className="flex items-center justify-between">
                       <FieldLabel>All day</FieldLabel>
                       <ToggleSwitch checked={allDay} onChange={setAllDay} />

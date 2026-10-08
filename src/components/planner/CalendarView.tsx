@@ -119,6 +119,31 @@ function hashString(s: string): number {
 function colorForEvent(event: CalendarEvent): string {
   return EVENT_COLOR_PALETTE[hashString(event.calendar) % EVENT_COLOR_PALETTE.length];
 }
+// [2026-10-08] "Phần thẻ trên lịch giữ style kiểu cũ... màu chủ đạo là
+// thanh dọc gần mép trái, màu nền nhạt" - yeu cau nguoi dung: quay ve dung
+// style the da chot cho TimedItemChip trong PlannerShell.tsx (nen pastel
+// nhat "accentSoft" + thanh accent trai "accentStrong" + chu MAU TOI, KHONG
+// phai khoi mau DAC + chu trang nhu truoc). CalendarEvent (calendar-types.ts)
+// chi co 1 hex DUY NHAT (tu colorForEvent), KHONG co san cap accentSoft/
+// accentStrong nhu LifeItemPalette - tu pha nen nhat qua color-mix thay vi
+// dinh nghia them 1 bang palette moi.
+function softBgStyle(hex: string): React.CSSProperties {
+  return { backgroundColor: `color-mix(in srgb, ${hex} 16%, white)` };
+}
+// [2026-10-08 fix] "không để thanh màu sát lề, cách trái ra 3px" - yeu cau
+// nguoi dung: `border-left` ve SAT mep trai THAT (border nam DUNG tai bien
+// box trai, khong co cach nao "lui vao" bang chinh thuoc tinh border). Doi
+// sang 1 <span> con, dinh vi TUYET DOI voi `left: 3px` rieng - card cha can
+// la `relative` + co du `pl-*` de chu khong de len thanh mau.
+function EventAccentBar({ color }: { color: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute top-1 bottom-1 left-[3px] w-[3px] rounded-full"
+      style={{ background: color }}
+    />
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Layout: xep NHIEU NGAY event thanh "lane" trong 1 hang (dung CHUNG cho
@@ -427,14 +452,15 @@ function MonthView({
                           e.stopPropagation();
                           onEventClick(s.event);
                         }}
-                        className="pointer-events-auto mx-0.5 mb-[2px] cursor-pointer truncate rounded-[4px] px-1 text-left text-[10px] font-medium text-white"
+                        className="pointer-events-auto relative mx-0.5 mb-[2px] cursor-pointer truncate rounded-[4px] py-px pr-1 pl-[9px] text-left text-[10px] font-medium text-[color:var(--planner-text-primary)]"
                         style={{
                           gridColumn: `${s.startCol + 1} / ${s.endCol + 2}`,
                           gridRow: s.lane + 1,
-                          background: colorForEvent(s.event),
+                          ...softBgStyle(colorForEvent(s.event)),
                         }}
                         title={s.event.title}
                       >
+                        <EventAccentBar color={colorForEvent(s.event)} />
                         {s.event.title}
                       </button>
                     ))}
@@ -572,9 +598,14 @@ function TimeGridView({
                 key={s.event.id}
                 type="button"
                 onClick={() => onEventClick(s.event)}
-                className="mx-0.5 mb-0.5 cursor-pointer truncate rounded-[4px] px-1.5 py-0.5 text-left text-[10.5px] font-medium text-white"
-                style={{ gridColumn: `${s.startCol + 1} / ${s.endCol + 2}`, gridRow: s.lane + 1, background: colorForEvent(s.event) }}
+                className="relative mx-0.5 mb-0.5 cursor-pointer truncate rounded-[4px] py-0.5 pr-1.5 pl-[9px] text-left text-[10.5px] font-medium text-[color:var(--planner-text-primary)]"
+                style={{
+                  gridColumn: `${s.startCol + 1} / ${s.endCol + 2}`,
+                  gridRow: s.lane + 1,
+                  ...softBgStyle(colorForEvent(s.event)),
+                }}
               >
+                <EventAccentBar color={colorForEvent(s.event)} />
                 {s.event.title}
               </button>
             ))}
@@ -616,29 +647,30 @@ function TimeGridView({
                       e.stopPropagation();
                       onEventClick(s.event);
                     }}
-                    className="absolute z-[2] flex cursor-pointer flex-col items-start gap-0.5 overflow-hidden rounded-[6px] px-1.5 py-1 text-left text-white"
+                    className="absolute z-[2] flex cursor-pointer flex-col items-start gap-0.5 overflow-hidden rounded-[4px] py-1 pr-1.5 pl-[9px] text-left text-[color:var(--planner-text-primary)]"
                     style={{
                       top: (s.startMin / 60) * HOUR_ROW_HEIGHT,
                       height: Math.max(18, ((s.endMin - s.startMin) / 60) * HOUR_ROW_HEIGHT),
                       left: `calc(${s.leftPercent}% + 2px)`,
                       width: `calc(${s.widthPercent}% - 4px)`,
-                      background: colorForEvent(s.event),
+                      ...softBgStyle(colorForEvent(s.event)),
                     }}
                   >
+                    <EventAccentBar color={colorForEvent(s.event)} />
                     <span className="truncate text-[11px] font-semibold">{s.event.title}</span>
                     {detailed && (
                       <>
-                        <span className="truncate text-[10px] opacity-90">
+                        <span className="truncate text-[10px] text-[color:var(--planner-text-secondary)]">
                           {formatHM12(s.event.startTime!)} — {formatHM12(s.event.endTime!)}
                         </span>
                         {s.event.location && (
-                          <span className="flex items-center gap-0.5 truncate text-[10px] opacity-90">
+                          <span className="flex items-center gap-0.5 truncate text-[10px] text-[color:var(--planner-text-secondary)]">
                             <MapPin size={9} className="shrink-0" />
                             {s.event.location}
                           </span>
                         )}
                         {s.event.invitees.length > 0 && (
-                          <span className="flex items-center gap-0.5 truncate text-[10px] opacity-90">
+                          <span className="flex items-center gap-0.5 truncate text-[10px] text-[color:var(--planner-text-secondary)]">
                             <UsersIcon size={9} className="shrink-0" />
                             {s.event.invitees.length}
                           </span>

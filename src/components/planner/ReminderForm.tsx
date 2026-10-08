@@ -199,7 +199,13 @@ function SubtaskRow({
             type="date"
             value={subtask.dueDate ?? ""}
             onChange={(e) => onChange({ ...subtask, dueDate: e.target.value || null })}
-            className="h-7 text-[11.5px]"
+            // [2026-10-08 fix] py-1 (khong phai h-7 CO DINH) - FormInput gio
+            // tu quyet dinh chieu cao qua padding doc (py-2.5 mac dinh), 1
+            // chieu cao CO DINH NHO hon se de bi CAT CHU (28px - 20px
+            // padding mac dinh = 8px con lai, khong du cho dong chu). Ghi de
+            // padding thay vi height giu dung tinh than "nho gon hon" cho
+            // hang subtask ma khong lam vo bo cuc.
+            className="py-1 text-[11.5px]"
           />
           <PriorityPicker
             value={subtask.priority ?? "none"}
@@ -243,6 +249,7 @@ function ImageThumb({
 
 export function ReminderForm({
   reminder,
+  initialDraft,
   lists,
   onSubmit,
   onCancel,
@@ -250,6 +257,9 @@ export function ReminderForm({
   knownTags = [],
 }: {
   reminder?: Reminder;
+  // [2026-10-08] Gieo san gia tri (vd ngay/gio vua CLICK tren luoi) khi TAO
+  // MOI - xem comment tuong duong o EventForm.tsx.
+  initialDraft?: Partial<Pick<Reminder, "dueDate" | "dueTime" | "list">>;
   lists: Array<{ name: string; color: string; icon?: string }>;
   onSubmit: (reminder: Reminder) => void;
   onCancel: () => void;
@@ -260,12 +270,12 @@ export function ReminderForm({
   const isEdit = !!reminder;
   const [completed, setCompleted] = useState(reminder?.completed ?? false);
   const [title, setTitle] = useState(reminder?.title ?? "");
-  const [list, setList] = useState(reminder?.list ?? lists[0]?.name ?? "");
+  const [list, setList] = useState(reminder?.list ?? initialDraft?.list ?? lists[0]?.name ?? "");
 
-  const [hasDate, setHasDate] = useState(!!reminder?.dueDate);
-  const [dueDate, setDueDate] = useState(reminder?.dueDate ?? todayISO());
-  const [hasTime, setHasTime] = useState(!!reminder?.dueTime);
-  const [dueTime, setDueTime] = useState(reminder?.dueTime ?? roundedNowHM());
+  const [hasDate, setHasDate] = useState(!!reminder?.dueDate || !!initialDraft?.dueDate);
+  const [dueDate, setDueDate] = useState(reminder?.dueDate ?? initialDraft?.dueDate ?? todayISO());
+  const [hasTime, setHasTime] = useState(!!reminder?.dueTime || !!initialDraft?.dueTime);
+  const [dueTime, setDueTime] = useState(reminder?.dueTime ?? initialDraft?.dueTime ?? roundedNowHM());
 
   const [hasRemindOnDate, setHasRemindOnDate] = useState(!!reminder?.remindOnDate);
   const [remindOnDate, setRemindOnDate] = useState(reminder?.remindOnDate ?? todayISO());
@@ -465,7 +475,7 @@ export function ReminderForm({
                   </div>
                 </Dialog.Title>
 
-                <div className="mset-scroll flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+                <div className="mset-scroll flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
                   {/* "Completed state: khi edit, hien checkbox 'Mark as
                       Complete' o tren cung" - spec. */}
                   {isEdit && (
@@ -513,7 +523,7 @@ export function ReminderForm({
                   </div>
 
                   {/* Due Date & Time. */}
-                  <div className="flex flex-col gap-2 rounded-[10px] border border-[color:var(--planner-border-soft)] p-2.5">
+                  <div className="flex flex-col gap-3 rounded-[10px] border border-[color:var(--planner-border-soft)] p-3.5">
                     <div className="flex items-center justify-between">
                       <FieldLabel>Add Date</FieldLabel>
                       <ToggleSwitch checked={hasDate} onChange={setHasDate} />
@@ -541,7 +551,7 @@ export function ReminderForm({
                   </div>
 
                   {/* "Remind me on date" - doc lap voi due date. */}
-                  <div className="flex flex-col gap-2 rounded-[10px] border border-[color:var(--planner-border-soft)] p-2.5">
+                  <div className="flex flex-col gap-3 rounded-[10px] border border-[color:var(--planner-border-soft)] p-3.5">
                     <div className="flex items-center justify-between">
                       <FieldLabel>Remind on a Date</FieldLabel>
                       <ToggleSwitch checked={hasRemindOnDate} onChange={setHasRemindOnDate} />
@@ -563,7 +573,7 @@ export function ReminderForm({
                   </div>
 
                   {/* Remind at Location. */}
-                  <div className="flex flex-col gap-2 rounded-[10px] border border-[color:var(--planner-border-soft)] p-2.5">
+                  <div className="flex flex-col gap-3 rounded-[10px] border border-[color:var(--planner-border-soft)] p-3.5">
                     <div className="flex items-center justify-between">
                       <FieldLabel>Remind at Location</FieldLabel>
                       <ToggleSwitch checked={hasLocation} onChange={setHasLocation} />

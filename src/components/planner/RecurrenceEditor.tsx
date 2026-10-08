@@ -453,7 +453,7 @@ export function RecurrenceEditor({
           )}
 
           {/* End repeat. */}
-          <div className="flex flex-col gap-2 rounded-[10px] border border-[color:var(--planner-border-soft)] p-2.5">
+          <div className="flex flex-col gap-3 rounded-[10px] border border-[color:var(--planner-border-soft)] p-3.5">
             <FieldLabel>End Repeat</FieldLabel>
             <label className="flex items-center gap-2">
               <span
