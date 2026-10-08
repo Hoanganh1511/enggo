@@ -1741,8 +1741,23 @@ function TimedItemChip({
               // thuc 11:00, task B bat dau 11:00). Khong anh huong logic tinh gio
               // that (displayTop/displayHeight goc van dung de tinh liveStart/
               // liveDuration o tren) - chi la 1 khoang hut nho THUAN VISUAL luc ve.
+              // [2026-10-08 fix] San 16 -> 4 - yeu cau nguoi dung: "đang case này
+              // bị trùng ở đoạn 15p nối bị dính vào nhau". San CU (16) LON HON
+              // chieu cao TU NHIEN cua 1 khoi 15 phut o CA 2 muc Density: compact
+              // (40px/h * 15/60 = 10px, tru 6 con 4px, van bi ep LEN 16px) va
+              // comfortable (58px/h * 15/60 = 14.5px, tru 6 con 8.5px, van bi ep
+              // LEN 16px) - nghia la MOI khoi 15 phut (don vi nho nhat he thong
+              // cho phep keo-tha, xem DRAG_SNAP_MINUTES = settings.timeSlotMinutes)
+              // deu bi "phinh" VUOT QUA dung khung gio cua no, tran sang dung
+              // khoi ke tiep lien ngay sau - day CHINH LA nguyen nhan "dính vào
+              // nhau" nguoi dung thay, khong phai loi thuat toan gom nhom chong
+              // cheo (layoutTimedItems). San moi (4) <= chieu cao TU NHIEN nho
+              // nhat (10px o compact) sau khi tru 6, nen KHONG BAO GIO ep khoi
+              // 15 phut tro len vuot qua dung khung gio cua no nua; san nay chi
+              // con tac dung ngan height am/0 cho truong hop hiem (item < 15
+              // phut, vd dang keo-gian thu nho qua gioi han binh thuong).
               top: displayTop + 3,
-              height: Math.max(displayHeight - 6, 16),
+              height: Math.max(displayHeight - 6, 4),
               left,
               width,
               // accentSoft (truoc accentLight) - xem comment day du o AllDayItemChip,
