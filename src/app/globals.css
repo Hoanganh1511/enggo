@@ -375,17 +375,26 @@
    pham vi DOM cua bat ky div "scope" nao, :root la noi DUY NHAT moi noi (ke
    ca noi dung Portal) deu ke thua duoc chac chan. */
 :root {
-  --mset-background: #f5f5f7;
-  --mset-surface: #ffffff;
-  --mset-surface-secondary: #f8f8fa;
-  --mset-surface-tertiary: #f2f2f5;
+  /* [2026-10-08] Section "1. Base Colors (Calendar)" - yeu cau nguoi dung dua
+     1 anh spec mau rieng cho Calendar (Page/Calendar background, Grid Line,
+     Time Label, Header background/text, Today column, Hover/Focus). Anh xa
+     THANG vao cac token --mset-* da co san (khong them token moi) de ke thua
+     TU DONG qua moi noi dang dung --planner-*/--mset-* (ca ban "Life Item"
+     cu lan "macOS Calendar" moi - 2 he thong dung CHUNG 1 bo bien goc nay,
+     xem comment --planner-* anh xa tu --mset-* phia tren). --mset-divider/
+     --mset-border-strong KHONG doi (khong co trong spec) - van giu rgba den
+     mo cho cac border DAM hon grid line thuong. */
+  --mset-background: #fafafc; /* Page Background */
+  --mset-surface: #ffffff; /* Calendar Background */
+  --mset-surface-secondary: #f1f5ff; /* Hover / Focus */
+  --mset-surface-tertiary: #f3f4f6; /* Header Background */
 
-  --mset-text-primary: #1d1d1f;
+  --mset-text-primary: #111827; /* Header Text */
   --mset-text-secondary: #6e6e73;
-  --mset-text-tertiary: #86868b;
+  --mset-text-tertiary: #6b7280; /* Time Label */
   --mset-text-disabled: #a1a1a6;
 
-  --mset-border: rgba(0, 0, 0, 0.08);
+  --mset-border: #e9ebf0; /* Grid Line */
   --mset-border-strong: rgba(0, 0, 0, 0.12);
   --mset-divider: rgba(0, 0, 0, 0.07);
 
@@ -393,7 +402,7 @@
   --mset-accent-hover: #006fe6;
   --mset-accent-active: #005fcc;
   --mset-accent-soft: #eaf3ff;
-  --mset-accent-subtle: #f3f8ff;
+  --mset-accent-subtle: #eef2ff; /* Today Column */
 
   --mset-lavender: #edebff;
   --mset-lavender-strong: #dcd8ff;

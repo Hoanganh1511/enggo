@@ -114,9 +114,15 @@ function itemSortTimestamp(item: TaskItem): number | null {
   return new Date(`${iso}T${time}:00`).getTime();
 }
 
+// [2026-10-08] "Work Type Colors" - cung bang 8 mau voi CATEGORY_COLORS.main
+// trong CalendarView.tsx (yeu cau nguoi dung: "sửa lại màu cho toàn bộ các
+// element trong lịch", khong rieng gi 1 view). Khong import CHEO tu
+// CalendarView.tsx (file do khong export mang nay) - lap lai gia tri hex
+// (cung tinh than 2 noi tung co 2 ban COLOR_PALETTE/EVENT_COLOR_PALETTE
+// giong het nhau truoc do, chi khac TEN bien).
 const COLOR_PALETTE = [
-  "#007aff", "#ff9500", "#34c759", "#af52de", "#ff3b30",
-  "#30b0c7", "#5856d6", "#ff2d55", "#a2845e", "#8e8e93",
+  "#8B5CF6", "#6366F1", "#EF4444", "#EC4899",
+  "#22C55E", "#14B8A6", "#F59E0B", "#647488",
 ];
 function hashString(s: string): number {
   let h = 0;
@@ -146,6 +152,24 @@ function formatDueLabel(reminder: Reminder): string {
   if (!reminder.dueDate) return "No due date";
   const date = formatShortDate(reminder.dueDate);
   return reminder.dueTime ? `Due ${date}, ${formatHM12(reminder.dueTime)}` : `Due ${date}`;
+}
+// [2026-10-08] "3. Task Status Colors" - yeu cau nguoi dung ap dung het
+// config mau vao cac element lich. Reminder (calendar-types.ts) khong co 1
+// field "status" enum rieng (chi co `completed: boolean` + `dueDate` suy ra
+// qua/chua qua han) - anh xa 3 trang thai THAT SU xac dinh duoc tu du lieu
+// hien co (Completed/Overdue/Normal), bo qua 3 nhan con lai cua spec (In
+// Progress/Needs Attention/Cancelled - KHONG co khai niem tuong ung nao
+// trong Reminder/CalendarEvent hien co, bia them se la gia lap du lieu).
+function dueLabelColor(reminder: Reminder): string {
+  if (reminder.completed) return "#94A3B8"; // Completed
+  if (reminder.dueDate) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (new Date(`${reminder.dueDate}T00:00:00`).getTime() < today.getTime()) {
+      return "#EF4444"; // Overdue
+    }
+  }
+  return "var(--planner-text-secondary)"; // Normal/Scheduled - giu nguyen mau cu
 }
 
 // "Today"/"Tomorrow"/"Thu, Oct 10"/"Next Week"... - spec vi du cho by_date.
@@ -333,7 +357,7 @@ function ReminderCard({
             {reminder.flagged && <Flag size={12} fill="var(--mset-warning)" style={{ color: "var(--mset-warning)" }} />}
           </div>
         </div>
-        <p className="text-[12px] text-[color:var(--planner-text-secondary)]">{formatDueLabel(reminder)}</p>
+        <p className="text-[12px]" style={{ color: dueLabelColor(reminder) }}>{formatDueLabel(reminder)}</p>
         {reminder.tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
             {reminder.tags.map((t) => (

@@ -104,42 +104,68 @@ const WEEKDAY_SHORT_MON_START = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const HOUR_ROW_HEIGHT = 48;
 
-const EVENT_COLOR_PALETTE = [
-  "#007aff", "#ff9500", "#34c759", "#af52de", "#ff3b30",
-  "#30b0c7", "#5856d6", "#ff2d55", "#a2845e", "#8e8e93",
-];
+// [2026-10-08] "Work Type Colors" + "Color Pair (Main + Light + Border)" -
+// yeu cau nguoi dung dua 1 anh spec day du (5 phan: Base/Work Type/Task
+// Status/Event Element Styles/Color Pair) roi "lấy thêm config trong cả 5
+// phần để sửa lại màu cho toàn bộ các element trong lịch". CalendarEvent
+// (calendar-types.ts) chi co 1 ten tu do `calendar: string` (KHONG phai 1
+// enum category co dinh Study/Meeting/Deadline/...) - giu NGUYEN co che suy
+// mau ON DINH qua hash ten (nhu truoc), nhung RUT tu bang nay (8 "Work Type")
+// thay vi 10 mau Apple chung chung cu, VA dung DUNG hex "Light"/"Border" cua
+// tung mau (khong con tu tinh color-mix xap xi nua).
+const CATEGORY_COLORS = [
+  { name: "Study/Learning", main: "#8B5CF6", light: "#F3E8FF", border: "#C4B5FD" },
+  { name: "Meeting", main: "#6366F1", light: "#E0E7FF", border: "#A5B4FC" },
+  { name: "Deadline/Important", main: "#EF4444", light: "#FEE2E2", border: "#FCA5A5" },
+  { name: "Personal/Life", main: "#EC4899", light: "#FCE7F3", border: "#F9A8D4" },
+  { name: "Sports/Health", main: "#22C55E", light: "#DCFCE7", border: "#86EFAC" },
+  { name: "Call/Communication", main: "#14B8A6", light: "#CCFBF1", border: "#5EEAD4" },
+  { name: "Break/Rest", main: "#F59E0B", light: "#FEF3C7", border: "#FCD34D" },
+  { name: "Other/Default", main: "#647488", light: "#F1F5F9", border: "#CBD5E1" },
+] as const;
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   return h;
 }
+function categoryForName(name: string): (typeof CATEGORY_COLORS)[number] {
+  return CATEGORY_COLORS[hashString(name) % CATEGORY_COLORS.length];
+}
 // CalendarEvent (calendar-types.ts) khong tu mang mau rieng (chi 1 ten
 // `calendar: string`) - suy mau on dinh tu ten calendar, giong pattern da
-// dung o TaskListView.tsx.
+// dung o TaskListView.tsx. Giu tra ve 1 hex DON (main) de tuong thich voi
+// moi noi dang dung 1 string (dot mau, accent bar...) - noi can ca light/
+// border (the su kien chinh) goi THANG categoryForName() thay vi ham nay.
 function colorForEvent(event: CalendarEvent): string {
-  return EVENT_COLOR_PALETTE[hashString(event.calendar) % EVENT_COLOR_PALETTE.length];
+  return categoryForName(event.calendar).main;
 }
 // [2026-10-08] "Phần thẻ trên lịch giữ style kiểu cũ... màu chủ đạo là
 // thanh dọc gần mép trái, màu nền nhạt" - yeu cau nguoi dung: quay ve dung
 // style the da chot cho TimedItemChip trong PlannerShell.tsx (nen pastel
 // nhat "accentSoft" + thanh accent trai "accentStrong" + chu MAU TOI, KHONG
-// phai khoi mau DAC + chu trang nhu truoc). CalendarEvent (calendar-types.ts)
-// chi co 1 hex DUY NHAT (tu colorForEvent), KHONG co san cap accentSoft/
-// accentStrong nhu LifeItemPalette - tu pha nen nhat qua color-mix thay vi
-// dinh nghia them 1 bang palette moi.
+// phai khoi mau DAC + chu trang nhu truoc).
+// [2026-10-08] Doi tu color-mix xap xi (16%) SANG dung DUNG hex "Light" cua
+// tung category (section 5 "Color Pair") - yeu cau nguoi dung ap dung het
+// config anh vao cac element lich, khong chi dung lam goi y ty le %% nua.
 function softBgStyle(hex: string): React.CSSProperties {
-  return { backgroundColor: `color-mix(in srgb, ${hex} 16%, white)` };
+  const cat = CATEGORY_COLORS.find((c) => c.main === hex);
+  return { backgroundColor: cat?.light ?? `color-mix(in srgb, ${hex} 16%, white)` };
 }
 // [2026-10-08 fix] "không để thanh màu sát lề, cách trái ra 3px" - yeu cau
 // nguoi dung: `border-left` ve SAT mep trai THAT (border nam DUNG tai bien
 // box trai, khong co cach nao "lui vao" bang chinh thuoc tinh border). Doi
 // sang 1 <span> con, dinh vi TUYET DOI voi `left: 3px` rieng - card cha can
 // la `relative` + co du `pl-*` de chu khong de len thanh mau.
+// [2026-10-08] w-1 (4px, truoc w-[3px]) - khop "Left border (category
+// color) • 4px" trong section 4 "Event Element Styles". Van giu left-[3px]
+// (cach le trai 3px, yeu cau nguoi dung truoc do) - 2 con so khac nhau,
+// khong lien quan: 1 cai la KHOANG CACH toi mep the, 1 cai la BE RONG cua
+// chinh thanh mau.
 function EventAccentBar({ color }: { color: string }) {
   return (
     <span
       aria-hidden="true"
-      className="absolute top-1 bottom-1 left-[3px] w-[3px] rounded-full"
+      className="absolute top-1 bottom-1 left-[3px] w-1 rounded-full"
       style={{ background: color }}
     />
   );
@@ -639,46 +665,62 @@ function TimeGridView({
                   <div key={h} className="border-t border-[color:var(--planner-border-soft)]" style={{ height: HOUR_ROW_HEIGHT }} />
                 ))}
                 <NowLine dayDate={date} />
-                {segments.map((s) => (
-                  <button
-                    key={s.event.id}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEventClick(s.event);
-                    }}
-                    className="absolute z-[2] flex cursor-pointer flex-col items-start gap-0.5 overflow-hidden rounded-[4px] py-1 pr-1.5 pl-[9px] text-left text-[color:var(--planner-text-primary)]"
-                    style={{
-                      top: (s.startMin / 60) * HOUR_ROW_HEIGHT,
-                      height: Math.max(18, ((s.endMin - s.startMin) / 60) * HOUR_ROW_HEIGHT),
-                      left: `calc(${s.leftPercent}% + 2px)`,
-                      width: `calc(${s.widthPercent}% - 4px)`,
-                      ...softBgStyle(colorForEvent(s.event)),
-                    }}
-                  >
-                    <EventAccentBar color={colorForEvent(s.event)} />
-                    <span className="truncate text-[11px] font-semibold">{s.event.title}</span>
-                    {detailed && (
-                      <>
-                        <span className="truncate text-[10px] text-[color:var(--planner-text-secondary)]">
-                          {formatHM12(s.event.startTime!)} — {formatHM12(s.event.endTime!)}
-                        </span>
-                        {s.event.location && (
-                          <span className="flex items-center gap-0.5 truncate text-[10px] text-[color:var(--planner-text-secondary)]">
-                            <MapPin size={9} className="shrink-0" />
-                            {s.event.location}
+                {segments.map((s) => {
+                  // [2026-10-08] Tinh 1 LAN ca main/light/border cua category -
+                  // yeu cau nguoi dung ap dung het section 4 "Event Element
+                  // Styles" + section 5 "Color Pair" cho the su kien CHINH
+                  // (week/day timed view, khop dung bo cuc anh spec nguoi dung
+                  // dua). KHONG doi font-size/padding theo dung px tuyet doi
+                  // trong anh (14px/13px/12-14px padding) - the o day deliberately
+                  // NHO/dac (grid 24h trong khong gian han che, event ngan co
+                  // the chi cao ~12-18px), ap y HET spec se lam vo bo cuc voi
+                  // event ngan; GIU nguyen ty le font/padding compact hien co,
+                  // CHI ap mau (main/light) + border-radius + border-color
+                  // (section 5) - phan AN TOAN de ap dung ma khong can redesign
+                  // lai ca mat do luoi gio (ngoai pham vi 1 lan sua mau).
+                  const cat = categoryForName(s.event.calendar);
+                  return (
+                    <button
+                      key={s.event.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEventClick(s.event);
+                      }}
+                      className="absolute z-[2] flex cursor-pointer flex-col items-start gap-0.5 overflow-hidden rounded-[8px] border py-1 pr-1.5 pl-[9px] text-left text-[color:var(--planner-text-primary)]"
+                      style={{
+                        top: (s.startMin / 60) * HOUR_ROW_HEIGHT,
+                        height: Math.max(18, ((s.endMin - s.startMin) / 60) * HOUR_ROW_HEIGHT),
+                        left: `calc(${s.leftPercent}% + 2px)`,
+                        width: `calc(${s.widthPercent}% - 4px)`,
+                        backgroundColor: cat.light,
+                        borderColor: cat.border,
+                      }}
+                    >
+                      <EventAccentBar color={cat.main} />
+                      <span className="truncate text-[11px] font-semibold">{s.event.title}</span>
+                      {detailed && (
+                        <>
+                          <span className="truncate text-[10px] text-[color:var(--planner-text-secondary)]">
+                            {formatHM12(s.event.startTime!)} — {formatHM12(s.event.endTime!)}
                           </span>
-                        )}
-                        {s.event.invitees.length > 0 && (
-                          <span className="flex items-center gap-0.5 truncate text-[10px] text-[color:var(--planner-text-secondary)]">
-                            <UsersIcon size={9} className="shrink-0" />
-                            {s.event.invitees.length}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </button>
-                ))}
+                          {s.event.location && (
+                            <span className="flex items-center gap-0.5 truncate text-[10px] text-[color:var(--planner-text-secondary)]">
+                              <MapPin size={9} className="shrink-0" />
+                              {s.event.location}
+                            </span>
+                          )}
+                          {s.event.invitees.length > 0 && (
+                            <span className="flex items-center gap-0.5 truncate text-[10px] text-[color:var(--planner-text-secondary)]">
+                              <UsersIcon size={9} className="shrink-0" />
+                              {s.event.invitees.length}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             );
           })}

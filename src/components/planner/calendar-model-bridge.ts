@@ -62,10 +62,16 @@ import type {
 } from "./calendar-types";
 
 export const PLANNER_CALENDAR_NAMES = ["Personal", "Work", "Family"];
+// [2026-10-08] Mau theo "Work Type Colors" (xem CATEGORY_COLORS trong
+// CalendarView.tsx) thay vi 3 mau Apple chung chung cu - yeu cau nguoi dung
+// ap dung mau moi cho het cac element trong lich. Chon THU CONG (khong qua
+// hash) cho 3 ten co dinh nay de khop Y NGHIA ro rang: Personal -> Personal/
+// Life, Work -> Meeting, Family -> Sports/Health (gan nhat voi hoat dong gia
+// dinh trong 8 nhom goc).
 export const PLANNER_REMINDER_LISTS = [
-  { name: "Personal", color: "#ff3b30" },
-  { name: "Work", color: "#007aff" },
-  { name: "Family", color: "#ff9500" },
+  { name: "Personal", color: "#EC4899" },
+  { name: "Work", color: "#6366F1" },
+  { name: "Family", color: "#22C55E" },
 ];
 
 function pad2(n: number): string {
