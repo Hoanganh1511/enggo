@@ -327,24 +327,131 @@
    doc dao voi tien to "--planner-", khong co nguy co trung/leak sang khu
    vuc khac) de moi noi (ke ca noi dung Portal rot ra ngoai body) deu ke
    thua duoc, khong can threading 1 `container` rieng qua tung PopoverContent. */
+/* [2026-10-08] "áp dụng thay đổi cho trang planner luôn" - yeu cau nguoi
+   dung: retint TOAN BO --planner-* sang dung bang mau/nguyen tac cua "style
+   system hoan chinh" (macOS System Settings) vua ap dung cho
+   PlannerSettingsModal.tsx, ANH XA tu --mset-* (xem khoi :root ngay duoi
+   day). Chi doi GIA TRI, KHONG doi TEN token - moi component trong
+   PlannerShell.tsx (WeekTimeGrid/TimedItemChip/sidebar/toolbar/popover/
+   form...) dung var(--planner-*) deu TU DONG nhan giao dien moi, khong can
+   sua tung file. Border chuyen tu hex DAC (#e9edf2) sang rgba(0,0,0,..) mo -
+   dung nguyen tac "05 - No heavy borders" ("Border chỉ để định nghĩa
+   boundary khi thực sự cần"). primary doi tu xanh duong nhat #4f7ff0 sang
+   dung --accent #007AFF cua chinh spec (nguyen tac "03 - Accent is
+   functional": 1 mau xanh DUY NHAT cho action/selection/focus xuyen suot,
+   khong con 2 bang mau xanh khac nhau giua Settings va phan con lai cua
+   Planner). */
 :root {
-  --planner-bg: #f7f8fa;
-  --planner-surface: #ffffff;
-  --planner-surface-soft: #fafbfc;
-  --planner-text-primary: #172033;
-  --planner-text-secondary: #667085;
-  --planner-text-muted: #98a2b3;
-  --planner-border: #e9edf2;
-  --planner-border-soft: #f0f2f5;
+  --planner-bg: var(--mset-background);
+  --planner-surface: var(--mset-surface);
+  --planner-surface-soft: var(--mset-surface-secondary);
+  --planner-text-primary: var(--mset-text-primary);
+  --planner-text-secondary: var(--mset-text-secondary);
+  --planner-text-muted: var(--mset-text-tertiary);
+  --planner-border: var(--mset-border-strong);
+  --planner-border-soft: var(--mset-border);
   /* [2026-10-06] Rieng cho line ke NGANG/DOC trong luoi gio WeekTimeGrid -
      yeu cau nguoi dung: "line ngang & dọc trong lịch mờ đi 30% nữa". Tach
      RIENG khoi --planner-border-soft (dang dung CHUNG cho rat nhieu border
      form/card/divider khac trong PlannerShell) de khong lam mo nhung cho
      KHONG phai luoi gio. 70% opacity cua --planner-border-soft ~ "mo di 30%". */
   --planner-grid-line: color-mix(in srgb, var(--planner-border-soft) 70%, transparent);
-  --planner-primary: #4f7ff0;
-  --planner-primary-soft: #f3f6ff;
-  --planner-today-bg: #f7f9ff;
+  --planner-primary: var(--mset-accent);
+  --planner-primary-soft: var(--mset-accent-soft);
+  --planner-today-bg: var(--mset-accent-subtle);
+}
+
+/* [2026-10-08] Design system RIENG cho PlannerSettingsModal.tsx - yeu cau
+   nguoi dung dua 1 "style system hoan chinh" (36 muc: color/typography/
+   modal/sidebar/section/button/segmented/toggle/checkbox/input/dropdown/
+   shadow/spacing/radius/motion...) lay cam hung macOS System Settings.
+   Tien to "--mset-" (MacSettings) - KHONG tai dung --planner-* (gia tri
+   KHAC han, xanh duong #007AFF thay vi #4f7ff0, nen #F5F5F7 thay vi #f7f8fa)
+   VA KHONG dung ten trung voi token goc (--background/--primary/--border...
+   da ton tai o :root voi gia tri RIENG cua toan app, de chung se GHI DE
+   nham sang moi noi khac dang doc chung ten do). Dat o :root (khong phai 1
+   class ".xxx-scope" quet qua 1 div) CUNG LY DO voi --planner-* o tren: modal
+   nay dung Radix Dialog.Portal, teleport THANG ra document.body - ngoai
+   pham vi DOM cua bat ky div "scope" nao, :root la noi DUY NHAT moi noi (ke
+   ca noi dung Portal) deu ke thua duoc chac chan. */
+:root {
+  --mset-background: #f5f5f7;
+  --mset-surface: #ffffff;
+  --mset-surface-secondary: #f8f8fa;
+  --mset-surface-tertiary: #f2f2f5;
+
+  --mset-text-primary: #1d1d1f;
+  --mset-text-secondary: #6e6e73;
+  --mset-text-tertiary: #86868b;
+  --mset-text-disabled: #a1a1a6;
+
+  --mset-border: rgba(0, 0, 0, 0.08);
+  --mset-border-strong: rgba(0, 0, 0, 0.12);
+  --mset-divider: rgba(0, 0, 0, 0.07);
+
+  --mset-accent: #007aff;
+  --mset-accent-hover: #006fe6;
+  --mset-accent-active: #005fcc;
+  --mset-accent-soft: #eaf3ff;
+  --mset-accent-subtle: #f3f8ff;
+
+  --mset-lavender: #edebff;
+  --mset-lavender-strong: #dcd8ff;
+  --mset-blue-soft: #e5f0ff;
+  --mset-peach-soft: #fff0e3;
+  --mset-green-soft: #e8f7ee;
+
+  --mset-success: #34c759;
+  --mset-warning: #ff9f0a;
+  --mset-danger: #ff3b30;
+  --mset-info: #007aff;
+}
+
+/* 23. SCROLLBAR - "Đừng dùng scrollbar mặc định quá thô", rieng cho vung
+   content cuon cua PlannerSettingsModal. */
+.mset-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.16) transparent;
+}
+.mset-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.mset-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mset-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.mset-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.24);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* [2026-10-08] "02. TYPOGRAPHY" - uu tien font he thong macOS (SF Pro) truoc
+   Inter (fallback cho may khong phai Mac) - yeu cau nguoi dung "áp dụng thay
+   đổi cho trang planner luôn". --planner-font-family la 1 CUSTOM PROPERTY
+   (khong phai 1 CSS rule ap san) - vi mot so noi trong khu vuc Planner (vd
+   PlannerSettingsModal.tsx, popover chi tiet task trong TimedItemChip) render
+   qua Radix Dialog/Popover.Portal, teleport THANG ra document.body - NGOAI
+   pham vi DOM cua div ".planner-scope", font-family dat qua SELECTOR
+   (.planner-scope *) se KHONG inherit toi duoc (giong het ly do --planner-*
+   phai chuyen tu class sang :root truoc day) - dinh nghia 1 BIEN o :root
+   (ke thua duoc o MOI NOI, ke ca Portal) de tung noi CHU DONG ap dung qua
+   `font-family: var(--planner-font-family)` (xem PlannerShell.tsx goc +
+   PlannerSettingsModal.tsx Dialog.Content), thay vi dua vao CSS inheritance
+   tu dong (se "gay" tai ranh gioi Portal). */
+:root {
+  --planner-font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "SF Pro Text",
+    var(--font-sans),
+    sans-serif;
 }
 
 @theme inline {

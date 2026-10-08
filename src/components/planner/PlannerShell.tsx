@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import {
   Bell,
   CalendarDays,
-  CalendarCheck2,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -15,6 +14,7 @@ import {
   Clock,
   Flame,
   ListFilter,
+  Loader2,
   Pencil,
   Plus,
   Settings,
@@ -95,6 +95,26 @@ const WEEKDAY_SHORT_BY_JS_DAY = [
   "Fri",
   "Sat",
 ];
+// [2026-10-08] 1 ky tu DUY NHAT, bat dau Thu Hai - yeu cau nguoi dung (mini-
+// calendar sidebar): "Ký hiệu chữ cái đầu theo tiếng Anh" + "body của nó từ
+// thứ 2 tới chủ nhật". Rieng cho MiniMonthCalendar (khac WEEKDAY_LABELS 3-ky-
+// tu dang dung cho MonthGrid/view Thang chinh).
+const WEEKDAY_INITIAL_MON_START = ["M", "T", "W", "T", "F", "S", "S"];
+// [2026-10-08] "các check box để filter: Personal | Family | Work |
+// Birthdays | Holidays. Mỗi ô checkbox một màu" - yeu cau nguoi dung. Mau
+// CHON TU DO (nguoi dung khong dua hex cu the) - 5 mau PHAN BIET ro, kieu
+// "danh muc lich" quen thuoc (giong macOS Calendar/Google Calendar).
+const SIDEBAR_FILTER_OPTIONS: {
+  key: "personal" | "family" | "work" | "birthdays" | "holidays";
+  label: string;
+  color: string;
+}[] = [
+  { key: "personal", label: "Personal", color: "#4F8CC9" },
+  { key: "family", label: "Family", color: "#22c55e" },
+  { key: "work", label: "Work", color: "#f97316" },
+  { key: "birthdays", label: "Birthdays", color: "#ec4899" },
+  { key: "holidays", label: "Holidays", color: "#a855f7" },
+];
 const WEEKDAY_FULL_EN = [
   "MONDAY",
   "TUESDAY",
@@ -112,20 +132,6 @@ const WEEKDAY_LONG_VI = [
   "Thứ Sáu",
   "Thứ Bảy",
   "Chủ Nhật",
-];
-const MONTH_LABELS = [
-  "Tháng 1",
-  "Tháng 2",
-  "Tháng 3",
-  "Tháng 4",
-  "Tháng 5",
-  "Tháng 6",
-  "Tháng 7",
-  "Tháng 8",
-  "Tháng 9",
-  "Tháng 10",
-  "Tháng 11",
-  "Tháng 12",
 ];
 const MONTH_LABELS_EN = [
   "January",
@@ -558,6 +564,57 @@ export function PlannerShell({
   // [2026-10-07] Settings modal (icon moi cuoi toolbar tren cung) - xem
   // PlannerSettingsModal.tsx.
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // [2026-10-08] Sidebar trai (xem SidebarContent ben duoi) - yeu cau nguoi
+  // dung: "head của sidebar... tab 1: về lịch... tab 2: draft (thiết kế
+  // sau)". "draft" CHUA co noi dung that (yeu cau se toi SAU) - gio chi can
+  // UI tab + placeholder.
+  const [sidebarTab, setSidebarTab] = useState<"calendar" | "draft">(
+    "calendar",
+  );
+  // [2026-10-08] "các check box để filter: Personal | Family | Work |
+  // Birthdays | Holidays" - yeu cau nguoi dung. CHUA co field du lieu THAT
+  // nao trong model PlannerItem khop voi 5 nhom nay (khac han LifeItemType
+  // Action/Event/Habit/Reflection da co) - hien tai CHI la UI/trang thai
+  // THUAN hien thi (tick/bo tick duoc), CHUA thuc su loc task nao tren luoi,
+  // vi khong co du lieu de loc theo. Se can nguoi dung xac nhan Y NGHIA cua
+  // 5 nhom nay (field moi? anh xa tu itemType hien co?) truoc khi noi vao
+  // logic loc that.
+  const [calendarFilters, setCalendarFilters] = useState({
+    personal: true,
+    family: true,
+    work: true,
+    birthdays: true,
+    holidays: true,
+  });
+  // [2026-10-08] Mini-calendar sidebar - "nhay" CA anchor (tuan/thang dang
+  // xem) LAN selectedDate ve DUNG ngay vua bam, khac `selectDate()` o tren
+  // (CHI doi selectedDate, gia dinh ngay do DA nam trong pham vi dang xem
+  // san - dung cho click 1 the tren CHINH luoi dang hien). Mini-calendar co
+  // the dang xem 1 thang KHAC han thang/tuan chinh dang hien, nen can doi CA
+  // anchor + tai lai du lieu dung pham vi moi.
+  // [2026-10-08] CHI reload khi ngay moi THAT SU roi ra ngoai pham vi
+  // (from/to) DA tai cho anchor hien tai - yeu cau nguoi dung: "Sao chuyển
+  // ngày mà phải render lại lịch vậy? vẫn trong tuần đấy thì đừng render
+  // lại". Truoc day goi reload() VO DIEU KIEN moi lan bam, du ngay moi van
+  // nam trong CUNG 1 tuan/thang da co san du lieu - gay load/flicker (xem
+  // `isLoading`) khong can thiet. Cung PATTERN da dung o changeSelectedDay()
+  // ben duoi, chi khac la jumpToDate tinh range theo chinh `date` MOI (tu
+  // mini-calendar co the dang hien 1 thang KHAC han thang anchor hien tai,
+  // khong the dung lai range cua anchor CU de so sanh "trong/ngoai").
+  function jumpToDate(date: string) {
+    setSelectedDate(date);
+    setSelectedItemId(null);
+    const currentRange = rangeForMode(viewMode, anchor);
+    if (date >= currentRange.from && date <= currentRange.to) {
+      // Van trong CUNG pham vi da tai - CHI doi anchor (de "Tháng X, Năm"/
+      // tuan dang hien cap nhat dung neu can) nhung KHONG goi reload(), du
+      // lieu da co san tu truoc, reload lai se chi lam flicker vo ich.
+      setAnchor(date);
+      return;
+    }
+    setAnchor(date);
+    void reload(rangeForMode(viewMode, date));
+  }
 
   async function reload(range: { from: string; to: string }) {
     setIsLoading(true);
@@ -876,9 +933,14 @@ export function PlannerShell({
   // ngat NGAY GIUA 1 ngay, rat kho doc. Render rieng moi ngay trong 1 the
   // whitespace-nowrap (xem JSX ben duoi) dam bao NEU phai xuong dong thi chi
   // xuong dong tai mui ten "→" (giua 2 ngay), khong bao gio vo giua 1 ngay.
-  const rangeStart = startOfWeek(anchor);
-  const rangeEnd = addDays(startOfWeek(anchor), 6);
-  const monthLabel = `${MONTH_LABELS[new Date(anchor).getMonth()]} ${new Date(anchor).getFullYear()}`;
+  // [2026-10-08] "Phần head giờ chỉ để ví dụ như sau: April 2026" - yeu cau
+  // nguoi dung (mockup macOS Calendar). Thay THE HAN cho rangeStart/rangeEnd
+  // (date-range "2026-10-05 → 2026-10-11") VA monthLabel (tieng Viet) cu -
+  // 1 nhan DUY NHAT "Tháng Năm" tieng Anh (dung MONTH_LABELS_EN, khop dung
+  // mockup), LUON theo thang cua `anchor` bat ke dang o che do Tuần hay
+  // Tháng.
+  const anchorMonthName = MONTH_LABELS_EN[new Date(anchor).getMonth()];
+  const anchorYearLabel = new Date(anchor).getFullYear();
 
   return (
     <PlannerSettingsProvider>
@@ -895,6 +957,12 @@ export function PlannerShell({
           style={{
             backgroundImage:
               "radial-gradient(circle at top left, #eef4ff 0%, transparent 30%)",
+            // [2026-10-08] "áp dụng thay đổi cho trang planner luôn" - font
+            // SF Pro uu tien (var(--planner-font-family), xem globals.css) -
+            // dat qua inline style (khong phai class) de CHAC CHAN ap dung,
+            // moi phan tu THUONG (khong qua Portal) ben trong tu inherit
+            // binh thuong theo CSS.
+            fontFamily: "var(--planner-font-family)",
           }}
         >
           {/* [2026-10-07] Sidebar trai MOI - yeu cau nguoi dung: "Thêm một
@@ -908,10 +976,76 @@ export function PlannerShell({
               dung ben canh (khong phai 1 con so co dinh). shrink-0 giu DUNG
               220px du phan ben canh co hep lai the nao. */}
           <div className="flex items-stretch">
-            <aside className="w-[220px] shrink-0 bg-white">
-              {/* TODO: noi dung sidebar - hien dang de TRONG, cho yeu cau
-                  tiep theo ve the hien gi ben trong (dieu huong/bo loc/mini
-                  calendar/...). */}
+            <aside className="flex w-[300px] shrink-0 flex-col gap-4 overflow-y-auto bg-white px-3.5 py-4">
+              {/* [2026-10-08] Head sidebar - yeu cau nguoi dung: "dồn về bên
+                  phải lần lượt là: phần tabs, tab 1: về lịch... tab 2: draft
+                  (thiết kế sau)". justify-end dua CA cum tab ve sat PHAI. */}
+              <div className="flex items-center justify-end gap-1 rounded-lg bg-[var(--planner-surface-soft)] p-1">
+                <button
+                  type="button"
+                  onClick={() => setSidebarTab("calendar")}
+                  className={cn(
+                    "cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
+                    sidebarTab === "calendar"
+                      ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)]"
+                      : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                  )}
+                >
+                  Lịch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSidebarTab("draft")}
+                  className={cn(
+                    "cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
+                    sidebarTab === "draft"
+                      ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)]"
+                      : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                  )}
+                >
+                  Draft
+                </button>
+              </div>
+
+              {sidebarTab === "calendar" ? (
+                <>
+                  {/* [2026-10-08] "các check box để filter: Personal | Family
+                      | Work | Birthdays | Holidays. Mỗi ô checkbox một màu,
+                      icon tick trắng. custom ô checkbox" - yeu cau nguoi
+                      dung. Xem comment calendarFilters state o tren: hien
+                      CHI la UI (chua loc task that, chua co field du lieu
+                      tuong ung). */}
+                  <div className="flex flex-col gap-2">
+                    {SIDEBAR_FILTER_OPTIONS.map((opt) => (
+                      <SidebarCheckboxRow
+                        key={opt.key}
+                        label={opt.label}
+                        color={opt.color}
+                        checked={calendarFilters[opt.key]}
+                        onChange={(v) =>
+                          setCalendarFilters((prev) => ({
+                            ...prev,
+                            [opt.key]: v,
+                          }))
+                        }
+                      />
+                    ))}
+                  </div>
+
+                  <div className="border-t border-[color:var(--planner-border-soft)]" />
+
+                  {/* "Ngay kề dưới là lịch theo tháng" - yeu cau nguoi dung. */}
+                  <MiniMonthCalendar
+                    anchor={anchor}
+                    selectedDate={selectedDate}
+                    onSelect={jumpToDate}
+                  />
+                </>
+              ) : (
+                <p className="text-[12.5px] text-[color:var(--planner-text-muted)]">
+                  Sắp có.
+                </p>
+              )}
             </aside>
             {/* [2026-10-05] Bo max-w-[1800px] (truoc day gioi han giua trang,
           thua han 1 khoang xam lon 2 ben tren man hinh rong) - yeu cau
@@ -921,8 +1055,8 @@ export function PlannerShell({
           lam "le trang" toi thieu. [2026-10-07] flex-1 min-w-0 - phai them
           sau khi sidebar moi o tren tro thanh 1 flex item ANH EM, tranh div
           nay BI EP CO LAI vuot muc hoac TRAN qua sidebar. */}
-          <div className="flex-1 min-w-0 px-7 py-4 lg:px-11">
-            {/* [2026-10-05] Nhom Header+ViewSwitcher+DateNav GOP vao 1 sidebar
+            <div className="flex-1 min-w-0 px-7 py-4 lg:px-8">
+              {/* [2026-10-05] Nhom Header+ViewSwitcher+DateNav GOP vao 1 sidebar
             NHO ben trai (truoc day xep thanh 2 hang NGANG phia tren, chiem
             mat ~200px chieu cao TRUOC KHI toi noi dung that) - yeu cau nguoi
             dung: "Nguyên phần cụm trên chiếm quá nhiều diện tích. Tạo cái
@@ -939,7 +1073,7 @@ export function PlannerShell({
             hinh con rat nhieu khoang trong ben duoi). CHI ap dung tu lg (3
             cot) tro len - duoi lg (xep chong doc) de moi khoi tu nhien theo
             chieu cao noi dung, ep h co dinh se rat xau khi xep doc. */}
-            {/* [2026-10-05] xl: (truoc day lg:) - bug phat hien qua kiem tra
+              {/* [2026-10-05] xl: (truoc day lg:) - bug phat hien qua kiem tra
             them: tai cac be rong "vua du" lg (~1024-1279px), 3 cot
             208px+1fr+380px chi con lai RAT IT cho cot calendar (7 cot ngay +
             1 cot nhan gio) - moi cot ngay con chua toi 40px, khong du cho
@@ -949,7 +1083,7 @@ export function PlannerShell({
             du rong hon han, dong thoi duoi xl van giu bo cuc xep CHONG DOC
             (grid-cols-1) von da kiem chung la hien thi TOT (lich chiem TRON
             chieu rong, khong bi 2 cot kia chia xe). */}
-            {/* [2026-10-07] Sidebar trai (208px, cao bang het 3 cot) GOP thanh 1
+              {/* [2026-10-07] Sidebar trai (208px, cao bang het 3 cot) GOP thanh 1
             THANH NGANG mong phia tren - yeu cau nguoi dung: "Cột bên trái
             giờ bỏ đi, chuyển nó lên thành 1 thanh ngang bên trên cùng, chia
             ra between 2 bên sao cho không để nó cao quá". Chia 2 nua qua
@@ -962,107 +1096,112 @@ export function PlannerShell({
             grid 2 cot ben duoi dung flex-1 min-h-0 de TU CHIA PHAN CAO CON
             LAI SAU thanh ngang - dam bao TONG chieu cao (thanh + grid) van
             khop dung 100dvh-112px nhu truoc, khong tran/thieu. */}
-            <div className="flex flex-col gap-3 xl:h-[calc(100dvh-112px)]">
-              <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] px-3.5 py-2 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="shrink-0 text-[16px] font-bold tracking-[-0.3px] text-[color:var(--planner-text-primary)]">
-                    Planner
-                  </h1>
-                  <div className="h-5 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
-                  {/* View Switcher (section 5) - gio xep NGANG (truoc day doc,
-                  khi con la 1 sidebar hep). */}
-                  <div className="flex items-center gap-0.5 rounded-xl border border-[color:var(--planner-border-soft)] bg-white/70 p-1">
-                    {(["week", "month"] as ViewMode[]).map((mode) => (
+              <div className="flex flex-col gap-3 xl:h-[calc(100dvh-112px)]">
+                <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] px-3.5 py-2 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* [2026-10-08] "Phần head giờ chỉ để ví dụ như sau: April
+                        2026    < Today >" - yeu cau nguoi dung (kem anh macOS
+                        Calendar). Thay THE HAN chu "Planner" tinh - gio la
+                        nhan Tháng/Năm DONG (anchorMonthLabel, theo dung thang
+                        cua anchor hien tai, dung tieng Anh nhu mockup), lon
+                        hon 15% so voi size cu cua "Planner" (16px * 1.15 =
+                        18.4px). Date-range "2026-10-05 → 2026-10-11" rieng
+                        CUNG bo - nhan thang/nam nay la thong tin DUY NHAT
+                        the hien "dang xem thoi diem nao" o toolbar nay. */}
+                    {/* [2026-10-08] Tach rieng Thang/Nam - yeu cau nguoi dung:
+                        "Phần này không phải chung nhau, mà cái năm sẽ nét
+                        thanh mảnh hơn, chỉ đậm cái tháng thôi". font-bold chi
+                        con o span Thang, span Nam dung font-normal + mau nhat
+                        hon (text-secondary thay vi text-primary) de ro net
+                        "mảnh" hon ro ret. */}
+                    <h1 className="shrink-0 text-[18.4px] tracking-[-0.3px]">
+                      <span className="font-bold text-[color:var(--planner-text-primary)]">
+                        {anchorMonthName}
+                      </span>{" "}
+                      <span className="font-normal text-[color:var(--planner-text-secondary)]">
+                        {anchorYearLabel}
+                      </span>
+                    </h1>
+                    <div className="h-5 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
+                    {/* View Switcher (section 5) - gio xep NGANG (truoc day doc,
+                  khi con la 1 sidebar hep). [2026-10-08] Bo nut "Hôm nay" KHOI
+                  day - chuyen sang cum "< Today >" ben phai (xem duoi), tranh
+                  2 nut "Hôm nay" trung chuc nang tren cung 1 toolbar. */}
+                    <div className="flex items-center gap-0.5 rounded-xl border border-[color:var(--planner-border-soft)] bg-white/70 p-1">
+                      {(["week", "month"] as ViewMode[]).map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => switchMode(mode)}
+                          className={cn(
+                            "cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
+                            viewMode === mode
+                              ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_2px_8px_rgba(20,30,50,0.06)]"
+                              : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                          )}
+                        >
+                          {mode === "week" ? "Tuần" : "Tháng"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* [2026-10-08] Cum "< Today >" - yeu cau nguoi dung (mockup
+                      macOS Calendar): prev chevron + nut "Today" + next
+                      chevron GOP LIEN thanh 1 khoi DUY NHAT (truoc day
+                      chevron rieng + the date-range rieng). */}
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center overflow-hidden rounded-[9px] border border-[color:var(--planner-border)] bg-white">
                       <button
-                        key={mode}
                         type="button"
-                        onClick={() => switchMode(mode)}
-                        className={cn(
-                          "cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
-                          viewMode === mode
-                            ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_2px_8px_rgba(20,30,50,0.06)]"
-                            : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
-                        )}
+                        onClick={() => changeAnchor(-1)}
+                        aria-label="Trước"
+                        className="flex size-8 shrink-0 cursor-pointer items-center justify-center transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
                       >
-                        {mode === "week" ? "Tuần" : "Tháng"}
+                        <ChevronLeft
+                          size={15}
+                          className="text-[color:var(--planner-text-secondary)]"
+                        />
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={goToToday}
+                        className="h-8 cursor-pointer border-x border-[color:var(--planner-border)] px-3 text-[13px] font-medium whitespace-nowrap text-[color:var(--planner-text-secondary)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-primary)]"
+                      >
+                        Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changeAnchor(1)}
+                        aria-label="Sau"
+                        className="flex size-8 shrink-0 cursor-pointer items-center justify-center transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+                      >
+                        <ChevronRight
+                          size={15}
+                          className="text-[color:var(--planner-text-secondary)]"
+                        />
+                      </button>
+                    </div>
+                    {/* [2026-10-07] Icon Settings - yeu cau nguoi dung: "Icon
+                  setting bổ sung vào cuối thanh toolbar trên cùng, phía bên
+                  phải đăng sau bộ chọn range day". Cung style size-8 voi 2
+                  nut prev/next chevron ben tren de dong bo. */}
                     <button
                       type="button"
-                      onClick={goToToday}
-                      className="flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium whitespace-nowrap text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-white hover:text-[color:var(--planner-primary)]"
+                      onClick={() => setSettingsOpen(true)}
+                      aria-label="Cài đặt"
+                      title="Cài đặt"
+                      className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
                     >
-                      <CalendarCheck2 size={14} strokeWidth={2} /> Hôm nay
+                      <Settings
+                        size={15}
+                        className="text-[color:var(--planner-text-secondary)]"
+                      />
                     </button>
                   </div>
                 </div>
 
-                {/* Date Navigation (section 6) - gio xep NGANG, prev/next canh
-                nhau roi den nhan khoang ngay/thang, thay vi 2 hang doc. */}
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => changeAnchor(-1)}
-                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-                  >
-                    <ChevronLeft
-                      size={15}
-                      className="text-[color:var(--planner-text-secondary)]"
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeAnchor(1)}
-                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-                  >
-                    <ChevronRight
-                      size={15}
-                      className="text-[color:var(--planner-text-secondary)]"
-                    />
-                  </button>
-                  <div className="flex items-center gap-1.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white px-2.5 py-1.5">
-                    <CalendarDays
-                      size={13}
-                      className="shrink-0 text-[color:var(--planner-text-muted)]"
-                    />
-                    {viewMode === "week" ? (
-                      <span className="flex flex-wrap items-baseline gap-x-1 text-[12.5px] leading-[1.4] font-semibold whitespace-nowrap text-[color:var(--planner-text-primary)]">
-                        <span className="whitespace-nowrap">{rangeStart}</span>
-                        <span
-                          className="shrink-0 text-[color:var(--planner-text-muted)]"
-                          aria-hidden="true"
-                        >
-                          →
-                        </span>
-                        <span className="whitespace-nowrap">{rangeEnd}</span>
-                      </span>
-                    ) : (
-                      <span className="text-[12.5px] leading-[1.4] font-semibold whitespace-nowrap text-[color:var(--planner-text-primary)]">
-                        {monthLabel}
-                      </span>
-                    )}
-                  </div>
-                  {/* [2026-10-07] Icon Settings - yeu cau nguoi dung: "Icon
-                  setting bổ sung vào cuối thanh toolbar trên cùng, phía bên
-                  phải đăng sau bộ chọn range day". Cung style size-8 voi 2
-                  nut prev/next chevron ben tren de dong bo. */}
-                  <button
-                    type="button"
-                    onClick={() => setSettingsOpen(true)}
-                    aria-label="Cài đặt"
-                    title="Cài đặt"
-                    
-                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[9px] border border-[color:var(--planner-border)] bg-white transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-                  >
-                    <Settings
-                      size={15}
-                      className="text-[color:var(--planner-text-secondary)]"
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {/* [2026-10-07] Bo Right panel (DayDetailPanel) - yeu cau nguoi
+                {/* [2026-10-07] Bo Right panel (DayDetailPanel) - yeu cau nguoi
                   dung: "ẩn Right panel đi" -> "bỏ hẳn, bỏ luôn khỏi layout".
                   Grid 2 cot [1fr_380px] truoc day gio CHI con 1 khoi lich
                   DUY NHAT, chiem TRON phan con lai (khong can grid nua, flex
@@ -1070,56 +1209,64 @@ export function PlannerShell({
                   DayDetailPanel CUNG mat theo - tao task gio CHI con qua keo
                   tha truc tiep tren luoi (xem handleQuickAddSubmit, o nhap
                   nam NGAY trong "thẻ default" luc keo). */}
-              <div className="flex min-h-0 flex-1 flex-col">
-                {/* Calendar Main Card (section 7). h-full + overflow-hidden - cho
+                <div className="relative flex min-h-0 flex-1 flex-col">
+                  {/* [2026-10-08] Lop phu loading co spinner - yeu cau nguoi
+                      dung: "Khi chuyển từ Tuần sang Tháng... lịch bị mờ đi 1
+                      tí, bạn đang dùng loading gì à? hãy để rõ trang thái
+                      bằng một lớp phủ loading có spinner". Truoc day CHI
+                      opacity-60 ca card (mo "lung lang", khong ro la dang
+                      tai hay bi disable) - gio 1 lop phu rieng (nen trang mo
+                      + backdrop-blur nhe) NAM TREN card, giua co spinner xoay
+                      ro rang. Dat o div BAO NGOAI CA 2 nhanh week/month (thay
+                      vi lap lai trong tung nhanh) - CHI can 1 dieu kien
+                      DUY NHAT, tranh sai lech. */}
+                  {isLoading && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[6px] bg-white/70 backdrop-blur-[1px]">
+                      <Loader2
+                        size={28}
+                        className="animate-spin text-[color:var(--planner-primary)]"
+                      />
+                    </div>
+                  )}
+                  {/* Calendar Main Card (section 7). h-full + overflow-hidden - cho
                 phep card GIAN HET chieu cao hang luoi, than luoi gio
                 (WeekTimeGrid) tu cuon RIENG BEN TRONG (flex-1, xem ben duoi)
                 thay vi ca card phinh to qua chieu cao cho phep. */}
-                {viewMode === "week" ? (
-                  <div
-                    className={cn(
-                      "flex h-full flex-col overflow-hidden rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
-                      isLoading && "opacity-60",
-                    )}
-                  >
-                    <WeekTimeGrid
-                      anchor={anchor}
-                      selectedDate={selectedDate}
-                      itemsByDate={itemsByDate}
-                      selectedItemId={selectedItemId}
-                      onSelect={selectDate}
-                      onSelectItem={setSelectedItemId}
-                      onSlotClick={handleSlotClick}
-                      draftPlaceholder={draftPlaceholder}
-                      onQuickAddSubmit={handleQuickAddSubmit}
-                      onQuickAddCancel={handleQuickAddCancel}
-                      onUpdateItemTime={handleUpdateItemTime}
-                      onUpdateItem={handleUpdateItem}
-                      onDelete={handleDelete}
-                      onDuplicate={handleDuplicate}
-                      onToggleDone={handleToggleDone}
-                      onAddChild={handleAddChild}
-                      typeColorOverrides={typeColorOverrides}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className={cn(
-                      "h-full overflow-y-auto rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]",
-                      isLoading && "opacity-60",
-                    )}
-                  >
-                    <MonthGrid
-                      anchor={anchor}
-                      selectedDate={selectedDate}
-                      itemsByDate={itemsByDate}
-                      onSelect={selectDate}
-                    />
-                  </div>
-                )}
+                  {viewMode === "week" ? (
+                    <div className="flex h-full flex-col overflow-hidden rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]">
+                      <WeekTimeGrid
+                        anchor={anchor}
+                        selectedDate={selectedDate}
+                        itemsByDate={itemsByDate}
+                        selectedItemId={selectedItemId}
+                        onSelect={selectDate}
+                        onSelectItem={setSelectedItemId}
+                        onSlotClick={handleSlotClick}
+                        draftPlaceholder={draftPlaceholder}
+                        onQuickAddSubmit={handleQuickAddSubmit}
+                        onQuickAddCancel={handleQuickAddCancel}
+                        onUpdateItemTime={handleUpdateItemTime}
+                        onUpdateItem={handleUpdateItem}
+                        onDelete={handleDelete}
+                        onDuplicate={handleDuplicate}
+                        onToggleDone={handleToggleDone}
+                        onAddChild={handleAddChild}
+                        typeColorOverrides={typeColorOverrides}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-full overflow-y-auto rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] p-3 shadow-[0_2px_8px_rgba(20,30,50,0.03)]">
+                      <MonthGrid
+                        anchor={anchor}
+                        selectedDate={selectedDate}
+                        itemsByDate={itemsByDate}
+                        onSelect={selectDate}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
         <PlannerSettingsModal
@@ -1746,6 +1893,7 @@ function TimedItemChip({
           onOpenAutoFocus={(e) => e.preventDefault()}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
+          style={{ fontFamily: "var(--planner-font-family)" }}
           className={cn(
             "relative z-50 overflow-hidden rounded-[12px] bg-white shadow-[0_10px_28px_rgba(20,30,50,.16)]",
             // [2026-10-07] "Popover rất chật chội... đừng để các element chồng
@@ -1760,26 +1908,42 @@ function TimedItemChip({
             detailMode === "edit" ? "w-[23rem]" : "w-80",
           )}
         >
-          {/* [2026-10-07] Header 3 cot CO DINH (trai/giua/phai) - yeu cau nguoi
-            dung: "header gồm: text ở giữa: 'Chi tiết sự kiện', bên phải ngoài
-            cùng là nút X close, bên trái ngoài cùng là nút Sửa". Thay THE HAN
-            cho hang doc 4 icon goc-tren-phai cu (Sửa/Xoá/Duplicate/Đóng) -
-            Xoá/Duplicate van con truy cap duoc qua SCHEDULE list o Right
-            Panel (TimelineRow/BigTimelineItem, khong mat tinh nang, chi
-            khong con lap lai o day nua cho popover nay gon nhu yeu cau). Che
-            do "edit" dung CHUNG 1 header (center doi chu, nut trai thanh
-            "Huỷ" goi onCancel cua chinh EditItemForm thay vi "Sửa") de luon
-            co 1 cho bam THOAT nhat quan du dang o che do nao. */}
+          {/* [2026-10-08] Header 3 cot CO DINH (trai/giua/phai) - yeu cau
+            nguoi dung: "Sửa để thành icon pencil, kế bên bổ sung thêm icon
+            Thùng rác để delete luôn". Nut "Sửa" dang CHU doi thanh icon
+            Pencil (highlight nen khi dang o che do edit, giong quy uoc
+            "active state" da dung o nhieu nut khac trong file nay) + them
+            DeleteConfirmButton (icon thung rac, da co san - tai dung y
+            NGUYEN component dang dung cho Schedule list, tu co popover xac
+            nhan truoc khi xoa that) ngay canh ben. */}
           <div className="flex items-center justify-between gap-2 border-b border-[color:var(--planner-border-soft)] px-3 py-2.5">
-            <button
-              type="button"
-              onClick={() =>
-                setDetailMode((m) => (m === "edit" ? "view" : "edit"))
-              }
-              className="cursor-pointer text-[12.5px] font-semibold text-[color:var(--planner-primary)] hover:underline"
-            >
-              {detailMode === "edit" ? "Huỷ" : "Sửa"}
-            </button>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() =>
+                  setDetailMode((m) => (m === "edit" ? "view" : "edit"))
+                }
+                aria-label={detailMode === "edit" ? "Huỷ sửa" : "Sửa"}
+                title={detailMode === "edit" ? "Huỷ sửa" : "Sửa"}
+                className={cn(
+                  "flex size-6 cursor-pointer items-center justify-center rounded-md transition-colors duration-150 ease-out",
+                  detailMode === "edit"
+                    ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
+                    : "text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]",
+                )}
+              >
+                <Pencil size={13} />
+              </button>
+              {detailMode === "view" && (
+                <DeleteConfirmButton
+                  label={item.title}
+                  onConfirm={() => {
+                    onDelete(item);
+                    setDetailOpen(false);
+                  }}
+                />
+              )}
+            </div>
             <p className="text-[13px] font-semibold text-[color:var(--planner-text-primary)]">
               {detailMode === "edit" ? "Chỉnh sửa" : "Chi tiết sự kiện"}
             </p>
@@ -1932,6 +2096,7 @@ function TimedItemChip({
                     open={reminderOpen}
                     align="start"
                     sideOffset={4}
+                    style={{ fontFamily: "var(--planner-font-family)" }}
                     className="z-[60] max-h-64 w-[calc(var(--radix-popover-trigger-width))] overflow-y-auto rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_8px_24px_rgba(20,30,50,.14)]"
                   >
                     {REMINDER_OPTIONS.map((opt) => (
@@ -2167,8 +2332,10 @@ function QuickAddPopover({
           style={{
             top,
             height,
-            borderColor: "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
-            backgroundColor: "color-mix(in srgb, var(--planner-primary) 20%, white)",
+            borderColor:
+              "color-mix(in srgb, var(--planner-primary) 45%, transparent)",
+            backgroundColor:
+              "color-mix(in srgb, var(--planner-primary) 20%, white)",
           }}
         />
       </PopoverAnchor>
@@ -2181,7 +2348,10 @@ function QuickAddPopover({
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         className="z-50 flex w-72 flex-col gap-2.5 rounded-[12px] border bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
-        style={{ borderColor: typePalette.accentBorder }}
+        style={{
+          borderColor: typePalette.accentBorder,
+          fontFamily: "var(--planner-font-family)",
+        }}
       >
         <input
           autoFocus
@@ -2215,6 +2385,143 @@ function QuickAddPopover({
         </div>
       </PopoverContent>
     </PopoverRoot>
+  );
+}
+
+// [2026-10-08] Checkbox TU VE (khong dung <input type="checkbox"> mac dinh
+// cua trinh duyet) - yeu cau nguoi dung: "Mỗi ô checkbox một màu, icon tick
+// trắng. custom ô checkbox, không để mặc định của web". Checked = to DAC
+// dung mau rieng (`color`) + dau tick trang; chua check = chi VIEN mau do
+// (nen trang) - phan biet ro 2 trang thai ma KHONG can doc text.
+function SidebarCheckboxRow({
+  label,
+  color,
+  checked,
+  onChange,
+}: {
+  label: string;
+  color: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center gap-2">
+      <span
+        role="checkbox"
+        aria-checked={checked}
+        tabIndex={0}
+        onClick={() => onChange(!checked)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onChange(!checked);
+          }
+        }}
+        className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-[5px] border-2 transition-colors duration-150 ease-out"
+        style={
+          checked
+            ? { backgroundColor: color, borderColor: color }
+            : { backgroundColor: "white", borderColor: color }
+        }
+      >
+        {checked && <Check size={11} strokeWidth={3} className="text-white" />}
+      </span>
+      <span className="text-[12.5px] font-medium text-[color:var(--planner-text-secondary)]">
+        {label}
+      </span>
+    </label>
+  );
+}
+
+// [2026-10-08] Mini-calendar THANG trong sidebar - yeu cau nguoi dung: "Ngay
+// kề dưới là lịch theo tháng, head có thông tin tháng mấy, năm nào ở chính
+// giữa. Left chevron và right chevron 2 bên. body của nó từ thứ 2 tới chủ
+// nhật. Ký hiệu chữ cái đầu theo tiếng Anh. Active màu vào today, nền màu số
+// trắng". Hien THANG cua CHINH `anchor` dang xem o lich chinh (khong co
+// state rieng) - bam ngay nao goi `onSelect` (jumpToDate ben PlannerShell)
+// de "nhay" CA lich chinh toi dung thang/ngay do, giu 2 ben LUON dong bo.
+function MiniMonthCalendar({
+  anchor,
+  selectedDate,
+  onSelect,
+}: {
+  anchor: string;
+  selectedDate: string;
+  onSelect: (date: string) => void;
+}) {
+  const monthStart = startOfMonth(anchor);
+  const monthEnd = endOfMonth(anchor);
+  const leadingBlank = (new Date(monthStart).getDay() + 6) % 7; // 0 = Thu Hai
+  const totalDaysInMonth = Number(monthEnd.slice(8, 10));
+  const today = toLocalISODate(new Date());
+  const cells: (string | null)[] = [
+    ...Array.from({ length: leadingBlank }, () => null),
+    ...Array.from({ length: totalDaysInMonth }, (_, i) =>
+      addDays(monthStart, i),
+    ),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const monthDate = new Date(monthStart);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-1">
+        <button
+          type="button"
+          onClick={() => onSelect(addMonths(anchor, -1))}
+          aria-label="Tháng trước"
+          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-text-secondary)]"
+        >
+          <ChevronLeft size={14} />
+        </button>
+        <span className="text-[12.5px] font-semibold text-[color:var(--planner-text-primary)]">
+          {MONTH_LABELS_EN[monthDate.getMonth()]} {monthDate.getFullYear()}
+        </span>
+        <button
+          type="button"
+          onClick={() => onSelect(addMonths(anchor, 1))}
+          aria-label="Tháng sau"
+          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-text-secondary)]"
+        >
+          <ChevronRight size={14} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-1">
+        {WEEKDAY_INITIAL_MON_START.map((label, i) => (
+          <div
+            key={i}
+            className="text-center text-[10.5px] font-semibold text-[color:var(--planner-text-muted)]"
+          >
+            {label}
+          </div>
+        ))}
+        {cells.map((d, i) =>
+          d === null ? (
+            <div key={`blank-${i}`} />
+          ) : (
+            <button
+              key={d}
+              type="button"
+              onClick={() => onSelect(d)}
+              className="flex items-center justify-center py-0.5"
+            >
+              <span
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full text-[11.5px] font-medium transition-colors duration-150 ease-out",
+                  d === today
+                    ? "bg-[color:var(--planner-primary)] font-semibold text-white"
+                    : d === selectedDate
+                      ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
+                      : "text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]",
+                )}
+              >
+                {Number(d.slice(8, 10))}
+              </span>
+            </button>
+          ),
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -2296,6 +2603,13 @@ function WeekTimeGrid({
     day: string;
     startMinute: number;
     currentMinute: number;
+    // [2026-10-08] "Click vào lịch hiện nét đứt luôn... khi nào giữ, kéo
+    // được 1 đoạn tương ứng 15 phút = 1/4 tiếng thì mới cho hiện" - yeu cau
+    // nguoi dung. true = DA keo du nguong (PIXEL THO, cung tieu chi voi
+    // onUp quyet dinh co mo QuickAddPopover hay khong) - khung net dut CHI
+    // ve khi co gia tri nay, khong con hien NGAY tu luc mousedown (truoc day
+    // slotDrag != null la ve ngay, du chua di chuyen chuot 1px nao).
+    started: boolean;
   } | null>(null);
   const slotDragRef = useRef<typeof slotDrag>(null);
 
@@ -2310,7 +2624,12 @@ function WeekTimeGrid({
       return Math.min(Math.max(snapped, firstVisibleMinute), lastVisibleMinute);
     }
     const startMinute = minuteFromClientY(e.clientY);
-    const initial = { day, startMinute, currentMinute: startMinute };
+    const initial = {
+      day,
+      startMinute,
+      currentMinute: startMinute,
+      started: false,
+    };
     slotDragRef.current = initial;
     setSlotDrag(initial);
     // [2026-10-07] Theo doi THEM pixel THO (chua snap) rieng - xem ly do day
@@ -2322,10 +2641,18 @@ function WeekTimeGrid({
 
     function onMove(ev: MouseEvent) {
       lastClientY = ev.clientY;
+      // [2026-10-08] "started" GIU NGUYEN true 1 khi da dat nguong (khong
+      // tu tat lai neu chuot keo nguoc ve gan diem bat dau) - tranh khung
+      // net dut nhap nhay an/hien lien tuc khi di chuot qua lai gan ranh
+      // gioi nguong trong CUNG 1 lan keo.
+      const started =
+        (slotDragRef.current?.started ?? false) ||
+        Math.abs(lastClientY - startClientY) >= DRAG_SNAP_PX;
       const next = {
         day,
         startMinute,
         currentMinute: minuteFromClientY(ev.clientY),
+        started,
       };
       slotDragRef.current = next;
       setSlotDrag(next);
@@ -2394,8 +2721,6 @@ function WeekTimeGrid({
     (d) => settings.showWeekends || ![0, 6].includes(new Date(d).getDay()),
   );
   const today = toLocalISODate(new Date());
-  const weekStart = new Date(startOfWeek(anchor, settings.weekStartsOn));
-  const monthYearLabel = `${MONTH_LABELS[weekStart.getMonth()]}, ${weekStart.getFullYear()}`;
   const now = new Date();
   const nowMinute = now.getHours() * 60 + now.getMinutes();
   // [2026-10-08] BUG THAT SU (xac nhan qua DevTools Styles panel: trinh
@@ -2445,9 +2770,6 @@ function WeekTimeGrid({
         className="shrink-0 border-b border-[color:var(--planner-border-soft)]"
         style={{ paddingRight: scrollbarWidth }}
       >
-        <p className="px-3 pt-2.5 pb-1 text-[14px] font-semibold text-[color:var(--planner-text-primary)]">
-          {monthYearLabel}
-        </p>
         <div className={cn("grid", gridColsClass)}>
           <div />
           {days.map((d) => (
@@ -2456,16 +2778,19 @@ function WeekTimeGrid({
               type="button"
               onClick={() => onSelect(d)}
               className={cn(
-                "flex cursor-pointer flex-col items-center gap-1 border-l border-[color:var(--planner-border-soft)] py-2 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
+                "flex cursor-pointer flex-col items-center gap-0.5 border-l border-[color:var(--planner-border-soft)] py-1 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
                 d === selectedDate && "bg-[color:var(--planner-primary-soft)]",
               )}
             >
-              <span className="text-[11px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+              {/* [2026-10-08] Thu nho hang thu (truoc py-2/gap-1/size-7/
+                  text-14px) - yeu cau nguoi dung: "Hàng thứ trong tuần chỉ
+                  cần bé thôi, to quá". */}
+              <span className="text-[10px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
                 {WEEKDAY_SHORT_BY_JS_DAY[new Date(d).getDay()]}
               </span>
               <span
                 className={cn(
-                  "flex size-7 items-center justify-center rounded-full text-[14px] font-semibold",
+                  "flex size-5.5 items-center justify-center rounded-full text-[12px] font-semibold",
                   d === today
                     ? "bg-[color:var(--planner-primary)] text-white shadow-[0_3px_8px_rgba(71,120,232,.18)]"
                     : d === selectedDate
@@ -2482,7 +2807,10 @@ function WeekTimeGrid({
             (khong chi an noi dung ben trong) khi tat. */}
         {settings.showAllDaySection && (
           <div
-            className={cn("grid border-t border-[color:var(--planner-border-soft)] bg-[#fafbfc]", gridColsClass)}
+            className={cn(
+              "grid border-t border-[color:var(--planner-border-soft)] bg-[#fafbfc]",
+              gridColsClass,
+            )}
           >
             <div className="py-1.5 text-center text-[10px] font-semibold text-[color:var(--planner-text-muted)]">
               Cả ngày
@@ -2531,7 +2859,15 @@ function WeekTimeGrid({
               <div
                 key={h}
                 style={{ height: HOUR_ROW_HEIGHT }}
-                className="relative border-t border-[color:var(--planner-grid-line)]"
+                // [2026-10-08] BO border-t o COT NHAN GIO (48px, cot dau
+                // tien) - yeu cau nguoi dung: "Không để cho line ngang gạch
+                // đi vào cột hiển thị giờ". Duong ke NGANG that su cua luoi
+                // (xuyen qua cac cot NGAY) da duoc ve RIENG o tung o gio cua
+                // TUNG cot ngay ben duoi (xem HOURS.map trong days.map) -
+                // cot nhan gio nay CHI con dung de DINH VI nhan "01:00.../
+                // 23:00" (relative + span con ben trong), khong can tu ve
+                // them 1 duong ke nua.
+                className="relative"
               >
                 {/* top-0 + -translate-y-1/2 (KHONG phai -top-2 doan truoc) -
                     yeu cau nguoi dung: "không được để sai từng giây một".
@@ -2543,15 +2879,27 @@ function WeekTimeGrid({
                     text LEN CHINH XAC giua duong ke do - dung toan hoc (50%
                     chieu cao THAT cua chinh span, khong phai so doan), luon
                     dung bat ke co chu/line-height the nao. */}
+                {/* [2026-10-08] Doi format nhan gio sang 12h "1 PM"/"2 AM" -
+                    yeu cau nguoi dung: "Cột thời gian đổi thành như sau: 1
+                    PM 2PM .... và 1AM 2AM.... Số thì medium đậm nhẹ size to
+                    hơn chữ AM và PM". 2 span rieng - so gio (font-medium,
+                    text-[12px], dam/to hon) + AM/PM (font-normal, text-[9px],
+                    nhat hon mau text-muted) thay vi 1 chuoi "HH:00" dong nhat
+                    truoc day. */}
                 {h > 0 && (
-                  <span className="absolute top-0 right-1.5 -translate-y-1/2 text-[11px] font-medium text-[color:var(--planner-text-muted)]">
-                    {h.toString().padStart(2, "0")}:00
+                  <span className="absolute top-0 right-1.5 -translate-y-1/2 whitespace-nowrap text-[color:var(--planner-text-muted)]">
+                    <span className="text-[14px] text-black/90 font-medium">
+                      {h % 12 === 0 ? 12 : h % 12}
+                    </span>{" "}
+                    <span className="text-[10px] font-normal">
+                      {h < 12 ? "AM" : "PM"}
+                    </span>
                   </span>
                 )}
               </div>
             ))}
           </div>
-          {days.map((d, dayIndex) => {
+          {days.map((d) => {
             // [2026-10-07] Settings: "Completed tasks" = Hide -> loc BOT
             // viec da xong TRUOC KHI dua vao layoutTimedItems() (khong chi
             // an sau khi render) - dam bao viec con lai KHONG BI chia cot
@@ -2598,19 +2946,15 @@ function WeekTimeGrid({
                     con thuan VISUAL (caro + border), het onClick rieng -
                     tranh tao TRUNG 2 lan khi mousedown+click
                     deu kich hoat. */}
-                {/* [2026-10-06] Nen caro (ban co) - yeu cau nguoi dung: "Nền
-                    của lịch để dạng caro đi" -> xac nhan kieu "caro bàn cờ (ô
-                    xen kẽ)" qua AskUserQuestion: (h + dayIndex) le/chan XOR
-                    nhau quyet dinh to hay khong, giong ban co vua. Mau to rat
-                    nhat + color-mix pha trong suot de VAN layer dung len tren
-                    gradient rieng cua cot today (khong "de" mat tint today). */}
+                {/* [2026-10-08] Bo nen caro (ban co) - yeu cau nguoi dung:
+                    "Không để nền sole caro nữa". CHI con giu lai to mo gio
+                    NGOAI khung lam viec (Settings: Working hours), bo han
+                    xen ke (h + dayIndex) le/chan truoc day. */}
                 {HOURS.map((h) => {
-                  const checker = (h + dayIndex) % 2 === 0;
                   // [2026-10-07] Settings: "Working hours" - gio NGOAI khung
                   // lam viec (vd truoc 08:00/sau 22:00) to nhat hon han, DE
                   // nguoi dung phan biet nhanh khung "nen lam viec" ma khong
-                  // can doc so - thay the checker binh thuong tai dung hang
-                  // gio do (checker van giu nguyen cho gio TRONG khung).
+                  // can doc so.
                   const isWorkingHour =
                     h * 60 < settings.workingHoursEnd &&
                     h * 60 + 60 > settings.workingHoursStart;
@@ -2622,9 +2966,7 @@ function WeekTimeGrid({
                         height: HOUR_ROW_HEIGHT,
                         backgroundColor: !isWorkingHour
                           ? "color-mix(in srgb, var(--planner-border-soft) 55%, transparent)"
-                          : checker
-                            ? "color-mix(in srgb, var(--planner-surface-soft) 60%, transparent)"
-                            : undefined,
+                          : undefined,
                       }}
                     />
                   );
@@ -2634,8 +2976,14 @@ function WeekTimeGrid({
                     KẾT THÚC, cap nhat THEO TUNG KHUNG HINH (state, khong phai
                     ref) de "theo" chuot that su. pointer-events-none - khong
                     duoc chan chinh onMouseMove/onMouseUp dang gan tren
-                    document cua chinh thao tac keo nay. */}
-                {slotDrag && slotDrag.day === d && (
+                    document cua chinh thao tac keo nay.
+                    [2026-10-08] + slotDrag.started - yeu cau nguoi dung:
+                    "Click vào lịch hiện nét đứt luôn... khi nào giữ, kéo
+                    được 1 đoạn tương ứng 15 phút = 1/4 tiếng thì mới cho
+                    hiện". Truoc day CHI can slotDrag != null (dat ngay tu
+                    mousedown) la ve, nen 1 cai CLICK don gian (khong di
+                    chuyen chuot) cung hien khung net dut "0 phut" vo nghia. */}
+                {slotDrag && slotDrag.started && slotDrag.day === d && (
                   <div
                     className="pointer-events-none absolute right-1 left-1 z-[2] rounded-[6px] border-2 border-dashed"
                     style={{
@@ -2682,8 +3030,14 @@ function WeekTimeGrid({
                     trong DayDetailPanel, da bo). Xem QuickAddPopover duoi. */}
                 {draftPlaceholder && draftPlaceholder.date === d && (
                   <QuickAddPopover
-                    top={((draftPlaceholder.start - firstVisibleMinute) / 60) * HOUR_ROW_HEIGHT}
-                    height={Math.max((draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT, HOUR_ROW_HEIGHT * 0.4)}
+                    top={
+                      ((draftPlaceholder.start - firstVisibleMinute) / 60) *
+                      HOUR_ROW_HEIGHT
+                    }
+                    height={Math.max(
+                      (draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT,
+                      HOUR_ROW_HEIGHT * 0.4,
+                    )}
                     onSubmit={onQuickAddSubmit}
                     onCancel={onQuickAddCancel}
                   />
@@ -3289,6 +3643,7 @@ function DeleteConfirmButton({
       <PopoverContent
         open={open}
         align="end"
+        style={{ fontFamily: "var(--planner-font-family)" }}
         className="z-50 w-60 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
       >
         <div onClick={(e) => e.stopPropagation()}>

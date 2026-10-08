@@ -68,10 +68,17 @@ export function TimePickerField({
   startMinute,
   durationMinutes,
   onChange,
+  portalContainer,
 }: {
   startMinute: number | null;
   durationMinutes: number;
   onChange: (startMinute: number | null, durationMinutes: number) => void;
+  // [2026-10-08] Xem comment chi tiet o PopoverContent (ui/popover.tsx) -
+  // can truyen xuong khi field nay dat BEN TRONG 1 Radix Dialog khac (vd
+  // Settings modal) de tranh Dialog's FocusScope "giut" focus lam popover
+  // khong con tuong tac duoc. Optional - cac noi dung KHONG nam trong Dialog
+  // (vd EditItemForm) de trong, Popover mount document.body nhu cu.
+  portalContainer?: HTMLElement | null;
 }) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -224,6 +231,7 @@ export function TimePickerField({
       <PopoverContent
         open={open}
         align="end"
+        container={portalContainer}
         className="z-50 w-[270px] rounded-[12px] border border-[color:var(--planner-border)] bg-white p-3 shadow-[0_8px_24px_rgba(20,30,50,.1)]"
       >
         <div className="flex items-center justify-between gap-2">

@@ -14,6 +14,19 @@ export const PopoverAnchor = RadixPopover.Anchor;
 
 type PopoverContentProps = React.ComponentProps<typeof RadixPopover.Content> & {
   open: boolean;
+  // [2026-10-08] "container" - noi mount Portal (mac dinh document.body neu
+  // khong truyen). Can khi Popover nay nam LONG trong 1 Radix Dialog khac
+  // (vd TimePickerField trong PlannerSettingsModal): Dialog modal dung
+  // FocusScope "trapped" quan ly focus qua 1 listener tren CA document -
+  // Portal mac dinh teleport thang ra document.body, NAM NGOAI subtree cua
+  // Dialog.Content, nen FocusScope coi moi focus/click trong do la "ngoai
+  // dialog" va LIEN TUC giut focus ve lai dialog, khien nut/input trong
+  // Popover khong con bam/go duoc nua (bug nguoi dung bao: "Không tương tác
+  // được trong chỗ chọn thời gian ở setting"). Truyen `container` = chinh
+  // DOM node cua Dialog.Content se mount Popover LAM CON CUA dialog do (van
+  // "portal" ra khoi vi tri component-tree binh thuong, nhung VAN nam trong
+  // DOM subtree ma FocusScope coi la "trong dialog"), het xung dot.
+  container?: HTMLElement | null;
 };
 
 // Dropdown/popover kiểu click-to-open dùng chung component này để luôn đồng bộ
@@ -23,12 +36,13 @@ export function PopoverContent({
   open,
   children,
   sideOffset = 8,
+  container,
   ...props
 }: PopoverContentProps) {
   return (
     <AnimatePresence>
       {open && (
-        <RadixPopover.Portal forceMount>
+        <RadixPopover.Portal forceMount container={container ?? undefined}>
           <RadixPopover.Content forceMount sideOffset={sideOffset} asChild {...props}>
             <motion.div
               // z-50 - Portal day ra document.body nhung KHONG tu dong noi
