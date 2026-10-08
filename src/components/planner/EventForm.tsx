@@ -5,24 +5,29 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   X,
-  Check,
-  ChevronDown,
   MapPin,
   Bell,
   Car,
   Link2,
   Paperclip,
   UserPlus,
-  Trash2,
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  DropdownMenuRoot,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+  pad2,
+  todayISO,
+  roundedNowHM,
+  isValidUrl,
+  formatFileSize,
+  randomId,
+  FormInput,
+  FieldLabel,
+  GhostAddButton,
+  ToggleSwitch,
+  InlineSelect,
+  DeleteConfirmPopover,
+} from "./macos-form-controls";
 import {
   ALERT_OFFSET_OPTIONS,
   TRAVEL_TIME_OPTIONS,
@@ -48,19 +53,6 @@ import {
 // uoc QuickAddPopover da dung trong PlannerShell.tsx: noi goi CHI mount
 // <EventForm /> khi can hien, Dialog.Root ben trong luon `open` tinh.
 
-function pad2(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
-function roundedNowHM(): string {
-  const d = new Date();
-  const m = Math.ceil(d.getMinutes() / 15) * 15;
-  const h = (d.getHours() + Math.floor(m / 60)) % 24;
-  return `${pad2(h)}:${pad2(m % 60)}`;
-}
 function addHourHM(hm: string): string {
   const [h, m] = hm.split(":").map(Number);
   return `${pad2((h + 1) % 24)}:${pad2(m)}`;
@@ -68,145 +60,6 @@ function addHourHM(hm: string): string {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function isValidEmail(s: string): boolean {
   return EMAIL_RE.test(s.trim());
-}
-function isValidUrl(s: string): boolean {
-  const v = s.trim();
-  if (!v) return true;
-  try {
-    new URL(v.includes("://") ? v : `https://${v}`);
-    return true;
-  } catch {
-    return false;
-  }
-}
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-function randomId(): string {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-// 1 input text dung CHUNG cho ca form - vien/mau/focus ring khop dung token
-// `--mset-*` (xem docs/planner-macos-design-system.md, muc NumberField).
-function FormInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className={cn(
-        "h-9 w-full rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] text-[color:var(--planner-text-primary)] outline-none transition-[border-color,box-shadow] duration-150 ease-out placeholder:text-[color:var(--planner-text-muted)] focus:border-[color:var(--planner-primary)] focus:shadow-[0_0_0_3px_rgba(0,122,255,.12)]",
-        props.className,
-      )}
-    />
-  );
-}
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="text-[11px] font-semibold tracking-[.02em] uppercase"
-      style={{ color: "var(--mset-text-tertiary)" }}
-    >
-      {children}
-    </span>
-  );
-}
-
-// Pattern "ghost add row" (xem docs/planner-macos-design-system.md) - dung
-// cho Location (an khi rong, hien khi bam).
-function GhostAddButton({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon: typeof MapPin;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-9 w-fit cursor-pointer items-center gap-1.5 rounded-[8px] px-1 text-[13px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
-    >
-      <Icon size={14} /> {label}
-    </button>
-  );
-}
-
-// Dropdown KHONG native (quy uoc chung toan app) - dung chung cho Calendar/
-// Alert/Travel Time. `container` forward xuong de an toan trong Dialog (xem
-// comment DropdownMenuContent, ui/dropdown-menu.tsx).
-function InlineSelect<T extends string>({
-  value,
-  options,
-  onChange,
-  container,
-  renderDot,
-}: {
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (v: T) => void;
-  container?: HTMLElement | null;
-  renderDot?: (value: T) => string | undefined;
-}) {
-  const [open, setOpen] = useState(false);
-  const current = options.find((o) => o.value === value);
-  const dotColor = renderDot?.(value);
-  return (
-    <DropdownMenuRoot open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[13px] font-medium text-[color:var(--planner-text-primary)] outline-none hover:border-[color:var(--planner-border)]"
-        >
-          <span className="flex min-w-0 items-center gap-1.5">
-            {dotColor && (
-              <span
-                className="size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: dotColor }}
-                aria-hidden="true"
-              />
-            )}
-            <span className="truncate">{current?.label ?? value}</span>
-          </span>
-          <ChevronDown size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        open={open}
-        align="start"
-        container={container}
-        className="z-50 max-h-64 w-[var(--radix-dropdown-menu-trigger-width)] min-w-[180px] overflow-y-auto rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
-        style={{ fontFamily: "var(--planner-font-family)" }}
-      >
-        {options.map((o) => {
-          const dot = renderDot?.(o.value);
-          return (
-            <DropdownMenuItem
-              key={o.value}
-              onSelect={() => onChange(o.value)}
-              className="flex cursor-pointer items-center justify-between gap-2 rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-secondary)] outline-none hover:bg-[var(--planner-surface-soft)]"
-            >
-              <span className="flex min-w-0 items-center gap-1.5">
-                {dot && (
-                  <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: dot }}
-                    aria-hidden="true"
-                  />
-                )}
-                <span className="truncate">{o.label}</span>
-              </span>
-              {value === o.value && (
-                <Check size={13} className="shrink-0 text-[color:var(--planner-primary)]" />
-              )}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenuRoot>
-  );
 }
 
 const CALENDAR_DOT_PALETTE = [
@@ -292,49 +145,6 @@ function AttachmentRow({ file, onRemove }: { file: EventAttachment; onRemove: ()
         className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--mset-danger)]"
       >
         <X size={12} />
-      </button>
-    </div>
-  );
-}
-
-// Xoa - can confirm TRUOC khi goi onDelete (spec: "hiện confirm dialog
-// trước khi gọi onDelete"). Popover nho tu confirm, cung tinh than voi
-// DeleteConfirmButton trong PlannerShell.tsx (khong import thang - EventForm
-// la component DOC LAP, tranh phu thuoc cheo vao file 5000+ dong do).
-function DeleteConfirmPopover({ onConfirm }: { onConfirm: () => void }) {
-  const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Delete event"
-        title="Delete event"
-        className="flex size-8 cursor-pointer items-center justify-center rounded-[9px] text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[rgba(255,59,48,.08)] hover:text-[color:var(--mset-danger)]"
-      >
-        <Trash2 size={15} />
-      </button>
-    );
-  }
-  return (
-    <div className="flex items-center gap-1 rounded-[9px] border border-[color:var(--mset-danger)] bg-[rgba(255,59,48,.06)] px-1.5 py-1">
-      <span className="px-1 text-[11.5px] font-medium" style={{ color: "var(--mset-danger)" }}>
-        Delete?
-      </span>
-      <button
-        type="button"
-        onClick={onConfirm}
-        className="cursor-pointer rounded-[6px] px-2 py-1 text-[11.5px] font-semibold text-white"
-        style={{ backgroundColor: "var(--mset-danger)" }}
-      >
-        Yes
-      </button>
-      <button
-        type="button"
-        onClick={() => setOpen(false)}
-        className="cursor-pointer rounded-[6px] px-2 py-1 text-[11.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
-      >
-        No
       </button>
     </div>
   );
@@ -530,7 +340,9 @@ export function EventForm({
                       "nut Cancel (trái), nút Save (phải, primary)". */}
                   <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[color:var(--mset-divider)] px-4 py-3">
                     <div className="flex items-center gap-1">
-                      {isEdit && onDelete && <DeleteConfirmPopover onConfirm={onDelete} />}
+                      {isEdit && onDelete && (
+                        <DeleteConfirmPopover label="Delete event" onConfirm={onDelete} />
+                      )}
                       <button
                         type="button"
                         onClick={onCancel}
@@ -567,19 +379,7 @@ export function EventForm({
                   <div className="flex flex-col gap-2 rounded-[10px] border border-[color:var(--planner-border-soft)] p-2.5">
                     <div className="flex items-center justify-between">
                       <FieldLabel>All day</FieldLabel>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={allDay}
-                        onClick={() => setAllDay((v) => !v)}
-                        className="relative h-[22px] w-[38px] shrink-0 cursor-pointer rounded-full border-0 p-0 transition-colors duration-150 ease-out"
-                        style={{ background: allDay ? "var(--mset-success)" : "#d1d1d6" }}
-                      >
-                        <span
-                          className="absolute top-0.5 left-0.5 size-[18px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,.2)] transition-transform duration-150 ease-out"
-                          style={{ transform: allDay ? "translateX(16px)" : "translateX(0)" }}
-                        />
-                      </button>
+                      <ToggleSwitch checked={allDay} onChange={setAllDay} />
                     </div>
                     <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-1.5">
                       <FieldLabel>Starts</FieldLabel>

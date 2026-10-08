@@ -85,3 +85,162 @@ export type CalendarEvent = {
   notes?: string;
   attachments: EventAttachment[];
 };
+
+// ---------------------------------------------------------------------------
+// [2026-10-08] Kieu du lieu RIENG cho ReminderForm.tsx (macOS Reminders
+// style) - CUNG TRIET LY voi CalendarEvent o tren: DOC LAP hoan toan voi
+// model PlannerItem, khong tai dung/ep chung shape.
+// ---------------------------------------------------------------------------
+
+export type Priority = "none" | "low" | "medium" | "high";
+
+export const PRIORITY_CONFIG: Record<Priority, { label: string; mark: string; color: string }> = {
+  none: { label: "None", mark: "", color: "var(--planner-text-muted)" },
+  low: { label: "Low", mark: "!", color: "#1d9bf6" },
+  medium: { label: "Medium", mark: "!!", color: "#ff9f0a" },
+  high: { label: "High", mark: "!!!", color: "#ff3b30" },
+};
+
+export type Subtask = {
+  id: string;
+  title: string;
+  done: boolean;
+  // Rieng cho TUNG subtask (hien khi expand) - doc lap voi due date/priority
+  // cua chinh Reminder cha.
+  dueDate?: string | null;
+  priority?: Priority;
+};
+
+export type EarlyReminder =
+  | "none"
+  | "1day"
+  | "2days"
+  | "3days"
+  | "1week"
+  | "2weeks"
+  | "custom";
+
+export const EARLY_REMINDER_OPTIONS: { value: EarlyReminder; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "1day", label: "1 day before" },
+  { value: "2days", label: "2 days before" },
+  { value: "3days", label: "3 days before" },
+  { value: "1week", label: "1 week before" },
+  { value: "2weeks", label: "2 weeks before" },
+  { value: "custom", label: "Custom" },
+];
+
+export type LocationTrigger = "arriving" | "leaving";
+
+export type ReminderLocation = {
+  // Ten/dia chi nguoi dung go/chon (khong goi API geocode that - xem comment
+  // ReminderForm.tsx).
+  query: string;
+  trigger: LocationTrigger;
+  // met, 100-500 (mac dinh 200) - xem Slider trong ReminderForm.
+  radiusMeters: number;
+};
+
+export type ReminderImage = {
+  id: string;
+  // object URL (tao qua URL.createObjectURL o client, xem ReminderForm) -
+  // component KHONG tu upload len server nao.
+  url: string;
+  fileName?: string;
+};
+
+export type Reminder = {
+  id: string;
+  title: string;
+  completed: boolean;
+  // Phai khop 1 phan tu trong props.lists (ReminderForm).
+  list: string;
+  // YYYY-MM-DD - null = chua bat "Add Date".
+  dueDate: string | null;
+  // HH:MM - null = chua bat "Add Time" (chi co y nghia khi dueDate != null).
+  dueTime: string | null;
+  // "Remind on a Date" - DOC LAP voi dueDate/dueTime o tren (vd due ngay 15
+  // nhung nhac truoc vao ngay 13).
+  remindOnDate: string | null;
+  remindOnTime: string | null;
+  location: ReminderLocation | null;
+  priority: Priority;
+  flagged: boolean;
+  tags: string[];
+  subtasks: Subtask[];
+  // Chi co y nghia khi dueDate != null (xem ReminderForm).
+  earlyReminder: EarlyReminder;
+  earlyReminderCustomMinutes?: number;
+  url?: string;
+  images: ReminderImage[];
+  notes?: string;
+};
+
+// ---------------------------------------------------------------------------
+// [2026-10-08] Kieu du lieu RIENG cho RecurrenceEditor.tsx (macOS Calendar
+// style) - CUNG triet ly voi CalendarEvent/Reminder o tren: DOC LAP hoan
+// toan voi model PlannerItem. LUU Y: PlannerShell.tsx (QuickAddPopover) VON
+// DA co 1 type CUNG TEN "RecurrenceRule" trong
+// src/lib/planner/life-item-types.ts - shape DON GIAN HON NHIEU (chi
+// {freq, customWeekdays?}), phuc vu rieng QuickAddPopover. Day la 1 type
+// KHAC, o 1 MODULE KHAC (./calendar-types, khong phai
+// lib/planner/life-item-types), phuc vu rieng RecurrenceEditor/EventForm/
+// ReminderForm - KHONG duoc tron lan hay thay the lan nhau. Trung ten vi
+// CA 2 deu mo ta "quy tac lap lai", nhung pham vi/do phuc tap khac nhau -
+// neu sau nay can GOP 2 he thong lam MOT, do la 1 quyet dinh kien truc rieng
+// (migration data + doi het noi dung o ca 2 phia), khong lam ngam trong task
+// nay.
+// ---------------------------------------------------------------------------
+
+export type RepeatFrequency = "daily" | "weekly" | "biweekly" | "monthly" | "yearly" | "custom";
+
+export const REPEAT_FREQUENCY_OPTIONS: { value: RepeatFrequency; label: string }[] = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Biweekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+  { value: "custom", label: "Custom" },
+];
+
+// 0=Sun..6=Sat - khop dung Date.getDay(), xuyen suot code Planner.
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export type OrdinalWeek = "first" | "second" | "third" | "fourth" | "last";
+
+export const ORDINAL_WEEK_OPTIONS: { value: OrdinalWeek; label: string }[] = [
+  { value: "first", label: "first" },
+  { value: "second", label: "second" },
+  { value: "third", label: "third" },
+  { value: "fourth", label: "fourth" },
+  { value: "last", label: "last" },
+];
+
+export type RecurrenceIntervalUnit = "days" | "weeks" | "months" | "years";
+
+// Monthly: 1 trong 2 che do loai tru nhau (radio trong RecurrenceEditor).
+export type MonthlyMode =
+  | { mode: "day_of_month"; day: number } // 1-31, hoac -1 = ngay cuoi thang
+  | { mode: "ordinal_weekday"; ordinal: OrdinalWeek; weekday: DayOfWeek };
+
+export type EndRepeatCondition =
+  | { type: "never" }
+  | { type: "after_count"; count: number }
+  | { type: "on_date"; date: string }; // YYYY-MM-DD, phai > startDate
+
+export type RecurrenceRule = {
+  frequency: RepeatFrequency;
+  // "Every [N] [unit]" - CHI hien/sua duoc tren UI khi frequency==="custom",
+  // nhung LUU luon o moi frequency (vd weekly ngam dinh {1,"weeks"},
+  // biweekly {2,"weeks"}) de logic preview/tinh toan dong nhat 1 cho, khong
+  // phai rai nhanh if theo tung frequency o noi khac dung rule nay.
+  interval: number;
+  intervalUnit: RecurrenceIntervalUnit;
+  // weekly/biweekly/custom(unit=weeks): it nhat 1 phan tu (xem Validation).
+  weekdays: DayOfWeek[];
+  // monthly.
+  monthly: MonthlyMode;
+  // yearly: 1-12.
+  months: number[];
+  end: EndRepeatCondition;
+};
