@@ -84,6 +84,13 @@ export type CalendarEvent = {
   url?: string;
   notes?: string;
   attachments: EventAttachment[];
+  // [2026-10-08] Them cho TaskListView.tsx ("Recurring icon nếu có
+  // recurrence") - CHUA co o CalendarEvent goc luc EventForm duoc tao (truoc
+  // khi RecurrenceEditor/RecurrenceRule ton tai). Type dinh nghia O DUOI file
+  // nay (RecurrenceRule) - TypeScript hoist type declaration trong CUNG
+  // module nen tham chieu NGUOC thu tu nay van hop le, khong can sap xep lai
+  // vi tri cac type trong file.
+  recurrence?: RecurrenceRule;
 };
 
 // ---------------------------------------------------------------------------
@@ -243,4 +250,65 @@ export type RecurrenceRule = {
   // yearly: 1-12.
   months: number[];
   end: EndRepeatCondition;
+};
+
+// ---------------------------------------------------------------------------
+// [2026-10-08] Kieu du lieu RIENG cho SharedCalendarForm.tsx (macOS Calendar
+// sharing style) - CUNG triet ly DOC LAP voi CalendarEvent/Reminder/
+// RecurrenceRule o tren.
+// ---------------------------------------------------------------------------
+
+export type Permission = "view_only" | "view_edit";
+
+export const PERMISSION_OPTIONS: { value: Permission; label: string }[] = [
+  { value: "view_only", label: "View Only" },
+  { value: "view_edit", label: "View & Edit" },
+];
+
+export type ParticipantStatus = "accepted" | "pending" | "declined";
+
+export type Participant = {
+  id: string;
+  // Apple ID - so khop voi `currentUserId` (SharedCalendarFormProps) de xac
+  // dinh "day co phai chinh minh/chu so huu khong". Co the CHUA co (undefined)
+  // voi 1 loi moi dang "pending" ma nguoi nhan chua tung dang nhap/chap nhan.
+  userId?: string;
+  email: string;
+  name?: string;
+  isOwner: boolean;
+  permission: Permission;
+  status: ParticipantStatus;
+};
+
+export type ShareType = "calendar" | "reminder_list";
+
+// 12 mau preset (grid 6x2) - xem SharedCalendarForm "Color picker".
+export const SHARE_COLOR_PRESETS: { name: string; hex: string }[] = [
+  { name: "Red", hex: "#ff3b30" },
+  { name: "Orange", hex: "#ff9500" },
+  { name: "Yellow", hex: "#ffcc00" },
+  { name: "Green", hex: "#34c759" },
+  { name: "Teal", hex: "#30b0c7" },
+  { name: "Blue", hex: "#007aff" },
+  { name: "Indigo", hex: "#5856d6" },
+  { name: "Purple", hex: "#af52de" },
+  { name: "Pink", hex: "#ff2d55" },
+  { name: "Brown", hex: "#a2845e" },
+  { name: "Gray", hex: "#8e8e93" },
+  { name: "Graphite", hex: "#48484a" },
+];
+
+export type SharedCalendar = {
+  id: string;
+  // "Sau khi tạo không thể đổi" - chi hien UI chon o CREATE mode.
+  shareType: ShareType;
+  name: string;
+  // Hex - 1 trong SHARE_COLOR_PRESETS hoac custom nguoi dung tu nhap.
+  color: string;
+  // Bao gom CA owner (1 phan tu isOwner:true duy nhat trong mang).
+  participants: Participant[];
+  isPublic: boolean;
+  // Chi co y nghia khi isPublic true.
+  publicUrl?: string;
+  notifyOnChanges: boolean;
 };

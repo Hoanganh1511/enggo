@@ -19,6 +19,7 @@ import {
   todayISO,
   roundedNowHM,
   isValidUrl,
+  isValidEmail,
   formatFileSize,
   randomId,
   FormInput,
@@ -56,10 +57,6 @@ import {
 function addHourHM(hm: string): string {
   const [h, m] = hm.split(":").map(Number);
   return `${pad2((h + 1) % 24)}:${pad2(m)}`;
-}
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function isValidEmail(s: string): boolean {
-  return EMAIL_RE.test(s.trim());
 }
 
 const CALENDAR_DOT_PALETTE = [

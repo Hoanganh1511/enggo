@@ -31,6 +31,10 @@ export function roundedNowHM(): string {
   const h = (d.getHours() + Math.floor(m / 60)) % 24;
   return `${pad2(h)}:${pad2(m % 60)}`;
 }
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export function isValidEmail(s: string): boolean {
+  return EMAIL_RE.test(s.trim());
+}
 export function isValidUrl(s: string): boolean {
   const v = s.trim();
   if (!v) return true;
@@ -206,9 +210,15 @@ export function InlineSelect<T extends string>({
 // ReminderForm deu yeu cau: "hiện confirm dialog trước khi gọi onDelete").
 export function DeleteConfirmPopover({
   label,
+  // [2026-10-08] Text hoi xac nhan - mac dinh "Delete?" (truong hop ngan
+  // gon, dung cho EventForm/ReminderForm). SharedCalendarForm can 1 cau dai
+  // hon ("Remove [name] from this calendar?") nen them tuy chon nay thay vi
+  // tao 1 component rieng gan nhu y het.
+  confirmText = "Delete?",
   onConfirm,
 }: {
   label: string;
+  confirmText?: string;
   onConfirm: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -226,9 +236,9 @@ export function DeleteConfirmPopover({
     );
   }
   return (
-    <div className="flex items-center gap-1 rounded-[9px] border border-[color:var(--mset-danger)] bg-[rgba(255,59,48,.06)] px-1.5 py-1">
+    <div className="flex max-w-[280px] items-center gap-1 rounded-[9px] border border-[color:var(--mset-danger)] bg-[rgba(255,59,48,.06)] px-1.5 py-1">
       <span className="px-1 text-[11.5px] font-medium" style={{ color: "var(--mset-danger)" }}>
-        Delete?
+        {confirmText}
       </span>
       <button
         type="button"
