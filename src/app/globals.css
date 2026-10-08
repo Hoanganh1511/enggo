@@ -378,11 +378,11 @@
   /* [2026-10-08] Section "1. Base Colors (Calendar)" - yeu cau nguoi dung dua
      1 anh spec mau rieng cho Calendar (Page/Calendar background, Grid Line,
      Time Label, Header background/text, Today column, Hover/Focus). Anh xa
-     THANG vao cac token --mset-* da co san (khong them token moi) de ke thua
-     TU DONG qua moi noi dang dung --planner-*/--mset-* (ca ban "Life Item"
-     cu lan "macOS Calendar" moi - 2 he thong dung CHUNG 1 bo bien goc nay,
-     xem comment --planner-* anh xa tu --mset-* phia tren). --mset-divider/
-     --mset-border-strong KHONG doi (khong co trong spec) - van giu rgba den
+     THANG vao cac token mset da co san (khong them token moi) de ke thua TU
+     DONG qua moi noi dang dung planner hoac mset (ca ban "Life Item" cu lan
+     "macOS Calendar" moi - 2 he thong dung CHUNG 1 bo bien goc nay, xem
+     comment anh xa planner tu mset phia tren). mset-divider va
+     mset-border-strong KHONG doi (khong co trong spec) - van giu rgba den
      mo cho cac border DAM hon grid line thuong. */
   --mset-background: #fafafc; /* Page Background */
   --mset-surface: #ffffff; /* Calendar Background */
