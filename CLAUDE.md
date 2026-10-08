@@ -57,6 +57,15 @@ Xem `docs/workspace-style-guide.md` TRƯỚC KHI viết class màu/font/size m�
 đây — đặc biệt khi port UI từ 1 source demo ngoài (dễ mang theo bảng màu/font
 riêng của source, gây lạc tông với phần còn lại của app).
 
+### Khu vực Planner (`/planner`)
+
+Xem `docs/planner-macos-design-system.md` TRƯỚC KHI thêm/sửa UI trong
+`src/components/planner/` — hệ thiết kế "macOS System Settings" đã chốt
+(màu `--mset-*`/`--planner-*`, modal/popover glass, SegmentedControl/Toggle/
+Checkbox/Dropdown tự vẽ, pattern "ghost add row", toolbar Tiptap, quy ước
+Portal-safe token...). Không tự chế màu/control mới khi pattern tương đương
+đã có trong guide.
+
 ### Khu vực Dashboard (`/home`, `/articles`)
 
 Xem `docs/home-dashboard-style-guide.md` TRƯỚC KHI thêm/sửa UI trong

@@ -4,7 +4,14 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Bell, Menu, MessageCircle, Search, Sparkles, SquarePen } from "lucide-react";
+import {
+  Bell,
+  Menu,
+  MessageCircle,
+  Search,
+  Sparkles,
+  SquarePen,
+} from "lucide-react";
 import { useDashboardSidebarDrawerStore } from "@/stores/dashboard-sidebar-drawer-store";
 import { useFocusModeStore } from "@/stores/focus-mode-store";
 import { cn } from "@/lib/utils";
@@ -46,7 +53,9 @@ import type { ApiChatMessage, ApiNotification } from "@/lib/api/types";
 const TopHeaderBar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const setDashboardDrawerOpen = useDashboardSidebarDrawerStore((s) => s.setOpen);
+  const setDashboardDrawerOpen = useDashboardSidebarDrawerStore(
+    (s) => s.setOpen,
+  );
   const [notifOpen, setNotifOpen] = useState(false);
   const [updatesOpen, setUpdatesOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -187,31 +196,13 @@ const TopHeaderBar = () => {
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-        <button type="button" title="Tìm kiếm" onClick={() => setSearchOpen(true)}>
+        <button
+          type="button"
+          title="Tìm kiếm"
+          onClick={() => setSearchOpen(true)}
+        >
           <HeaderIconChip icon={Search} />
         </button>
-
-        <PopoverRoot
-          open={updatesOpen}
-          onOpenChange={(next) => {
-            setUpdatesOpen(next);
-            if (next) markUpdatesSeen();
-          }}
-        >
-          <PopoverTrigger asChild>
-            <button type="button" title="Có gì mới">
-              <HeaderIconChip icon={Sparkles} dot={hasUnseenUpdates} />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            open={updatesOpen}
-            align="end"
-            sideOffset={10}
-            className="z-50"
-          >
-            <UpdatesPanel />
-          </PopoverContent>
-        </PopoverRoot>
 
         <Link href="/messages" title="Tin nhắn">
           <HeaderIconChip icon={MessageCircle} badge={chatBadge} />

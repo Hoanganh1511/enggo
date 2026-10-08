@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import TiptapUnderline from "@tiptap/extension-underline";
+import Placeholder from "@tiptap/extension-placeholder";
 import {
   Bell,
   CalendarDays,
@@ -15,12 +19,23 @@ import {
   Flame,
   ListFilter,
   Loader2,
+  MapPin,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Plus,
+  Repeat,
   Settings,
   Sparkles,
   Trash2,
   X,
+  Bold as BoldIcon,
+  Italic as ItalicIcon,
+  Underline as UnderlineIcon,
+  List as BulletListIcon,
+  ListOrdered as OrderedListIcon,
+  Paperclip,
+  Smile,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -36,12 +51,19 @@ import {
   listPlannerTypeColorsAction,
   setPlannerTypeColorAction,
 } from "@/actions/planner/planner";
+import { uploadChatAttachmentAction } from "@/actions/chat/upload-attachment";
 import {
   PopoverRoot,
   PopoverTrigger,
   PopoverContent,
   PopoverAnchor,
 } from "@/components/ui/popover";
+import {
+  DropdownMenuRoot,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { TimePickerField } from "./time-picker-field";
 import {
   LIFE_ITEM_TYPES,
@@ -53,6 +75,8 @@ import {
   REMINDER_OPTIONS,
   WEEKDAY_SHORT_IDS,
   WEEKDAY_SHORT_LABELS,
+  WEEKDAY_FULL_VI,
+  RECURRENCE_FREQ_OPTIONS,
   DEFAULT_REFLECTION_PROMPTS,
   type LifeItemType,
   type LifeItemPriority,
@@ -60,6 +84,7 @@ import {
   type EventMetadata,
   type HabitMetadata,
   type ReflectionMetadata,
+  type RecurrenceRule,
 } from "@/lib/planner/life-item-types";
 import { TagChipInput } from "@/components/series/notes/TagChipInput";
 import {
@@ -255,6 +280,109 @@ function minutesToLabel(m: number, format: "24H" | "12H" = "24H"): string {
   }
   return `${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 }
+// [2026-10-08] "date" (YYYY-MM-DD) + "minute" (phut tinh tu 0h) -> 1 chuoi
+// ISO datetime dung lam gia tri cho `deadline` (string, xem ApiPlannerItem) -
+// dung cho QuickAddPopover khi nguoi dung chon gio qua "+ Thêm hạn chót".
+function dateAndMinuteToISO(date: string, minute: number): string {
+  const h = Math.floor(minute / 60) % 24;
+  const mm = minute % 60;
+  return `${date}T${h.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}:00`;
+}
+// [2026-10-08] So thu VN (khong co "Thứ") dung cho preview recurrence CUSTOM
+// (vd "Thứ 2, 4, 6 hàng tuần") - khop Date.getDay() (0=CN).
+const DOW_VI_NUM: Record<number, string> = {
+  0: "CN",
+  1: "2",
+  2: "3",
+  3: "4",
+  4: "5",
+  5: "6",
+  6: "7",
+};
+// [2026-10-08] Dong chu preview DUOI select box "lặp lại" trong
+// QuickAddPopover - yeu cau nguoi dung dua vi du CU THE cho tung tan suat
+// ("Không lặp lại → chỉ diễn ra ví dụ: ngày 8/10", "Mỗi tuần → 9:00 thứ Năm
+// hàng tuần"...). `minute` la gio dang chon (scheduledMinute luc keo, hoac
+// deadlineMinute luc click) - null neu chua chon gio nao, cau se bo phan gio.
+function describeRecurrence(
+  rule: RecurrenceRule,
+  date: string,
+  minute: number | null,
+  timeFormat: "24H" | "12H",
+): string {
+  const d = new Date(date);
+  const dayNum = d.getDate();
+  const monthNum = d.getMonth() + 1;
+  const timeStr = minute !== null ? minutesToLabel(minute, timeFormat) : null;
+  switch (rule.freq) {
+    case "DAILY":
+      return timeStr ? `${timeStr} mỗi ngày` : "Mỗi ngày";
+    case "WEEKLY": {
+      const weekday = WEEKDAY_FULL_VI[d.getDay()];
+      return timeStr
+        ? `${timeStr} ${weekday.charAt(0).toLowerCase()}${weekday.slice(1)} hàng tuần`
+        : `${weekday} hàng tuần`;
+    }
+    case "MONTHLY":
+      return `Ngày ${dayNum} hàng tháng`;
+    case "YEARLY":
+      return `Ngày ${dayNum}/${monthNum} hàng năm`;
+    case "CUSTOM": {
+      const days = rule.customWeekdays ?? [];
+      if (days.length === 0) return "Tùy chỉnh — chọn ngày lặp lại";
+      const names = [...days].sort().map((i) => DOW_VI_NUM[i]);
+      return `Thứ ${names.join(", ")} hàng tuần`;
+    }
+    case "NONE":
+    default:
+      return `Chỉ diễn ra ngày ${dayNum}/${monthNum}`;
+  }
+}
+// Emoji pho bien, mang cung - KHONG them thu vien emoji-picker moi (repo
+// chua co san, xem docs/planner-macos-design-system.md) de tranh tang
+// bundle/dependency moi chi cho 1 popover nho; du dung cho task nay.
+const QUICK_EMOJIS = [
+  "😀",
+  "😂",
+  "😍",
+  "🤔",
+  "😅",
+  "😎",
+  "🥳",
+  "😴",
+  "👍",
+  "👎",
+  "🙏",
+  "👏",
+  "💪",
+  "✌️",
+  "🤝",
+  "👀",
+  "❤️",
+  "🔥",
+  "✨",
+  "⭐",
+  "🎉",
+  "✅",
+  "❌",
+  "⚠️",
+  "📌",
+  "📎",
+  "📅",
+  "⏰",
+  "💡",
+  "🚀",
+  "🎯",
+  "📝",
+  "☕",
+  "🍕",
+  "🏠",
+  "💼",
+  "📚",
+  "🎵",
+  "🏃",
+  "😢",
+];
 function groupByDate(items: ApiPlannerItem[]): ItemsByDate {
   const map: ItemsByDate = {};
   for (const item of items) {
@@ -543,6 +671,14 @@ export function PlannerShell({
     date: string;
     start: number;
     duration: number;
+    // [2026-10-08] True = mo tu 1 cu KEO THA that su (co time range ro
+    // rang) - false = mo tu 1 cu CLICK DON (khong keo) - yeu cau nguoi dung:
+    // "Thời gian thì nếu thao tác mở form này là kéo thả thì đặt sẵn time
+    // picker với giá trị đã chọn. Nếu người dùng chỉ click thì để tương tự +
+    // add location nhưng text là add deadline". QuickAddPopover doc co nay
+    // de quyet dinh hien TimePickerField (da dien san, cho keo) hay nut ghost
+    // "+ Thêm hạn chót" (cho click, mac dinh KHONG gan scheduledMinute).
+    isDrag: boolean;
   } | null>(null);
   // [2026-10-06] "User customization" (spec section 21) - tai 1 LAN luc mo
   // Planner, dua xuong CA cay qua LifeItemPaletteProvider (xem
@@ -564,13 +700,13 @@ export function PlannerShell({
   // [2026-10-07] Settings modal (icon moi cuoi toolbar tren cung) - xem
   // PlannerSettingsModal.tsx.
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // [2026-10-08] Sidebar trai (xem SidebarContent ben duoi) - yeu cau nguoi
-  // dung: "head của sidebar... tab 1: về lịch... tab 2: draft (thiết kế
-  // sau)". "draft" CHUA co noi dung that (yeu cau se toi SAU) - gio chi can
-  // UI tab + placeholder.
-  const [sidebarTab, setSidebarTab] = useState<"calendar" | "draft">(
-    "calendar",
-  );
+  // [2026-10-08] Sidebar trai - yeu cau nguoi dung: "bỏ Tabs, Chỉ giữ lại
+  // view của Lịch như hiện tại" (tab "Draft" chua co noi dung that, placeholder
+  // tam thoi tu truoc, nay bo han theo yeu cau moi) + "hàng đầu tiên: Nút
+  // collapse sidebar, Nút +". `sidebarCollapsed` thay the hoan toan
+  // `sidebarTab` cu (khong con "calendar"/"draft" 2 trang nua, CHI con duy
+  // nhat view lich, co the thu gon/mo rong).
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   // [2026-10-08] "các check box để filter: Personal | Family | Work |
   // Birthdays | Holidays" - yeu cau nguoi dung. CHUA co field du lieu THAT
   // nao trong model PlannerItem khop voi 5 nhom nay (khac han LifeItemType
@@ -701,6 +837,7 @@ export function PlannerShell({
     project?: string;
     tags?: string[];
     deadline?: string;
+    description?: string;
     metadata?: Record<string, unknown>;
   }) {
     // Dong thoi voi viec AddTaskForm tu dong, don "thẻ default" tren luoi
@@ -863,7 +1000,12 @@ export function PlannerShell({
   // "Click vào khoảng trống... hệ thống tự hiểu Date/Start, mở Add Task".
   // CHI luu lai PHUT - ngay da duoc chinh CHINH `onSelect(d)` (goi kem luc
   // click, xem WeekTimeGrid) tu dong chuyen selectedDate dung ngay cot do roi.
-  function handleSlotClick(day: string, minute: number, duration?: number) {
+  function handleSlotClick(
+    day: string,
+    minute: number,
+    duration?: number,
+    isDrag = true,
+  ) {
     setQuickAddPrefill({ start: minute, duration });
     // [2026-10-07] "Thẻ default" placeholder tren luoi, giu CHO TOI khi
     // AddTaskForm dong (du la vi tao xong hay vi huỷ) - yeu cau nguoi dung:
@@ -872,12 +1014,40 @@ export function PlannerShell({
     // onSelect(day) vua goi NGAY TRUOC trong CUNG 1 lan mousedown/mouseup,
     // closure cua ham nay van con gia tri selectedDate CU luc dang render,
     // doc nham se ra SAI ngay neu keo o 1 cot khac ngay dang chon).
+    // [2026-10-08] + isDrag (mac dinh true) - xem comment o field cung ten
+    // tren draftPlaceholder: phan biet "kéo thả" (co time range ro rang,
+    // TimePickerField dien san) voi "click đơn" (khong keo, hien "+ Thêm
+    // hạn chót" thay vi ep san 1 khung gio).
     setDraftPlaceholder({
       date: day,
       start: minute,
       duration: duration ?? DEFAULT_DURATION_MINUTES,
+      isDrag,
     });
     quickAddHandledRef.current = false;
+  }
+
+  // [2026-10-08] Nut "+" o hang dau sidebar - yeu cau nguoi dung: "hàng đầu
+  // tiên: Nút collapse sidebar, Nút +". Tai dung HOAN TOAN co che
+  // draftPlaceholder/QuickAddPopover co san (xem handleSlotClick ngay tren),
+  // KHONG tao luong tao viec rieng thu 2 - mo popover tai "gio hien tai" cua
+  // ngay dang chon (selectedDate), cung isDrag=false (ghost "+ Thêm hạn chót")
+  // giong 1 cu click don tren luoi. Neu dang o che do Tháng, chuyen sang Tuần
+  // truoc (QuickAddPopover CHI render o dung cot ngay dang hien tren luoi
+  // Tuần, xem `draftPlaceholder.date === d` trong WeekTimeGrid) - truong hop
+  // selectedDate nam ngoai han tuan dang tai (hiem, vd vua chuyen Tháng xa)
+  // se can nguoi dung bam lai sau khi luoi Tuần tai xong, chap nhan duoc.
+  function handleSidebarQuickAdd() {
+    if (viewMode !== "week") switchMode("week");
+    const now = new Date();
+    const nowMinute =
+      now.getHours() * 60 + Math.round(now.getMinutes() / 15) * 15;
+    handleSlotClick(
+      selectedDate,
+      Math.min(nowMinute, 23 * 60 + 45),
+      undefined,
+      false,
+    );
   }
 
   // [2026-10-07] "Bỏ Right panel... chỉ còn tạo task bằng kéo-thả trực tiếp
@@ -897,10 +1067,22 @@ export function PlannerShell({
   // false moi lan mo placeholder MOI (handleSlotClick o tren) dam bao CHI
   // dung 1 trong 3 nguon goi (Enter/Escape/blur that) duoc xu ly.
   const quickAddHandledRef = useRef(false);
+  // [2026-10-08] Fields mo rong HAN - redesign form tao viec theo spec macOS
+  // (xem docs/planner-macos-design-system.md): location/description/
+  // recurrence moi, + scheduledMinute/durationMinutes/deadlineMinute gio LA
+  // GIA TRI NOI BO cua chinh popover (co the da duoc nguoi dung CHINH LAI
+  // qua TimePickerField trong form, KHONG con lay thang tu draftPlaceholder
+  // nhu truoc nua - popover la nguon THAT SU cho thoi gian).
   function handleQuickAddSubmit(fields: {
     title: string;
     itemType: LifeItemType;
     priority: LifeItemPriority | null;
+    location: string;
+    description: string;
+    recurrence: RecurrenceRule;
+    scheduledMinute: number | null;
+    durationMinutes: number | null;
+    deadlineMinute: number | null;
   }) {
     if (quickAddHandledRef.current || !draftPlaceholder) return;
     quickAddHandledRef.current = true;
@@ -909,13 +1091,23 @@ export function PlannerShell({
       setDraftPlaceholder(null);
       return;
     }
+    const metadata: Record<string, unknown> = {};
+    if (fields.location.trim()) metadata.location = fields.location.trim();
+    if (fields.recurrence.freq !== "NONE")
+      metadata.recurrence = fields.recurrence;
     void handleAddItem({
       title: t,
       kind: "SIMPLE",
       itemType: fields.itemType,
       priority: fields.priority ?? undefined,
-      scheduledMinute: draftPlaceholder.start,
-      durationMinutes: draftPlaceholder.duration,
+      scheduledMinute: fields.scheduledMinute ?? undefined,
+      durationMinutes: fields.durationMinutes ?? undefined,
+      deadline:
+        fields.deadlineMinute !== null
+          ? dateAndMinuteToISO(draftPlaceholder.date, fields.deadlineMinute)
+          : undefined,
+      metadata: Object.keys(metadata).length ? metadata : undefined,
+      description: fields.description.trim() ? fields.description : undefined,
     });
     setDraftPlaceholder(null);
   }
@@ -976,38 +1168,56 @@ export function PlannerShell({
               dung ben canh (khong phai 1 con so co dinh). shrink-0 giu DUNG
               220px du phan ben canh co hep lai the nao. */}
           <div className="flex items-stretch">
-            <aside className="flex w-[300px] shrink-0 flex-col gap-4 overflow-y-auto bg-white px-3.5 py-4">
-              {/* [2026-10-08] Head sidebar - yeu cau nguoi dung: "dồn về bên
-                  phải lần lượt là: phần tabs, tab 1: về lịch... tab 2: draft
-                  (thiết kế sau)". justify-end dua CA cum tab ve sat PHAI. */}
-              <div className="flex items-center justify-end gap-1 rounded-lg bg-[var(--planner-surface-soft)] p-1">
+            <aside
+              className={cn(
+                "flex shrink-0 flex-col gap-4 overflow-y-auto bg-white py-4 transition-[width] duration-150 ease-out",
+                sidebarCollapsed
+                  ? "w-[52px] items-center px-2"
+                  : "w-[300px] px-3.5",
+              )}
+            >
+              {/* [2026-10-08] Hang dau sidebar - yeu cau nguoi dung: "bỏ
+                  Tabs, Chỉ giữ lại view của Lịch như hiện tại. Bổ sung: Trên
+                  hàng đầu tiên: Nút collapse sidebar, Nút +". Thay HAN cum
+                  tab Lịch/Draft cu. Khi collapsed: CHI con nut mo rong (het
+                  cho nut "+" - khong co y nghia khi noi dung dang an). */}
+              <div
+                className={cn(
+                  "flex items-center",
+                  sidebarCollapsed ? "flex-col gap-2" : "justify-between",
+                )}
+              >
                 <button
                   type="button"
-                  onClick={() => setSidebarTab("calendar")}
-                  className={cn(
-                    "cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
-                    sidebarTab === "calendar"
-                      ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)]"
-                      : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
-                  )}
+                  onClick={() => setSidebarCollapsed((v) => !v)}
+                  aria-label={
+                    sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"
+                  }
+                  title={
+                    sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"
+                  }
+                  className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-text-secondary)]"
                 >
-                  Lịch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSidebarTab("draft")}
-                  className={cn(
-                    "cursor-pointer rounded-md px-3 py-1.5 text-[12.5px] font-medium whitespace-nowrap transition-colors duration-150 ease-out",
-                    sidebarTab === "draft"
-                      ? "bg-white font-semibold text-[color:var(--planner-text-primary)] shadow-[0_1px_4px_rgba(20,30,50,.08)]"
-                      : "text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]",
+                  {sidebarCollapsed ? (
+                    <PanelLeftOpen size={15} />
+                  ) : (
+                    <PanelLeftClose size={15} />
                   )}
-                >
-                  Draft
                 </button>
+                {!sidebarCollapsed && (
+                  <button
+                    type="button"
+                    onClick={handleSidebarQuickAdd}
+                    aria-label="Thêm việc mới"
+                    title="Thêm việc mới"
+                    className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-[color:var(--planner-text-muted)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-primary)]"
+                  >
+                    <Plus size={20} />
+                  </button>
+                )}
               </div>
 
-              {sidebarTab === "calendar" ? (
+              {!sidebarCollapsed && (
                 <>
                   {/* [2026-10-08] "các check box để filter: Personal | Family
                       | Work | Birthdays | Holidays. Mỗi ô checkbox một màu,
@@ -1041,10 +1251,6 @@ export function PlannerShell({
                     onSelect={jumpToDate}
                   />
                 </>
-              ) : (
-                <p className="text-[12.5px] text-[color:var(--planner-text-muted)]">
-                  Sắp có.
-                </p>
               )}
             </aside>
             {/* [2026-10-05] Bo max-w-[1800px] (truoc day gioi han giua trang,
@@ -1055,7 +1261,7 @@ export function PlannerShell({
           lam "le trang" toi thieu. [2026-10-07] flex-1 min-w-0 - phai them
           sau khi sidebar moi o tren tro thanh 1 flex item ANH EM, tranh div
           nay BI EP CO LAI vuot muc hoac TRAN qua sidebar. */}
-            <div className="flex-1 min-w-0 px-7 py-4 lg:px-8">
+            <div className="flex-1 min-w-0 px-2 py-4 lg:px-4">
               {/* [2026-10-05] Nhom Header+ViewSwitcher+DateNav GOP vao 1 sidebar
             NHO ben trai (truoc day xep thanh 2 hang NGANG phia tren, chiem
             mat ~200px chieu cao TRUOC KHI toi noi dung that) - yeu cau nguoi
@@ -2288,37 +2494,252 @@ function TypeLegend({
   );
 }
 
-// [2026-10-07] Popover tao viec NHANH, bam TRUC TIEP vao vi tri vua chon/keo
-// tha tren luoi gio - yeu cau nguoi dung: "Tạo task giờ sẽ hiện popover ngay
-// nơi chọn hoặc kéo thả trên lịch" (thay AddTaskForm cu song trong
-// DayDetailPanel, da bo theo yeu cau truoc do "ẩn Right panel đi"). Gio/thoi
-// luong DA CO SAN tu chinh vi tri keo (top/height truyen vao, hien qua khung
-// net dut mau primary) - popover CHI con hoi Tieu de/Loai viec/Uu tien, gon
-// hon AddTaskForm day du (Mau sac/Khu vuc/Trong tam... van chinh duoc SAU
-// qua popover "Chi tiết sự kiện" cua chinh the vua tao).
+// Nut nho trong toolbar editor mo ta (Bold/Italic/Underline/list/dinh
+// kem/emoji) - cung tinh than voi ToolbarButton cua CommunityComposer.tsx
+// (component rieng, khong dung chung file de tranh phu thuoc cheo module
+// community/planner khong lien quan).
+function EditorToolbarButton({
+  label,
+  active,
+  disabled,
+  onClick,
+  icon: Icon,
+}: {
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  icon: typeof BoldIcon;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-[6px] transition-colors duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-40",
+        active
+          ? "bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
+          : "text-[color:var(--planner-text-muted)] hover:bg-white hover:text-[color:var(--planner-text-secondary)]",
+      )}
+    >
+      <Icon size={13} strokeWidth={2} />
+    </button>
+  );
+}
+
+// Luoi emoji CO DINH (khong goi API/thu vien ngoai) - xem QUICK_EMOJIS.
+function EmojiPickerGrid({
+  onPick,
+  onClose,
+}: {
+  onPick: (emoji: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="absolute top-full left-0 z-50 mt-1 grid w-48 grid-cols-8 gap-0.5 rounded-[9px] border border-[color:var(--planner-border)] bg-white p-1.5 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {QUICK_EMOJIS.map((em) => (
+        <button
+          key={em}
+          type="button"
+          onClick={() => {
+            onPick(em);
+            onClose();
+          }}
+          className="flex size-5 cursor-pointer items-center justify-center rounded text-[13px] hover:bg-[var(--planner-surface-soft)]"
+        >
+          {em}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// [2026-10-07/08] Popover tao viec NHANH, bam TRUC TIEP vao vi tri vua
+// chon/keo tha tren luoi gio - yeu cau nguoi dung: "Tạo task giờ sẽ hiện
+// popover ngay nơi chọn hoặc kéo thả trên lịch". [2026-10-08] REDESIGN HOAN
+// TOAN theo spec chi tiet nguoi dung gui (xem
+// docs/planner-macos-design-system.md section "QuickAddPopover"): tieu de +
+// dia diem (icon -> input, an khi rong) + thoi gian (keo tha = TimePickerField
+// dien san NGAY; click don = ghost "+ Thêm hạn chót", chi hien TimePickerField
+// sau khi bam) + "lặp lại" (dropdown khong native, 6 tan suat, dong preview
+// doi theo lua chon) + mo ta chi tiet (Tiptap mini-editor: Bold/Italic/
+// Underline/list cham/list so/dinh kem file/emoji) + Loai viec/Uu tien (giu
+// nguyen tu ban truoc) + Huỷ/Tạo việc.
 function QuickAddPopover({
   top,
   height,
+  date,
+  isDrag,
+  initialStartMinute,
+  initialDurationMinutes,
   onSubmit,
   onCancel,
 }: {
   top: number;
   height: number;
+  date: string;
+  isDrag: boolean;
+  initialStartMinute: number;
+  initialDurationMinutes: number;
   onSubmit: (fields: {
     title: string;
     itemType: LifeItemType;
     priority: LifeItemPriority | null;
+    location: string;
+    description: string;
+    recurrence: RecurrenceRule;
+    scheduledMinute: number | null;
+    durationMinutes: number | null;
+    deadlineMinute: number | null;
   }) => void;
   onCancel: () => void;
 }) {
+  const { settings } = usePlannerSettings();
   const [title, setTitle] = useState("");
   const [itemType, setItemType] = useState<LifeItemType>("ACTION");
   const [priority, setPriority] = useState<LifeItemPriority | null>(null);
   const typePalette = resolveLifeItemPalette(itemType);
 
-  function submit() {
-    onSubmit({ title, itemType, priority });
+  // [2026-10-08] Click RA NGOAI popover -> DONG (khong tao luon 1 draft moi
+  // tai vi tri vua click) - yeu cau nguoi dung: "Chưa xử lý việc click out ra
+  // khỏi popover tạo công việc thì đóng lại. Nó phải đóng, lần sau click
+  // tiếp mới hiện pop ở vị trí khác". Cung 1 nguyen nhan/cach fix nhu bug
+  // tuong tu da gap voi AddTaskForm cu (xem comment o DayDetailPanel, gio da
+  // bo): cu mousedown "ra ngoai" nay CHAY QUA CA 2 duong - (1) Radix
+  // DismissableLayer cua chinh Popover nay (dong qua onOpenChange) VA (2)
+  // onMouseDown cua CHINH cot ngay (startSlotDrag, gan qua React tren CUNG
+  // phan tu DOM dang bi click) - vi khong co draft CU nao dang "chan" no, no
+  // tu hieu la 1 click MOI -> mo NGAY 1 draftPlaceholder khac, tao cam giac
+  // "popover nhay sang vi tri khac" thay vi "dong lai". Fix: nghe mousedown
+  // o CAPTURE phase tren `document` (luon chay TRUOC moi handler bubble, ke
+  // ca onMouseDown cua cot ngay) - neu target nam NGOAI noi dung popover
+  // (contentRef), goi onCancel() + stopPropagation() NGAY de chan HAN event
+  // tiep tuc lan xuong toi startSlotDrag - dam bao click-ra-ngoai nay CHI
+  // lam 1 viec (dong popover), nguoi dung phai bam THEM 1 lan nua moi mo
+  // duoc popover khac o vi tri moi.
+  const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function onPointerDownCapture(e: MouseEvent) {
+      if (
+        contentRef.current &&
+        !contentRef.current.contains(e.target as Node)
+      ) {
+        e.stopPropagation();
+        onCancel();
+      }
+    }
+    document.addEventListener("mousedown", onPointerDownCapture, {
+      capture: true,
+    });
+    return () =>
+      document.removeEventListener("mousedown", onPointerDownCapture, {
+        capture: true,
+      });
+  }, [onCancel]);
+
+  // Dia diem - icon + "+ Thêm địa điểm" cho den khi bam, chuyen thanh input.
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [location, setLocation] = useState("");
+
+  // Thoi gian - xem comment field `isDrag` o draftPlaceholder (PlannerShell):
+  // keo tha -> TimePickerField LUON hien, dien san gia tri da chon; click don
+  // -> ghost "+ Thêm hạn chót" cho den khi nguoi dung chu dong bam.
+  const [scheduledStart, setScheduledStart] = useState<number | null>(
+    isDrag ? initialStartMinute : null,
+  );
+  const [scheduledDuration, setScheduledDuration] = useState(
+    initialDurationMinutes,
+  );
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
+  const [deadlineMinute, setDeadlineMinute] = useState<number | null>(null);
+
+  // Lap lai.
+  const [recurrence, setRecurrence] = useState<RecurrenceRule>({
+    freq: "NONE",
+  });
+  const [recurrenceMenuOpen, setRecurrenceMenuOpen] = useState(false);
+
+  // Mo ta chi tiet - Tiptap (da dung san cho Composer/CommunityComposer,
+  // xem docs/planner-macos-design-system.md "Mo ta chi tiet") thay vi
+  // textarea thuan nhu EditItemForm cu, de co Bold/Italic/Underline/list
+  // THAT su theo dung spec. Luu lai thanh HTML (editor.getHTML()) vao field
+  // `description` co san - EditItemForm (sua task) hien VAN dung textarea
+  // thuan, nen task tao qua day se hien THO ca the HTML khi mo lai o do; day
+  // la danh doi CO Y THUC (uu tien co dinh dang THAT khi TAO moi) thay vi
+  // nang cap ca EditItemForm trong cung 1 task - flag ro khi bao cao.
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapUnderline,
+      Placeholder.configure({ placeholder: "Mô tả chi tiết công việc..." }),
+    ],
+    content: "",
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class:
+          "min-h-14 text-[12.5px] text-[color:var(--planner-text-primary)] leading-relaxed focus:outline-none " +
+          "[&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 " +
+          "[&_a]:text-[color:var(--planner-primary)] [&_a]:underline " +
+          "[&_p.is-editor-empty:first-child::before]:text-[color:var(--planner-text-muted)] [&_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_p.is-editor-empty:first-child::before]:float-left [&_p.is-editor-empty:first-child::before]:pointer-events-none",
+      },
+    },
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+
+  // [2026-10-08] Dinh kem file - tai qua pipeline upload CO SAN cua Chat
+  // (uploadChatAttachmentAction, xem src/actions/chat/upload-attachment.ts) -
+  // Planner CHUA co field `attachments[]` rieng trong data model, nen chen
+  // THANG link file vao NOI DUNG mo ta (Tiptap) thay vi them 1 cot/migration
+  // backend moi chi cho task nay - lua chon it xam lan nhat, tai dung dung
+  // pipeline da chay that.
+  async function handleFilePick(files: FileList | null) {
+    const file = files?.[0];
+    if (!file || !editor) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("kind", "file");
+    const result = await uploadChatAttachmentAction(formData).catch(() => null);
+    setUploading(false);
+    if (result) {
+      editor
+        .chain()
+        .focus()
+        .insertContent(
+          `<a href="${result.url}" target="_blank" rel="noopener noreferrer">📎 ${result.name}</a> `,
+        )
+        .run();
+    }
   }
+
+  function submit() {
+    onSubmit({
+      title,
+      itemType,
+      priority,
+      location: location.trim(),
+      description: editor && !editor.isEmpty ? editor.getHTML() : "",
+      recurrence,
+      scheduledMinute: isDrag ? scheduledStart : null,
+      durationMinutes: isDrag ? scheduledDuration : null,
+      deadlineMinute: isDrag ? null : deadlineMinute,
+    });
+  }
+
+  const recurrencePreview = describeRecurrence(
+    recurrence,
+    date,
+    isDrag ? scheduledStart : deadlineMinute,
+    settings.timeFormat,
+  );
 
   return (
     <PopoverRoot open onOpenChange={(next) => !next && onCancel()}>
@@ -2347,41 +2768,284 @@ function QuickAddPopover({
         onOpenAutoFocus={(e) => e.preventDefault()}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className="z-50 flex w-72 flex-col gap-2.5 rounded-[12px] border bg-white p-3 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
+        className="z-50 flex max-h-[min(640px,80vh)] w-[360px] flex-col gap-2.5 overflow-y-auto rounded-[12px] border bg-white p-4 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
         style={{
           borderColor: typePalette.accentBorder,
           fontFamily: "var(--planner-font-family)",
         }}
       >
-        <input
-          autoFocus
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-            if (e.key === "Escape") onCancel();
-          }}
-          placeholder="Tên việc cần làm..."
-          className="h-9 w-full rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] font-medium text-[color:var(--planner-text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:bg-white"
-        />
-        <TypePickerRow value={itemType} onChange={setItemType} />
-        <PriorityPickerRow value={priority} onChange={setPriority} />
-        <div className="flex items-center justify-end gap-1.5">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="h-[32px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
-          >
-            Huỷ
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!title.trim()}
-            className="h-[32px] cursor-pointer rounded-[9px] bg-[color:var(--planner-primary)] px-3 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
-          >
-            Tạo việc
-          </button>
+        {/* [2026-10-08] Wrapper CHI de gan contentRef (dung check "click co
+            nam trong popover hay khong" o useEffect tren) - "contents" =
+            KHONG tao box rieng, khong anh huong flex layout cua chinh
+            PopoverContent (van la cha flex truc tiep cua cac phan tu ben
+            trong). PopoverContent (ui/popover.tsx) la function component
+            thuong (khong forwardRef) nen khong the gan ref THANG len no. */}
+        <div ref={contentRef} className="contents">
+          <input
+            autoFocus
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+              if (e.key === "Escape") onCancel();
+            }}
+            placeholder="Tên việc cần làm..."
+            className="h-9 w-full rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] px-2.5 text-[13px] font-medium text-[color:var(--planner-text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--planner-text-muted)] focus:border-[#b9c9ef] focus:bg-white"
+          />
+
+          {/* Dia diem */}
+          {location || locationOpen ? (
+            <div className="flex items-center gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] px-2">
+              <MapPin
+                size={13}
+                className="shrink-0 text-[color:var(--planner-text-muted)]"
+              />
+              <input
+                autoFocus={locationOpen}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                onBlur={() => {
+                  if (!location.trim()) setLocationOpen(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setLocation("");
+                    setLocationOpen(false);
+                  }
+                }}
+                placeholder="Địa điểm..."
+                className="h-8 flex-1 bg-transparent text-[12.5px] text-[color:var(--planner-text-primary)] outline-none placeholder:text-[color:var(--planner-text-muted)]"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setLocationOpen(true)}
+              className="flex w-fit cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+            >
+              <MapPin size={13} /> Thêm địa điểm
+            </button>
+          )}
+
+          {/* Thoi gian - xem comment `isDrag` o tren. */}
+          {isDrag ? (
+            <TimePickerField
+              startMinute={scheduledStart}
+              durationMinutes={scheduledDuration}
+              onChange={(s, d) => {
+                setScheduledStart(s);
+                setScheduledDuration(d);
+              }}
+            />
+          ) : deadlineOpen || deadlineMinute !== null ? (
+            <TimePickerField
+              startMinute={deadlineMinute}
+              durationMinutes={30}
+              onChange={(s) => setDeadlineMinute(s)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDeadlineOpen(true)}
+              className="flex w-fit cursor-pointer items-center gap-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+            >
+              <Clock size={13} /> Thêm hạn chót
+            </button>
+          )}
+
+          {/* Lap lai - dropdown KHONG native (quy uoc chung toan app), preview
+            dong doi theo tan suat + ngay/gio dang chon. */}
+          <div className="flex flex-col gap-1.5">
+            <DropdownMenuRoot
+              open={recurrenceMenuOpen}
+              onOpenChange={setRecurrenceMenuOpen}
+            >
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-8 cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-secondary)] outline-none hover:border-[color:var(--planner-border)]"
+                >
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <Repeat
+                      size={13}
+                      className="shrink-0 text-[color:var(--planner-text-muted)]"
+                    />
+                    <span className="truncate">{recurrencePreview}</span>
+                  </span>
+                  <ChevronDown
+                    size={12}
+                    className="shrink-0 text-[color:var(--planner-text-muted)]"
+                  />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                open={recurrenceMenuOpen}
+                align="start"
+                className="z-50 w-56 rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_10px_28px_rgba(20,30,50,.16)]"
+                style={{ fontFamily: "var(--planner-font-family)" }}
+              >
+                {RECURRENCE_FREQ_OPTIONS.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onSelect={() =>
+                      setRecurrence({
+                        freq: opt.value,
+                        customWeekdays:
+                          opt.value === "CUSTOM"
+                            ? (recurrence.customWeekdays ?? [
+                                new Date(date).getDay(),
+                              ])
+                            : undefined,
+                      })
+                    }
+                    className="flex cursor-pointer items-center justify-between rounded-[7px] px-2.5 py-1.5 text-[12.5px] font-medium text-[color:var(--planner-text-secondary)] outline-none hover:bg-[var(--planner-surface-soft)]"
+                  >
+                    {opt.label}
+                    {recurrence.freq === opt.value && (
+                      <Check
+                        size={13}
+                        className="text-[color:var(--planner-primary)]"
+                      />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenuRoot>
+            {recurrence.freq === "CUSTOM" && (
+              <div className="flex flex-wrap gap-1 pl-0.5">
+                {WEEKDAY_SHORT_IDS.map((id, idx) => {
+                  // WEEKDAY_SHORT_IDS[0]="MON" -> Date.getDay()=1, ..[6]="SUN" -> 0.
+                  const dow = (idx + 1) % 7;
+                  const selected =
+                    recurrence.customWeekdays?.includes(dow) ?? false;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      title={WEEKDAY_FULL_VI[dow]}
+                      onClick={() =>
+                        setRecurrence((r) => {
+                          const cur = new Set(r.customWeekdays ?? []);
+                          if (cur.has(dow)) cur.delete(dow);
+                          else cur.add(dow);
+                          return {
+                            ...r,
+                            customWeekdays: Array.from(cur).sort(),
+                          };
+                        })
+                      }
+                      className={cn(
+                        "flex size-6 cursor-pointer items-center justify-center rounded-full border text-[10.5px] font-semibold transition-colors duration-150 ease-out",
+                        selected
+                          ? "border-[color:var(--planner-primary)] bg-[color:var(--planner-primary-soft)] text-[color:var(--planner-primary)]"
+                          : "border-[color:var(--planner-border-soft)] text-[color:var(--planner-text-muted)] hover:border-[color:var(--planner-border)]",
+                      )}
+                    >
+                      {DOW_VI_NUM[dow]}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <TypePickerRow value={itemType} onChange={setItemType} />
+          <PriorityPickerRow value={priority} onChange={setPriority} />
+
+          {/* Mo ta chi tiet - Tiptap mini-editor, xem comment field `editor`. */}
+          <div className="rounded-[9px] border border-[color:var(--planner-border-soft)] bg-[var(--planner-surface-soft)] p-2">
+            <div className="mb-1.5 flex items-center gap-0.5 border-b border-[color:var(--planner-border-soft)] pb-1.5">
+              <EditorToolbarButton
+                label="Đậm"
+                icon={BoldIcon}
+                active={editor?.isActive("bold")}
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+              />
+              <EditorToolbarButton
+                label="Nghiêng"
+                icon={ItalicIcon}
+                active={editor?.isActive("italic")}
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+              />
+              <EditorToolbarButton
+                label="Gạch chân"
+                icon={UnderlineIcon}
+                active={editor?.isActive("underline")}
+                onClick={() => editor?.chain().focus().toggleUnderline().run()}
+              />
+              <div className="mx-0.5 h-4 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
+              <EditorToolbarButton
+                label="Danh sách chấm"
+                icon={BulletListIcon}
+                active={editor?.isActive("bulletList")}
+                onClick={() => editor?.chain().focus().toggleBulletList().run()}
+              />
+              <EditorToolbarButton
+                label="Danh sách số"
+                icon={OrderedListIcon}
+                active={editor?.isActive("orderedList")}
+                onClick={() =>
+                  editor?.chain().focus().toggleOrderedList().run()
+                }
+              />
+              <div className="mx-0.5 h-4 w-px shrink-0 bg-[color:var(--planner-border-soft)]" />
+              <EditorToolbarButton
+                label="Đính kèm tệp"
+                icon={Paperclip}
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              />
+              <div className="relative">
+                <EditorToolbarButton
+                  label="Emoji"
+                  icon={Smile}
+                  active={emojiOpen}
+                  onClick={() => setEmojiOpen((v) => !v)}
+                />
+                {emojiOpen && (
+                  <EmojiPickerGrid
+                    onPick={(em) =>
+                      editor?.chain().focus().insertContent(em).run()
+                    }
+                    onClose={() => setEmojiOpen(false)}
+                  />
+                )}
+              </div>
+              {uploading && (
+                <span className="ml-1 text-[10.5px] font-medium text-[color:var(--planner-text-muted)]">
+                  Đang tải lên...
+                </span>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) => {
+                void handleFilePick(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <EditorContent editor={editor} />
+          </div>
+
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="h-[32px] cursor-pointer rounded-[9px] px-2.5 text-[12.5px] font-medium text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={!title.trim()}
+              className="h-[32px] cursor-pointer rounded-[9px] bg-[color:var(--planner-primary)] px-3 text-[12.5px] font-semibold text-white shadow-[0_4px_10px_rgba(79,127,240,.18)] transition-colors duration-150 ease-out hover:bg-[#416fdd] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+            >
+              Tạo việc
+            </button>
+          </div>
         </div>
       </PopoverContent>
     </PopoverRoot>
@@ -2550,8 +3214,18 @@ function WeekTimeGrid({
   selectedItemId: string | null;
   onSelect: (date: string) => void;
   onSelectItem: (id: string) => void;
-  onSlotClick: (day: string, minute: number, duration?: number) => void;
-  draftPlaceholder: { date: string; start: number; duration: number } | null;
+  onSlotClick: (
+    day: string,
+    minute: number,
+    duration?: number,
+    isDrag?: boolean,
+  ) => void;
+  draftPlaceholder: {
+    date: string;
+    start: number;
+    duration: number;
+    isDrag: boolean;
+  } | null;
   // [2026-10-07] Thay AddTaskForm (song trong DayDetailPanel, da bo - xem
   // comment o noi goi WeekTimeGrid) - o nhap NGAY TREN "thẻ default" luc keo
   // tha, submit = title khong rong (Enter/blur), cancel = Escape/blur rong.
@@ -2559,6 +3233,12 @@ function WeekTimeGrid({
     title: string;
     itemType: LifeItemType;
     priority: LifeItemPriority | null;
+    location: string;
+    description: string;
+    recurrence: RecurrenceRule;
+    scheduledMinute: number | null;
+    durationMinutes: number | null;
+    deadlineMinute: number | null;
   }) => void;
   onQuickAddCancel: () => void;
   onUpdateItemTime: (
@@ -2615,8 +3295,17 @@ function WeekTimeGrid({
 
   function startSlotDrag(e: React.MouseEvent<HTMLDivElement>, day: string) {
     if (e.button !== 0) return; // chi chuot trai
-    const rect = e.currentTarget.getBoundingClientRect();
+    // [2026-10-08 fix] Giu lai CHINH phan tu cot ngay (khong phai rect CHUP 1
+    // LAN) - yeu cau nguoi dung: "Nếu giữ kéo thả thì khi ra ngoài view lịch
+    // cũng vẫn phải cuộn lên theo... không được tự ngắt khi chuột ra ngoài".
+    // Truoc day `rect` chup 1 LAN luc mousedown roi dung MAI cho ca lan keo -
+    // khi auto-scroll (them ben duoi) lam noi dung cuon, vi tri THAT cua cot
+    // ngay so voi viewport da DOI nhung `rect` cu khong biet, tinh sai phut.
+    // Gio goi lai getBoundingClientRect() MOI LAN can, luon dung voi vi tri
+    // HIEN TAI du noi dung vua tu cuon.
+    const dayEl = e.currentTarget;
     function minuteFromClientY(clientY: number): number {
+      const rect = dayEl.getBoundingClientRect();
       const raw = ((clientY - rect.top) / HOUR_ROW_HEIGHT) * 60;
       const snapped =
         Math.round(raw / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES +
@@ -2639,6 +3328,78 @@ function WeekTimeGrid({
     let lastClientY = e.clientY;
     const startClientY = e.clientY;
 
+    // [2026-10-08] Auto-scroll khi keo gan/ra khoi mep tren-duoi cua VUNG
+    // CUON luoi gio (scrollRef, KHAC voi dayEl - dayEl cao CA 24h, scrollRef
+    // moi la khung NHIN THAY duoc) - yeu cau nguoi dung: "khi ra ngoài view
+    // lịch cũng vẫn phải cuộn lên theo để đến vị trí muốn kết thúc phù hợp,
+    // không được tự ngắt khi chuột ra ngoài". Toc do ty le thuan khoang cach
+    // vuot qua mep (cang xa mep, cuon cang nhanh, nhung LUON cuon it nhat 1
+    // muc khi da vuot nguong - kha ca khi chuot ra han ngoai khung lich, vd
+    // de len toolbar/header phia tren).
+    const AUTO_SCROLL_EDGE_PX = 48;
+    const AUTO_SCROLL_MAX_SPEED = 18; // px moi khung hinh (~60fps)
+    let autoScrollRaf: number | null = null;
+    function autoScrollSpeedFor(clientY: number): number {
+      const container = scrollRef.current;
+      if (!container) return 0;
+      const crect = container.getBoundingClientRect();
+      const distFromTop = clientY - crect.top;
+      const distFromBottom = crect.bottom - clientY;
+      if (distFromTop < AUTO_SCROLL_EDGE_PX) {
+        const proximity = Math.min(
+          1,
+          Math.max(
+            0,
+            (AUTO_SCROLL_EDGE_PX - distFromTop) / AUTO_SCROLL_EDGE_PX,
+          ),
+        );
+        return -AUTO_SCROLL_MAX_SPEED * proximity;
+      }
+      if (distFromBottom < AUTO_SCROLL_EDGE_PX) {
+        const proximity = Math.min(
+          1,
+          Math.max(
+            0,
+            (AUTO_SCROLL_EDGE_PX - distFromBottom) / AUTO_SCROLL_EDGE_PX,
+          ),
+        );
+        return AUTO_SCROLL_MAX_SPEED * proximity;
+      }
+      return 0;
+    }
+    // [2026-10-08] Vong lap rAF RIENG (khong phai chi dua vao onMove) - vi
+    // khi chuot DUNG YEN sat mep (khong con sinh mousemove moi), noi dung
+    // van phai TIEP TUC tu cuon + "currentMinute" van phai tiep tuc tang/
+    // giam theo - giong hanh vi auto-scroll chuan cua Google Calendar.
+    function autoScrollTick() {
+      const container = scrollRef.current;
+      if (!container) {
+        autoScrollRaf = null;
+        return;
+      }
+      const speed = autoScrollSpeedFor(lastClientY);
+      if (speed === 0) {
+        autoScrollRaf = null;
+        return;
+      }
+      container.scrollTop = Math.min(
+        Math.max(container.scrollTop + speed, 0),
+        container.scrollHeight - container.clientHeight,
+      );
+      const started =
+        (slotDragRef.current?.started ?? false) ||
+        Math.abs(lastClientY - startClientY) >= DRAG_SNAP_PX;
+      const next = {
+        day,
+        startMinute,
+        currentMinute: minuteFromClientY(lastClientY),
+        started,
+      };
+      slotDragRef.current = next;
+      setSlotDrag(next);
+      autoScrollRaf = requestAnimationFrame(autoScrollTick);
+    }
+
     function onMove(ev: MouseEvent) {
       lastClientY = ev.clientY;
       // [2026-10-08] "started" GIU NGUYEN true 1 khi da dat nguong (khong
@@ -2656,10 +3417,21 @@ function WeekTimeGrid({
       };
       slotDragRef.current = next;
       setSlotDrag(next);
+      if (autoScrollSpeedFor(ev.clientY) !== 0) {
+        if (autoScrollRaf === null)
+          autoScrollRaf = requestAnimationFrame(autoScrollTick);
+      } else if (autoScrollRaf !== null) {
+        cancelAnimationFrame(autoScrollRaf);
+        autoScrollRaf = null;
+      }
     }
     function onUp() {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
+      if (autoScrollRaf !== null) {
+        cancelAnimationFrame(autoScrollRaf);
+        autoScrollRaf = null;
+      }
       const final = slotDragRef.current;
       slotDragRef.current = null;
       setSlotDrag(null);
@@ -2680,7 +3452,16 @@ function WeekTimeGrid({
       // tron snap.
       const rawDeltaPx = Math.abs(lastClientY - startClientY);
       if (rawDeltaPx >= DRAG_SNAP_PX && duration >= DRAG_SNAP_MINUTES) {
-        onSlotClick(final.day, lo, duration);
+        onSlotClick(final.day, lo, duration, true);
+      } else if (rawDeltaPx < DRAG_SNAP_PX) {
+        // [2026-10-08] Click DON (khong keo) - yeu cau nguoi dung: "Nếu
+        // người dùng chỉ click thì để tương tự + add location nhưng text là
+        // add deadline" (xem QuickAddPopover) - KHAC voi truoc day (click
+        // KHONG mo gi ca), gio click van mo form tao viec, chi khac o thoi
+        // gian KHONG bi ep san 1 khung gio (isDrag=false, duration=undefined
+        // -> QuickAddPopover tu hien "+ Thêm hạn chót" thay vi TimePickerField
+        // dien san).
+        onSlotClick(final.day, final.startMinute, undefined, false);
       }
     }
     document.addEventListener("mousemove", onMove);
@@ -3038,6 +3819,10 @@ function WeekTimeGrid({
                       (draftPlaceholder.duration / 60) * HOUR_ROW_HEIGHT,
                       HOUR_ROW_HEIGHT * 0.4,
                     )}
+                    date={draftPlaceholder.date}
+                    isDrag={draftPlaceholder.isDrag}
+                    initialStartMinute={draftPlaceholder.start}
+                    initialDurationMinutes={draftPlaceholder.duration}
                     onSubmit={onQuickAddSubmit}
                     onCancel={onQuickAddCancel}
                   />

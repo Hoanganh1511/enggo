@@ -350,3 +350,43 @@ export const WEEKDAY_SHORT_LABELS: Record<(typeof WEEKDAY_SHORT_IDS)[number], st
   SAT: "Sat",
   SUN: "Sun",
 };
+
+// [2026-10-08] "Lặp lại" (recurrence) cho QuickAddPopover - yeu cau nguoi
+// dung: "select box về việc có lặp lại không: Không lặp lại/Mỗi ngày/Mỗi
+// tuần/Mỗi tháng/Mỗi năm/Tùy chỉnh". Luu trong `item.metadata.recurrence`
+// (CHUNG cho MOI Type, giong pattern reminderMinutesBefore o tren - KHONG
+// can migration backend vi metadata von la Json tu do). CHI la "khai bao y
+// dinh lap lai" (UI + luu metadata) - CHUA co logic sinh/nhan ban cac lan
+// xuat hien lap lai tren lich (can RRULE expansion o backend, ngoai pham vi
+// task nay) - flag ro trong PR/noi dung bao cao, khong ngam hieu la "lam
+// xong het".
+export type RecurrenceFreq =
+  | "NONE"
+  | "DAILY"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "YEARLY"
+  | "CUSTOM";
+export type RecurrenceRule = {
+  freq: RecurrenceFreq;
+  // CUSTOM: cac thu trong tuan duoc chon lap lai (vd "thứ 2, 4, 6") - gia
+  // tri 0=CN..6=T7 (khop Date.getDay()).
+  customWeekdays?: number[];
+};
+export const RECURRENCE_FREQ_OPTIONS: { value: RecurrenceFreq; label: string }[] = [
+  { value: "NONE", label: "Không lặp lại" },
+  { value: "DAILY", label: "Mỗi ngày" },
+  { value: "WEEKLY", label: "Mỗi tuần" },
+  { value: "MONTHLY", label: "Mỗi tháng" },
+  { value: "YEARLY", label: "Mỗi năm" },
+  { value: "CUSTOM", label: "Tùy chỉnh" },
+];
+export const WEEKDAY_FULL_VI = [
+  "Chủ Nhật",
+  "Thứ Hai",
+  "Thứ Ba",
+  "Thứ Tư",
+  "Thứ Năm",
+  "Thứ Sáu",
+  "Thứ Bảy",
+]; // index = Date.getDay() (0 = CN)
