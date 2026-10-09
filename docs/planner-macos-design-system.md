@@ -11,6 +11,52 @@ thêm UI mới trong khu vực Planner (`src/components/planner/`), thay vì ch�
 lại spec gốc (đã nằm rải rác trong code/lịch sử chat), rút thẳng từ
 `globals.css`/`PlannerSettingsModal.tsx` — những gì **đã chạy thật**.
 
+> **Cập nhật 2026-10-09 — refactor Planner.** Hệ token/màu/control trong file
+> này vẫn đúng nguyên vẹn. Nhưng **mô hình dữ liệu và tập component đã đổi
+> hẳn**: xem "Mô hình dữ liệu" và "Component shared" bên dưới trước khi viết
+> UI mới. Các component sau **đã bị xoá**, đừng đi tìm: `EventForm`,
+> `ReminderForm`, `RecurrenceEditor`, `SharedCalendarForm`, `TaskTypePicker`,
+> `TaskListView`, `CalendarView`, `calendar-types.ts`,
+> `calendar-model-bridge.ts`, `life-item-types.ts`,
+> `life-item-palette-context.tsx`, `calendar-events.ts`.
+
+## Component shared — dùng lại, đừng vẽ lại
+
+Mọi chỗ hiển thị/sửa một `PlannerItem` đều phải đi qua các component này.
+Trước refactor có 6 cách vẽ thẻ gần giống nhau và 4 form riêng, mỗi cái tự
+quyết định badge nào được hiện — sửa 1 chi tiết phải nhớ sửa 6 chỗ, và thực
+tế chúng đã trôi khác nhau.
+
+| Việc cần làm | Dùng |
+| --- | --- |
+| Hiện 1 item (lưới giờ / hàng "Cả ngày" / danh sách / ô lưới tháng) | `PlannerItemCard` với `variant="timed" \| "allDay" \| "list" \| "compact"` |
+| Tạo **hoặc** sửa item (mọi loại) | `PlannerItemForm` — một form duy nhất |
+| Panel chi tiết 1 item | `PlannerItemDetail` |
+| Chấm category / badge status / dấu ưu tiên / icon loại | `planner-indicators.tsx` |
+| Chuỗi giờ, địa điểm, link họp, thời lượng | `planner-datetime.tsx` (`formatSchedule()` là nơi DUY NHẤT biến lịch thành chữ) |
+| Trạng thái rỗng / đang tải / lỗi / lỗi inline trong form | `planner-states.tsx` |
+| Modal có dropdown lồng bên trong | `PlannerModal` (truyền `container` xuống — xem mục Portal-safe) |
+
+Validate: `validateDraft()` trong `planner-domain.ts` — **cùng một bộ luật
+với backend** (`PlannerService.normalizeSchedule`). Đừng viết lại luật
+ngày/giờ trong component.
+
+## Category vs status vs priority — 3 trục độc lập
+
+Nguyên tắc từ design reference ("Keep category and status separate"):
+
+- **Category** quyết định **màu thẻ**: nền `light` + thanh accent `main` dọc
+  mép trái (3px, **cách lề trái 3px**, bo tròn 2 đầu), bo góc 7px, không
+  border 4 cạnh, không shadow mặc định — chỉ `hover:brightness-95`.
+- **Status** là lớp **riêng**: badge/chấm/gạch ngang. **Không** tô lại cả thẻ
+  theo status, nếu không category mất khả năng nhận diện.
+- **Priority** độc lập với cả hai, hiện bằng dấu `!`/`!!`/`!!!` + màu.
+- Mọi trạng thái phải hiểu được **không chỉ nhờ màu**: status có icon + chữ,
+  priority có dấu `!` + nhãn ẩn cho screen reader.
+
+`OVERDUE` là trạng thái **suy ra ở backend lúc đọc**, không lưu trong DB và
+người dùng không chọn tay được (`PLANNER_STATUS_META[...].selectable`).
+
 ## Phạm vi áp dụng
 
 Mọi UI mới trong `src/components/planner/` (modal, popover, form, dropdown,
@@ -267,21 +313,42 @@ transition={{ duration: 0.15, ease: "easeOut" }}
 (`src/components/ui/*.tsx`) — không cần tự viết lại, chỉ cần dùng 2 component
 đó.
 
-## Dữ liệu metadata "mở rộng không cần migration"
+## Mô hình dữ liệu (cập nhật 2026-10-09 — đọc kỹ, đã đổi hẳn)
 
-Pattern đã dùng nhiều lần (vd `reminderMinutesBefore`, `recurrence`,
-`location` generic cho mọi Type): field mới KHÔNG bắt buộc + không cần
-backend migration thì lưu trong `PlannerItem.metadata` (cột Json tự do,
-`src/lib/api/planner.ts`), đặt tên field rõ nghĩa, viết comment dẫn tới chỗ
-field được định nghĩa gốc (`src/lib/planner/life-item-types.ts`). Chỉ thêm
-cột/migration backend thật khi field cần filter/sort/index hiệu quả ở
-server, hoặc khi nó bắt buộc cho mọi item (không optional).
+Pattern "nhét field mới vào `PlannerItem.metadata` (cột Json tự do) để khỏi
+migration" **ĐÃ BỊ BỎ**, cùng với chính cột `metadata`. Lý do: nó là nguồn
+gốc của việc cùng một khái niệm (địa điểm, link họp, nhắc trước, việc con)
+tồn tại dưới 2-3 tên khác nhau ở 2-3 chỗ khác nhau, không field nào được
+validate, và không query/filter được ở server.
+
+Thay bằng **một model phẳng, mọi field là cột thật** — nguồn sự thật duy
+nhất: `src/lib/planner/planner-domain.ts` (khớp 1-1 với model `PlannerItem`
+trong `career-tree-api/prisma/schema.prisma`):
+
+- Loại: `TASK | EVENT | REMINDER` (`PlannerItemType`).
+- `scheduleKind`: `UNSCHEDULED | DEADLINE | TIMED | ALL_DAY` — **discriminator
+  tường minh**, KHÔNG suy ý định từ việc cột ngày nào tình cờ có giá trị.
+  Mỗi loại chỉ cho phép một tập `scheduleKind` nhất định
+  (`PLANNER_TYPE_META[type].allowedScheduleKinds`).
+- `category` (8 giá trị) quyết định **màu thẻ**; `status` (6) và `priority`
+  (4) là 2 trục **độc lập** — xem "Category vs status vs priority" bên dưới.
+- Field tuỳ chọn là cột thật: `location`, `meetingUrl`, `checklist` (Json),
+  `recurrence` (Json), `description`.
+
+Thêm field mới: thêm cột + migration thật, thêm vào `planner-domain.ts`,
+rồi để các component shared tự nhận. **Đừng** tạo lại một cột Json tự do.
+
+Khác biệt giữa 3 loại là **DỮ LIỆU trong `PLANNER_TYPE_META`**
+(`allowedScheduleKinds` / `completable` / `supportsChecklist` /
+`supportsPlace`), không phải 3 nhánh `if` trong form — thêm loại mới là thêm
+một dòng vào bảng đó.
 
 ## Giới hạn đã biết (chưa làm, không ngầm hiểu là "đã xong")
 
-- `RecurrenceRule` (`item.metadata.recurrence`) hiện CHỈ là khai báo ý định
-  lặp lại (lưu + hiển thị preview) — CHƯA có logic sinh/nhân bản các lần
-  xuất hiện lặp lại thật trên lịch (cần RRULE expansion phía backend).
+- `item.recurrence` (cột Json) hiện CHỈ **lưu** được ý định lặp lại — CHƯA
+  sinh instance: một việc lặp lại vẫn chỉ là 1 dòng, không tự nhân bản ra các
+  lần xuất hiện sau trên lịch, và chưa có luồng sửa "chỉ lần này / lần này và
+  sau / tất cả". Cần RRULE expansion phía backend.
 - Mô tả chi tiết (description) tạo qua `QuickAddPopover` lưu dạng HTML
   (Tiptap `getHTML()`) để giữ định dạng Bold/Italic/Underline/list thật —
   nhưng form sửa task có sẵn (`EditItemForm`, phần "Sửa chi tiết") vẫn dùng

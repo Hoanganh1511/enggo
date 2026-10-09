@@ -23,10 +23,15 @@ export const DEFAULT_PLANNER_SETTINGS: PlannerSettings = {
   firstVisibleHour: 0,
   lastVisibleHour: 24,
   timeSlotMinutes: 30,
-  showTaskType: true,
+  // [2026-10-09] showTaskType -> showCategory; bo showArea/showProject (2 cot
+  // area/project da bi xoa khoi PlannerItem); them showStatus/showLocation.
+  // Phai KHOP voi @default trong model PlannerSettings (schema.prisma) -
+  // day la gia tri dung TRUOC khi fetch dau tien tra ve, lech la UI nhay 1
+  // nhip khi settings that ve.
+  showCategory: true,
+  showStatus: true,
   showDuration: true,
-  showArea: false,
-  showProject: false,
+  showLocation: true,
   showPriority: true,
   completedTaskDisplay: "KEEP_VISIBLE",
   completedTaskStyle: "CHECK_ICON",

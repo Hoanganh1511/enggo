@@ -1,114 +1,96 @@
 import { apiFetch } from "./client";
-import type { LifeItemType, LifeItemPriority } from "@/lib/planner/life-item-types";
+import type {
+  CategoryColor,
+  ChecklistItem,
+  PlannerCategory,
+  PlannerItem,
+  PlannerItemType,
+  PlannerPriority,
+  PlannerScheduleKind,
+  PlannerStatus,
+} from "@/lib/planner/planner-domain";
 
-// API cho tinh nang Planner (/planner, trang MOI, doc lap voi /tracking dang
-// khoa) - xem comment day du o backend (career-tree-api/src/planner/).
-export type PlannerItemKind = "SIMPLE" | "BIG";
-export type ApiPlannerItem = {
-  id: string;
-  date: string;
+// API Planner - khop 1-1 voi career-tree-api/src/planner/.
+//
+// [2026-10-09] Refactor: shape cu (date + scheduledMinute + durationMinutes +
+// kind/itemType/area/project/tags/metadata/colorPaletteId) da bi THAY HOAN
+// TOAN. Khong con adapter - `PlannerItem` tra ve tu day dung TRUC TIEP trong
+// UI, khong dich qua kieu trung gian nao.
+//
+// Kieu item dung CHUNG voi UI, dinh nghia o lib/planner/planner-domain.ts
+// (nguon su that duy nhat) - re-export cho goi quen tay.
+export type { PlannerItem } from "@/lib/planner/planner-domain";
+
+// Tao moi: title + type la BAT BUOC; scheduleKind bo trong = backend dung
+// mac dinh theo type (TASK->UNSCHEDULED, EVENT->TIMED, REMINDER->DEADLINE).
+// Luat cheo field (TIMED can startAt+endAt, DEADLINE can dueAt...) do backend
+// `normalizeSchedule()` kiem tra - FE goi `validateDraft()` truoc de bao loi
+// tai cho, nhung backend van la chot cuoi.
+export type CreatePlannerItemInput = {
+  type: PlannerItemType;
   title: string;
-  kind: PlannerItemKind;
-  // [2026-10-06] "Good Life - Life Management System" - xem comment day du
-  // o life-item-types.ts. Mac dinh ACTION (item cu truoc migration nay).
-  itemType: LifeItemType;
-  scheduledMinute: number | null;
-  // Mau the (hex "#rrggbb") - TRUONG CU, KHONG CON duoc doc de hien thi mau
-  // (mau gio la semantic theo itemType, xem resolveLifeItemPalette()) - giu
-  // lai field o day CHI de khop kieu API, khong dung o dau trong UI nua.
-  color: string | null;
-  // [2026-10-07] Mau RIENG cho item nay, DOC LAP voi itemType - yeu cau
-  // nguoi dung: "chọn màu này sẽ là màu của card, không liên quan tới loại
-  // của card". 1 id trong LIFE_ITEM_PALETTES (life-item-types.ts) hoac null
-  // (chua tu chon rieng - fallback ve mau theo Type nhu truoc, xem
-  // resolveLifeItemPalette()).
-  colorPaletteId: string | null;
-  // Thoi luong (phut) - null = chua dat, FE tu fallback ve 1 gia tri mac
-  // dinh khi can ve UI (xem DEFAULT_DURATION_MINUTES trong PlannerShell.tsx).
-  durationMinutes: number | null;
-  // Nguoi dung tu danh dau "việc trọng tâm hôm nay" ("Today's Focus").
-  isFocus: boolean;
-  done: boolean;
-  orderIndex: number;
-  parentId: string | null;
-  // --- Metadata CHUNG cho moi Type (section 8-16, optional/"progressive
-  // disclosure" - khong bat buoc dien).
-  priority: LifeItemPriority | null;
-  status: string | null;
-  area: string | null;
-  project: string | null;
-  tags: string[];
-  deadline: string | null;
-  // Field RIENG theo Type - xem EventMetadata/HabitMetadata/ReflectionMetadata
-  // trong life-item-types.ts, UI tu cast dung kieu theo `itemType`.
-  metadata: Record<string, unknown> | null;
-  // [2026-10-07] Noi dung chi tiet tu do - yeu cau nguoi dung: "task cần
-  // phải có phần viết nội dung chi tiết của task nữa".
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-  // CHI co gia tri (mang, co the rong) o top-level item - item con (da co
-  // parentId) khong co field nay (backend khong tra ve).
-  children?: ApiPlannerItem[];
-};
-export type PlannerItemInput = {
-  date: string;
-  title: string;
-  kind?: PlannerItemKind;
-  itemType?: LifeItemType;
-  scheduledMinute?: number;
-  color?: string;
-  colorPaletteId?: string;
-  durationMinutes?: number;
-  isFocus?: boolean;
-  // Truyen de chen 1 DAU VIEC CON vao duoi 1 planner "lớn" da co san thay vi
-  // tao item top-level moi - xem PlannerService.create() o backend.
-  parentId?: string;
-  priority?: LifeItemPriority;
-  status?: string;
-  area?: string;
-  project?: string;
-  tags?: string[];
-  deadline?: string;
-  metadata?: Record<string, unknown>;
   description?: string;
+  category?: PlannerCategory;
+  status?: PlannerStatus;
+  priority?: PlannerPriority;
+  scheduleKind?: PlannerScheduleKind;
+  startAt?: string;
+  endAt?: string;
+  dueAt?: string;
+  location?: string;
+  meetingUrl?: string;
+  checklist?: ChecklistItem[];
+  recurrence?: Record<string, unknown>;
+  orderIndex?: number;
 };
-export type PlannerItemUpdateInput = Partial<{
+
+// null = XOA gia tri da dat; undefined (vang mat) = GIU NGUYEN. Backend phan
+// biet 2 truong hop nay (@ValidateIf trong UpdatePlannerItemDto).
+export type UpdatePlannerItemInput = Partial<{
+  type: PlannerItemType;
   title: string;
-  done: boolean;
-  itemType: LifeItemType;
-  // null = xoa gia tri da dat (khac undefined = giu nguyen) - xem comment
-  // PlannerService.update() o backend. Ap dung cho ca metadata moi (priority/
-  // status/area/project/deadline/metadata), khong rieng scheduledMinute/color.
-  scheduledMinute: number | null;
-  color: string | null;
-  colorPaletteId: string | null;
-  durationMinutes: number | null;
-  isFocus: boolean;
-  orderIndex: number;
-  priority: LifeItemPriority | null;
-  status: string | null;
-  area: string | null;
-  project: string | null;
-  tags: string[];
-  deadline: string | null;
-  metadata: Record<string, unknown> | null;
   description: string | null;
+  category: PlannerCategory;
+  status: PlannerStatus;
+  priority: PlannerPriority;
+  scheduleKind: PlannerScheduleKind;
+  startAt: string | null;
+  endAt: string | null;
+  dueAt: string | null;
+  location: string | null;
+  meetingUrl: string | null;
+  checklist: ChecklistItem[] | null;
+  recurrence: Record<string, unknown> | null;
+  orderIndex: number;
 }>;
 
-export function listPlannerItems(from: string, to: string): Promise<ApiPlannerItem[]> {
-  return apiFetch<ApiPlannerItem[]>(
+/**
+ * Item co MAT trong khoang [from, to]: TIMED/ALL_DAY giao khoang, hoac
+ * DEADLINE co dueAt trong khoang. KHONG tra ve item UNSCHEDULED - dung
+ * `listUnscheduledPlannerItems()` cho nhung item do.
+ */
+export function listPlannerItems(from: string, to: string): Promise<PlannerItem[]> {
+  return apiFetch<PlannerItem[]>(
     `/planner/items?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
   );
 }
-export function createPlannerItem(dto: PlannerItemInput): Promise<ApiPlannerItem> {
-  return apiFetch<ApiPlannerItem>("/planner/items", {
+
+/** Viec chua xep lich - khong thuoc ngay nao nen phai lay rieng. */
+export function listUnscheduledPlannerItems(): Promise<PlannerItem[]> {
+  return apiFetch<PlannerItem[]>("/planner/items/unscheduled");
+}
+
+export function createPlannerItem(dto: CreatePlannerItemInput): Promise<PlannerItem> {
+  return apiFetch<PlannerItem>("/planner/items", {
     method: "POST",
     body: JSON.stringify(dto),
   });
 }
-export function updatePlannerItem(id: string, dto: PlannerItemUpdateInput): Promise<ApiPlannerItem> {
-  return apiFetch<ApiPlannerItem>(`/planner/items/${id}`, {
+export function updatePlannerItem(
+  id: string,
+  dto: UpdatePlannerItemInput,
+): Promise<PlannerItem> {
+  return apiFetch<PlannerItem>(`/planner/items/${id}`, {
     method: "PATCH",
     body: JSON.stringify(dto),
   });
@@ -117,25 +99,29 @@ export function deletePlannerItem(id: string): Promise<void> {
   return apiFetch<void>(`/planner/items/${id}`, { method: "DELETE" });
 }
 
-// --- "User customization" (spec section 21) - palette rieng tung Type.
-export type PlannerTypeColor = { type: LifeItemType; paletteId: string };
-export function listPlannerTypeColors(): Promise<PlannerTypeColor[]> {
-  return apiFetch<PlannerTypeColor[]>("/planner/type-colors");
+// --- Mau theo CATEGORY (thay PlannerTypeColor cu: mau theo itemType +
+// paletteId tu bo 14 palette). Gio luu truc tiep 3 hex main/light/border, de
+// khop design reference, va vang mat 1 dong = dung mac dinh cua category.
+export type PlannerCategoryColorRow = CategoryColor & { category: PlannerCategory };
+
+export function listPlannerCategoryColors(): Promise<PlannerCategoryColorRow[]> {
+  return apiFetch<PlannerCategoryColorRow[]>("/planner/category-colors");
 }
-export function setPlannerTypeColor(type: LifeItemType, paletteId: string): Promise<PlannerTypeColor> {
-  return apiFetch<PlannerTypeColor>(`/planner/type-colors/${type}`, {
+export function setPlannerCategoryColor(
+  category: PlannerCategory,
+  color: CategoryColor,
+): Promise<PlannerCategoryColorRow> {
+  return apiFetch<PlannerCategoryColorRow>(`/planner/category-colors/${category}`, {
     method: "PATCH",
-    body: JSON.stringify({ paletteId }),
+    body: JSON.stringify(color),
   });
 }
-export function resetPlannerTypeColor(type: LifeItemType): Promise<void> {
-  return apiFetch<void>(`/planner/type-colors/${type}`, { method: "DELETE" });
+export function resetPlannerCategoryColor(category: PlannerCategory): Promise<void> {
+  return apiFetch<void>(`/planner/category-colors/${category}`, { method: "DELETE" });
 }
 
-// [2026-10-07] Settings modal (toolbar icon moi) - 1 object DUY NHAT/user,
-// khac PlannerTypeColor o tren (nhieu dong, 1 dong/Type). Giu NGUYEN VAN
-// gia tri khop 1-1 voi model PlannerSettings ben backend (schema.prisma) +
-// UpdatePlannerSettingsDto.
+// [2026-10-07] Settings modal - 1 object DUY NHAT/user. Khop 1-1 voi model
+// PlannerSettings (schema.prisma) + UpdatePlannerSettingsDto.
 export type PlannerSettings = {
   userId: string;
   weekStartsOn: "MONDAY" | "SUNDAY";
@@ -148,10 +134,12 @@ export type PlannerSettings = {
   firstVisibleHour: number;
   lastVisibleHour: number;
   timeSlotMinutes: 15 | 30 | 60;
-  showTaskType: boolean;
+  // [2026-10-09] showTaskType -> showCategory; bo showArea/showProject (cot
+  // area/project da bi xoa); them showStatus/showLocation.
+  showCategory: boolean;
+  showStatus: boolean;
   showDuration: boolean;
-  showArea: boolean;
-  showProject: boolean;
+  showLocation: boolean;
   showPriority: boolean;
   completedTaskDisplay: "KEEP_VISIBLE" | "COLLAPSE" | "HIDE";
   completedTaskStyle: "CHECK_ICON" | "CHECK_COLOR" | "DONE_BADGE" | "PATTERN";

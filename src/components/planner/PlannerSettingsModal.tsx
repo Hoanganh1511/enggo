@@ -12,14 +12,19 @@ import {
 } from "lucide-react";
 import { TimePickerField } from "./time-picker-field";
 import { usePlannerSettings } from "./planner-settings-context";
-import { useTypeColorOverrides } from "./life-item-palette-context";
 import type { PlannerSettings } from "@/lib/api/planner";
 import {
-  LIFE_ITEM_TYPES,
-  LIFE_ITEM_PALETTES,
-  resolveLifeItemPalette,
-  type LifeItemType,
-} from "@/lib/planner/life-item-types";
+  resetPlannerCategoryColorAction,
+  setPlannerCategoryColorAction,
+} from "@/actions/planner/planner";
+import {
+  PLANNER_CATEGORIES,
+  PLANNER_CATEGORY_META,
+  resolveCategoryColor,
+  type CategoryColor,
+  type CategoryColorOverrides,
+  type PlannerCategory,
+} from "@/lib/planner/planner-domain";
 
 // [2026-10-08] Settings modal cua Planner - REBUILD HOAN TOAN theo "style
 // system hoan chinh" (36 muc design tokens: color/typography/modal/sidebar/
@@ -57,15 +62,16 @@ type NavKey = (typeof NAV_ITEMS)[number]["key"];
 export function PlannerSettingsModal({
   open,
   onOpenChange,
-  onChangeTypeColor,
+  colorOverrides,
+  onColorOverridesChange,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onChangeTypeColor: (type: LifeItemType, paletteId: string) => void;
+  colorOverrides: CategoryColorOverrides;
+  onColorOverridesChange: (next: CategoryColorOverrides) => void;
 }) {
   const [nav, setNav] = useState<NavKey>("general");
   const { settings, update } = usePlannerSettings();
-  const overrides = useTypeColorOverrides();
   // [2026-10-08] DOM node cua chinh Dialog.Content - truyen xuong lam
   // `container` cho Popover LONG BEN TRONG (TimePickerField o CalendarSection)
   // de Popover mount LAM CON cua dialog nay thay vi document.body - xem
@@ -183,7 +189,10 @@ export function PlannerSettingsModal({
               )}
               {nav === "appearance" && <AppearanceSection settings={settings} update={update} />}
               {nav === "colors" && (
-                <ColorsSection overrides={overrides} onChangeTypeColor={onChangeTypeColor} />
+                <ColorsSection
+                  overrides={colorOverrides}
+                  onOverridesChange={onColorOverridesChange}
+                />
               )}
             </div>
           </div>
@@ -493,10 +502,12 @@ function AppearanceSection({
   return (
     <>
       <Section title="Show on task card">
-        <Checkbox label="Task type" checked={settings.showTaskType} onChange={(v) => update({ showTaskType: v })} />
+        {/* [2026-10-09] "Task type" -> "Category"; bo "Area"/"Project" (2 cot
+            do da bi xoa khoi PlannerItem); them "Status"/"Location". */}
+        <Checkbox label="Category" checked={settings.showCategory} onChange={(v) => update({ showCategory: v })} />
+        <Checkbox label="Status" checked={settings.showStatus} onChange={(v) => update({ showStatus: v })} />
         <Checkbox label="Duration" checked={settings.showDuration} onChange={(v) => update({ showDuration: v })} />
-        <Checkbox label="Area" checked={settings.showArea} onChange={(v) => update({ showArea: v })} />
-        <Checkbox label="Project" checked={settings.showProject} onChange={(v) => update({ showProject: v })} />
+        <Checkbox label="Location" checked={settings.showLocation} onChange={(v) => update({ showLocation: v })} />
         <Checkbox label="Priority" checked={settings.showPriority} onChange={(v) => update({ showPriority: v })} />
       </Section>
       <Section title="Completed tasks" last>
@@ -528,54 +539,180 @@ function AppearanceSection({
   );
 }
 
-function ColorsSection({
-  overrides,
-  onChangeTypeColor,
+// [2026-10-09] Tieu de vi du cho the demo - 1 cau THAT cho tung category,
+// de the demo doc duoc nhu 1 the viec that thay vi chu "Demo" chung chung.
+const CATEGORY_DEMO: Record<PlannerCategory, { title: string; meta: string }> = {
+  STUDY: { title: "Ôn chương 4 — Thuật toán", meta: "09:00 – 10:30" },
+  MEETING: { title: "Họp đồng bộ dự án", meta: "14:00 – 15:00" },
+  DEADLINE: { title: "Nộp báo cáo tuần", meta: "Hạn 17:00" },
+  PERSONAL: { title: "Đi chợ cuối tuần", meta: "10:00 – 11:00" },
+  SPORTS: { title: "Chạy bộ 5km", meta: "06:00 – 06:45" },
+  CALL: { title: "Gọi cho khách hàng", meta: "11:00 – 11:30" },
+  BREAK: { title: "Nghỉ trưa", meta: "12:00 – 13:00" },
+  OTHER: { title: "Việc khác", meta: "15:00 – 16:00" },
+};
+
+// The viec DEMO - style KHOP DUNG the that tren luoi tuan (PlannerItemCard
+// variant="timed": nen `light` + thanh accent `main` cach le trai 3px, bo
+// goc 7px), de nguoi dung thay CHINH XAC mau se trong nhu the nao tren lich
+// that, khong chi 1 cham mau tron roi doan.
+function CategoryDemoCard({
+  color,
+  title,
+  meta,
 }: {
-  overrides: Partial<Record<LifeItemType, string>>;
-  onChangeTypeColor: (type: LifeItemType, paletteId: string) => void;
+  color: CategoryColor;
+  title: string;
+  meta: string;
 }) {
   return (
-    <Section title="Task type colors" last>
+    <div
+      className="relative w-full overflow-hidden rounded-[7px] py-1.5 pr-2.5 pl-[11px]"
+      style={{ backgroundColor: color.light, border: `1px solid ${color.border}` }}
+    >
+      <span
+        className="absolute top-1 bottom-1 left-[3px] w-[3px] rounded-full"
+        style={{ backgroundColor: color.main }}
+        aria-hidden="true"
+      />
+      <p
+        className="truncate text-[10.5px] font-medium"
+        style={{ color: color.main }}
+      >
+        {meta}
+      </p>
+      <p
+        className="truncate text-[12px] font-semibold"
+        style={{ color: "var(--mset-text-primary)" }}
+      >
+        {title}
+      </p>
+    </div>
+  );
+}
+
+/** 1 o chon mau (main / light / border) - input type=color + ma hex doc duoc. */
+function HexSwatchInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (hex: string) => void;
+}) {
+  return (
+    <label className="flex min-w-0 flex-1 cursor-pointer flex-col gap-1">
+      <span
+        className="text-[10px] font-semibold tracking-[.02em] uppercase"
+        style={{ color: "var(--mset-text-tertiary)" }}
+      >
+        {label}
+      </span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={label}
+          className="size-6 shrink-0 cursor-pointer rounded-[6px] border-0 bg-transparent p-0"
+        />
+        <span
+          className="min-w-0 truncate text-[10.5px] tabular-nums"
+          style={{ color: "var(--mset-text-tertiary)" }}
+        >
+          {value.toUpperCase()}
+        </span>
+      </span>
+    </label>
+  );
+}
+
+// [2026-10-09] Thay "Task type colors" (mau theo LifeItemType, chon 1 trong
+// 14 palette co san). Gio: mau theo CATEGORY va chinh DUOC CA 3 hex
+// (main/light/border) - dung bo 3 ma design reference dinh nghia, thay vi
+// bat nguoi dung chon trong 1 bo palette dong cung.
+function ColorsSection({
+  overrides,
+  onOverridesChange,
+}: {
+  overrides: CategoryColorOverrides;
+  onOverridesChange: (next: CategoryColorOverrides) => void;
+}) {
+  // Ghi NGAY (khong co nut Luu) - dong bo voi moi control khac trong modal
+  // nay. Cap nhat local truoc de UI phan hoi tuc thi, roi gui len server.
+  function setColor(category: PlannerCategory, next: CategoryColor) {
+    onOverridesChange({ ...overrides, [category]: next });
+    void setPlannerCategoryColorAction(category, next).catch(() => {
+      // Ghi that bai: khong cuon lai UI (nguoi dung dang keo chon mau, giat
+      // nguoc lai se roi hon la de nguyen) - lan mo lai Planner se tai lai
+      // gia tri that tu server.
+    });
+  }
+
+  function reset(category: PlannerCategory) {
+    const next = { ...overrides };
+    delete next[category];
+    onOverridesChange(next);
+    void resetPlannerCategoryColorAction(category).catch(() => {});
+  }
+
+  return (
+    <Section title="Category colors" last>
       <div className="flex flex-col gap-5">
-        {LIFE_ITEM_TYPES.map((t) => {
-          const current = resolveLifeItemPalette(t.id, overrides);
+        {PLANNER_CATEGORIES.map((cat) => {
+          const color = resolveCategoryColor(cat, overrides);
+          const customized = !!overrides[cat];
+          const demo = CATEGORY_DEMO[cat];
           return (
-            <div key={t.id} className="flex flex-col gap-2">
-              <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: "var(--mset-text-primary)" }}>
-                <span aria-hidden="true">{t.icon}</span> {t.label}
-                <span className="text-xs font-normal" style={{ color: "var(--mset-text-tertiary)" }}>
-                  · {current.name}
+            <div key={cat} className="flex flex-col gap-2.5">
+              <span className="flex items-center gap-1.5">
+                <span
+                  className="size-3 shrink-0 rounded-full"
+                  style={{ backgroundColor: color.main }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "var(--mset-text-primary)" }}
+                >
+                  {PLANNER_CATEGORY_META[cat].label}
                 </span>
+                {customized && (
+                  <button
+                    type="button"
+                    onClick={() => reset(cat)}
+                    className="ml-auto cursor-pointer text-[11px] font-medium hover:underline"
+                    style={{ color: "var(--mset-accent)" }}
+                  >
+                    Về mặc định
+                  </button>
+                )}
               </span>
-              <div className="flex flex-wrap gap-2">
-                {LIFE_ITEM_PALETTES.map((p) => {
-                  const selected = current.id === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      title={p.name}
-                      onClick={() => onChangeTypeColor(t.id, p.id)}
-                      style={{
-                        backgroundColor: p.accentStrong,
-                        // [2026-10-08] boxShadow THUAN (khong dung class
-                        // ring-offset-* cua Tailwind) - modal nen kinh mo
-                        // (backdrop-filter blur), ring-offset mac dinh gia
-                        // dinh nen DUOI la mau DAC (thuong trang), dung
-                        // inline shadow tu ve "vien trang" + "vien dam khi
-                        // selected" chac chan dung mau, khong le qua lop
-                        // kinh ben duoi.
-                        boxShadow: selected
-                          ? "0 0 0 2px #ffffff, 0 0 0 4px var(--mset-text-primary)"
-                          : "0 0 0 1px rgba(0,0,0,.10)",
-                      }}
-                      className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform duration-150 ease-out hover:scale-110"
-                    >
-                      {selected && <Check size={13} strokeWidth={3} className="text-white drop-shadow" />}
-                    </button>
-                  );
-                })}
+              <div className="flex items-start gap-4">
+                <div className="flex min-w-0 flex-1 gap-2">
+                  <HexSwatchInput
+                    label="Main"
+                    value={color.main}
+                    onChange={(hex) => setColor(cat, { ...color, main: hex })}
+                  />
+                  <HexSwatchInput
+                    label="Light"
+                    value={color.light}
+                    onChange={(hex) => setColor(cat, { ...color, light: hex })}
+                  />
+                  <HexSwatchInput
+                    label="Border"
+                    value={color.border}
+                    onChange={(hex) => setColor(cat, { ...color, border: hex })}
+                  />
+                </div>
+                {/* The demo cap nhat TRUC TIEP theo mau dang chon - yeu cau
+                    nguoi dung: "hiển thị thêm card công việc demo khi chọn
+                    màu tương ứng với mỗi loại để dễ hình dung". */}
+                <div className="w-44 shrink-0">
+                  <CategoryDemoCard color={color} title={demo.title} meta={demo.meta} />
+                </div>
               </div>
             </div>
           );
