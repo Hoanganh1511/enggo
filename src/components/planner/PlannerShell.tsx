@@ -39,7 +39,11 @@ import {
   listPlannerTypeColorsAction,
   setPlannerTypeColorAction,
 } from "@/actions/planner/planner";
-import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  PopoverRoot,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { TimePickerField } from "./time-picker-field";
 import {
   LIFE_ITEM_TYPES,
@@ -1058,7 +1062,10 @@ export function PlannerShell({
                   )}
                 </button>
                 {!sidebarCollapsed && (
-                  <TaskTypePicker onSelect={handleTaskTypeSelect} position="bottom-start" />
+                  <TaskTypePicker
+                    onSelect={handleTaskTypeSelect}
+                    position="bottom-start"
+                  />
                 )}
               </div>
 
@@ -1106,7 +1113,7 @@ export function PlannerShell({
           lam "le trang" toi thieu. [2026-10-07] flex-1 min-w-0 - phai them
           sau khi sidebar moi o tren tro thanh 1 flex item ANH EM, tranh div
           nay BI EP CO LAI vuot muc hoac TRAN qua sidebar. */}
-            <div className="flex-1 min-w-0 px-2 py-4 lg:px-4">
+            <div className="flex-1 min-w-0 px-2 py-0 lg:px-4">
               {/* [2026-10-05] Nhom Header+ViewSwitcher+DateNav GOP vao 1 sidebar
             NHO ben trai (truoc day xep thanh 2 hang NGANG phia tren, chiem
             mat ~200px chieu cao TRUOC KHI toi noi dung that) - yeu cau nguoi
@@ -1148,7 +1155,7 @@ export function PlannerShell({
             LAI SAU thanh ngang - dam bao TONG chieu cao (thanh + grid) van
             khop dung 100dvh-112px nhu truoc, khong tran/thieu. */}
               <div className="flex flex-col gap-3 xl:h-[calc(100dvh-112px)]">
-                <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] px-3.5 py-2 shadow-[0_2px_10px_rgba(20,30,50,.03)]">
+                <div className="flex shrink-0 flex-wrap items-center justify-between gap-3   bg-[var(--planner-surface)] px-3.5 py-2 ">
                   <div className="flex flex-wrap items-center gap-2.5">
                     {/* [2026-10-08] "Phần head giờ chỉ để ví dụ như sau: April
                         2026    < Today >" - yeu cau nguoi dung (kem anh macOS
@@ -1284,7 +1291,7 @@ export function PlannerShell({
                 (WeekTimeGrid) tu cuon RIENG BEN TRONG (flex-1, xem ben duoi)
                 thay vi ca card phinh to qua chieu cao cho phep. */}
                   {viewMode === "week" ? (
-                    <div className="flex h-full flex-col overflow-hidden rounded-[6px] border border-[color:var(--planner-border)] bg-[var(--planner-surface)] shadow-[0_2px_8px_rgba(20,30,50,0.03)]">
+                    <div className="flex h-full flex-col overflow-hidden  bg-[var(--planner-surface)] ">
                       <WeekTimeGrid
                         anchor={anchor}
                         selectedDate={selectedDate}
@@ -2025,164 +2032,164 @@ function TimedItemChip({
           </div>
 
           <div className="flex flex-col gap-3 p-3">
-              {/* Ten su kien. */}
-              <p
-                className={cn(
-                  "text-[15px] font-semibold text-[color:var(--planner-text-primary)]",
-                  item.done && "line-through",
-                )}
-              >
-                {item.title}
-              </p>
+            {/* Ten su kien. */}
+            <p
+              className={cn(
+                "text-[15px] font-semibold text-[color:var(--planner-text-primary)]",
+                item.done && "line-through",
+              )}
+            >
+              {item.title}
+            </p>
 
-              {/* Timeline - gio bat dau -> ket thuc (chu KHONG phai o nhap gio
+            {/* Timeline - gio bat dau -> ket thuc (chu KHONG phai o nhap gio
                 truc tiep nhu TimePickerField cu - doi gio phai qua "Sửa",
                 dung y tinh than "view-only" cua popover nay). */}
-              <div
-                className="flex items-center gap-1.5 text-[12.5px] font-medium"
-                style={{ color: cat.accentStrong }}
-              >
-                <Clock size={13} strokeWidth={2.2} />
-                {timeLabel}
-              </div>
+            <div
+              className="flex items-center gap-1.5 text-[12.5px] font-medium"
+              style={{ color: cat.accentStrong }}
+            >
+              <Clock size={13} strokeWidth={2.2} />
+              {timeLabel}
+            </div>
 
-              {/* [2026-10-07] "vùng riêng giống bên ngoài lịch nhưng chỉ có
+            {/* [2026-10-07] "vùng riêng giống bên ngoài lịch nhưng chỉ có
                 range time từ trước và sau 1 tiếng so với task đó" - yeu cau
                 nguoi dung. Xem MiniTimelinePreview ben duoi. */}
-              <MiniTimelinePreview item={item} palette={cat} />
+            <MiniTimelinePreview item={item} palette={cat} />
 
-              {/* [2026-10-07] Chọn màu - yeu cau nguoi dung: "chọn màu này sẽ
+            {/* [2026-10-07] Chọn màu - yeu cau nguoi dung: "chọn màu này sẽ
                 là màu của card, không liên quan tới loại của card". TRUOC DAY
                 "đổi màu" = doi itemType (dung TypePickerRow) - SAI vi lam
                 task doi LUON ca phan loai. Gio dung field RIENG
                 `colorPaletteId` (DOC LAP voi itemType) - luoi DAY DU
                 LIFE_ITEM_PALETTES (21 mau: 4 mac dinh + 10 pastel + 7
                 macOS Calendar), khong gioi han theo Type nua. */}
-              <div className="flex flex-col gap-1.5 border-t border-[color:var(--planner-border-soft)] pt-2.5">
-                <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">
-                  Chọn màu
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setColorPickerOpen((v) => !v)}
-                  className="flex cursor-pointer items-center gap-2 self-start rounded-[8px] border border-[color:var(--planner-border-soft)] px-2 py-1.5 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+            <div className="flex flex-col gap-1.5 border-t border-[color:var(--planner-border-soft)] pt-2.5">
+              <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">
+                Chọn màu
+              </p>
+              <button
+                type="button"
+                onClick={() => setColorPickerOpen((v) => !v)}
+                className="flex cursor-pointer items-center gap-2 self-start rounded-[8px] border border-[color:var(--planner-border-soft)] px-2 py-1.5 transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+              >
+                <span
+                  className="size-5 shrink-0 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,.08)] ring-2 ring-white"
+                  style={{ backgroundColor: cat.accentStrong }}
+                  aria-hidden="true"
+                />
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: cat.accentText }}
                 >
-                  <span
-                    className="size-5 shrink-0 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,.08)] ring-2 ring-white"
-                    style={{ backgroundColor: cat.accentStrong }}
-                    aria-hidden="true"
-                  />
-                  <span
-                    className="text-[12px] font-semibold"
-                    style={{ color: cat.accentText }}
-                  >
-                    {cat.name}
-                  </span>
-                </button>
-                {colorPickerOpen && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {/* "Mặc định" - quay lai mau THEO TYPE (xoa colorPaletteId
+                  {cat.name}
+                </span>
+              </button>
+              {colorPickerOpen && (
+                <div className="flex flex-wrap gap-1.5">
+                  {/* "Mặc định" - quay lai mau THEO TYPE (xoa colorPaletteId
                       rieng, khac han voi chon 1 mau cu the trong luoi duoi). */}
+                  <button
+                    type="button"
+                    title="Mặc định theo loại"
+                    onClick={() => {
+                      onUpdateItem(item, { colorPaletteId: null });
+                      setColorPickerOpen(false);
+                    }}
+                    className={cn(
+                      "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-[color:var(--planner-border)] bg-white text-[9px] font-bold text-[color:var(--planner-text-muted)] transition-transform duration-150 ease-out hover:scale-110",
+                      !item.colorPaletteId &&
+                        "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
+                    )}
+                  >
+                    {typeCfg.icon}
+                  </button>
+                  {LIFE_ITEM_PALETTES.map((p) => (
                     <button
+                      key={p.id}
                       type="button"
-                      title="Mặc định theo loại"
+                      title={p.name}
                       onClick={() => {
-                        onUpdateItem(item, { colorPaletteId: null });
+                        onUpdateItem(item, { colorPaletteId: p.id });
                         setColorPickerOpen(false);
                       }}
+                      style={{ backgroundColor: p.accentStrong }}
                       className={cn(
-                        "flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-[color:var(--planner-border)] bg-white text-[9px] font-bold text-[color:var(--planner-text-muted)] transition-transform duration-150 ease-out hover:scale-110",
-                        !item.colorPaletteId &&
+                        "size-6 shrink-0 cursor-pointer rounded-full ring-1 ring-black/10 ring-offset-1 ring-offset-white transition-transform duration-150 ease-out hover:scale-110",
+                        item.colorPaletteId === p.id &&
                           "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
                       )}
-                    >
-                      {typeCfg.icon}
-                    </button>
-                    {LIFE_ITEM_PALETTES.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        title={p.name}
-                        onClick={() => {
-                          onUpdateItem(item, { colorPaletteId: p.id });
-                          setColorPickerOpen(false);
-                        }}
-                        style={{ backgroundColor: p.accentStrong }}
-                        className={cn(
-                          "size-6 shrink-0 cursor-pointer rounded-full ring-1 ring-black/10 ring-offset-1 ring-offset-white transition-transform duration-150 ease-out hover:scale-110",
-                          item.colorPaletteId === p.id &&
-                            "outline-2 outline-offset-1 outline-[color:var(--planner-text-primary)]",
-                        )}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
 
-              {/* Cảnh báo nhắc nhở - yeu cau nguoi dung: "các option như: Không
+            {/* Cảnh báo nhắc nhở - yeu cau nguoi dung: "các option như: Không
                 có, nhắc vào lúc diễn ra, trước 5/10/15/30/1h/2h/1d/2d/1week".
                 Luu qua item.metadata.reminderMinutesBefore (xem comment
                 REMINDER_OPTIONS trong life-item-types.ts). */}
-              <div className="flex flex-col gap-1.5 border-t border-[color:var(--planner-border-soft)] pt-2.5">
-                <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">
-                  Cảnh báo nhắc nhở
-                </p>
-                <PopoverRoot open={reminderOpen} onOpenChange={setReminderOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex h-8 w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[12px] font-medium text-[color:var(--planner-text-primary)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
-                    >
-                      <span className="flex min-w-0 items-center gap-1.5 truncate">
-                        <Bell
-                          size={12}
-                          className="shrink-0 text-[color:var(--planner-text-muted)]"
-                        />
-                        {reminderLabel}
-                      </span>
-                      <ChevronDown
+            <div className="flex flex-col gap-1.5 border-t border-[color:var(--planner-border-soft)] pt-2.5">
+              <p className="text-[10.5px] font-semibold tracking-wide text-[color:var(--planner-text-muted)] uppercase">
+                Cảnh báo nhắc nhở
+              </p>
+              <PopoverRoot open={reminderOpen} onOpenChange={setReminderOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-8 w-full cursor-pointer items-center justify-between gap-2 rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white px-2.5 text-[12px] font-medium text-[color:var(--planner-text-primary)] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]"
+                  >
+                    <span className="flex min-w-0 items-center gap-1.5 truncate">
+                      <Bell
                         size={12}
                         className="shrink-0 text-[color:var(--planner-text-muted)]"
                       />
+                      {reminderLabel}
+                    </span>
+                    <ChevronDown
+                      size={12}
+                      className="shrink-0 text-[color:var(--planner-text-muted)]"
+                    />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  open={reminderOpen}
+                  align="start"
+                  sideOffset={4}
+                  style={{ fontFamily: "var(--planner-font-family)" }}
+                  className="z-[60] max-h-64 w-[calc(var(--radix-popover-trigger-width))] overflow-y-auto rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_8px_24px_rgba(20,30,50,.14)]"
+                >
+                  {REMINDER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => {
+                        onUpdateItem(item, {
+                          metadata: {
+                            ...(item.metadata ?? {}),
+                            reminderMinutesBefore: opt.value,
+                          },
+                        });
+                        setReminderOpen(false);
+                      }}
+                      className={cn(
+                        "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[7px] px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
+                        opt.value === reminderMinutesBefore
+                          ? "font-semibold text-[color:var(--planner-primary)]"
+                          : "text-[color:var(--planner-text-secondary)]",
+                      )}
+                    >
+                      {opt.label}
+                      {opt.value === reminderMinutesBefore && (
+                        <Check size={13} strokeWidth={2.4} />
+                      )}
                     </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    open={reminderOpen}
-                    align="start"
-                    sideOffset={4}
-                    style={{ fontFamily: "var(--planner-font-family)" }}
-                    className="z-[60] max-h-64 w-[calc(var(--radix-popover-trigger-width))] overflow-y-auto rounded-[10px] border border-[color:var(--planner-border)] bg-white p-1 shadow-[0_8px_24px_rgba(20,30,50,.14)]"
-                  >
-                    {REMINDER_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.label}
-                        type="button"
-                        onClick={() => {
-                          onUpdateItem(item, {
-                            metadata: {
-                              ...(item.metadata ?? {}),
-                              reminderMinutesBefore: opt.value,
-                            },
-                          });
-                          setReminderOpen(false);
-                        }}
-                        className={cn(
-                          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-[7px] px-2.5 py-1.5 text-left text-[12px] transition-colors duration-150 ease-out hover:bg-[var(--planner-surface-soft)]",
-                          opt.value === reminderMinutesBefore
-                            ? "font-semibold text-[color:var(--planner-primary)]"
-                            : "text-[color:var(--planner-text-secondary)]",
-                        )}
-                      >
-                        {opt.label}
-                        {opt.value === reminderMinutesBefore && (
-                          <Check size={13} strokeWidth={2.4} />
-                        )}
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </PopoverRoot>
-              </div>
+                  ))}
+                </PopoverContent>
+              </PopoverRoot>
             </div>
+          </div>
         </PopoverContent>
       </PopoverRoot>
       {/* [2026-10-08] "thay nguyên những tính năng đã prompt chuyên nghiệp
@@ -2785,17 +2792,14 @@ function WeekTimeGrid({
       // khoang cach chuot DA DI CHUYEN that, khong bi "khuech dai" boi lam
       // tron snap.
       const rawDeltaPx = Math.abs(lastClientY - startClientY);
+      // [2026-10-09] "Bỏ tính năng: Click thì bật modal tạo reminder. Click
+      // thường thì không bật cái gì cả" - yeu cau nguoi dung: quay ve dung
+      // hanh vi "chi keo THAT su (>= nguong + du 1 quang toi thieu) moi mo
+      // form tao viec" - click don (rawDeltaPx < DRAG_SNAP_PX) gio KHONG con
+      // mo ReminderForm nua, chi don thuan chon ngay (onSelect o tren da lo
+      // phan do), khong lam gi them.
       if (rawDeltaPx >= DRAG_SNAP_PX && duration >= DRAG_SNAP_MINUTES) {
         onSlotClick(final.day, lo, duration, true);
-      } else if (rawDeltaPx < DRAG_SNAP_PX) {
-        // [2026-10-08] Click DON (khong keo) - yeu cau nguoi dung: "Nếu
-        // người dùng chỉ click thì để tương tự + add location nhưng text là
-        // add deadline" (xem QuickAddPopover) - KHAC voi truoc day (click
-        // KHONG mo gi ca), gio click van mo form tao viec, chi khac o thoi
-        // gian KHONG bi ep san 1 khung gio (isDrag=false, duration=undefined
-        // -> QuickAddPopover tu hien "+ Thêm hạn chót" thay vi TimePickerField
-        // dien san).
-        onSlotClick(final.day, final.startMinute, undefined, false);
       }
     }
     document.addEventListener("mousemove", onMove);
@@ -3156,7 +3160,10 @@ function WeekTimeGrid({
                       calendars={PLANNER_CALENDAR_NAMES}
                       initialDraft={{
                         startDate: draftPlaceholder.date,
-                        startTime: minutesToLabel(draftPlaceholder.start, "24H"),
+                        startTime: minutesToLabel(
+                          draftPlaceholder.start,
+                          "24H",
+                        ),
                         endDate: draftPlaceholder.date,
                         endTime: minutesToLabel(
                           draftPlaceholder.start + draftPlaceholder.duration,
