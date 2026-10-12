@@ -11,6 +11,9 @@ import {
   resetPlannerCategoryColor,
   getPlannerSettings,
   updatePlannerSettings,
+  listPlannerItemAttachments,
+  addPlannerItemAttachment,
+  removePlannerItemAttachment,
   type CreatePlannerItemInput,
   type UpdatePlannerItemInput,
   type PlannerSettingsPatch,
@@ -51,4 +54,20 @@ export async function getPlannerSettingsAction() {
 }
 export async function updatePlannerSettingsAction(patch: PlannerSettingsPatch) {
   return updatePlannerSettings(patch);
+}
+
+export async function listPlannerItemAttachmentsAction(itemId: string) {
+  return listPlannerItemAttachments(itemId);
+}
+export async function addPlannerItemAttachmentAction(
+  itemId: string,
+  dto: { seriesId: string; entryId?: string },
+) {
+  return addPlannerItemAttachment(itemId, dto);
+}
+export async function removePlannerItemAttachmentAction(
+  itemId: string,
+  attachmentId: string,
+) {
+  return removePlannerItemAttachment(itemId, attachmentId);
 }

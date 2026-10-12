@@ -35,6 +35,7 @@ import {
 } from "./planner-datetime";
 import { DeleteConfirmPopover } from "./macos-form-controls";
 import { PlannerInlineError } from "./planner-states";
+import { AttachmentsSection } from "./planner-attachments";
 import { itemDurationMinutes } from "@/lib/planner/planner-domain";
 
 export function PlannerItemDetail({
@@ -182,6 +183,9 @@ export function PlannerItemDetail({
           </ul>
         </div>
       )}
+
+      {/* --- Dinh kem (Series) */}
+      <AttachmentsSection itemId={item.id} />
 
       {error && <PlannerInlineError message={error} />}
 

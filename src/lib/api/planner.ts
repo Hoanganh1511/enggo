@@ -99,6 +99,45 @@ export function deletePlannerItem(id: string): Promise<void> {
   return apiFetch<void>(`/planner/items/${id}`, { method: "DELETE" });
 }
 
+// [2026-10-12] Dinh kem Series(/Entry) - yeu cau nguoi dung: "Bổ sung tính
+// năng đính kèm các thứ vào task, chẳng hạn như các series". Pham vi da
+// CHOT: CHI Series, NHIEU dinh kem/task, hien dang danh sach. Tai RIENG
+// (lazy khi mo panel chi tiet), khong gom trong payload PlannerItem chinh.
+export type PlannerItemAttachment = {
+  id: string;
+  seriesId: string;
+  seriesSlug: string;
+  seriesTitle: string;
+  seriesCoverImageUrl: string | null;
+  // null = dinh kem CA Series (khong phai 1 entry cu the trong series).
+  entryId: string | null;
+  entrySlug: string | null;
+  entryTitle: string | null;
+  orderIndex: number;
+  createdAt: string;
+};
+
+export function listPlannerItemAttachments(itemId: string): Promise<PlannerItemAttachment[]> {
+  return apiFetch<PlannerItemAttachment[]>(`/planner/items/${itemId}/attachments`);
+}
+export function addPlannerItemAttachment(
+  itemId: string,
+  dto: { seriesId: string; entryId?: string },
+): Promise<PlannerItemAttachment> {
+  return apiFetch<PlannerItemAttachment>(`/planner/items/${itemId}/attachments`, {
+    method: "POST",
+    body: JSON.stringify(dto),
+  });
+}
+export function removePlannerItemAttachment(
+  itemId: string,
+  attachmentId: string,
+): Promise<void> {
+  return apiFetch<void>(`/planner/items/${itemId}/attachments/${attachmentId}`, {
+    method: "DELETE",
+  });
+}
+
 // --- Mau theo CATEGORY (thay PlannerTypeColor cu: mau theo itemType +
 // paletteId tu bo 14 palette). Gio luu truc tiep 3 hex main/light/border, de
 // khop design reference, va vang mat 1 dong = dung mac dinh cua category.
