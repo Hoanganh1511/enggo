@@ -88,11 +88,27 @@ type ViewMode = "week" | "month" | "day";
 const WEEKDAY_LABELS_MON_START = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const WEEKDAY_SHORT_BY_JS_DAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const WEEKDAY_FULL_EN = [
-  "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY",
+  "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
 ];
 const MONTH_LABELS_EN = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 /**
@@ -121,7 +137,10 @@ function addMonths(dateStr: string, months: number): string {
   d.setMonth(d.getMonth() + months);
   return toLocalISODate(d);
 }
-function startOfWeek(dateStr: string, weekStartsOn: "MONDAY" | "SUNDAY"): string {
+function startOfWeek(
+  dateStr: string,
+  weekStartsOn: "MONDAY" | "SUNDAY",
+): string {
   const d = new Date(dateStr);
   const day = d.getDay(); // 0 = CN
   const diff = weekStartsOn === "SUNDAY" ? -day : day === 0 ? -6 : 1 - day;
@@ -161,7 +180,10 @@ function rangeForMode(
   }
   // Luoi thang ve ca ngay dau/cuoi cua tuan tran ra ngoai thang -> tai rong
   // ra 7 ngay moi phia cho du.
-  return { from: addDays(startOfMonth(anchor), -7), to: addDays(endOfMonth(anchor), 7) };
+  return {
+    from: addDays(startOfMonth(anchor), -7),
+    to: addDays(endOfMonth(anchor), 7),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -277,7 +299,8 @@ function layoutTimedItems(dayEntries: DayEntry[]): TimedLayoutEntry[] {
       }
 
       const conflictingSegments = segments.filter(
-        (s) => s.active.length > 1 && !s.active.some((e) => e.item.type === "EVENT"),
+        (s) =>
+          s.active.length > 1 && !s.active.some((e) => e.item.type === "EVENT"),
       );
       const conflict = conflictingSegments.length > 0;
       const conflictWith = conflict
@@ -412,7 +435,10 @@ export function PlannerShell({
 }) {
   return (
     <PlannerSettingsProvider>
-      <PlannerShellInner initialDate={initialDate} initialItems={initialItems} />
+      <PlannerShellInner
+        initialDate={initialDate}
+        initialItems={initialItems}
+      />
     </PlannerSettingsProvider>
   );
 }
@@ -459,7 +485,9 @@ function PlannerShellInner({
   >(null);
 
   // Mau category tu chinh (backend PlannerCategoryColor). Vang mat = mac dinh.
-  const [colorOverrides, setColorOverrides] = useState<CategoryColorOverrides>({});
+  const [colorOverrides, setColorOverrides] = useState<CategoryColorOverrides>(
+    {},
+  );
   useEffect(() => {
     listPlannerCategoryColorsAction()
       .then((rows) => {
@@ -479,9 +507,9 @@ function PlannerShellInner({
   // (Personal/Family/Work/Birthdays/Holidays) nhung KHONG loc gi that (chua
   // co field du lieu tuong ung, chi la UI tri). Gio `category` la field
   // THAT trong model nen checkbox loc that su. null = chua loc gi (hien tat).
-  const [hiddenCategories, setHiddenCategories] = useState<Set<PlannerCategory>>(
-    () => new Set(),
-  );
+  const [hiddenCategories, setHiddenCategories] = useState<
+    Set<PlannerCategory>
+  >(() => new Set());
 
   const range = useMemo(
     () => rangeForMode(viewMode, anchor, selectedDate, settings.weekStartsOn),
@@ -516,7 +544,9 @@ function PlannerShellInner({
       } catch (err) {
         if (cancelled) return;
         setLoadError(
-          err instanceof Error ? err.message : "Không tải được dữ liệu Planner.",
+          err instanceof Error
+            ? err.message
+            : "Không tải được dữ liệu Planner.",
         );
       } finally {
         // Het "dang tai" du thanh cong hay loi - neu khong, loi se treo UI o
@@ -591,7 +621,9 @@ function PlannerShellInner({
   // (yeu cau nguoi dung: "không có trạng thái gì của thẻ để biết là đang
   // update"), (b) chan khong cho bat dau 1 luot keo MOI tren CUNG item khi
   // luot truoc chua xong (tranh 2 ghi chong cheo nhau).
-  const [pendingItemIds, setPendingItemIds] = useState<Set<string>>(() => new Set());
+  const [pendingItemIds, setPendingItemIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   /**
    * Keo di chuyen / keo gian the tren luoi gio -> ghi lai startAt/endAt.
@@ -611,7 +643,12 @@ function PlannerShellInner({
    * server), khong con anh huong gi den nhung gi nguoi dung da thay.
    */
   const handleUpdateItemTime = useCallback(
-    async (item: PlannerItem, dateKey: string, startMin: number, endMin: number) => {
+    async (
+      item: PlannerItem,
+      dateKey: string,
+      startMin: number,
+      endMin: number,
+    ) => {
       const base = new Date(`${dateKey}T00:00:00`);
       const startAt = new Date(base.getTime() + startMin * 60000).toISOString();
       const endAt = new Date(base.getTime() + endMin * 60000).toISOString();
@@ -622,7 +659,9 @@ function PlannerShellInner({
       };
       const patch = { scheduleKind: "TIMED" as const, startAt, endAt };
 
-      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, ...patch } : it)));
+      setItems((prev) =>
+        prev.map((it) => (it.id === item.id ? { ...it, ...patch } : it)),
+      );
       setPendingItemIds((prev) => new Set(prev).add(item.id));
       try {
         await updatePlannerItemAction(item.id, patch);
@@ -681,8 +720,16 @@ function PlannerShellInner({
     if (viewMode === "day") return [selectedDate];
     return Array.from({ length: 7 }, (_, i) =>
       addDays(startOfWeek(anchor, settings.weekStartsOn), i),
-    ).filter((d) => settings.showWeekends || ![0, 6].includes(new Date(d).getDay()));
-  }, [viewMode, selectedDate, anchor, settings.weekStartsOn, settings.showWeekends]);
+    ).filter(
+      (d) => settings.showWeekends || ![0, 6].includes(new Date(d).getDay()),
+    );
+  }, [
+    viewMode,
+    selectedDate,
+    anchor,
+    settings.weekStartsOn,
+    settings.showWeekends,
+  ]);
 
   const detailItem = useMemo(
     () =>
@@ -747,7 +794,9 @@ function PlannerShellInner({
           <aside
             className={cn(
               "flex shrink-0 flex-col gap-4 overflow-y-auto bg-white py-4 transition-[width] duration-150 ease-out",
-              sidebarCollapsed ? "w-[52px] items-center px-2" : "w-[300px] px-3.5",
+              sidebarCollapsed
+                ? "w-[52px] items-center px-2"
+                : "w-[300px] px-3.5",
             )}
           >
             <div
@@ -759,7 +808,9 @@ function PlannerShellInner({
               <button
                 type="button"
                 onClick={() => setSidebarCollapsed((v) => !v)}
-                aria-label={sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+                aria-label={
+                  sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"
+                }
                 title={sidebarCollapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
                 className="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-[color:var(--planner-text-muted)] transition-colors duration-150 hover:bg-[var(--planner-surface-soft)] hover:text-[color:var(--planner-text-secondary)]"
               >
@@ -901,7 +952,22 @@ function PlannerShellInner({
                         setViewMode(m);
                       }}
                       className={cn(
-                        "cursor-pointer rounded-[6px] px-2.5 py-1 text-[12px] font-medium transition-colors",
+                        // [2026-10-12 fix] CHI transition background-color,
+                        // KHONG con `transition-colors` (vo tinh keo ca
+                        // `color` vao danh sach thuoc tinh duoc animate) -
+                        // yeu cau nguoi dung: "lúc switch bị 1 thoáng chốc
+                        // text đen". Nut nay doi tu text-white (literal) ->
+                        // text theo bien CSS 2 lop (--planner-text-secondary
+                        // -> var(--mset-text-secondary)) khi chuyen active/
+                        // inactive; browser tung frame dau cua transition co
+                        // the chua resolve kip chuoi var() long nhau do, roi
+                        // ve tam gia tri mac dinh cua `color` (den) truoc khi
+                        // on dinh - ra dung trieu chung "thoáng chốc text
+                        // đen". Mau chu o day CHI co 2 trang thai roi rac
+                        // (active/inactive), doi NGAY khong mat gi ve UX -
+                        // chi nen giu lai chuyen dong cho background (pill)
+                        // cho mem mai.
+                        "cursor-pointer rounded-[6px] px-2.5 py-1 text-[12px] font-medium transition-[background-color] duration-150",
                         viewMode === m
                           ? "bg-[color:var(--planner-primary)] text-white"
                           : "text-[color:var(--planner-text-secondary)] hover:text-[color:var(--planner-text-primary)]",
@@ -1001,8 +1067,12 @@ function PlannerShellInner({
                       type: "TASK",
                       prefill: {
                         scheduleKind: "TIMED",
-                        startAt: new Date(`${selectedDate}T09:00:00`).toISOString(),
-                        endAt: new Date(`${selectedDate}T10:00:00`).toISOString(),
+                        startAt: new Date(
+                          `${selectedDate}T09:00:00`,
+                        ).toISOString(),
+                        endAt: new Date(
+                          `${selectedDate}T10:00:00`,
+                        ).toISOString(),
                       },
                     })
                   }
@@ -1038,9 +1108,15 @@ function PlannerShellInner({
                     ? `edit-${formState.item.id}`
                     : `create-${formState.type}-${formState.prefill?.startAt ?? ""}-${formState.prefill?.scheduleKind ?? ""}`
                 }
-                type={formState.mode === "edit" ? formState.item.type : formState.type}
+                type={
+                  formState.mode === "edit"
+                    ? formState.item.type
+                    : formState.type
+                }
                 initial={formState.mode === "edit" ? formState.item : undefined}
-                prefill={formState.mode === "create" ? formState.prefill : undefined}
+                prefill={
+                  formState.mode === "create" ? formState.prefill : undefined
+                }
                 overrides={colorOverrides}
                 container={container}
                 onCancel={() => setFormState(null)}
@@ -1187,10 +1263,10 @@ function PlannerCreateMenu({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex size-8 cursor-pointer items-center justify-center rounded-[8px] bg-[color:var(--planner-primary)] text-white hover:bg-[color:var(--mset-accent-hover)]"
+        className="flex size-6 cursor-pointer items-center justify-center rounded-[4px] bg-[color:var(--planner-primary)] text-white hover:bg-[color:var(--mset-accent-hover)]"
         title="Tạo mới"
       >
-        <Plus size={15} />
+        <Plus size={16} />
       </button>
       {open && (
         <div
@@ -1420,7 +1496,12 @@ function WeekTimeGrid({
   const HOURS = useMemo(
     () =>
       Array.from(
-        { length: Math.max(settings.lastVisibleHour - settings.firstVisibleHour, 1) },
+        {
+          length: Math.max(
+            settings.lastVisibleHour - settings.firstVisibleHour,
+            1,
+          ),
+        },
         (_, i) => settings.firstVisibleHour + i,
       ),
     [settings.firstVisibleHour, settings.lastVisibleHour],
@@ -1486,7 +1567,12 @@ function WeekTimeGrid({
     scrollRef.current?.scrollTo({
       top: (target - settings.firstVisibleHour) * HOUR_ROW_HEIGHT - 24,
     });
-  }, [daysKey, settings.firstVisibleHour, settings.lastVisibleHour, HOUR_ROW_HEIGHT]);
+  }, [
+    daysKey,
+    settings.firstVisibleHour,
+    settings.lastVisibleHour,
+    HOUR_ROW_HEIGHT,
+  ]);
 
   // --- Keo tao viec tren vung trong
   const [slotDrag, setSlotDrag] = useState<{
@@ -1512,12 +1598,18 @@ function WeekTimeGrid({
       const rect = dayEl.getBoundingClientRect();
       const raw = ((clientY - rect.top) / HOUR_ROW_HEIGHT) * 60;
       const snapped =
-        Math.round(raw / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES + firstVisibleMinute;
+        Math.round(raw / DRAG_SNAP_MINUTES) * DRAG_SNAP_MINUTES +
+        firstVisibleMinute;
       return Math.min(Math.max(snapped, firstVisibleMinute), lastVisibleMinute);
     }
 
     const startMinute = minuteFromClientY(e.clientY);
-    const initial = { day, startMinute, currentMinute: startMinute, started: false };
+    const initial = {
+      day,
+      startMinute,
+      currentMinute: startMinute,
+      started: false,
+    };
     slotDragRef.current = initial;
     setSlotDrag(initial);
 
@@ -1538,11 +1630,17 @@ function WeekTimeGrid({
       const fromTop = clientY - crect.top;
       const fromBottom = crect.bottom - clientY;
       if (fromTop < AUTO_SCROLL_EDGE_PX) {
-        const p = Math.min(1, Math.max(0, (AUTO_SCROLL_EDGE_PX - fromTop) / AUTO_SCROLL_EDGE_PX));
+        const p = Math.min(
+          1,
+          Math.max(0, (AUTO_SCROLL_EDGE_PX - fromTop) / AUTO_SCROLL_EDGE_PX),
+        );
         return -AUTO_SCROLL_MAX_SPEED * p;
       }
       if (fromBottom < AUTO_SCROLL_EDGE_PX) {
-        const p = Math.min(1, Math.max(0, (AUTO_SCROLL_EDGE_PX - fromBottom) / AUTO_SCROLL_EDGE_PX));
+        const p = Math.min(
+          1,
+          Math.max(0, (AUTO_SCROLL_EDGE_PX - fromBottom) / AUTO_SCROLL_EDGE_PX),
+        );
         return AUTO_SCROLL_MAX_SPEED * p;
       }
       return 0;
@@ -1588,7 +1686,8 @@ function WeekTimeGrid({
       lastClientY = ev.clientY;
       pushDragState();
       if (autoScrollSpeedFor(ev.clientY) !== 0) {
-        if (autoScrollRaf === null) autoScrollRaf = requestAnimationFrame(autoScrollTick);
+        if (autoScrollRaf === null)
+          autoScrollRaf = requestAnimationFrame(autoScrollTick);
       } else if (autoScrollRaf !== null) {
         cancelAnimationFrame(autoScrollRaf);
         autoScrollRaf = null;
@@ -1632,7 +1731,11 @@ function WeekTimeGrid({
     const map: Record<string, TimedLayoutEntry[]> = {};
     for (const d of days) {
       const dayItems = (itemsByDate[d] ?? []).filter(
-        (it) => !(settings.completedTaskDisplay === "HIDE" && it.status === "COMPLETED"),
+        (it) =>
+          !(
+            settings.completedTaskDisplay === "HIDE" &&
+            it.status === "COMPLETED"
+          ),
       );
       map[d] = layoutTimedItems(buildDayEntries(dayItems, d));
     }
@@ -1642,7 +1745,9 @@ function WeekTimeGrid({
   const allDayByDay = useMemo(() => {
     const map: Record<string, PlannerItem[]> = {};
     for (const d of days) {
-      map[d] = (itemsByDate[d] ?? []).filter((it) => it.scheduleKind === "ALL_DAY");
+      map[d] = (itemsByDate[d] ?? []).filter(
+        (it) => it.scheduleKind === "ALL_DAY",
+      );
     }
     return map;
   }, [days, itemsByDate]);
@@ -1723,7 +1828,11 @@ function WeekTimeGrid({
           {/* Cot nhan gio */}
           <div className="flex flex-col">
             {HOURS.map((h) => (
-              <div key={h} style={{ height: HOUR_ROW_HEIGHT }} className="relative">
+              <div
+                key={h}
+                style={{ height: HOUR_ROW_HEIGHT }}
+                className="relative"
+              >
                 {/* top-0 + -translate-y-1/2: neo DUNG vao duong ke cua o gio
                     (cung toa do voi the, ca 2 tinh tu h*HOUR_ROW_HEIGHT) roi
                     can giua nhan bang 50% chieu cao THAT cua chinh span -
@@ -1794,7 +1903,9 @@ function WeekTimeGrid({
                     <div
                       className="pointer-events-none absolute right-0 left-0 z-[3] flex items-center"
                       style={{
-                        top: ((nowMinute - firstVisibleMinute) / 60) * HOUR_ROW_HEIGHT,
+                        top:
+                          ((nowMinute - firstVisibleMinute) / 60) *
+                          HOUR_ROW_HEIGHT,
                       }}
                       aria-hidden="true"
                     >
@@ -1809,12 +1920,18 @@ function WeekTimeGrid({
                     className="pointer-events-none absolute right-1 left-1 z-[2] rounded-[6px] border-2 border-dashed"
                     style={{
                       top:
-                        ((Math.min(slotDrag.startMinute, slotDrag.currentMinute) -
+                        ((Math.min(
+                          slotDrag.startMinute,
+                          slotDrag.currentMinute,
+                        ) -
                           firstVisibleMinute) /
                           60) *
                         HOUR_ROW_HEIGHT,
                       height: Math.max(
-                        (Math.abs(slotDrag.currentMinute - slotDrag.startMinute) / 60) *
+                        (Math.abs(
+                          slotDrag.currentMinute - slotDrag.startMinute,
+                        ) /
+                          60) *
                           HOUR_ROW_HEIGHT,
                         4,
                       ),
@@ -1912,8 +2029,15 @@ function TimedChipPositioner({
   onOpen: () => void;
   onUpdateTime: (startMin: number, endMin: number) => Promise<void> | void;
 }) {
-  const { item, startMin, endMin, leftPercent, widthPercent, conflict, draggable } =
-    entry;
+  const {
+    item,
+    startMin,
+    endMin,
+    leftPercent,
+    widthPercent,
+    conflict,
+    draggable,
+  } = entry;
   const color = resolveCategoryColor(item.category, overrides);
 
   const top = ((startMin - firstVisibleMinute) / 60) * hourRowHeight;
@@ -1921,14 +2045,17 @@ function TimedChipPositioner({
 
   // `drag` = preview CUC BO (chua luu). Chi goi API LUC THA chuot, khong goi
   // lien tuc theo tung pixel.
-  const [drag, setDrag] = useState<{ mode: "move" | "resize"; deltaPx: number } | null>(
-    null,
-  );
+  const [drag, setDrag] = useState<{
+    mode: "move" | "resize";
+    deltaPx: number;
+  } | null>(null);
   // Ban song song doc duoc NGAY trong onUp. Khong goi setState cua component
   // CHA ben trong updater function cua setState nay - updater phai PURE;
   // lam vay React canh bao that: "Cannot update a component while rendering
   // a different component".
-  const dragRef = useRef<{ mode: "move" | "resize"; deltaPx: number } | null>(null);
+  const dragRef = useRef<{ mode: "move" | "resize"; deltaPx: number } | null>(
+    null,
+  );
   const suppressClickRef = useRef(false);
 
   const displayTop = drag?.mode === "move" ? top + drag.deltaPx : top;
@@ -2303,9 +2430,10 @@ function DayDetailPanel({
     for (const it of sorted) {
       counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
     }
-    return PLANNER_CATEGORIES.map((cat) => ({ cat, count: counts.get(cat) ?? 0 })).filter(
-      (c) => c.count > 0,
-    );
+    return PLANNER_CATEGORIES.map((cat) => ({
+      cat,
+      count: counts.get(cat) ?? 0,
+    })).filter((c) => c.count > 0);
   }, [sorted]);
 
   return (
@@ -2313,9 +2441,14 @@ function DayDetailPanel({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
-            <CalendarDays size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
+            <CalendarDays
+              size={13}
+              className="shrink-0 text-[color:var(--planner-text-muted)]"
+            />
             {isToday ? (
-              <span className="tracking-wide text-[color:var(--planner-primary)]">TODAY</span>
+              <span className="tracking-wide text-[color:var(--planner-primary)]">
+                TODAY
+              </span>
             ) : (
               <span className="text-[color:var(--planner-text-primary)]">
                 {formatPanelHeaderDate(dateKey)}
