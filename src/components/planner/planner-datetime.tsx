@@ -43,6 +43,16 @@ export function isoToShortDate(iso: string): string {
   return `${d.getDate()} thg ${d.getMonth() + 1}`;
 }
 
+const WEEKDAY_SHORT_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+
+/** "T4, 9/10" - kem thu, dung cho dong gio o danh sach (panel ben phai, muc
+ *  5 "thời gian trước > Loại task > Tên task > Địa điểm" - dong thoi gian
+ *  phai tu no the hien ca thu/ngay, khong chi gio). */
+export function isoToWeekdayDate(iso: string): string {
+  const d = new Date(iso);
+  return `${WEEKDAY_SHORT_VI[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}`;
+}
+
 function sameLocalDay(a: string, b: string): boolean {
   const x = new Date(a);
   const y = new Date(b);
@@ -70,7 +80,10 @@ export function formatSchedule(
   item: PlannerItem,
   format: TimeFormat = "24H",
   withDate = false,
+  /** true = ngay kem thu (isoToWeekdayDate) thay vi ngay tran (isoToShortDate). */
+  weekday = false,
 ): ScheduleText {
+  const dateOf = weekday ? isoToWeekdayDate : isoToShortDate;
   switch (item.scheduleKind) {
     case "UNSCHEDULED":
       return { primary: "Chưa xếp lịch" };
@@ -79,7 +92,7 @@ export function formatSchedule(
       if (!item.dueAt) return { primary: "Chưa đặt hạn" };
       const time = isoToTimeLabel(item.dueAt, format);
       return {
-        primary: withDate ? `Hạn ${isoToShortDate(item.dueAt)}, ${time}` : `Hạn ${time}`,
+        primary: withDate ? `Hạn ${dateOf(item.dueAt)}, ${time}` : `Hạn ${time}`,
       };
     }
 
@@ -91,11 +104,11 @@ export function formatSchedule(
       if (multi && item.endAt) {
         return {
           primary: "Cả ngày",
-          secondary: `${isoToShortDate(item.startAt)} → ${isoToShortDate(item.endAt)}`,
+          secondary: `${dateOf(item.startAt)} → ${dateOf(item.endAt)}`,
         };
       }
       return {
-        primary: withDate ? `Cả ngày, ${isoToShortDate(item.startAt)}` : "Cả ngày",
+        primary: withDate ? `Cả ngày, ${dateOf(item.startAt)}` : "Cả ngày",
       };
     }
 
@@ -103,7 +116,7 @@ export function formatSchedule(
       if (!item.startAt) return { primary: "Chưa đặt giờ" };
       const start = isoToTimeLabel(item.startAt, format);
       if (!item.endAt) {
-        return { primary: withDate ? `${isoToShortDate(item.startAt)}, ${start}` : start };
+        return { primary: withDate ? `${dateOf(item.startAt)}, ${start}` : start };
       }
       const end = isoToTimeLabel(item.endAt, format);
       // Vat qua nua dem / nhieu ngay: phai noi ro ngay ket thuc, neu khong
@@ -111,12 +124,12 @@ export function formatSchedule(
       if (!sameLocalDay(item.startAt, item.endAt)) {
         return {
           primary: `${start} → ${end}`,
-          secondary: `${isoToShortDate(item.startAt)} → ${isoToShortDate(item.endAt)}`,
+          secondary: `${dateOf(item.startAt)} → ${dateOf(item.endAt)}`,
         };
       }
       const range = `${start} – ${end}`;
       return {
-        primary: withDate ? `${isoToShortDate(item.startAt)}, ${range}` : range,
+        primary: withDate ? `${dateOf(item.startAt)}, ${range}` : range,
       };
     }
   }
@@ -138,28 +151,37 @@ export function ScheduleDisplay({
   item,
   format = "24H",
   withDate = false,
+  weekday = false,
   withIcon = true,
   accentColor,
+  /** Viec sap het han/ket thuc (isUrgentSoon) - de bold do, de len tren moi
+   *  mau khac (category/muted) vi day la canh bao, khong phai trang tri. */
+  urgent = false,
   className,
 }: {
   item: PlannerItem;
   format?: TimeFormat;
   withDate?: boolean;
+  /** Ngay kem thu (vd "T4, 9/10") thay vi ngay tran (vd "9 thg 10"). Chi co
+   *  tac dung khi withDate=true. */
+  weekday?: boolean;
   withIcon?: boolean;
   /** Mau category - dong gio tren the lay mau accent cua category. */
   accentColor?: string;
+  urgent?: boolean;
   className?: string;
 }) {
-  const text = formatSchedule(item, format, withDate);
+  const text = formatSchedule(item, format, withDate, weekday);
   const unscheduled = item.scheduleKind === "UNSCHEDULED";
   return (
     <span
       className={cn(
         "inline-flex min-w-0 items-center gap-1 text-[11px] leading-[1.3] font-medium tabular-nums",
         unscheduled && "text-[color:var(--planner-text-muted)] italic",
+        urgent && "font-bold text-[color:var(--mset-danger)]",
         className,
       )}
-      style={accentColor && !unscheduled ? { color: accentColor } : undefined}
+      style={accentColor && !unscheduled && !urgent ? { color: accentColor } : undefined}
     >
       {withIcon && !isAllDay(item) && !unscheduled && (
         <Clock size={11} strokeWidth={2.25} className="shrink-0" aria-hidden="true" />

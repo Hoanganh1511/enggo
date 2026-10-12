@@ -285,6 +285,28 @@ export function isFinished(item: PlannerItem): boolean {
   return item.status === "COMPLETED" || item.status === "CANCELLED";
 }
 
+/** Nguong "sap het han" (phut) - xem isUrgentSoon(). */
+export const URGENT_SOON_MINUTES = 60;
+
+/**
+ * Item sap het han/ket thuc trong vong URGENT_SOON_MINUTES phut toi (va CHUA
+ * qua han - da qua han la OVERDUE, mot canh bao KHAC, manh hon, da co mau
+ * rieng qua StatusBadge). Moc xet: dueAt cho DEADLINE, endAt cho TIMED -
+ * UNSCHEDULED/ALL_DAY khong co khai niem "sap het han".
+ */
+export function isUrgentSoon(item: PlannerItem, nowMs: number): boolean {
+  if (isFinished(item) || item.status === "OVERDUE") return false;
+  const targetIso =
+    item.scheduleKind === "DEADLINE"
+      ? item.dueAt
+      : item.scheduleKind === "TIMED"
+        ? item.endAt
+        : null;
+  if (!targetIso) return false;
+  const diffMinutes = (new Date(targetIso).getTime() - nowMs) / 60000;
+  return diffMinutes >= 0 && diffMinutes <= URGENT_SOON_MINUTES;
+}
+
 // ---------------------------------------------------------------------------
 // Validate - DUNG 1 bo luat voi backend (PlannerService.normalizeSchedule).
 // Form goi truoc khi submit de bao loi tai cho thay vi doi 400 tu server.

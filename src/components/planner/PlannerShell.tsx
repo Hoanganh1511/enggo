@@ -83,14 +83,28 @@ import { CategoryDot, TypeIcon } from "./planner-indicators";
 // Hang so + tien ich ngay
 // ---------------------------------------------------------------------------
 
-type ViewMode = "week" | "month";
+type ViewMode = "week" | "month" | "day";
 
 const WEEKDAY_LABELS_MON_START = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const WEEKDAY_SHORT_BY_JS_DAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+const WEEKDAY_FULL_EN = [
+  "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY",
+];
 const MONTH_LABELS_EN = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+
+/**
+ * "WEDNESDAY 12.10.2026" - header cua DayDetailPanel khi dang xem 1 ngay
+ * KHAC hom nay (hom nay thi header hien "TODAY" thay vao, xem DayDetailPanel).
+ */
+function formatPanelHeaderDate(dateKey: string): string {
+  const d = new Date(`${dateKey}T00:00:00`);
+  const dd = d.getDate().toString().padStart(2, "0");
+  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+  return `${WEEKDAY_FULL_EN[d.getDay()]} ${dd}.${mm}.${d.getFullYear()}`;
+}
 
 /** YYYY-MM-DD theo gio DIA PHUONG. KHONG dung toISOString().slice(0,10) -
  *  cai do tra ve ngay theo UTC, lech 1 ngay voi nguoi dung o UTC+7 sau 17h. */
@@ -133,8 +147,14 @@ function formatLongDateVi(dateStr: string): string {
 function rangeForMode(
   mode: ViewMode,
   anchor: string,
+  selectedDate: string,
   weekStartsOn: "MONDAY" | "SUNDAY",
 ): { from: string; to: string } {
+  if (mode === "day") {
+    // Che do Ngay - CHI 1 ngay DUY NHAT, dung `selectedDate` (nguon su that
+    // cho ngay dang xem o che do nay) thay vi `anchor`.
+    return { from: selectedDate, to: selectedDate };
+  }
   if (mode === "week") {
     const from = startOfWeek(anchor, weekStartsOn);
     return { from, to: addDays(from, 6) };
@@ -361,6 +381,24 @@ function buildDayEntries(items: PlannerItem[], dateKey: string): DayEntry[] {
   return out;
 }
 
+/**
+ * Dong ho "bay gio" (ms, Date.now()) - dung cho PlannerItemCard tinh
+ * isUrgentSoon() trong panel ngay/sidebar. Cung mot `now` dung chung cho ca
+ * danh sach (khong de moi the tu goi Date.now() rieng trong luc render -
+ * vua tran SSR/client, vua khien moi the "lech nhip" nhau 1 chut).
+ *
+ * Lazy initializer (khong phai setState dong bo trong than effect) - cung
+ * pattern voi `nowMinute` trong WeekTimeGrid.
+ */
+function useNowTick(intervalMs = 30_000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
 // ---------------------------------------------------------------------------
 // Shell
 // ---------------------------------------------------------------------------
@@ -388,6 +426,7 @@ function PlannerShellInner({
   initialItems: PlannerItem[];
 }) {
   const { settings } = usePlannerSettings();
+  const now = useNowTick();
 
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(initialDate);
@@ -445,8 +484,8 @@ function PlannerShellInner({
   );
 
   const range = useMemo(
-    () => rangeForMode(viewMode, anchor, settings.weekStartsOn),
-    [viewMode, anchor, settings.weekStartsOn],
+    () => rangeForMode(viewMode, anchor, selectedDate, settings.weekStartsOn),
+    [viewMode, anchor, selectedDate, settings.weekStartsOn],
   );
 
   // `loading` la state DAN XUAT, khong phai 1 useState rieng: "dang tai" =
@@ -547,15 +586,65 @@ function PlannerShellInner({
     [handleUpdate],
   );
 
-  /** Keo di chuyen / keo gian the tren luoi gio -> ghi lai startAt/endAt. */
+  // [2026-10-12] Item dang co 1 ghi (keo-tha/keo-gian) CHUA duoc server xac
+  // nhan - dung de (a) ve 1 dau hieu "dang luu" nho tren chinh the dang keo
+  // (yeu cau nguoi dung: "không có trạng thái gì của thẻ để biết là đang
+  // update"), (b) chan khong cho bat dau 1 luot keo MOI tren CUNG item khi
+  // luot truoc chua xong (tranh 2 ghi chong cheo nhau).
+  const [pendingItemIds, setPendingItemIds] = useState<Set<string>>(() => new Set());
+
+  /**
+   * Keo di chuyen / keo gian the tren luoi gio -> ghi lai startAt/endAt.
+   *
+   * OPTIMISTIC (yeu cau nguoi dung: "lúc thả ra không có trạng thái gì...
+   * một lúc sau mới giật đùng 1 cái kéo dài thẻ ra"): goc van de la `drag`
+   * state (preview cuc bo luc dang keo) bi xoa NGAY luc tha chuot, nhung vi
+   * tri THAT (tu `item.startAt/endAt` trong props) chi cap nhat SAU KHI
+   * round-trip server (updatePlannerItemAction + reload()) xong - khoang
+   * trong giua 2 moc do la luc the "giat lui" ve vi tri cu roi "giat toi"
+   * lai vi tri moi, chu khong phai 1 chuyen dong lien tuc.
+   *
+   * Sua: ghi `startAt/endAt` moi vao `items` CUC BO ngay khi tha chuot
+   * (truoc khi goi API) - the hien NGAY dung vi tri da keo, khong co khoang
+   * trong nao de "giat". Request that bai thi lui lai gia tri cu va bao loi;
+   * thanh cong thi `reload()` chi la dong bo ngam (vd OVERDUE suy ra o
+   * server), khong con anh huong gi den nhung gi nguoi dung da thay.
+   */
   const handleUpdateItemTime = useCallback(
     async (item: PlannerItem, dateKey: string, startMin: number, endMin: number) => {
       const base = new Date(`${dateKey}T00:00:00`);
       const startAt = new Date(base.getTime() + startMin * 60000).toISOString();
       const endAt = new Date(base.getTime() + endMin * 60000).toISOString();
-      await handleUpdate(item.id, { scheduleKind: "TIMED", startAt, endAt });
+      const previous = {
+        scheduleKind: item.scheduleKind,
+        startAt: item.startAt,
+        endAt: item.endAt,
+      };
+      const patch = { scheduleKind: "TIMED" as const, startAt, endAt };
+
+      setItems((prev) => prev.map((it) => (it.id === item.id ? { ...it, ...patch } : it)));
+      setPendingItemIds((prev) => new Set(prev).add(item.id));
+      try {
+        await updatePlannerItemAction(item.id, patch);
+        reload();
+      } catch (err) {
+        // That bai: lui ngay ve gia tri cu - khong doi nguoi dung tu nhan ra
+        // qua 1 lan reload khac.
+        setItems((prev) =>
+          prev.map((it) => (it.id === item.id ? { ...it, ...previous } : it)),
+        );
+        setLoadError(
+          err instanceof Error ? err.message : "Không lưu được thời gian mới.",
+        );
+      } finally {
+        setPendingItemIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.id);
+          return next;
+        });
+      }
     },
-    [handleUpdate],
+    [reload],
   );
 
   // --- Du lieu dan xuat
@@ -583,6 +672,18 @@ function PlannerShellInner({
     [unscheduled, hiddenCategories],
   );
 
+  // Ngay se hien tren luoi gio - tinh o DAY (khong con ben trong
+  // WeekTimeGrid) de 1 component dung chung duoc CA che do Tuan (nhieu cot)
+  // LAN Ngay (1 cot, full width) - yeu cau nguoi dung: "chỉ hiển thị full
+  // ngày hôm nay, cho full width ra". Che do Ngay dung THANG `selectedDate`
+  // (khong qua `startOfWeek`).
+  const gridDays = useMemo(() => {
+    if (viewMode === "day") return [selectedDate];
+    return Array.from({ length: 7 }, (_, i) =>
+      addDays(startOfWeek(anchor, settings.weekStartsOn), i),
+    ).filter((d) => settings.showWeekends || ![0, 6].includes(new Date(d).getDay()));
+  }, [viewMode, selectedDate, anchor, settings.weekStartsOn, settings.showWeekends]);
+
   const detailItem = useMemo(
     () =>
       [...items, ...unscheduled].find((it) => it.id === detailItemId) ?? null,
@@ -604,7 +705,23 @@ function PlannerShellInner({
   const rangeLabel =
     viewMode === "week"
       ? `${formatLongDateVi(range.from)} – ${formatLongDateVi(range.to)}`
-      : "";
+      : viewMode === "day"
+        ? formatLongDateVi(selectedDate)
+        : "";
+
+  /** Chuyen ky truoc/sau - buoc nhay tuy theo che do xem hien tai. Che do
+   *  Ngay doi CA `anchor` LAN `selectedDate` cung luc (2 gia tri phai luon
+   *  khop nhau khi chi co 1 ngay duy nhat tren luoi). */
+  function stepPeriod(delta: 1 | -1) {
+    if (viewMode === "day") {
+      setAnchor((a) => addDays(a, delta));
+      setSelectedDate((d) => addDays(d, delta));
+    } else if (viewMode === "week") {
+      setAnchor((a) => addDays(a, delta * 7));
+    } else {
+      setAnchor((a) => addMonths(a, delta));
+    }
+  }
 
   function openDetail(id: string) {
     setSelectedItemId(id);
@@ -694,6 +811,8 @@ function PlannerShellInner({
                   loading={loading}
                   overrides={colorOverrides}
                   badges={badges}
+                  timeFormat={settings.timeFormat}
+                  now={now}
                   onOpen={openDetail}
                   onToggleComplete={handleToggleComplete}
                   onAdd={() =>
@@ -727,11 +846,7 @@ function PlannerShellInner({
                 <button
                   type="button"
                   aria-label="Kỳ trước"
-                  onClick={() =>
-                    setAnchor((a) =>
-                      viewMode === "week" ? addDays(a, -7) : addMonths(a, -1),
-                    )
-                  }
+                  onClick={() => stepPeriod(-1)}
                   className="flex size-8 cursor-pointer items-center justify-center rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
                 >
                   <ChevronLeft size={15} />
@@ -739,11 +854,7 @@ function PlannerShellInner({
                 <button
                   type="button"
                   aria-label="Kỳ sau"
-                  onClick={() =>
-                    setAnchor((a) =>
-                      viewMode === "week" ? addDays(a, 7) : addMonths(a, 1),
-                    )
-                  }
+                  onClick={() => stepPeriod(1)}
                   className="flex size-8 cursor-pointer items-center justify-center rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white text-[color:var(--planner-text-secondary)] hover:bg-[var(--planner-surface-soft)]"
                 >
                   <ChevronRight size={15} />
@@ -771,11 +882,24 @@ function PlannerShellInner({
 
               <div className="flex items-center gap-1.5">
                 <div className="inline-flex rounded-[8px] border border-[color:var(--planner-border-soft)] bg-white p-0.5">
-                  {(["week", "month"] as ViewMode[]).map((m) => (
+                  {(["day", "week", "month"] as ViewMode[]).map((m) => (
                     <button
                       key={m}
                       type="button"
-                      onClick={() => setViewMode(m)}
+                      onClick={() => {
+                        // Vao che do Ngay TU 1 che do khac -> nhay thang ve
+                        // hom nay ngay - yeu cau nguoi dung: "nếu chọn chế độ
+                        // này thì chỉ hiển thị full ngày hôm nay". Da o san
+                        // trong Ngay thi bam lai KHONG reset (tranh phien khi
+                        // dang xem ngay khac trong che do Ngay va lo bam lai
+                        // nut nay), giong hanh vi nut "Hôm nay" rieng.
+                        if (m === "day" && viewMode !== "day") {
+                          const t = toLocalISODate(new Date());
+                          setAnchor(t);
+                          setSelectedDate(t);
+                        }
+                        setViewMode(m);
+                      }}
                       className={cn(
                         "cursor-pointer rounded-[6px] px-2.5 py-1 text-[12px] font-medium transition-colors",
                         viewMode === m
@@ -783,7 +907,7 @@ function PlannerShellInner({
                           : "text-[color:var(--planner-text-secondary)] hover:text-[color:var(--planner-text-primary)]",
                       )}
                     >
-                      {m === "week" ? "Tuần" : "Tháng"}
+                      {m === "day" ? "Ngày" : m === "week" ? "Tuần" : "Tháng"}
                     </button>
                   ))}
                 </div>
@@ -809,14 +933,25 @@ function PlannerShellInner({
               <div className="min-w-0 flex-1 overflow-hidden rounded-[14px] border border-[color:var(--planner-border-soft)] bg-[color:var(--planner-surface)] shadow-[0_1px_2px_rgba(20,30,50,.04)]">
                 {loadError ? (
                   <PlannerErrorState message={loadError} onRetry={reload} />
-                ) : viewMode === "week" ? (
+                ) : viewMode === "month" ? (
+                  <MonthGrid
+                    anchor={anchor}
+                    selectedDate={selectedDate}
+                    itemsByDate={itemsByDate}
+                    onSelectDate={setSelectedDate}
+                    onOpenItem={openDetail}
+                  />
+                ) : (
+                  // "week" VA "day" dung CHUNG 1 grid - khac nhau DUY NHAT o
+                  // so ngay trong `gridDays` (1 cot full width cho "day").
                   <div className="h-[calc(100vh-220px)] min-h-[420px]">
                     <WeekTimeGrid
-                      anchor={anchor}
+                      days={gridDays}
                       selectedDate={selectedDate}
                       itemsByDate={itemsByDate}
                       selectedItemId={selectedItemId}
                       badges={badges}
+                      pendingItemIds={pendingItemIds}
                       onSelectDate={setSelectedDate}
                       onOpenItem={openDetail}
                       onDragCreate={(dateKey, startMin, endMin) => {
@@ -839,39 +974,40 @@ function PlannerShellInner({
                       onUpdateItemTime={handleUpdateItemTime}
                     />
                   </div>
-                ) : (
-                  <MonthGrid
-                    anchor={anchor}
-                    selectedDate={selectedDate}
-                    itemsByDate={itemsByDate}
-                    onSelectDate={setSelectedDate}
-                    onOpenItem={openDetail}
-                  />
                 )}
               </div>
 
-              <DayDetailPanel
-                dateKey={selectedDate}
-                items={itemsByDate[selectedDate] ?? []}
-                loading={loading}
-                overrides={colorOverrides}
-                badges={badges}
-                timeFormat={settings.timeFormat}
-                selectedItemId={selectedItemId}
-                onOpenItem={openDetail}
-                onToggleComplete={handleToggleComplete}
-                onAdd={() =>
-                  setFormState({
-                    mode: "create",
-                    type: "TASK",
-                    prefill: {
-                      scheduleKind: "TIMED",
-                      startAt: new Date(`${selectedDate}T09:00:00`).toISOString(),
-                      endAt: new Date(`${selectedDate}T10:00:00`).toISOString(),
-                    },
-                  })
-                }
-              />
+              {/* Che do Ngay da la 1 luoi gio full-width DUY NHAT cho dung
+                  ngay dang chon - panel danh sach ben phai gio THUA (trung
+                  lap y het noi dung), an di de nhuong toan bo be rong cho
+                  luoi gio - yeu cau nguoi dung: "cho full width ra". Xem chi
+                  tiet qua popup (PlannerItemDetail) van hoat dong binh
+                  thuong, khong phu thuoc panel nay. */}
+              {viewMode !== "day" && (
+                <DayDetailPanel
+                  dateKey={selectedDate}
+                  items={itemsByDate[selectedDate] ?? []}
+                  loading={loading}
+                  overrides={colorOverrides}
+                  badges={badges}
+                  timeFormat={settings.timeFormat}
+                  now={now}
+                  selectedItemId={selectedItemId}
+                  onOpenItem={openDetail}
+                  onToggleComplete={handleToggleComplete}
+                  onAdd={() =>
+                    setFormState({
+                      mode: "create",
+                      type: "TASK",
+                      prefill: {
+                        scheduleKind: "TIMED",
+                        startAt: new Date(`${selectedDate}T09:00:00`).toISOString(),
+                        endAt: new Date(`${selectedDate}T10:00:00`).toISOString(),
+                      },
+                    })
+                  }
+                />
+              )}
             </div>
           </div>
         </div>
@@ -1177,6 +1313,8 @@ function UnscheduledList({
   loading,
   overrides,
   badges,
+  timeFormat,
+  now,
   onOpen,
   onToggleComplete,
   onAdd,
@@ -1185,6 +1323,8 @@ function UnscheduledList({
   loading: boolean;
   overrides: CategoryColorOverrides;
   badges: CardBadgeVisibility;
+  timeFormat: "24H" | "12H";
+  now: number;
   onOpen: (id: string) => void;
   onToggleComplete: (item: PlannerItem) => Promise<void> | void;
   onAdd: () => void;
@@ -1219,6 +1359,8 @@ function UnscheduledList({
                 variant="list"
                 overrides={overrides}
                 badges={badges}
+                timeFormat={timeFormat}
+                now={now}
                 onClick={() => onOpen(item.id)}
                 onToggleComplete={() => void onToggleComplete(item)}
               />
@@ -1235,21 +1377,29 @@ function UnscheduledList({
 // ---------------------------------------------------------------------------
 
 function WeekTimeGrid({
-  anchor,
+  days,
   selectedDate,
   itemsByDate,
   selectedItemId,
   badges,
+  pendingItemIds,
   onSelectDate,
   onOpenItem,
   onDragCreate,
   onUpdateItemTime,
 }: {
-  anchor: string;
+  // [2026-10-12] Ngay se hien thi - tinh SAN o PlannerShellInner (gridDays),
+  // KHONG con tu tinh tu `anchor` o day nua. Cho phep DUNG 1 component cho
+  // ca "week" (7/5 ngay) LAN "day" (1 ngay, full width) - yeu cau nguoi
+  // dung: che do Ngay "chỉ hiển thị full ngày hôm nay, cho full width ra".
+  days: string[];
   selectedDate: string;
   itemsByDate: Record<string, PlannerItem[]>;
   selectedItemId: string | null;
   badges: CardBadgeVisibility;
+  /** Item dang co 1 ghi startAt/endAt CHUA duoc server xac nhan (xem
+   *  handleUpdateItemTime o PlannerShellInner) - ve 1 dau "dang luu" nho. */
+  pendingItemIds: Set<string>;
   onSelectDate: (d: string) => void;
   onOpenItem: (id: string) => void;
   onDragCreate: (dateKey: string, startMin: number, endMin: number) => void;
@@ -1280,14 +1430,6 @@ function WeekTimeGrid({
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const days = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, i) =>
-        addDays(startOfWeek(anchor, settings.weekStartsOn), i),
-      ).filter((d) => settings.showWeekends || ![0, 6].includes(new Date(d).getDay())),
-    [anchor, settings.weekStartsOn, settings.showWeekends],
-  );
-
   const today = toLocalISODate(new Date());
   const [nowMinute, setNowMinute] = useState(() => {
     const n = new Date();
@@ -1306,10 +1448,15 @@ function WeekTimeGrid({
   // Tron "fr" voi "px" trong calc() cho grid-template-columns bi trinh duyet
   // LOAI BO ca khai bao (da xac nhan qua DevTools) -> moi o roi vao 1 cot,
   // xep doc. Dung class Tailwind tinh voi 1fr thuan.
+  // [2026-10-12] 1 ngay (che do Ngay) - cot gio rong hon (56px thay 48px) vi
+  // co du cho, cot ngay con lai la 1fr DUY NHAT = full width tu nhien, khong
+  // can logic rieng nao khac (vi tri the van tinh theo %).
   const gridColsClass =
-    days.length === 5
-      ? "grid-cols-[48px_repeat(5,1fr)]"
-      : "grid-cols-[48px_repeat(7,1fr)]";
+    days.length === 1
+      ? "grid-cols-[56px_1fr]"
+      : days.length === 5
+        ? "grid-cols-[48px_repeat(5,1fr)]"
+        : "grid-cols-[48px_repeat(7,1fr)]";
 
   // Bu be rong thanh cuon cho hang header. Tren Windows/Linux thanh cuon
   // CHIEM CHO THAT, nen than luoi (co overflow-y) hep hon header -> 7 cot
@@ -1326,7 +1473,11 @@ function WeekTimeGrid({
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  // Cuon san toi ~7h sang (hoac gio dau tien con thay duoc) khi mo/doi tuan.
+  // Cuon san toi ~7h sang (hoac gio dau tien con thay duoc) khi mo/doi
+  // tuan/ngay. `days.join(",")` (khong con `anchor`) - thay doi khi KHOANG
+  // NGAY HIEN THI that su doi (ca khi chuyen Tuan<->Ngay), dung bang dieu
+  // kien cu truoc day dung `anchor` khi WeekTimeGrid con tu tinh `days`.
+  const daysKey = days.join(",");
   useEffect(() => {
     const target = Math.max(
       settings.firstVisibleHour,
@@ -1335,7 +1486,7 @@ function WeekTimeGrid({
     scrollRef.current?.scrollTo({
       top: (target - settings.firstVisibleHour) * HOUR_ROW_HEIGHT - 24,
     });
-  }, [anchor, settings.firstVisibleHour, settings.lastVisibleHour, HOUR_ROW_HEIGHT]);
+  }, [daysKey, settings.firstVisibleHour, settings.lastVisibleHour, HOUR_ROW_HEIGHT]);
 
   // --- Keo tao viec tren vung trong
   const [slotDrag, setSlotDrag] = useState<{
@@ -1707,6 +1858,7 @@ function WeekTimeGrid({
                       settings.completedTaskDisplay === "COLLAPSE" &&
                       entry.item.status === "COMPLETED"
                     }
+                    syncing={pendingItemIds.has(entry.item.id)}
                     onOpen={() => onOpenItem(entry.item.id)}
                     onUpdateTime={(startMin, endMin) =>
                       onUpdateItemTime(entry.item, d, startMin, endMin)
@@ -1740,6 +1892,7 @@ function TimedChipPositioner({
   timeFormat,
   completedStyle,
   forceCompact,
+  syncing,
   onOpen,
   onUpdateTime,
 }: {
@@ -1754,6 +1907,8 @@ function TimedChipPositioner({
   timeFormat: "24H" | "12H";
   completedStyle: "CHECK_ICON" | "CHECK_COLOR" | "DONE_BADGE" | "PATTERN";
   forceCompact: boolean;
+  /** Vua keo xong, dang cho server xac nhan - xem comment handleUpdateItemTime. */
+  syncing: boolean;
   onOpen: () => void;
   onUpdateTime: (startMin: number, endMin: number) => Promise<void> | void;
 }) {
@@ -1787,6 +1942,10 @@ function TimedChipPositioner({
   function startDrag(e: React.MouseEvent, mode: "move" | "resize") {
     if (e.button !== 0) return;
     if (!draggable) return;
+    // Dang cho server xac nhan lan ghi TRUOC - khong cho keo chong them 1
+    // lan ghi nua tren CUNG item (tranh request sau ghi de len gia tri
+    // optimistic cua request truoc theo thu tu tra ve khong dam bao).
+    if (syncing) return;
     e.preventDefault();
     e.stopPropagation(); // khong de cot ngay hieu la keo-tao-viec
     const startClientY = e.clientY;
@@ -1873,6 +2032,7 @@ function TimedChipPositioner({
           height={compact ? 0 : boxHeight}
           selected={selected}
           completedStyle={completedStyle}
+          syncing={syncing}
           className="h-full"
           onClick={() => {
             // Vua keo xong thi KHONG coi la click mo chi tiet.
@@ -2093,6 +2253,7 @@ function DayDetailPanel({
   overrides,
   badges,
   timeFormat,
+  now,
   selectedItemId,
   onOpenItem,
   onToggleComplete,
@@ -2104,6 +2265,7 @@ function DayDetailPanel({
   overrides: CategoryColorOverrides;
   badges: CardBadgeVisibility;
   timeFormat: "24H" | "12H";
+  now: number;
   selectedItemId: string | null;
   onOpenItem: (id: string) => void;
   onToggleComplete: (item: PlannerItem) => Promise<void> | void;
@@ -2122,15 +2284,67 @@ function DayDetailPanel({
 
   const doneCount = sorted.filter((i) => i.status === "COMPLETED").length;
 
+  // "TODAY" (chu xanh) luon la trang thai MAC DINH cua header khi dang xem
+  // dung ngay hien tai; chi khi nguoi dung chon/focus 1 ngay KHAC (dateKey
+  // != hom nay) header moi doi sang dang day du "WEEKDAY DD.MM.YYYY" - yeu
+  // cau nguoi dung 2026-10-12. Lay "hom nay" tu CUNG `now` tick (khong tu
+  // goi new Date() rieng) de khop voi moc isUrgentSoon() dung cho cac the
+  // ben duoi, tranh lech nhau quanh thoi diem 00:00.
+  const today = toLocalISODate(new Date(now));
+  const isToday = dateKey === today;
+
+  // The tom tat theo category ("filter checked" style) - yeu cau nguoi
+  // dung: "có 1 family meeting thì hiển thị Family Meeting (1)". Dem SO
+  // LUONG item/ngay theo tung category, chi hien category co mat (>0),
+  // mau lay DUNG bo mau category (cung nguon voi sidebar/the), dam bao
+  // "bộ màu có quy định xuyên suốt" - khong tu chon mau rieng o day.
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<PlannerCategory, number>();
+    for (const it of sorted) {
+      counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
+    }
+    return PLANNER_CATEGORIES.map((cat) => ({ cat, count: counts.get(cat) ?? 0 })).filter(
+      (c) => c.count > 0,
+    );
+  }, [sorted]);
+
   return (
     <aside className="flex w-full shrink-0 flex-col gap-2 rounded-[14px] border border-[color:var(--planner-border-soft)] bg-[color:var(--planner-surface)] p-3 shadow-[0_1px_2px_rgba(20,30,50,.04)] xl:w-[320px]">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="flex items-center gap-1.5 text-[13px] font-bold text-[color:var(--planner-text-primary)]">
-            <CalendarDays size={13} className="text-[color:var(--planner-text-muted)]" />
-            {formatLongDateVi(dateKey)}
+          <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
+            <CalendarDays size={13} className="shrink-0 text-[color:var(--planner-text-muted)]" />
+            {isToday ? (
+              <span className="tracking-wide text-[color:var(--planner-primary)]">TODAY</span>
+            ) : (
+              <span className="text-[color:var(--planner-text-primary)]">
+                {formatPanelHeaderDate(dateKey)}
+              </span>
+            )}
           </h2>
-          <p className="mt-0.5 text-[10.5px] text-[color:var(--planner-text-muted)]">
+
+          {categoryCounts.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {categoryCounts.map(({ cat, count }) => {
+                const color = resolveCategoryColor(cat, overrides);
+                return (
+                  <span
+                    key={cat}
+                    className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9.5px] font-semibold"
+                    style={{
+                      backgroundColor: color.light,
+                      borderColor: color.border,
+                      color: color.main,
+                    }}
+                  >
+                    {PLANNER_CATEGORY_META[cat].label} ({count})
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <p className="mt-1 text-[10.5px] text-[color:var(--planner-text-muted)]">
             {sorted.length === 0
               ? "Không có việc nào"
               : `${sorted.length} việc · ${doneCount} đã xong`}
@@ -2165,6 +2379,7 @@ function DayDetailPanel({
                 overrides={overrides}
                 badges={badges}
                 timeFormat={timeFormat}
+                now={now}
                 selected={selectedItemId === item.id}
                 onClick={() => onOpenItem(item.id)}
                 onToggleComplete={() => void onToggleComplete(item)}

@@ -20,10 +20,12 @@
 // chi hover brightness. Doc gio TRUOC roi den tieu de.
 
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   checklistProgress,
   isFinished,
+  isUrgentSoon,
   PLANNER_STATUS_META,
   resolveCategoryColor,
   type CategoryColorOverrides,
@@ -67,9 +69,26 @@ export type PlannerItemCardProps = {
   badges?: CardBadgeVisibility;
   /** Chieu cao thuc (px) - CHI variant "timed", quyet dinh mat do noi dung. */
   height?: number;
+  /** Gio hien tai (ms, Date.now()) - CHI variant "list", dung tinh "sap het
+   *  han" (isUrgentSoon). Khong truyen = khong bao gio bold do (vd o cac
+   *  variant khac chua can canh bao nay). Truyen tu ngoai (khong tu doc
+   *  Date.now() trong luc render) de tranh lech SSR/client va de 1 dong ho
+   *  dung chung cho ca danh sach thay vi moi the tu tinh rieng. */
+  now?: number;
   selected?: boolean;
   /** `completedTaskStyle` tu Settings - cach ve item da xong. */
   completedStyle?: "CHECK_ICON" | "CHECK_COLOR" | "DONE_BADGE" | "PATTERN";
+  /** [2026-10-12] Vua ghi xong 1 thay doi (vd keo-tha/keo-gian tren luoi
+   *  gio) nhung CHUA duoc server xac nhan - ve 1 dau "dang luu" nho (CHI
+   *  variant "timed" hien). Thay cho UX cu: xoa preview keo NGAY luc tha
+   *  chuot roi doi round-trip server/reload() xong moi cap nhat vi tri that,
+   *  tao ra 1 khoang trong "giat lui-giat toi" - yeu cau nguoi dung: "thả ra
+   *  không có trạng thái gì... một lúc sau mới giật đùng 1 cái". Noi goi
+   *  (PlannerShell) da cap nhat `item` OPTIMISTIC truoc khi goi day, nen the
+   *  o DAY VI TRI da la vi tri moi tu dau - prop nay CHI dung de ve them 1
+   *  tin hieu nho "dang xac nhan voi server", khong anh huong vi tri/kich
+   *  thuoc. */
+  syncing?: boolean;
   onClick?: (e: React.MouseEvent) => void;
   /** Bat/tat hoan thanh - CHI hien o variant "list" va khi type cho phep. */
   onToggleComplete?: () => void;
@@ -92,8 +111,10 @@ export function PlannerItemCard({
   timeFormat = "24H",
   badges = ALL_BADGES_VISIBLE,
   height,
+  now,
   selected,
   completedStyle = "CHECK_ICON",
+  syncing = false,
   onClick,
   onToggleComplete,
   className,
@@ -176,8 +197,21 @@ export function PlannerItemCard({
   }
 
   // --- list: hang trong danh sach. Rong thoai mai nen hien du meta.
+  //
+  // Thu tu hien thi (yeu cau nguoi dung 2026-10-12): THOI GIAN truoc > LOAI
+  // task > TEN task > Dia diem/... - 3 dong rieng thay vi gop Loai+Ten vao 1
+  // dong roi Thoi gian xuong dong duoi nhu ban cu:
+  //   dong 1: thoi gian (kem thu/ngay - isoToWeekdayDate qua prop `weekday`),
+  //           bold do khi sap het han (isUrgentSoon, can `now` tu ngoai).
+  //   dong 2: icon Loai + Ten task (+ dau uu tien).
+  //   dong 3: Dia diem/link hop + trang thai + checklist.
+  // Icon/cham dau dong (checkbox hoac cham mau) CAN SAT TOP cua ca hang -
+  // yeu cau nguoi dung: "icon luon sat top, khong center truc y nhu hien
+  // tai" - dung margin-top CO DINH nho (khong con can theo tam dong tieu
+  // de nhu ban cu, vi tieu de khong con la dong dau tien).
   if (variant === "list") {
     const completable = item.type !== "EVENT";
+    const urgent = now !== undefined && isUrgentSoon(item, now);
     return (
       <div
         className={cn(
@@ -199,7 +233,7 @@ export function PlannerItemCard({
               item.status === "COMPLETED" ? "Bỏ đánh dấu hoàn thành" : "Đánh dấu hoàn thành"
             }
             className={cn(
-              "mt-0.5 flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors",
+              "mt-px flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors",
               item.status === "COMPLETED"
                 ? "border-transparent bg-[color:var(--mset-success)] text-white"
                 : "border-[color:var(--planner-border)] hover:border-[color:var(--planner-primary)]",
@@ -220,7 +254,7 @@ export function PlannerItemCard({
           </button>
         ) : (
           <span
-            className="mt-[7px] size-2 shrink-0 rounded-full"
+            className="mt-[5px] size-2 shrink-0 rounded-full"
             style={{ backgroundColor: color.main }}
             aria-hidden="true"
           />
@@ -229,9 +263,21 @@ export function PlannerItemCard({
         <button
           type="button"
           onClick={onClick}
-          className="min-w-0 flex-1 cursor-pointer text-left"
+          className="flex min-w-0 flex-1 cursor-pointer flex-col text-left"
         >
-          <span className="flex min-w-0 items-center gap-1.5">
+          {/* Dong 1: thoi gian - TRUOC tat ca, kem thu/ngay. */}
+          <ScheduleDisplay
+            item={item}
+            format={timeFormat}
+            withDate
+            weekday
+            accentColor={color.main}
+            urgent={urgent}
+            className="text-[11px]"
+          />
+
+          {/* Dong 2: Loai + Ten task. */}
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
             <TypeIcon
               type={item.type}
               size={12}
@@ -253,23 +299,23 @@ export function PlannerItemCard({
             {badges.showPriority && <PriorityMark priority={item.priority} />}
           </span>
 
-          <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <ScheduleDisplay
-              item={item}
-              format={timeFormat}
-              accentColor={color.main}
-            />
-            {badges.showStatus && <StatusBadge status={item.status} onlyNotable />}
-            {badges.showLocation && item.location && (
-              <LocationDisplay location={item.location} />
-            )}
-            {badges.showLocation && item.meetingUrl && (
-              <MeetingLinkDisplay url={item.meetingUrl} interactive />
-            )}
-            {progress && (
-              <ChecklistProgressBadge done={progress.done} total={progress.total} />
-            )}
-          </span>
+          {/* Dong 3: Dia diem/link hop + trang thai + checklist. */}
+          {(badges.showLocation && (item.location || item.meetingUrl)) ||
+          (badges.showStatus && item.status !== "SCHEDULED") ||
+          progress ? (
+            <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+              {badges.showLocation && item.location && (
+                <LocationDisplay location={item.location} />
+              )}
+              {badges.showLocation && item.meetingUrl && (
+                <MeetingLinkDisplay url={item.meetingUrl} interactive />
+              )}
+              {badges.showStatus && <StatusBadge status={item.status} onlyNotable />}
+              {progress && (
+                <ChecklistProgressBadge done={progress.done} total={progress.total} />
+              )}
+            </span>
+          ) : null}
         </button>
         {children}
       </div>
@@ -393,6 +439,25 @@ export function PlannerItemCard({
       {finished && completedStyle === "DONE_BADGE" && (
         <span className="pointer-events-none absolute top-0.5 right-0.5 rounded-[4px] bg-[color:var(--mset-success)] px-1 py-px text-[9px] font-semibold text-white">
           Done
+        </span>
+      )}
+      {/* [2026-10-12] Dau "dang luu" - vi tri da DUNG (parent cap nhat
+          optimistic), day CHI la tin hieu "server chua xac nhan xong", nen
+          dat o goc TREN-TRAI (canh thanh accent, khong tranh cho voi
+          DONE_BADGE/conflict o goc phai) va rat nho - khong duoc lan at noi
+          dung chinh cua the. */}
+      {syncing && (
+        <span
+          className="pointer-events-none absolute top-0.5 left-1.5 flex size-3 items-center justify-center rounded-full bg-white/95 shadow-[0_1px_3px_rgba(20,30,50,.25)]"
+          role="status"
+          aria-label="Đang lưu…"
+        >
+          <Loader2
+            size={8}
+            strokeWidth={3}
+            className="animate-spin"
+            style={{ color: color.main }}
+          />
         </span>
       )}
       {children}
