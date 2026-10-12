@@ -143,7 +143,9 @@ export function PlannerItemCard({
         <span
           className="size-1 shrink-0 rounded-full"
           style={{
-            backgroundColor: finished ? "var(--planner-text-muted)" : color.main,
+            backgroundColor: finished
+              ? "var(--planner-text-muted)"
+              : color.main,
             opacity: finished ? 0.5 : 1,
           }}
           aria-hidden="true"
@@ -230,7 +232,9 @@ export function PlannerItemCard({
               onToggleComplete();
             }}
             aria-label={
-              item.status === "COMPLETED" ? "Bỏ đánh dấu hoàn thành" : "Đánh dấu hoàn thành"
+              item.status === "COMPLETED"
+                ? "Bỏ đánh dấu hoàn thành"
+                : "Đánh dấu hoàn thành"
             }
             className={cn(
               "mt-px flex size-4 shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors",
@@ -277,11 +281,11 @@ export function PlannerItemCard({
           />
 
           {/* Dong 2: Loai + Ten task. */}
-          <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+          <span className="mt-0.5 flex min-w-0 items-start gap-1.5">
             <TypeIcon
               type={item.type}
               size={12}
-              className="shrink-0"
+              className="shrink-0 mt-1"
               style={{ color: color.main }}
             />
             <span
@@ -310,9 +314,14 @@ export function PlannerItemCard({
               {badges.showLocation && item.meetingUrl && (
                 <MeetingLinkDisplay url={item.meetingUrl} interactive />
               )}
-              {badges.showStatus && <StatusBadge status={item.status} onlyNotable />}
+              {badges.showStatus && (
+                <StatusBadge status={item.status} onlyNotable />
+              )}
               {progress && (
-                <ChecklistProgressBadge done={progress.done} total={progress.total} />
+                <ChecklistProgressBadge
+                  done={progress.done}
+                  total={progress.total}
+                />
               )}
             </span>
           ) : null}
@@ -352,7 +361,9 @@ export function PlannerItemCard({
           finished && completedStyle === "PATTERN"
             ? `repeating-linear-gradient(135deg, transparent, transparent 6px, color-mix(in srgb, ${color.main} 22%, transparent) 6px, color-mix(in srgb, ${color.main} 22%, transparent) 12px)`
             : undefined,
-        boxShadow: selected ? `0 0 0 2px white, 0 0 0 3px ${color.main}` : undefined,
+        boxShadow: selected
+          ? `0 0 0 2px white, 0 0 0 3px ${color.main}`
+          : undefined,
         ...style,
       }}
       className={cn(
@@ -401,13 +412,22 @@ export function PlannerItemCard({
             {showMeta && (
               <span className="mt-0.5 flex w-full min-w-0 flex-col gap-0.5 overflow-hidden">
                 {badges.showLocation && item.location && (
-                  <LocationDisplay location={item.location} className="text-[10px]" />
+                  <LocationDisplay
+                    location={item.location}
+                    className="text-[10px]"
+                  />
                 )}
                 {badges.showLocation && item.meetingUrl && (
-                  <MeetingLinkDisplay url={item.meetingUrl} className="text-[10px]" />
+                  <MeetingLinkDisplay
+                    url={item.meetingUrl}
+                    className="text-[10px]"
+                  />
                 )}
                 {progress && (
-                  <ChecklistProgressBadge done={progress.done} total={progress.total} />
+                  <ChecklistProgressBadge
+                    done={progress.done}
+                    total={progress.total}
+                  />
                 )}
               </span>
             )}
