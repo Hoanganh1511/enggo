@@ -269,12 +269,14 @@ export function PlannerItemCard({
           onClick={onClick}
           className="flex min-w-0 flex-1 cursor-pointer flex-col text-left"
         >
-          {/* Dong 1: thoi gian - TRUOC tat ca, kem thu/ngay. */}
+          {/* Dong 1: thoi gian - TRUOC tat ca. KHONG kem thu/ngay (yeu cau
+              nguoi dung 2026-10-12: "T2, 12/10, 08:30 - 10:00" -> "08:30 -
+              10:00") - ca 2 noi dung variant "list" (TodayTasksList,
+              DayDetailPanel) deu CHI hien item cua DUNG 1 ngay, ngay/thu da
+              ro tu tieu de khu vuc do, lap lai tren TUNG dong la thua. */}
           <ScheduleDisplay
             item={item}
             format={timeFormat}
-            withDate
-            weekday
             accentColor={color.main}
             urgent={urgent}
             className="text-[11px]"

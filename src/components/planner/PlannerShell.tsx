@@ -1479,15 +1479,14 @@ function CategoryCountChips({
         return (
           <span
             key={cat}
-            // [2026-10-12 fix] Yeu cau nguoi dung: bo goc chi 6px (truoc la
-            // rounded-full), font to hon 2px (9.5 -> 11.5), padding x/y to
-            // hon 2px (px-1.5/py-0.5 = 6px/2px -> px-2/py-1 = 8px/4px).
-            className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-1 text-[11.5px] font-semibold"
-            style={{
-              backgroundColor: color.light,
-              borderColor: color.border,
-              color: color.main,
-            }}
+            // [2026-10-12 fix] Nen DAC mau category + chu trang (truoc la
+            // nen nhat `color.light` + chu mau) - yeu cau nguoi dung: "tôi
+            // muốn nó màu đặc, text trắng cơ". Bo border (khong can vien
+            // rieng khi nen da dac mau, tranh vien mau nhat lac long tren
+            // nen dac). Bo goc 6px, font 11.5px, padding 8px/4px (cac yeu
+            // cau truoc do ve kich thuoc van giu nguyen).
+            className="inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[11.5px] font-semibold text-white"
+            style={{ backgroundColor: color.main }}
           >
             {PLANNER_CATEGORY_META[cat].label} ({count})
           </span>
@@ -1538,7 +1537,12 @@ function TodayTasksList({
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center justify-between px-0.5">
-        <span className="text-[10px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+        {/* [2026-10-12 fix] Mau "TODAY" xanh (dong bo voi tieu de
+            DayDetailPanel khi dang xem dung hom nay) - yeu cau nguoi dung:
+            "Dòng Today xanh đâu? Thay cho cái Hôm nay xám xịt kia." Van giu
+            uppercase+tracking (dong bo voi cac nhan section khac trong
+            sidebar: "PHÂN LOẠI"...), chi doi mau+do dam chu. */}
+        <span className="text-[10px] font-bold tracking-[.04em] text-[color:var(--planner-primary)] uppercase">
           Hôm nay
         </span>
         <button
