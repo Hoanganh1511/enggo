@@ -1325,57 +1325,87 @@ function CategoryFilterList({
   overrides: CategoryColorOverrides;
   onToggle: (c: PlannerCategory) => void;
 }) {
+  // [2026-10-12] Accordion - MAC DINH DONG (yeu cau nguoi dung: "Phần Phân
+  // loại để default là accordion đóng") - danh sach 8 category chiem kha
+  // nhieu chieu cao sidebar ngay tu dau, trong khi phan lon luc dung
+  // Planner nguoi dung khong can loc.
+  const [open, setOpen] = useState(false);
+  const activeCount = PLANNER_CATEGORIES.length - hidden.size;
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="px-0.5 text-[10px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
-        Phân loại
-      </span>
-      {PLANNER_CATEGORIES.map((cat) => {
-        const color = resolveCategoryColor(cat, overrides);
-        const checked = !hidden.has(cat);
-        return (
-          <label
-            key={cat}
-            className="flex cursor-pointer items-center gap-2 rounded-[6px] px-0.5 py-0.5 hover:bg-[var(--planner-surface-soft)]"
-          >
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => onToggle(cat)}
-              className="sr-only"
-            />
-            {/* Checkbox tu ve: khi tich thi to DUNG mau category - nhan ra
-                ngay o nay ung voi mau nao tren lich. */}
-            <span
-              aria-hidden="true"
-              className={cn(
-                "flex size-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px] transition-colors",
-              )}
-              style={
-                checked
-                  ? { backgroundColor: color.main, borderColor: color.main }
-                  : { borderColor: "var(--planner-border)" }
-              }
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full cursor-pointer items-center justify-between gap-1 rounded-[6px] px-0.5 py-0.5 hover:bg-[var(--planner-surface-soft)]"
+      >
+        <span className="text-[10px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+          Phân loại
+          {/* Dang dong MA co loc (bo tich vai category) - van can thay con
+              bao nhieu/tong bao nhieu de khong "quen mat" dang loc du khong
+              mo accordion ra xem tung dong. */}
+          {hidden.size > 0 && (
+            <span className="ml-1 font-medium tracking-normal normal-case text-[color:var(--planner-text-muted)]">
+              ({activeCount}/{PLANNER_CATEGORIES.length})
+            </span>
+          )}
+        </span>
+        <ChevronRight
+          size={12}
+          className={cn(
+            "shrink-0 text-[color:var(--planner-text-muted)] transition-transform duration-150",
+            open && "rotate-90",
+          )}
+          aria-hidden="true"
+        />
+      </button>
+      {open &&
+        PLANNER_CATEGORIES.map((cat) => {
+          const color = resolveCategoryColor(cat, overrides);
+          const checked = !hidden.has(cat);
+          return (
+            <label
+              key={cat}
+              className="flex cursor-pointer items-center gap-2 rounded-[6px] px-0.5 py-0.5 hover:bg-[var(--planner-surface-soft)]"
             >
-              {checked && (
-                <svg viewBox="0 0 10 10" className="size-2.5 text-white">
-                  <path
-                    d="M1.5 5.2 3.8 7.4 8.5 2.6"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-[12px] text-[color:var(--planner-text-secondary)]">
-              {PLANNER_CATEGORY_META[cat].label}
-            </span>
-          </label>
-        );
-      })}
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(cat)}
+                className="sr-only"
+              />
+              {/* Checkbox tu ve: khi tich thi to DUNG mau category - nhan ra
+                  ngay o nay ung voi mau nao tren lich. */}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px] transition-colors",
+                )}
+                style={
+                  checked
+                    ? { backgroundColor: color.main, borderColor: color.main }
+                    : { borderColor: "var(--planner-border)" }
+                }
+              >
+                {checked && (
+                  <svg viewBox="0 0 10 10" className="size-2.5 text-white">
+                    <path
+                      d="M1.5 5.2 3.8 7.4 8.5 2.6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[12px] text-[color:var(--planner-text-secondary)]">
+                {PLANNER_CATEGORY_META[cat].label}
+              </span>
+            </label>
+          );
+        })}
     </div>
   );
 }
