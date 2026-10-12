@@ -351,7 +351,14 @@ export function PlannerItemCard({
         }
       }}
       initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
+      // [2026-10-12 fix] "Chon" gio la DO NOI (shadow + lift nhe, khong con
+      // vien 2 lop trang+mau) - yeu cau nguoi dung: "Click vào không cần
+      // border, tôi muốn hiện shadow... nổi lên 3d 1 tí". `animate` (khong
+      // phai chi `initial`) nen MOI LAN `selected` doi, framer-motion tu
+      // animate muot qua lai giua 2 trang thai thay vi nhay cung - z-index
+      // de the nam TREN cac the khac dat o wrapper ngoai (TimedChipPositioner,
+      // PlannerShell.tsx) vi bien doi cua motion khong tu lam the voi z-index.
+      animate={{ opacity: 1, scale: selected ? 1.035 : 1, y: selected ? -2 : 0 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
       title={item.title}
       style={{
@@ -364,7 +371,7 @@ export function PlannerItemCard({
             ? `repeating-linear-gradient(135deg, transparent, transparent 6px, color-mix(in srgb, ${color.main} 22%, transparent) 6px, color-mix(in srgb, ${color.main} 22%, transparent) 12px)`
             : undefined,
         boxShadow: selected
-          ? `0 0 0 2px white, 0 0 0 3px ${color.main}`
+          ? `0 10px 24px -6px color-mix(in srgb, ${color.main} 45%, transparent), 0 4px 10px -2px rgba(20,30,50,.18)`
           : undefined,
         ...style,
       }}

@@ -1171,12 +1171,13 @@ function PlannerShellInner({
           title="Chi tiết"
           maxWidthClassName="max-w-[440px]"
         >
-          {() =>
+          {(container) =>
             detailItem && (
               <PlannerItemDetail
                 item={detailItem}
                 overrides={colorOverrides}
                 timeFormat={settings.timeFormat}
+                container={container}
                 onEdit={() => {
                   setDetailItemId(null);
                   setFormState({ mode: "edit", item: detailItem });
@@ -2279,7 +2280,13 @@ function TimedChipPositioner({
       )}
 
       <div
-        className="absolute z-[1]"
+        // [2026-10-12 fix] The dang chon (`selected`) noi LEN TREN moi the
+        // khac (kem dropshadow + lift o PlannerItemCard) - yeu cau nguoi
+        // dung: "nó phải nằm z index trên các thẻ khác". Cac the thuong
+        // dung chung z-[1] (co the chong canh nhau khi trung gio); z-20 du
+        // cao de vuot moi the khac trong CUNG cot ngay ma khong vuot qua cac
+        // lop UI thuc su tren no (modal z-50, nhan gio bay luc keo z-[5]).
+        className={cn("absolute", selected ? "z-20" : "z-[1]")}
         style={{
           top: displayTop,
           height: boxHeight,

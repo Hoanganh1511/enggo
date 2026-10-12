@@ -42,6 +42,7 @@ export function PlannerItemDetail({
   item,
   overrides,
   timeFormat = "24H",
+  container,
   onEdit,
   onDelete,
   onToggleComplete,
@@ -51,6 +52,10 @@ export function PlannerItemDetail({
   item: PlannerItem;
   overrides?: CategoryColorOverrides;
   timeFormat?: TimeFormat;
+  /** Node cua Dialog.Content (PlannerModal) - forward xuong AttachmentsSection
+   *  de popover chon Series mount DUNG trong subtree cua dialog, khong bi
+   *  overflow-y-auto cua than modal cat cut. */
+  container?: HTMLElement | null;
   onEdit?: () => void;
   onDelete?: () => Promise<void> | void;
   onToggleComplete?: () => Promise<void> | void;
@@ -185,7 +190,7 @@ export function PlannerItemDetail({
       )}
 
       {/* --- Dinh kem (Series) */}
-      <AttachmentsSection itemId={item.id} />
+      <AttachmentsSection itemId={item.id} container={container} />
 
       {error && <PlannerInlineError message={error} />}
 

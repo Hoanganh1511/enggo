@@ -10,10 +10,11 @@
 // Tai RIENG (lazy, khi panel chi tiet mo) - KHONG nam trong PlannerItem
 // chinh, xem lib/api/planner.ts.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Paperclip, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PopoverRoot, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   listPlannerItemAttachmentsAction,
   addPlannerItemAttachmentAction,
@@ -24,7 +25,17 @@ import type { PlannerItemAttachment } from "@/lib/api/planner";
 import type { ContentSeriesListItem } from "@/lib/api/content-series";
 import { PlannerInlineError } from "./planner-states";
 
-export function AttachmentsSection({ itemId }: { itemId: string }) {
+export function AttachmentsSection({
+  itemId,
+  container,
+}: {
+  itemId: string;
+  /** Node cua Dialog.Content (PlannerModal) - xem comment PopoverContent
+   *  (ui/popover.tsx): popover chon Series PHAI mount trong subtree cua
+   *  dialog, neu khong bi overflow-y-auto cua than modal CAT CUT (bug nguoi
+   *  dung bao: "Bị overflow hidden hay sao ấy"). */
+  container?: HTMLElement | null;
+}) {
   // `loaded` giu CA itemId cua lan fetch cuoi - `attachments` DAN XUAT tu no
   // (null khi itemId doi nhung chua fetch xong cho item MOI). Tranh goi
   // setState() dong bo ngay trong than effect (react-hooks/set-state-in-effect)
@@ -89,41 +100,46 @@ export function AttachmentsSection({ itemId }: { itemId: string }) {
     }
   }
 
-  // Dang tai LAN DAU: giu im lang (khong skeleton rieng) - phan lon item
-  // khong co dinh kem, hien 1 khung rong roi tu lap day ngay sau fetch se it
-  // giat hon la ve skeleton roi bien mat.
-  if (attachments === null) return null;
-
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
+      {/* [2026-10-12 fix] Hang tieu de + nut "+" LUON hien NGAY (khong doi
+          fetch xong) - yeu cau nguoi dung: "khi click vào chi task, một vài
+          giây sau mới hiện phần đính kèm lên". Truoc day CA khoi nay return
+          null trong luc tai, nen panel "nhay" them 1 doan khi du lieu ve -
+          gio CHI phan DANH SACH ben duoi (loading/empty/list) thay doi, chieu
+          cao panel on dinh tu luc mo, va nguoi dung bam "+" dinh kem duoc
+          NGAY, khong can doi round-trip load list cu xong. */}
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[.02em] text-[color:var(--planner-text-muted)] uppercase">
           <Paperclip size={12} aria-hidden="true" />
           Đính kèm
         </span>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setPickerOpen((v) => !v)}
-            aria-haspopup="menu"
-            aria-expanded={pickerOpen}
-            aria-label="Đính kèm Series"
-            className="flex size-5 cursor-pointer items-center justify-center rounded-[5px] text-[color:var(--planner-text-muted)] hover:bg-[color:var(--planner-surface-soft)]"
-          >
-            <Plus size={12} />
-          </button>
-          {pickerOpen && (
-            <SeriesPicker
-              onPick={handleAdd}
-              onClose={() => setPickerOpen(false)}
-            />
-          )}
-        </div>
+        <PopoverRoot open={pickerOpen} onOpenChange={setPickerOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Đính kèm Series"
+              className="flex size-5 cursor-pointer items-center justify-center rounded-[5px] text-[color:var(--planner-text-muted)] hover:bg-[color:var(--planner-surface-soft)]"
+            >
+              <Plus size={12} />
+            </button>
+          </PopoverTrigger>
+          <SeriesPicker
+            open={pickerOpen}
+            container={container}
+            onPick={handleAdd}
+          />
+        </PopoverRoot>
       </div>
 
       {error && <PlannerInlineError message={error} />}
 
-      {attachments.length === 0 ? (
+      {attachments === null ? (
+        <div className="flex flex-col gap-1" aria-busy="true" aria-live="polite">
+          <span className="sr-only">Đang tải đính kèm…</span>
+          <span className="h-[30px] animate-pulse rounded-[8px] bg-[color:var(--planner-surface-soft)]" />
+        </div>
+      ) : attachments.length === 0 ? (
         <p className="text-[11px] leading-[1.5] text-[color:var(--planner-text-muted)]">
           Chưa có đính kèm nào.
         </p>
@@ -214,54 +230,49 @@ function AttachmentRow({
 /**
  * Popover chon Series (hoac 1 Entry cu the trong Series) de dinh kem.
  *
- * Cung pattern voi PlannerCreateMenu (PlannerShell.tsx): bam ra ngoai /
- * Escape thi dong.
+ * Dung chung PopoverRoot/Trigger/Content (ui/popover.tsx, xem
+ * TimePickerField.tsx lam vi du tuong tu) thay vi tu ve 1 div position:
+ * absolute + tu bat mousedown/Escape - panel chi tiet nam trong 1 Dialog
+ * (PlannerModal) co than `overflow-y-auto`, 1 div `absolute` THUONG se bi
+ * CHINH vung cuon do cat cut (bug nguoi dung bao: "Bị overflow hidden hay
+ * sao ấy") du CSS `position: absolute` ve ly thuyet thoat khoi luong trang -
+ * no khong thoat duoc `overflow` cua to tien. PopoverContent portal thang ra
+ * ngoai (qua `container`, xem comment o AttachmentsSection) nen khong bi
+ * ket noi do.
  */
 function SeriesPicker({
+  open,
+  container,
   onPick,
-  onClose,
 }: {
+  open: boolean;
+  container?: HTMLElement | null;
   onPick: (seriesId: string, entryId?: string) => void;
-  onClose: () => void;
 }) {
   const [series, setSeries] = useState<ContentSeriesListItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!open || series !== null) return;
     listContentSeriesAction()
       .then(setSeries)
       .catch((err) =>
         setLoadError(err instanceof Error ? err.message : "Không tải được danh sách Series."),
       );
-  }, []);
-
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (!wrapRef.current?.contains(e.target as Node)) onClose();
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  }, [open, series]);
 
   const filtered = (series ?? []).filter((s) =>
     s.title.toLowerCase().includes(query.trim().toLowerCase()),
   );
 
   return (
-    <div
-      ref={wrapRef}
-      role="menu"
-      className="absolute top-full right-0 z-30 mt-1.5 flex max-h-80 w-[280px] flex-col overflow-hidden rounded-[10px] border border-[color:var(--planner-border)] bg-white shadow-[0_10px_28px_rgba(20,30,50,.16)]"
+    <PopoverContent
+      open={open}
+      align="end"
+      container={container}
+      className="z-50 flex max-h-80 w-[280px] flex-col overflow-hidden rounded-[10px] border border-[color:var(--planner-border)] bg-white shadow-[0_10px_28px_rgba(20,30,50,.16)]"
       style={{ fontFamily: "var(--planner-font-family)" }}
     >
       <div className="shrink-0 border-b border-[color:var(--planner-border-soft)] p-1.5">
@@ -357,6 +368,6 @@ function SeriesPicker({
           })
         )}
       </div>
-    </div>
+    </PopoverContent>
   );
 }
