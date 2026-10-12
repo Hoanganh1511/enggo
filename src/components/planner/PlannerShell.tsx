@@ -795,6 +795,18 @@ function PlannerShellInner({
     setDetailItemId(id);
   }
 
+  // [2026-10-13 fix] Dong popup "Chi tiết" PHAI tra `selectedItemId` ve null
+  // cung luc - yeu cau nguoi dung: "cái click cho thẻ shadow và nổi lên, là
+  // trạng thái active xem chi tiết cái task đó, lúc đóng thì nó cũng trở về
+  // trạng thái ban đầu". Truoc day CHI `detailItemId` duoc xoa luc dong (xem
+  // PlannerModal "Chi tiết" + nut "Sửa" ben duoi) - `selectedItemId` (dieu
+  // khien shadow/lift tren luoi tuan LAN highlight hang trong DayDetailPanel)
+  // o lai VINH VIEN sau khi dong, khien the van "noi" du popup da tat.
+  function closeDetail() {
+    setDetailItemId(null);
+    setSelectedItemId(null);
+  }
+
   return (
     <PlannerCategoryColorProvider overrides={colorOverrides}>
       {/* planner-scope nap bo CSS var rieng (globals.css). -mx/-my huy padding
@@ -1167,7 +1179,7 @@ function PlannerShellInner({
 
         <PlannerModal
           open={!!detailItem}
-          onOpenChange={(o) => !o && setDetailItemId(null)}
+          onOpenChange={(o) => !o && closeDetail()}
           title="Chi tiết"
           maxWidthClassName="max-w-[440px]"
         >
@@ -1179,7 +1191,7 @@ function PlannerShellInner({
                 timeFormat={settings.timeFormat}
                 container={container}
                 onEdit={() => {
-                  setDetailItemId(null);
+                  closeDetail();
                   setFormState({ mode: "edit", item: detailItem });
                 }}
                 onDelete={() => handleDelete(detailItem.id)}
