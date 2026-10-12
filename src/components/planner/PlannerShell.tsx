@@ -299,6 +299,19 @@ function layoutTimedItems(dayEntries: DayEntry[]): TimedLayoutEntry[] {
 const DEADLINE_VISUAL_MINUTES = 30;
 
 /**
+ * Khoang ho DOC giua 2 the lien ke, tru vao chieu cao hop VE.
+ *
+ * Mot viec 08:30-10:00 va mot viec 10:00-11:30 co bien pixel TRUNG NHAU
+ * tuyet doi (ket thuc cai nay = bat dau cai kia), nen 2 the dinh lien thanh
+ * mot khoi mau lien tuc, khong doc ra duoc la hai viec. Tru 2px o tang VE -
+ * KHONG dung vao startMin/endMin, vi nhan gio luc keo-tha doc nguoc tu pixel
+ * ra phut: tru vao do se bao "09:58" thay vi "10:00".
+ */
+const CARD_GAP_PX = 2;
+/** San chieu cao hop ve - viec rat ngan (5') van phai du cao de bam trung. */
+const MIN_CARD_BOX_PX = 12;
+
+/**
  * Cat cac item cua 1 ngay thanh DayEntry dat tren luoi gio (TIMED + DEADLINE).
  * ALL_DAY di rieng ra hang "Ca ngay"; UNSCHEDULED khong o ngay nao.
  */
@@ -332,8 +345,14 @@ function buildDayEntries(items: PlannerItem[], dateKey: string): DayEntry[] {
     out.push({
       item,
       startMin,
-      // Toi thieu 15' de the 0-phut van bam duoc.
-      endMin: Math.max(endMin, startMin + 15),
+      // endMin GIU DUNG phut that - KHONG phong to toi thieu o day. Truoc
+      // day cho `Math.max(endMin, startMin + 15)` de the ngan con bam duoc,
+      // nhung endMin cung la dau vao cua layoutTimedItems(): 1 viec 10:00-
+      // 10:05 bi keo dai thanh 10:15 se GIAO voi viec 10:05 ngay sau no, roi
+      // ca hai bi chia doi cot du thuc te khong he trung gio. Chieu cao toi
+      // thieu gio xu ly o tang VE (MIN_CARD_BOX_PX trong TimedChipPositioner)
+      // - dung cho no la van de hien thi, khong phai van de du lieu.
+      endMin,
       // Chi keo duoc khi CA item nam gon trong ngay nay - keo 1 manh da bi
       // cat se ghi sai moc cho phan nam o ngay khac.
       draggable: s >= dayStartMs && e <= dayEndMs,
@@ -1758,9 +1777,12 @@ function TimedChipPositioner({
   const suppressClickRef = useRef(false);
 
   const displayTop = drag?.mode === "move" ? top + drag.deltaPx : top;
+  // LOGIC: tuong ung dung khoang phut that - nhan gio luc keo doc tu day ra.
   const displayHeight =
     drag?.mode === "resize" ? Math.max(snapPx, height + drag.deltaPx) : height;
-  const compact = forceCompact || displayHeight < 40;
+  // VE: tru khoang ho de the lien ke khong dinh nhau (xem CARD_GAP_PX).
+  const boxHeight = Math.max(displayHeight - CARD_GAP_PX, MIN_CARD_BOX_PX);
+  const compact = forceCompact || boxHeight < 40;
 
   function startDrag(e: React.MouseEvent, mode: "move" | "resize") {
     if (e.button !== 0) return;
@@ -1837,7 +1859,7 @@ function TimedChipPositioner({
         className="absolute z-[1]"
         style={{
           top: displayTop,
-          height: displayHeight,
+          height: boxHeight,
           left: `calc(${leftPercent}% + 4px)`,
           width: `calc(${widthPercent}% - 8px)`,
         }}
@@ -1848,7 +1870,7 @@ function TimedChipPositioner({
           overrides={overrides}
           badges={badges}
           timeFormat={timeFormat}
-          height={compact ? 0 : displayHeight}
+          height={compact ? 0 : boxHeight}
           selected={selected}
           completedStyle={completedStyle}
           className="h-full"
