@@ -461,6 +461,12 @@ function PlannerShellInner({
 
   const [items, setItems] = useState<PlannerItem[]>(initialItems);
   const [unscheduled, setUnscheduled] = useState<PlannerItem[]>([]);
+  // [2026-10-12] "Hôm nay" o sidebar thay cho "Chưa xếp lịch" - danh sach
+  // nay PHAI dung voi THUC LICH ("hom nay" that, tu `now` tick) bat ke dang
+  // xem thang/tuan/ngay nao khac tren luoi chinh, nen tai RIENG (cung tinh
+  // than voi `unscheduled`, khong doc tu `items` - `items` chi chua du lieu
+  // cua KHOANG dang xem, se trong neu nguoi dung dang luot sang thang khac).
+  const [todayItems, setTodayItems] = useState<PlannerItem[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -516,6 +522,11 @@ function PlannerShellInner({
     [viewMode, anchor, selectedDate, settings.weekStartsOn],
   );
 
+  // "hom nay" THAT (lay tu `now` tick, KHONG phai `selectedDate`/`anchor`) -
+  // dung rieng cho danh sach "Hôm nay" o sidebar, luon dung bat ke dang xem
+  // thang/tuan/ngay nao.
+  const todayKey = toLocalISODate(new Date(now));
+
   // `loading` la state DAN XUAT, khong phai 1 useState rieng: "dang tai" =
   // du lieu da nap KHONG ung voi khoang dang xem. Lam vay vi bat
   // setLoading(true) ngay trong than useEffect vi pham
@@ -523,7 +534,9 @@ function PlannerShellInner({
   // cascading render) - va dan xuat thi cung khong the lech khoi thuc te:
   // khong co duong nao de `loading` ket o true khi du lieu da ve.
   const [reloadNonce, setReloadNonce] = useState(0);
-  const loadKey = `${range.from}|${range.to}|${reloadNonce}`;
+  // `todayKey` nam trong loadKey - ngay doi (qua nua dem, app van mo) cung
+  // kich hoat tai lai, khong can effect rieng theo doi rieng truong hop nay.
+  const loadKey = `${range.from}|${range.to}|${todayKey}|${reloadNonce}`;
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const loading = loadedKey !== loadKey;
 
@@ -533,13 +546,16 @@ function PlannerShellInner({
     // nao trong than effect.
     void (async () => {
       try {
-        const [ranged, un] = await Promise.all([
+        const [ranged, un, todays] = await Promise.all([
           listPlannerItemsAction(range.from, range.to),
           listUnscheduledPlannerItemsAction(),
+          // Tai RIENG, DOC LAP voi `range` (xem comment `todayItems` o tren).
+          listPlannerItemsAction(todayKey, todayKey),
         ]);
         if (cancelled) return;
         setItems(ranged);
         setUnscheduled(un);
+        setTodayItems(todays);
         setLoadError(null);
       } catch (err) {
         if (cancelled) return;
@@ -559,7 +575,7 @@ function PlannerShellInner({
     return () => {
       cancelled = true;
     };
-  }, [loadKey, range.from, range.to]);
+  }, [loadKey, range.from, range.to, todayKey]);
 
   /** Nap lai - dung sau moi thao tac ghi, va cho nut "Thử lại" khi loi. */
   const reload = useCallback(() => {
@@ -706,9 +722,13 @@ function PlannerShellInner({
     return map;
   }, [visibleItems]);
 
-  const visibleUnscheduled = useMemo(
-    () => unscheduled.filter((it) => !hiddenCategories.has(it.category)),
-    [unscheduled, hiddenCategories],
+  // [2026-10-12] Thay "Chưa xếp lịch" (UnscheduledList) o sidebar - yeu cau
+  // nguoi dung: "Chuyển phần task today sang thay thế phần Chưa xếp lịch".
+  // `unscheduled` (state) van GIU (dung cho `detailItem` tim theo id ben
+  // duoi), chi khong con render thanh 1 danh sach rieng trong sidebar nua.
+  const visibleTodayItems = useMemo(
+    () => todayItems.filter((it) => !hiddenCategories.has(it.category)),
+    [todayItems, hiddenCategories],
   );
 
   // Ngay se hien tren luoi gio - tinh o DAY (khong con ben trong
@@ -857,8 +877,8 @@ function PlannerShellInner({
 
                 <div className="border-t border-[color:var(--planner-border-soft)]" />
 
-                <UnscheduledList
-                  items={visibleUnscheduled}
+                <TodayTasksList
+                  items={visibleTodayItems}
                   loading={loading}
                   overrides={colorOverrides}
                   badges={badges}
@@ -870,7 +890,11 @@ function PlannerShellInner({
                     setFormState({
                       mode: "create",
                       type: "TASK",
-                      prefill: { scheduleKind: "UNSCHEDULED" },
+                      prefill: {
+                        scheduleKind: "TIMED",
+                        startAt: new Date(`${todayKey}T09:00:00`).toISOString(),
+                        endAt: new Date(`${todayKey}T10:00:00`).toISOString(),
+                      },
                     })
                   }
                 />
@@ -1337,9 +1361,14 @@ function CategoryFilterList({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full cursor-pointer items-center justify-between gap-1 rounded-[6px] px-0.5 py-0.5 hover:bg-[var(--planner-surface-soft)]"
+        // [2026-10-12 fix] Bo nen hover - yeu cau nguoi dung: "không để màu
+        // nền, nhìn nó bị dí dít với chữ". px-0.5/py-0.5 (2px) qua sat de
+        // phu nen lam chu nhu bi "ep" sat vien mau - don gian bo han nen,
+        // chi doi mau chu khi hover (dong nhat voi cach cac hang category
+        // ben duoi the hien hover).
+        className="flex w-full cursor-pointer items-center justify-between gap-1 px-0.5 py-0.5 text-[color:var(--planner-text-muted)] hover:text-[color:var(--planner-text-secondary)]"
       >
-        <span className="text-[10px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
+        <span className="text-[10px] font-semibold tracking-[.04em] uppercase">
           Phân loại
           {/* Dang dong MA co loc (bo tich vai category) - van can thay con
               bao nhieu/tong bao nhieu de khong "quen mat" dang loc du khong
@@ -1411,10 +1440,71 @@ function CategoryFilterList({
 }
 
 // ---------------------------------------------------------------------------
-// Danh sach viec chua xep lich
+// The tom tat so luong theo category ("Meeting (1)") - dung chung boi
+// DayDetailPanel VA TodayTasksList (sidebar).
 // ---------------------------------------------------------------------------
 
-function UnscheduledList({
+/**
+ * Chip tom tat SO LUONG item theo tung category ("filter checked" style) -
+ * yeu cau nguoi dung: "có 1 family meeting thì hiển thị Family Meeting (1)".
+ * Chi hien category co mat (>0), mau lay DUNG bo mau category (cung nguon
+ * voi sidebar/the), dam bao "bộ màu có quy định xuyên suốt".
+ */
+function CategoryCountChips({
+  items,
+  overrides,
+  className,
+}: {
+  items: PlannerItem[];
+  overrides: CategoryColorOverrides;
+  className?: string;
+}) {
+  const counts = useMemo(() => {
+    const map = new Map<PlannerCategory, number>();
+    for (const it of items) {
+      map.set(it.category, (map.get(it.category) ?? 0) + 1);
+    }
+    return PLANNER_CATEGORIES.map((cat) => ({
+      cat,
+      count: map.get(cat) ?? 0,
+    })).filter((c) => c.count > 0);
+  }, [items]);
+
+  if (counts.length === 0) return null;
+
+  return (
+    <div className={cn("flex flex-wrap gap-1", className)}>
+      {counts.map(({ cat, count }) => {
+        const color = resolveCategoryColor(cat, overrides);
+        return (
+          <span
+            key={cat}
+            // [2026-10-12 fix] Yeu cau nguoi dung: bo goc chi 6px (truoc la
+            // rounded-full), font to hon 2px (9.5 -> 11.5), padding x/y to
+            // hon 2px (px-1.5/py-0.5 = 6px/2px -> px-2/py-1 = 8px/4px).
+            className="inline-flex items-center gap-1 rounded-[6px] border px-2 py-1 text-[11.5px] font-semibold"
+            style={{
+              backgroundColor: color.light,
+              borderColor: color.border,
+              color: color.main,
+            }}
+          >
+            {PLANNER_CATEGORY_META[cat].label} ({count})
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Danh sach viec HOM NAY (sidebar) - thay "Chưa xếp lịch" (UnscheduledList,
+// da bo) - yeu cau nguoi dung: "Chuyển phần task today sang thay thế phần
+// Chưa xếp lịch". Luon dung voi lich THAT cua hom nay (`todayKey`, tu `now`
+// tick), bat ke dang xem thang/tuan/ngay nao khac tren luoi chinh.
+// ---------------------------------------------------------------------------
+
+function TodayTasksList({
   items,
   loading,
   overrides,
@@ -1435,30 +1525,43 @@ function UnscheduledList({
   onToggleComplete: (item: PlannerItem) => Promise<void> | void;
   onAdd: () => void;
 }) {
+  // Sap xep nhu DayDetailPanel: ca ngay len dau, roi theo gio.
+  const sorted = useMemo(() => {
+    const keyOf = (it: PlannerItem) => {
+      if (it.scheduleKind === "ALL_DAY") return -1;
+      const iso = it.startAt ?? it.dueAt;
+      return iso ? minutesOfDay(iso) : 24 * 60 + 1;
+    };
+    return [...items].sort((a, b) => keyOf(a) - keyOf(b));
+  }, [items]);
+
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
       <div className="flex items-center justify-between px-0.5">
         <span className="text-[10px] font-semibold tracking-[.04em] text-[color:var(--planner-text-muted)] uppercase">
-          Chưa xếp lịch
+          Hôm nay
         </span>
         <button
           type="button"
           onClick={onAdd}
-          aria-label="Thêm việc chưa xếp lịch"
+          aria-label="Thêm việc cho hôm nay"
           className="flex size-5 cursor-pointer items-center justify-center rounded-[5px] text-[color:var(--planner-text-muted)] hover:bg-[var(--planner-surface-soft)]"
         >
           <Plus size={12} />
         </button>
       </div>
-      {loading && items.length === 0 ? (
+
+      <CategoryCountChips items={sorted} overrides={overrides} className="px-0.5" />
+
+      {loading && sorted.length === 0 ? (
         <PlannerSkeletonRows rows={2} />
-      ) : items.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <p className="px-0.5 py-1 text-[11px] leading-[1.5] text-[color:var(--planner-text-muted)]">
-          Không có việc nào đang chờ xếp lịch.
+          Hôm nay chưa có việc nào.
         </p>
       ) : (
         <ul className="flex min-w-0 flex-col">
-          {items.map((item) => (
+          {sorted.map((item) => (
             <li key={item.id} className="min-w-0">
               <PlannerItemCard
                 item={item}
@@ -2450,22 +2553,6 @@ function DayDetailPanel({
   const today = toLocalISODate(new Date(now));
   const isToday = dateKey === today;
 
-  // The tom tat theo category ("filter checked" style) - yeu cau nguoi
-  // dung: "có 1 family meeting thì hiển thị Family Meeting (1)". Dem SO
-  // LUONG item/ngay theo tung category, chi hien category co mat (>0),
-  // mau lay DUNG bo mau category (cung nguon voi sidebar/the), dam bao
-  // "bộ màu có quy định xuyên suốt" - khong tu chon mau rieng o day.
-  const categoryCounts = useMemo(() => {
-    const counts = new Map<PlannerCategory, number>();
-    for (const it of sorted) {
-      counts.set(it.category, (counts.get(it.category) ?? 0) + 1);
-    }
-    return PLANNER_CATEGORIES.map((cat) => ({
-      cat,
-      count: counts.get(cat) ?? 0,
-    })).filter((c) => c.count > 0);
-  }, [sorted]);
-
   return (
     <aside className="flex w-full shrink-0 flex-col gap-2 rounded-[14px] border border-[color:var(--planner-border-soft)] bg-[color:var(--planner-surface)] p-3 shadow-[0_1px_2px_rgba(20,30,50,.04)] xl:w-[320px]">
       <div className="flex items-start justify-between gap-2">
@@ -2486,26 +2573,7 @@ function DayDetailPanel({
             )}
           </h2>
 
-          {categoryCounts.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {categoryCounts.map(({ cat, count }) => {
-                const color = resolveCategoryColor(cat, overrides);
-                return (
-                  <span
-                    key={cat}
-                    className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9.5px] font-semibold"
-                    style={{
-                      backgroundColor: color.light,
-                      borderColor: color.border,
-                      color: color.main,
-                    }}
-                  >
-                    {PLANNER_CATEGORY_META[cat].label} ({count})
-                  </span>
-                );
-              })}
-            </div>
-          )}
+          <CategoryCountChips items={sorted} overrides={overrides} className="mt-1.5" />
 
           <p className="mt-1 text-[10.5px] text-[color:var(--planner-text-muted)]">
             {sorted.length === 0
