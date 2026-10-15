@@ -5,7 +5,12 @@ import { listPublicCollectionsAction } from "@/actions/discover/collections/list
 import { listContentSeriesAction } from "@/actions/discover/content-series/list-content-series";
 import { getFollowingAction } from "@/actions/discover/follow-user";
 import { normalizePost } from "@/lib/discover/normalize-post";
-import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
+// [2026-10-15] Tam an ArticlesHero (hero carousel + 3 the chu de AI/Cong viec/
+// Doi song) khoi /home theo yeu cau nguoi dung: "Cụm 3 vùng này tạm bỏ ra
+// khỏi home đi. Không hiện nữa". KHONG xoa component/file (van con nguyen o
+// components/discover/articles-hub/ArticlesHero.tsx) - chi bo cho GOI render
+// ben duoi, de bat lai chi can mo comment o day + o JSX + writeHref.
+// import { ArticlesHero } from "@/components/discover/articles-hub/ArticlesHero";
 import { SectionTitle } from "@/components/discover/articles-hub/SectionTitle";
 import { CreatorRail, type CreatorSummary } from "@/components/discover/articles-hub/CreatorRail";
 import { AttentionCollectionsRail } from "@/components/discover/articles-hub/AttentionCollectionsRail";
@@ -27,9 +32,12 @@ import type { Author } from "@/content/home-feed-mock";
 export default async function ArticlesPage() {
   const session = await auth();
   const username = session?.username ?? null;
-  // Truoc day tro toi /workspace/[username] - da xoa cung tinh nang
-  // Workspace (2026-09-14), gio dan thang toi trang soan bai that.
-  const writeHref = username ? "/compose" : "/login";
+  // writeHref: truoc day tro toi /workspace/[username] (da xoa cung tinh
+  // nang Workspace, 2026-09-14), roi dan thang toi trang soan bai that - CHI
+  // tung duoc dung boi ArticlesHero (xem comment "Tam an ArticlesHero" o
+  // import phia tren) - comment lai cung luc, bat ArticlesHero lai thi mo
+  // comment dong nay truoc.
+  // const writeHref = username ? "/compose" : "/login";
 
   const [rawPosts, attentionCollections, newestSeries, categoryTree] = await Promise.all([
     listPostsAction({ limit: 48 }).catch(() => []),
@@ -94,7 +102,7 @@ export default async function ArticlesPage() {
 
   return (
     <>
-      <ArticlesHero writeHref={writeHref} />
+      {/* <ArticlesHero writeHref={writeHref} /> */}
 
       <SectionTitle
         icon={Users}

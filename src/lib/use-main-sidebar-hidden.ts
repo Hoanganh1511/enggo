@@ -27,6 +27,10 @@ const HIDDEN_PATH_PATTERNS = [
   // /planner (va moi trang con sau nay neu co, vd /planner/settings) - yeu
   // cau nguoi dung: "Trang planner này đưa ra khỏi layout sidebar nhé".
   /^\/planner(?:\/|$)/,
+  // [2026-10-15] English Learner - 1 workspace rieng (ElNav tu ve dieu huong
+  // noi bo), khong phai trang duyet feed, nen CUNG an sidebar chinh giong
+  // Planner thay vi hien 2 thanh dieu huong canh nhau.
+  /^\/(learn|courses|reviews|mistakes|vocabulary|progress)(?:\/|$)/,
 ];
 
 export function useMainSidebarHidden(): boolean {

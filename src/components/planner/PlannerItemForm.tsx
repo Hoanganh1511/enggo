@@ -172,6 +172,22 @@ function DateTimeField({
         {withTime && (
           <FormInput
             type="time"
+            // [2026-10-13 fix] "Kết thúc: 12:00 S" trong o nhung preview lai
+            // ra "00:00" - KHONG phai bug tinh toan: <input type="time">
+            // nguyen ban theo locale he thong, va tren locale 12h (vi-VN)
+            // widget co THEM 1 o AM/PM (SA/CH) rut gon con 1 chu trong o
+            // 108px hep, rat de bi doc nham/go nham. "12:00 SA" (AM) va
+            // "12:00 CH" (PM) la 2 gia tri 24h HOAN TOAN khac nhau (00:00 va
+            // 12:00) - nguoi dung go "12:00" nhung o AM/PM van o "SA" (mac
+            // dinh/chua doi) thi .value THAT SU browser bao ve la "00:00",
+            // preview doc dung gia tri do nen hien dung "00:00" - 2 ben
+            // KHONG he lech nhau, chi la native widget qua de hieu nham.
+            // Fix: ep `lang="en-GB"` - Chrome/Firefox doc locale theo
+            // thuoc tinh `lang` cua CHINH input (uu tien hon locale he
+            // thong/trinh duyet) de quyet dinh dinh dang <input type="time">,
+            // "en-GB" luon hien 24h (00-23h), BO HAN o AM/PM - xoa tan goc
+            // nguyen nhan nham lan, khong can tu viet lai ca widget.
+            lang="en-GB"
             value={time}
             onChange={(e) => onTimeChange(e.target.value)}
             aria-label={`${label} — giờ`}
