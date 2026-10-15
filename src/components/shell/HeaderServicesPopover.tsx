@@ -7,7 +7,6 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
-  GraduationCap,
   LayoutGrid,
 } from "lucide-react";
 import {
@@ -72,29 +71,6 @@ export function HeaderServicesPopover() {
               <span className="block text-sm font-semibold text-ink">Planner</span>
               <span className="mt-0.5 block text-xs text-ink-muted">
                 Lên kế hoạch, quản lý việc theo tuần/tháng
-              </span>
-            </span>
-            <ChevronRight
-              size={16}
-              className="mt-1 shrink-0 -translate-x-2.5 text-ink-faint opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100"
-            />
-          </Link>
-          {/* [2026-10-15] "English Learner" - yeu cau nguoi dung: "Bổ sung
-              thêm 1 service trên Header: English Learner". Cung pattern voi
-              Planner ngay tren (1 muc nav CHINH rieng /learn, khong phai 1
-              "dich vu" the 3D trong HOME_FEATURES). */}
-          <Link
-            href="/learn"
-            onClick={() => setOpen(false)}
-            className="group flex items-center gap-3 rounded-lg p-2.5 text-left transition-colors duration-150 ease-out hover:bg-primary-soft"
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-white shadow-md transition-colors duration-150 ease-out group-hover:border-transparent group-hover:bg-linear-to-r group-hover:from-violet-100 group-hover:to-pink-100">
-              <GraduationCap size={17} className="text-primary" strokeWidth={2} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-ink">English Learner</span>
-              <span className="mt-0.5 block text-xs text-ink-muted">
-                Học ngữ pháp &amp; từ vựng tiếng Anh theo lộ trình
               </span>
             </span>
             <ChevronRight
